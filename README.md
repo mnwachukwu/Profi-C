@@ -189,14 +189,17 @@ read-only inside the body, which removes the classic closure-capture trap.
 | Lexer | Complete |
 | Parser | Complete |
 | Resolver | Complete |
-| Type checker | Not started |
+| Type checker | Complete |
+| Definite assignment, optional narrowing | Complete |
 | Interpreter | Not started |
 | CIL emitter | Not started |
 
-Source becomes a syntax tree, and every name in it is resolved to what it declares. All three
-stages report errors with positions and recover rather than stopping at the first mistake.
-Types are not checked yet, so the examples above are valid and fully resolved but are **not
-yet executable**. The language design is settled — see the specification below.
+**The front end is finished.** Source becomes a syntax tree, every name resolves, every
+expression has a type, nothing can be read before it holds a value, and an optional cannot be
+read at all until presence is proven. All of it reports errors with positions and recovers
+rather than stopping at the first mistake.
+
+Nothing executes yet — the examples above are fully checked but are **not yet runnable**.
 
 ## Documentation
 

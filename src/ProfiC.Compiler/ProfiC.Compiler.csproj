@@ -10,4 +10,8 @@
     <InternalsVisibleTo Include="ProfiC.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ProfiC.Runtime\ProfiC.Runtime.csproj" />
+  </ItemGroup>
+
 </Project>

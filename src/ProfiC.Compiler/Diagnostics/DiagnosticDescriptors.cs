@@ -21,6 +21,9 @@ public static class DiagnosticDescriptors
     private static DiagnosticDescriptor Error(string id, string title, string format) =>
         new(id, DiagnosticSeverity.Error, title, format);
 
+    private static DiagnosticDescriptor Warning(string id, string title, string format) =>
+        new(id, DiagnosticSeverity.Warning, title, format);
+
     // ---- Lexical, PFC0001 to PFC0099 ----------------------------------------------------
 
     public static readonly DiagnosticDescriptor UnrecognizedCharacter = Error(
@@ -244,4 +247,208 @@ public static class DiagnosticDescriptors
         "PFC0216",
         "No parent to reach",
         "'base' needs a parent model, and '{0}' extends nothing.");
+
+    // ---- Type checking, PFC0300 to PFC0399 -----------------------------------------------
+
+    public static readonly DiagnosticDescriptor CannotConvert = Error(
+        "PFC0300",
+        "Cannot convert",
+        "Cannot use {0} where {1} is expected.");
+
+    /// <summary>
+    /// A conversion that exists but must be written. The message names the call, since
+    /// knowing one is possible is not much use without knowing how to ask for it.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ConversionMustBeExplicit = Error(
+        "PFC0301",
+        "Conversion must be written out",
+        "{0} does not become {1} on its own, because the result would surprise you. "
+        + "Write '{2}' to ask for it.");
+
+    public static readonly DiagnosticDescriptor ConditionMustBeBoolean = Error(
+        "PFC0302",
+        "Condition must be a boolean",
+        "A {0} condition must be a boolean, and this is {1}.");
+
+    public static readonly DiagnosticDescriptor OperatorNotDefined = Error(
+        "PFC0303",
+        "Operator not defined for these types",
+        "'{0}' is not defined for {1} and {2}.");
+
+    public static readonly DiagnosticDescriptor UnaryOperatorNotDefined = Error(
+        "PFC0304",
+        "Operator not defined for this type",
+        "'{0}' is not defined for {1}.");
+
+    /// <summary>
+    /// Branch types must agree exactly rather than finding a common type, so that the type of
+    /// a conditional is always the type its branches are written as.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ConditionalBranchesDiffer = Error(
+        "PFC0305",
+        "Conditional branches have different types",
+        "The branches of an 'if ... then ... else' must have the same type, and these are "
+        + "{0} and {1}.");
+
+    public static readonly DiagnosticDescriptor MemberNotFound = Error(
+        "PFC0306",
+        "Member not found",
+        "{0} has no member named '{1}'.");
+
+    public static readonly DiagnosticDescriptor NotCallable = Error(
+        "PFC0307",
+        "Not something that can be called",
+        "{0} cannot be called.");
+
+    public static readonly DiagnosticDescriptor WrongArgumentCount = Error(
+        "PFC0308",
+        "Wrong number of arguments",
+        "'{0}' takes {1} argument(s), but {2} were given.");
+
+    public static readonly DiagnosticDescriptor NoMatchingOverload = Error(
+        "PFC0309",
+        "No overload matches",
+        "No version of '{0}' accepts these arguments.");
+
+    public static readonly DiagnosticDescriptor AmbiguousOverload = Error(
+        "PFC0310",
+        "Ambiguous call",
+        "Several versions of '{0}' match these arguments equally well.");
+
+    public static readonly DiagnosticDescriptor NotIndexable = Error(
+        "PFC0311",
+        "Not something that can be indexed",
+        "{0} cannot be indexed. Only a set and a string can.");
+
+    public static readonly DiagnosticDescriptor IndexMustBeInteger = Error(
+        "PFC0312",
+        "Index must be an integer",
+        "An index must be an integer, and this is {0}.");
+
+    public static readonly DiagnosticDescriptor CannotInferEmptyCollection = Error(
+        "PFC0313",
+        "Cannot infer the type of an empty set",
+        "The type of an empty set cannot be worked out from the set alone. "
+        + "Write the type, as in 'integer[] values = {};'.");
+
+    public static readonly DiagnosticDescriptor CollectionElementsDiffer = Error(
+        "PFC0314",
+        "Set elements have different types",
+        "Every element of a set must have the same type; found {0} and {1}.");
+
+    public static readonly DiagnosticDescriptor NotSwitchable = Error(
+        "PFC0315",
+        "Cannot switch on this type",
+        "A switch cannot examine {0}. Equality on it is unreliable, so a case label could "
+        + "never be trusted to match.");
+
+    public static readonly DiagnosticDescriptor ForEachNeedsSequence = Error(
+        "PFC0316",
+        "Cannot iterate this type",
+        "'for each' needs a set or a string, and this is {0}.");
+
+    public static readonly DiagnosticDescriptor RangeLoopNeedsInteger = Error(
+        "PFC0317",
+        "Range loop needs integers",
+        "A range loop counts with integers, and this is {0}.");
+
+    public static readonly DiagnosticDescriptor YieldValueInVoidFunction = Error(
+        "PFC0318",
+        "This function yields nothing",
+        "'{0}' declares no result, so 'yield' cannot carry a value.");
+
+    public static readonly DiagnosticDescriptor YieldMissingValue = Error(
+        "PFC0319",
+        "Missing value to yield",
+        "'{0}' yields a {1}, so 'yield' needs a value.");
+
+    public static readonly DiagnosticDescriptor ConstantNeedsInitializer = Error(
+        "PFC0320",
+        "Constant needs a value",
+        "'{0}' is a constant, so it must be given a value where it is declared.");
+
+    public static readonly DiagnosticDescriptor ConstantNotFoldable = Error(
+        "PFC0321",
+        "Constant value must be known while compiling",
+        "The value of '{0}' must be worked out while compiling, so it can only be built from "
+        + "literals and other constants.");
+
+    /// <summary>
+    /// A constant is only permitted where an immutable binding really means an unchanging
+    /// value, which rules out the types that could change behind it.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ConstantTypeNotAllowed = Error(
+        "PFC0322",
+        "This type cannot be constant",
+        "{0} cannot be declared constant, because the binding could stay fixed while what "
+        + "it names changed. This may widen in a later version.");
+
+    public static readonly DiagnosticDescriptor InferredDeclarationNeedsInitializer = Error(
+        "PFC0323",
+        "Nothing to infer from",
+        "'let' works out the type from the value, so it needs one.");
+
+    public static readonly DiagnosticDescriptor DivisionByZero = Error(
+        "PFC0324",
+        "Division by zero",
+        "This divides by zero.");
+
+    public static readonly DiagnosticDescriptor CaseLabelNotConstant = Error(
+        "PFC0325",
+        "Case label must be a constant",
+        "A case label must be known while compiling.");
+
+    public static readonly DiagnosticDescriptor DuplicateCaseLabel = Error(
+        "PFC0326",
+        "Duplicate case label",
+        "The value {0} is already handled by another case.");
+
+    public static readonly DiagnosticDescriptor CannotTestOrCast = Error(
+        "PFC0327",
+        "Types are unrelated",
+        "{0} can never be {1}, so this test can only ever give one answer.");
+
+    public static readonly DiagnosticDescriptor CannotInstantiate = Error(
+        "PFC0328",
+        "Cannot be instantiated",
+        "'{0}' is {1} and cannot be instantiated.");
+
+    public static readonly DiagnosticDescriptor OptionalMustBeUnwrapped = Error(
+        "PFC0329",
+        "Optional must be unwrapped first",
+        "This is {0}, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a "
+        + "fallback, or 'Value()' to insist.");
+
+    // ---- Definite assignment and flow, PFC0400 to PFC0499 --------------------------------
+
+    /// <summary>
+    /// <para>The rule that lets the language do without null.</para>
+    /// <para>A variable that has not been given a value cannot be read, so there is no
+    /// "unset" state for a program to stumble into and no null to represent it.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor UseBeforeAssignment = Error(
+        "PFC0400",
+        "Used before it is given a value",
+        "'{0}' is used here before it has been given a value.");
+
+    public static readonly DiagnosticDescriptor UseBeforeAssignmentOnSomePath = Error(
+        "PFC0401",
+        "Not given a value on every path",
+        "'{0}' is not given a value on every path that reaches this point.");
+
+    /// <summary>
+    /// A field has no default, so a constructor must supply one. An optional field escapes
+    /// this, which is exactly what makes a self-referential model constructible: a Node whose
+    /// 'next' is optional has a base case, where one that had to be assigned would not.
+    /// </summary>
+    public static readonly DiagnosticDescriptor FieldNotAssignedInConstructor = Error(
+        "PFC0402",
+        "Field not given a value",
+        "'{0}' must be given a value before this constructor ends. Give it one here, or an "
+        + "initializer where it is declared, or make it optional.");
+
+    public static readonly DiagnosticDescriptor UnreachableCode = Warning(
+        "PFC0403",
+        "Unreachable code",
+        "This can never be reached.");
 }

@@ -104,7 +104,14 @@ public sealed partial class Resolver
         }
     }
 
-    private void BindFunction(FunctionDecl function)
+    /// <summary>
+    /// <para>Binds a function's parameters and body.</para>
+    /// <para><paramref name="isMember"/> separates a declared member from a function declared
+    /// among statements. A local function is not a member, so the rules about what a global
+    /// model may hold do not apply to it — and it inherits whether <c>this</c> is available
+    /// from the member it sits inside, rather than deciding for itself.</para>
+    /// </summary>
+    private void BindFunction(FunctionDecl function, bool isMember = true)
     {
         FunctionSymbol? symbol = _model.GetSymbol(function) as FunctionSymbol;
 
@@ -114,11 +121,15 @@ public sealed partial class Resolver
         }
 
         bool savedGlobal = _inGlobalMember;
-        _inGlobalMember = symbol?.IsGlobal ?? false;
 
-        if (_currentModel is { IsGlobal: true } && symbol is { IsGlobal: false })
+        if (isMember)
         {
-            Report(DiagnosticDescriptors.GlobalModelMemberNotGlobal, function, _currentModel.Name);
+            _inGlobalMember = symbol?.IsGlobal ?? false;
+
+            if (_currentModel is { IsGlobal: true } && symbol is { IsGlobal: false })
+            {
+                Report(DiagnosticDescriptors.GlobalModelMemberNotGlobal, function, _currentModel.Name);
+            }
         }
 
         try
@@ -169,9 +180,7 @@ public sealed partial class Resolver
                 break;
 
             case LocalDeclStmt local when local.Declaration is FunctionDecl function:
-                // A local function captures the enclosing locals, so it binds inside the
-                // scope it was declared in rather than a fresh one.
-                BindFunction(function);
+                BindLocalFunction(function);
                 break;
 
             case IfStmt statement2:
@@ -255,6 +264,35 @@ public sealed partial class Resolver
                 BindAssignment(assignment);
                 break;
         }
+    }
+
+    /// <summary>
+    /// <para>Binds a function declared among statements.</para>
+    /// <para>Members were collected in the first pass, but a local function is not a member —
+    /// it is introduced by a statement, so its symbol is built here. It goes into the
+    /// enclosing scope, which is both what makes it callable by name and what lets its body
+    /// see the locals around it.</para>
+    /// </summary>
+    private void BindLocalFunction(FunctionDecl function)
+    {
+        TypeSymbol? returnType =
+            function.ReturnType is null ? null : ResolveType(function.ReturnType);
+
+        List<ParameterSymbol> parameters =
+        [
+            .. function.Parameters.Select(p =>
+                new ParameterSymbol(p.Name, ResolveType(p.Type)) { Declaration = p }),
+        ];
+
+        FunctionSymbol symbol = new(function.Name, returnType, parameters, function.Modifiers)
+        {
+            Declaration = function,
+        };
+
+        Declare(symbol, function);
+        _model.Bind(function, symbol);
+
+        BindFunction(function, isMember: false);
     }
 
     private void BindVarDecl(VarDeclStmt declaration)

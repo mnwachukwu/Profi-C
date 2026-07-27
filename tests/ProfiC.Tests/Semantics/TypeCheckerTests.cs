@@ -1,0 +1,729 @@
+using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Parsing;
+using ProfiC.Compiler.Semantics;
+using ProfiC.Compiler.Text;
+
+namespace ProfiC.Tests.Semantics;
+
+/// <summary>Type checking: what fits where, and what has to be written out.</summary>
+[TestFixture]
+public sealed class TypeCheckerTests
+{
+    private static DiagnosticBag Check(string source)
+    {
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(new SourceText(source, "<test>"), diagnostics);
+        SemanticModel model = Resolver.Resolve(unit, diagnostics);
+        TypeChecker.Check(unit, model, diagnostics);
+        return diagnostics;
+    }
+
+    private static string[] IdsOf(DiagnosticBag bag) => [.. bag.Sorted().Select(d => d.Id)];
+
+    /// <summary>Wraps statements in a program, which is the shape most cases need.</summary>
+    private static DiagnosticBag CheckBody(string body) =>
+        Check($$"""
+            global model Program
+                function Main()
+            {{body}}
+                end function
+            end model
+            """);
+
+    // ---- Conversions --------------------------------------------------------------------------
+
+    [Test]
+    public void WideningAnIntegerHappensOnItsOwn()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    real r = 1;
+                    fraction f = 2;
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// Neither direction is automatic. One third as a real is 0.33333333333333331 and one
+    /// tenth as a fraction is 3602879701896397 over 36028797018963968; both are surprising
+    /// enough that the program should ask.
+    /// </summary>
+    [Test]
+    public void AFractionAndARealNeverConvertOnTheirOwn()
+    {
+        DiagnosticBag toReal = CheckBody("        real r = 1|2;");
+        DiagnosticBag toFraction = CheckBody("        fraction f = 0.5;");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(toReal), Is.EqualTo(new[] { "PFC0301" }));
+            Assert.That(toReal.Single().Message, Does.Contain("ToReal()"));
+
+            Assert.That(IdsOf(toFraction), Is.EqualTo(new[] { "PFC0301" }));
+            Assert.That(toFraction.Single().Message, Does.Contain("ToFraction()"));
+        });
+    }
+
+    [Test]
+    public void TheExplicitConversionsWork()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    let r = (1|2).ToReal();
+                    let f = (0.5).ToFraction();
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void UnrelatedTypesDoNotConvert()
+    {
+        Assert.That(IdsOf(CheckBody("        integer x = \"text\";")),
+                    Is.EqualTo(new[] { "PFC0300" }));
+    }
+
+    [Test]
+    public void AValueMayBeWrappedIntoAnOptional()
+    {
+        Assert.That(IdsOf(CheckBody("        integer? maybe = 1;")), Is.Empty);
+    }
+
+    /// <summary>
+    /// Reading an optional as a plain value is never automatic. The message names the three
+    /// members that do it, since that is the whole fix.
+    /// </summary>
+    [Test]
+    public void AnOptionalMustBeUnwrappedAndTheMessageSaysHow()
+    {
+        DiagnosticBag diagnostics = CheckBody(
+            """
+                    integer? maybe;
+                    integer definite = maybe;
+            """);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0329" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain("HasValue()"));
+            Assert.That(diagnostics.Single().Message, Does.Contain("Or("));
+            Assert.That(diagnostics.Single().Message, Does.Contain("Value()"));
+        });
+    }
+
+    [Test]
+    public void AStringAndASetOfCharactersConvertBothWays()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    character[] letters = "abc";
+                    string rebuilt = letters;
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void AModelConvertsToItsAncestors()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            model Shape
+            end model
+
+            model Square extends Shape
+            end model
+
+            global model Program
+                function Main()
+                    Shape s = new Square();
+                end function
+            end model
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void AnAncestorDoesNotConvertToADescendant()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            model Shape
+            end model
+
+            model Square extends Shape
+            end model
+
+            global model Program
+                function Main()
+                    Square q = new Shape();
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0300" }));
+    }
+
+    /// <summary>
+    /// Boxing is refused rather than deferred, so this stays an error in every version.
+    /// </summary>
+    [Test]
+    public void AValueTypeNeverConvertsToModel()
+    {
+        Assert.That(IdsOf(CheckBody("        Model m = 1;")), Is.EqualTo(new[] { "PFC0300" }));
+    }
+
+    // ---- Operators -----------------------------------------------------------------------------
+
+    [Test]
+    public void ArithmeticNeedsNumbers()
+    {
+        Assert.That(IdsOf(CheckBody("        let x = true * 2;")),
+                    Is.EqualTo(new[] { "PFC0303" }));
+    }
+
+    [Test]
+    public void MixingAFractionAndARealInArithmeticIsRejected()
+    {
+        // They have no common type on purpose, so there is nothing for the operator to
+        // produce without a conversion nobody asked for.
+        Assert.That(IdsOf(CheckBody("        let x = 1|2 + 0.5;")),
+                    Is.EqualTo(new[] { "PFC0303" }));
+    }
+
+    [Test]
+    public void AddingToAStringJoinsItWhicheverSideTheStringIsOn()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    string a = "score: " + 42;
+                    string b = 42 + " points";
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void LogicalOperatorsNeedBooleans()
+    {
+        Assert.That(IdsOf(CheckBody("        let x = 1 and 2;")),
+                    Is.EqualTo(new[] { "PFC0302", "PFC0302" }));
+    }
+
+    [Test]
+    public void AConditionMustBeABoolean()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    if 1
+                        yield;
+                    end if
+            """)), Is.EqualTo(new[] { "PFC0302" }));
+    }
+
+    [Test]
+    public void DividingByAnObviousZeroIsCaughtWhileCompiling()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(CheckBody("        let x = 1 / 0;")),
+                        Is.EqualTo(new[] { "PFC0324" }));
+            Assert.That(IdsOf(CheckBody("        let x = 1 % 0;")),
+                        Is.EqualTo(new[] { "PFC0324" }));
+        });
+    }
+
+    // ---- The conditional expression --------------------------------------------------------------
+
+    [Test]
+    public void ConditionalBranchesMustAgreeExactly()
+    {
+        // Finding a common type would make this a real, which is what neither branch says.
+        DiagnosticBag diagnostics = CheckBody("        let x = if true then 1 else 2.5;");
+
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0305" }));
+    }
+
+    [Test]
+    public void MatchingBranchesGiveTheirOwnType()
+    {
+        Assert.That(IdsOf(CheckBody("        string label = if true then \"a\" else \"b\";")),
+                    Is.Empty);
+    }
+
+    // ---- Sets and indexing ---------------------------------------------------------------------
+
+    [Test]
+    public void SetElementsMustAgree()
+    {
+        Assert.That(IdsOf(CheckBody("        let mixed = {1, \"two\"};")),
+                    Is.EqualTo(new[] { "PFC0314" }));
+    }
+
+    [Test]
+    public void AnEmptySetNeedsItsTypeWritten()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(CheckBody("        let nothing = {};")),
+                        Is.EqualTo(new[] { "PFC0313" }));
+            Assert.That(IdsOf(CheckBody("        integer[] empty = {};")), Is.Empty);
+        });
+    }
+
+    [Test]
+    public void IndexingNeedsASetOrAStringAndAnIntegerIndex()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(CheckBody(
+                """
+                        integer[] numbers = {1, 2};
+                        let first = numbers[0];
+                        let letter = "abc"[1];
+                """)), Is.Empty);
+
+            Assert.That(IdsOf(CheckBody("        let bad = 5[0];")),
+                        Is.EqualTo(new[] { "PFC0311" }));
+
+            Assert.That(IdsOf(CheckBody(
+                """
+                        integer[] numbers = {1};
+                        let bad = numbers["x"];
+                """)), Is.EqualTo(new[] { "PFC0312" }));
+        });
+    }
+
+    [Test]
+    public void SetMembersAreAvailableWithoutBeingDeclared()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer[] numbers = {1, 2};
+                    let count = numbers.Count();
+                    let has = numbers.Contains(1);
+                    let removed = numbers.Remove(1);
+                    numbers.Insert(3);
+                    numbers.Clear();
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void AStringReportsItsLengthWithCountJustAsASetDoes()
+    {
+        Assert.That(IdsOf(CheckBody("        let n = \"abc\".Count();")), Is.Empty);
+    }
+
+    // ---- Optionals -------------------------------------------------------------------------------
+
+    [Test]
+    public void TheThreeOptionalMembersWork()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? maybe;
+                    let present = maybe.HasValue();
+                    let fallback = maybe.Or(0);
+                    let insisted = maybe.Value();
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void OrChainsAndOnlyAPlainFallbackEndsTheChain()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? a;
+                    integer? b;
+                    integer definite = a.Or(b).Or(3);
+            """)), Is.Empty);
+    }
+
+    // ---- Switch ------------------------------------------------------------------------------------
+
+    [TestCase("real", "1.5")]
+    [TestCase("fraction", "1|2")]
+    public void ASwitchCannotExamineATypeWhereEqualityIsUnreliable(string type, string value)
+    {
+        DiagnosticBag diagnostics = CheckBody(
+            $"""
+                    {type} subject = {value};
+                    switch subject
+                        default:
+                            yield;
+                    end switch
+            """);
+
+        Assert.That(IdsOf(diagnostics), Does.Contain("PFC0315"));
+    }
+
+    [Test]
+    public void ASwitchOnAnIntegerIsFine()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer code = 1;
+                    switch code
+                        case 1:
+                            yield;
+                        case 2:
+                            yield;
+                        default:
+                            yield;
+                    end switch
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void ACaseValueHandledTwiceIsRejected()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer code = 1;
+                    switch code
+                        case 1:
+                            yield;
+                        case 1:
+                            yield;
+                    end switch
+            """)), Is.EqualTo(new[] { "PFC0326" }));
+    }
+
+    // ---- Loops --------------------------------------------------------------------------------------
+
+    [Test]
+    public void ARangeLoopCountsWithIntegers()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    for integer i = 1 to 2.5
+                        yield;
+                    end for
+            """)), Is.EqualTo(new[] { "PFC0317" }));
+    }
+
+    [Test]
+    public void IteratingWorksOverASetAndOverAString()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer[] numbers = {1, 2};
+                    for each n in numbers
+                        integer copy = n;
+                    end for
+                    for each letter in "abc"
+                        character c = letter;
+                    end for
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void IteratingSomethingThatIsNotASequenceIsRejected()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    for each x in 5
+                        yield;
+                    end for
+            """)), Is.EqualTo(new[] { "PFC0316" }));
+    }
+
+    // ---- Yield ----------------------------------------------------------------------------------------
+
+    [Test]
+    public void YieldMustMatchWhatTheFunctionDeclares()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(Check(
+                """
+                model M
+                    integer function F()
+                        yield "text";
+                    end function
+                end model
+                """)), Is.EqualTo(new[] { "PFC0300" }));
+
+            Assert.That(IdsOf(Check(
+                """
+                model M
+                    function F()
+                        yield 1;
+                    end function
+                end model
+                """)), Is.EqualTo(new[] { "PFC0318" }));
+
+            Assert.That(IdsOf(Check(
+                """
+                model M
+                    integer function F()
+                        yield;
+                    end function
+                end model
+                """)), Is.EqualTo(new[] { "PFC0319" }));
+        });
+    }
+
+    // ---- Constants -------------------------------------------------------------------------------------
+
+    [Test]
+    public void AConstantNeedsAValueKnownWhileCompiling()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(CheckBody("        constant integer A = 2 + 3;")), Is.Empty);
+
+            Assert.That(IdsOf(CheckBody(
+                """
+                        integer runtime = 1;
+                        constant integer B = runtime;
+                """)), Is.EqualTo(new[] { "PFC0321" }));
+        });
+    }
+
+    /// <summary>
+    /// A constant is permitted only where an immutable binding really means an unchanging
+    /// value, which rules out anything that could change behind it.
+    /// </summary>
+    [Test]
+    public void AConstantSetIsRejectedBecauseTheBindingCouldNotHoldItStill()
+    {
+        Assert.That(IdsOf(CheckBody("        constant integer[] Numbers = {1, 2};")),
+                    Does.Contain("PFC0322"));
+    }
+
+    [Test]
+    public void AConstantModelIsRejectedForTheSameReason()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            model Dog
+            end model
+
+            global model Program
+                function Main()
+                    constant Dog Pet = new Dog();
+                end function
+            end model
+            """)), Does.Contain("PFC0322"));
+    }
+
+    [Test]
+    public void AConstantMustBeGivenAValue()
+    {
+        Assert.That(IdsOf(CheckBody("        constant integer A;")),
+                    Is.EqualTo(new[] { "PFC0320" }));
+    }
+
+    // ---- Calls -------------------------------------------------------------------------------------------
+
+    [Test]
+    public void ArgumentsMustFitTheParameters()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            global model Program
+                function Take(integer value)
+                end function
+
+                function Main()
+                    Program.Take("text");
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0300" }));
+    }
+
+    [Test]
+    public void TheArgumentCountMustMatch()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            global model Program
+                function Take(integer value)
+                end function
+
+                function Main()
+                    Program.Take(1, 2);
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0308" }));
+    }
+
+    [Test]
+    public void AnExactMatchWinsAmongOverloads()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            global model Program
+                function Take(integer value)
+                end function
+
+                function Take(real value)
+                end function
+
+                function Main()
+                    Program.Take(1);
+                    Program.Take(1.5);
+                end function
+            end model
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// Two versions reachable only by conversion is a tie, and a tie is reported rather than
+    /// broken: choosing silently would make which one runs depend on rules nobody remembers.
+    /// </summary>
+    [Test]
+    public void ATieAmongConversionsIsReportedRatherThanBroken()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            global model Program
+                function Take(real value)
+                end function
+
+                function Take(fraction value)
+                end function
+
+                function Main()
+                    Program.Take(1);
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0310" }));
+    }
+
+    [Test]
+    public void CallingSomethingThatIsNotAFunctionIsRejected()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer x = 1;
+                    x();
+            """)), Is.EqualTo(new[] { "PFC0307" }));
+    }
+
+    [Test]
+    public void AMemberThatDoesNotExistIsReported()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer[] numbers = {1};
+                    numbers.Nonexistent();
+            """)), Is.EqualTo(new[] { "PFC0306" }));
+    }
+
+    [Test]
+    public void ABaseConstructorCallChecksItsArguments()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            model Shape
+                public function Shape(string label)
+                end function
+            end model
+
+            model Square extends Shape
+                public function Square()
+                    base("square");
+                end function
+            end model
+            """)), Is.Empty);
+    }
+
+    // ---- Instantiation ---------------------------------------------------------------------------------------
+
+    [Test]
+    public void AnAbstractModelCannotBeInstantiated()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            abstract model Shape
+            end model
+
+            global model Program
+                function Main()
+                    let s = new Shape();
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0328" }));
+    }
+
+    [Test]
+    public void AGlobalModelCannotBeInstantiated()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            global model Utility
+            end model
+
+            global model Program
+                function Main()
+                    let u = new Utility();
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0328" }));
+    }
+
+    // ---- Casts -------------------------------------------------------------------------------------------------
+
+    [Test]
+    public void ACastYieldsAnOptional()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            model Shape
+            end model
+
+            model Square extends Shape
+            end model
+
+            global model Program
+                function Main(Shape s)
+                    Square? maybe = s as Square;
+                    let test = s is Square;
+                end function
+            end model
+            """)), Is.Empty);
+    }
+
+    [Test]
+    public void TestingUnrelatedTypesIsRejected()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            model Dog
+            end model
+
+            model Fish
+            end model
+
+            global model Program
+                function Main(Dog d)
+                    let x = d is Fish;
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PFC0327" }));
+    }
+
+    // ---- Recovery ------------------------------------------------------------------------------------------------
+
+    [Test]
+    public void AnEarlierErrorDoesNotEchoThroughTheTypeChecker()
+    {
+        // One mistake, one diagnostic, all the way through.
+        Assert.That(IdsOf(CheckBody(
+            """
+                    let x = nowhere;
+                    let y = x + 1;
+                    let z = y * 2;
+            """)), Is.EqualTo(new[] { "PFC0200" }));
+    }
+
+    [Test]
+    public void CheckingNeverThrows()
+    {
+        string[] hostile =
+        [
+            "", "model M end model", "model M function F() yield; end function end model",
+            "global model Program function Main() let x = ; end function end model",
+            "model M function F() this.x.y.z(); end function end model",
+            "model M function F() let a = {}.Count(); end function end model",
+        ];
+
+        foreach (string source in hostile)
+        {
+            Assert.DoesNotThrow(() => Check(source), $"checking \"{source}\" threw");
+        }
+    }
+}

@@ -33,6 +33,26 @@ public abstract class TypeSymbol : Symbol
     public override string Kind => "type";
 
     public override string ToString() => Display;
+
+    /// <summary>
+    /// <para>The type with an article in front, as a diagnostic would read it aloud: "an
+    /// integer", "a real".</para>
+    /// <para>Worth the small effort because it appears in nearly every type diagnostic, and
+    /// "a integer" undermines the care taken over the rest of the message.</para>
+    /// </summary>
+    public string WithArticle() => $"{ArticleFor(Display)} {Display}";
+
+    /// <summary>The same, capitalized for the start of a sentence.</summary>
+    public string WithArticleCapitalized()
+    {
+        string article = ArticleFor(Display);
+        return $"{char.ToUpperInvariant(article[0])}{article[1..]} {Display}";
+    }
+
+    private static string ArticleFor(string display) =>
+        display.Length > 0 && "aeiouAEIOU".Contains(display[0], StringComparison.Ordinal)
+            ? "an"
+            : "a";
 }
 
 /// <summary>The built-in types the language names with a keyword.</summary>

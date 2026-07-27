@@ -154,6 +154,8 @@ internal static class Program
 
         CompilationUnit unit = Parser.Parse(source, diagnostics);
         SemanticModel model = Resolver.Resolve(unit, diagnostics);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
 
         DiagnosticRenderer.WriteAll(source, diagnostics);
 
