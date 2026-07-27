@@ -147,4 +147,101 @@ public static class DiagnosticDescriptors
         "PFC0199",
         "Too many errors",
         "Too many errors; parsing stopped.");
+
+    // ---- Name resolution, PFC0200 to PFC0299 --------------------------------------------
+
+    public static readonly DiagnosticDescriptor NameNotFound = Error(
+        "PFC0200",
+        "Name not found",
+        "'{0}' is not defined here.");
+
+    public static readonly DiagnosticDescriptor TypeNotFound = Error(
+        "PFC0201",
+        "Type not found",
+        "There is no type named '{0}'.");
+
+    public static readonly DiagnosticDescriptor DuplicateDeclaration = Error(
+        "PFC0202",
+        "Name already declared",
+        "'{0}' is already declared in this scope.");
+
+    public static readonly DiagnosticDescriptor ReservedTypeName = Error(
+        "PFC0203",
+        "Reserved type name",
+        "'{0}' is a built-in type and cannot be redeclared.");
+
+    /// <summary>
+    /// <para>The diagnostic that pays for requiring <c>this.</c> on every member access.</para>
+    /// <para>A bare name reaches only locals and parameters, so a name that matches a field
+    /// is a mistake with exactly one fix. Saying so is far better than "not defined here",
+    /// which is technically true and useless.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor MemberNeedsReceiver = Error(
+        "PFC0204",
+        "Member access needs a receiver",
+        "'{0}' is a {1} of '{2}', so it must be written as '{3}.{0}'. "
+        + "A bare name reaches only locals and parameters.");
+
+    public static readonly DiagnosticDescriptor CannotAssignToConstant = Error(
+        "PFC0205",
+        "Cannot assign to a constant",
+        "'{0}' is a constant and cannot be assigned to.");
+
+    public static readonly DiagnosticDescriptor CannotAssignToLoopVariable = Error(
+        "PFC0206",
+        "Cannot assign to a loop variable",
+        "'{0}' is a loop variable and is read-only inside the loop. Each iteration binds a "
+        + "fresh one, so assigning to it would change nothing.");
+
+    public static readonly DiagnosticDescriptor CircularInheritance = Error(
+        "PFC0207",
+        "Circular inheritance",
+        "'{0}' cannot extend itself, directly or through its ancestors.");
+
+    public static readonly DiagnosticDescriptor CannotExtendSealed = Error(
+        "PFC0208",
+        "Cannot extend a sealed model",
+        "'{0}' is sealed and cannot be extended.");
+
+    public static readonly DiagnosticDescriptor CannotExtendNonModel = Error(
+        "PFC0209",
+        "Cannot extend this type",
+        "'{0}' is a {1}, and only a model can be extended.");
+
+    public static readonly DiagnosticDescriptor SealedAndAbstract = Error(
+        "PFC0210",
+        "Sealed and abstract together",
+        "'{0}' cannot be both sealed and abstract; it could then be neither extended nor "
+        + "instantiated, so nothing could use it.");
+
+    public static readonly DiagnosticDescriptor GlobalModelMemberNotGlobal = Error(
+        "PFC0211",
+        "Instance member on a global model",
+        "'{0}' cannot have instance members, because a global model is never instantiated.");
+
+    public static readonly DiagnosticDescriptor EntryPointMissing = Error(
+        "PFC0212",
+        "No entry point",
+        "A program needs a 'global model Program' containing a function named 'Main'.");
+
+    public static readonly DiagnosticDescriptor EntryPointNotGlobalModel = Error(
+        "PFC0213",
+        "Program must be a global model",
+        "'Program' must be declared 'global model', since there is no such thing as an "
+        + "instance of a running program.");
+
+    public static readonly DiagnosticDescriptor ProgramDeclaredMoreThanOnce = Error(
+        "PFC0214",
+        "Program declared more than once",
+        "'Program' may be declared only once in a compilation.");
+
+    public static readonly DiagnosticDescriptor ThisOutsideModel = Error(
+        "PFC0215",
+        "'{0}' used outside a model",
+        "'{0}' can only be used inside a model's instance member.");
+
+    public static readonly DiagnosticDescriptor BaseWithoutParent = Error(
+        "PFC0216",
+        "No parent to reach",
+        "'base' needs a parent model, and '{0}' extends nothing.");
 }

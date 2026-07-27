@@ -2,6 +2,7 @@ using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Parsing;
+using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
 namespace ProfiC.Cli;
@@ -28,6 +29,7 @@ internal static class Program
             "--version" or "-v" => WriteVersion(),
             "tokens" => RunTokens(args),
             "ast" => RunAst(args),
+            "check" => RunCheck(args),
             _ => UnknownCommand(args[0]),
         };
     }
@@ -39,6 +41,7 @@ internal static class Program
         Console.WriteLine("Usage:");
         Console.WriteLine("  profic tokens <file>    Scan a .pfc file and print its token stream");
         Console.WriteLine("  profic ast <file>       Parse a .pfc file and print its syntax tree");
+        Console.WriteLine("  profic check <file>     Parse and resolve a .pfc file, reporting problems");
         Console.WriteLine("  profic --version        Print the compiler version");
         Console.WriteLine("  profic --help           Print this message");
     }
@@ -121,6 +124,44 @@ internal static class Program
         if (diagnostics.Count > 0)
         {
             DiagnosticRenderer.WriteAll(source, diagnostics);
+        }
+
+        return diagnostics.HasErrors ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Parses and resolves a file, reporting everything found. This is as far as the compiler
+    /// goes today; type checking follows.
+    /// </summary>
+    private static int RunCheck(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("profic: 'check' requires a file path.");
+            return 1;
+        }
+
+        string path = args[1];
+
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"profic: file not found: {path}");
+            return 1;
+        }
+
+        SourceText source = SourceText.FromFile(path);
+        DiagnosticBag diagnostics = new();
+
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+        SemanticModel model = Resolver.Resolve(unit, diagnostics);
+
+        DiagnosticRenderer.WriteAll(source, diagnostics);
+
+        if (!diagnostics.HasErrors)
+        {
+            int types = model.AllTypes().Count();
+            string entry = model.EntryPoint is null ? "none" : "Program.Main";
+            Console.WriteLine($"{source.FileName}: ok, {types} types, entry point {entry}.");
         }
 
         return diagnostics.HasErrors ? 1 : 0;

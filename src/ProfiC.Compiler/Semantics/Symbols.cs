@@ -1,0 +1,233 @@
+using ProfiC.Compiler.Ast;
+
+namespace ProfiC.Compiler.Semantics;
+
+/// <summary>Something a program declares and can refer to by name.</summary>
+public abstract class Symbol(string name)
+{
+    /// <summary>The name as written.</summary>
+    public string Name { get; } = name;
+
+    /// <summary>Where it was declared. Null for a built-in, which no source declares.</summary>
+    public SyntaxNode? Declaration { get; init; }
+
+    /// <summary>A short description used in diagnostics, such as "model" or "local".</summary>
+    public abstract string Kind { get; }
+
+    public override string ToString() => $"{Kind} {Name}";
+}
+
+/// <summary>A namespace, which holds types and other namespaces.</summary>
+public sealed class NamespaceSymbol(string name, NamespaceSymbol? parent) : Symbol(name)
+{
+    public NamespaceSymbol? Parent { get; } = parent;
+
+    public Dictionary<string, TypeSymbol> Types { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, NamespaceSymbol> Namespaces { get; } = new(StringComparer.Ordinal);
+
+    public override string Kind => "namespace";
+
+    /// <summary>The dotted path to this namespace.</summary>
+    public string FullName =>
+        Parent is null or { Name: "" } ? Name : $"{Parent.FullName}.{Name}";
+}
+
+/// <summary>
+/// Shared behaviour of the three declared type kinds: models, structures, and enumerations.
+/// </summary>
+public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modifiers)
+    : TypeSymbol(name)
+{
+    public DeclarationModifiers Modifiers { get; } = modifiers;
+
+    /// <summary>The namespace or model this was declared in.</summary>
+    public Symbol? Container { get; internal set; }
+
+    /// <summary>Members declared directly on this type, keyed by name.</summary>
+    public Dictionary<string, List<Symbol>> Members { get; } = new(StringComparer.Ordinal);
+
+    public override string Display => Name;
+
+    /// <summary>Records a member, allowing several to share a name so that overloads work.</summary>
+    internal void AddMember(Symbol member)
+    {
+        if (!Members.TryGetValue(member.Name, out List<Symbol>? existing))
+        {
+            existing = [];
+            Members[member.Name] = existing;
+        }
+
+        existing.Add(member);
+    }
+
+    /// <summary>Every member with a given name declared directly on this type.</summary>
+    public IReadOnlyList<Symbol> Lookup(string name) =>
+        Members.TryGetValue(name, out List<Symbol>? found) ? found : [];
+}
+
+/// <summary>A model: a reference type with single inheritance and virtual dispatch.</summary>
+public sealed class ModelSymbol(string name, DeclarationModifiers modifiers)
+    : DeclaredTypeSymbol(name, modifiers)
+{
+    /// <summary>
+    /// The model this extends. Null only for the root, since every model extends
+    /// <c>Model</c> implicitly.
+    /// </summary>
+    public ModelSymbol? BaseType { get; internal set; }
+
+    /// <summary>True when this cannot be extended.</summary>
+    public bool IsSealed => Modifiers.Has(DeclarationModifiers.Sealed);
+
+    /// <summary>True when this cannot be instantiated.</summary>
+    public bool IsAbstract => Modifiers.Has(DeclarationModifiers.Abstract);
+
+    /// <summary>True for a <c>global model</c>, which has no instances and only global members.</summary>
+    public bool IsGlobal => Modifiers.Has(DeclarationModifiers.Global);
+
+    public override bool IsValueType => false;
+
+    public override string Kind => "model";
+
+    /// <summary>This model and each of its ancestors, nearest first.</summary>
+    public IEnumerable<ModelSymbol> SelfAndAncestors()
+    {
+        // Bounded rather than while-true: an inheritance cycle is reported separately, and
+        // walking one here would hang instead of producing a diagnostic.
+        HashSet<ModelSymbol> seen = [];
+
+        for (ModelSymbol? current = this; current is not null; current = current.BaseType)
+        {
+            if (!seen.Add(current))
+            {
+                yield break;
+            }
+
+            yield return current;
+        }
+    }
+
+    /// <summary>Finds a member on this model or any ancestor.</summary>
+    public IReadOnlyList<Symbol> LookupIncludingBase(string name)
+    {
+        foreach (ModelSymbol model in SelfAndAncestors())
+        {
+            IReadOnlyList<Symbol> found = model.Lookup(name);
+
+            if (found.Count > 0)
+            {
+                return found;
+            }
+        }
+
+        return [];
+    }
+}
+
+/// <summary>
+/// A structure: a value type. It inherits <c>Model</c>'s members but never converts to
+/// <c>Model</c>, since that conversion would be boxing.
+/// </summary>
+public sealed class StructureSymbol(string name, DeclarationModifiers modifiers)
+    : DeclaredTypeSymbol(name, modifiers)
+{
+    public override bool IsValueType => true;
+
+    public override string Kind => "structure";
+}
+
+/// <summary>An enumeration: an integer-backed value type with named members.</summary>
+public sealed class EnumerationSymbol(string name, DeclarationModifiers modifiers)
+    : DeclaredTypeSymbol(name, modifiers)
+{
+    public override bool IsValueType => true;
+
+    public override string Kind => "enumeration";
+}
+
+/// <summary>One member of an enumeration.</summary>
+public sealed class EnumMemberSymbol(string name, EnumerationSymbol owner, long value)
+    : Symbol(name)
+{
+    public EnumerationSymbol Owner { get; } = owner;
+
+    public long Value { get; } = value;
+
+    public override string Kind => "enumeration member";
+}
+
+/// <summary>A field on a model or structure.</summary>
+public sealed class FieldSymbol(
+    string name,
+    TypeSymbol type,
+    DeclarationModifiers modifiers) : Symbol(name)
+{
+    public TypeSymbol Type { get; } = type;
+
+    public DeclarationModifiers Modifiers { get; } = modifiers;
+
+    public bool IsGlobal => Modifiers.Has(DeclarationModifiers.Global);
+
+    public bool IsConstant => Modifiers.Has(DeclarationModifiers.Constant);
+
+    public override string Kind => IsConstant ? "constant" : "field";
+}
+
+/// <summary>A function, whether a member, a local function, or a constructor.</summary>
+public sealed class FunctionSymbol(
+    string name,
+    TypeSymbol? returnType,
+    IReadOnlyList<ParameterSymbol> parameters,
+    DeclarationModifiers modifiers) : Symbol(name)
+{
+    /// <summary>Null when the function yields nothing.</summary>
+    public TypeSymbol? ReturnType { get; } = returnType;
+
+    public IReadOnlyList<ParameterSymbol> Parameters { get; } = parameters;
+
+    public DeclarationModifiers Modifiers { get; } = modifiers;
+
+    public bool IsGlobal => Modifiers.Has(DeclarationModifiers.Global);
+
+    public bool IsVirtual => Modifiers.Has(DeclarationModifiers.Virtual);
+
+    public bool IsOverride => Modifiers.Has(DeclarationModifiers.Override);
+
+    /// <summary>
+    /// True when this is a constructor: its name matches its type and it declares no return
+    /// type. Nothing in the syntax marks one, so this is where the two are told apart.
+    /// </summary>
+    public bool IsConstructor { get; internal set; }
+
+    public override string Kind => IsConstructor ? "constructor" : "function";
+
+    /// <summary>This function's type, for when it is used as a value.</summary>
+    public FunctionType AsType() =>
+        new(ReturnType, [.. Parameters.Select(p => p.Type)]);
+}
+
+/// <summary>One parameter of a function or lambda.</summary>
+public sealed class ParameterSymbol(string name, TypeSymbol type) : Symbol(name)
+{
+    public TypeSymbol Type { get; } = type;
+
+    public override string Kind => "parameter";
+}
+
+/// <summary>A variable declared in a function body.</summary>
+public sealed class LocalSymbol(string name, TypeSymbol type, bool isConstant) : Symbol(name)
+{
+    /// <summary>The declared or inferred type. Inference happens while type checking.</summary>
+    public TypeSymbol Type { get; internal set; } = type;
+
+    public bool IsConstant { get; } = isConstant;
+
+    /// <summary>
+    /// True for a loop variable, which is read-only inside the body. Assigning to one would
+    /// change only that iteration's copy, since each iteration binds a fresh variable, and a
+    /// silent no-op is the worst outcome for someone learning.
+    /// </summary>
+    public bool IsLoopVariable { get; init; }
+
+    public override string Kind => IsLoopVariable ? "loop variable" : IsConstant ? "constant" : "local";
+}

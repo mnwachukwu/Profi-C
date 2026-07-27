@@ -188,14 +188,15 @@ read-only inside the body, which removes the classic closure-capture trap.
 |---|---|
 | Lexer | Complete |
 | Parser | Complete |
-| Resolver, type checker | Not started |
+| Resolver | Complete |
+| Type checker | Not started |
 | Interpreter | Not started |
 | CIL emitter | Not started |
 
-Source becomes a syntax tree, and both stages report errors with positions and recover rather
-than stopping at the first mistake. Nothing is checked for meaning yet, so the examples above
-are valid syntax but are **not yet executable**. The language design is settled — see the
-specification below.
+Source becomes a syntax tree, and every name in it is resolved to what it declares. All three
+stages report errors with positions and recover rather than stopping at the first mistake.
+Types are not checked yet, so the examples above are valid and fully resolved but are **not
+yet executable**. The language design is settled — see the specification below.
 
 ## Documentation
 
@@ -228,6 +229,10 @@ dotnet run --project src/ProfiC.Cli -- tokens samples/hello.pfc
 
 ```bash
 dotnet run --project src/ProfiC.Cli -- ast samples/tour.pfc
+```
+
+```bash
+dotnet run --project src/ProfiC.Cli -- check samples/tour.pfc
 ```
 
 ## Repository layout
