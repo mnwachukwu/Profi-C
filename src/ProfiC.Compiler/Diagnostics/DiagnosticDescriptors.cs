@@ -130,6 +130,19 @@ public static class DiagnosticDescriptors
         "Cannot assign to this expression",
         "The left side of an assignment must be a name, an index, or a member access.");
 
+    /// <summary>
+    /// <para>A type may be declared at namespace level or inside a model, but not inside a
+    /// function.</para>
+    /// <para>Permitting it would mean a type could be introduced by a statement, which forces
+    /// name resolution to interleave collecting types with binding bodies rather than doing
+    /// each once. C# has no local classes either, for much the same reason.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeInsideFunction = Error(
+        "PFC0110",
+        "Type declared inside a function",
+        "A {0} cannot be declared inside a function. Move it out to the enclosing model or "
+        + "namespace.");
+
     public static readonly DiagnosticDescriptor TooManyErrors = Error(
         "PFC0199",
         "Too many errors",

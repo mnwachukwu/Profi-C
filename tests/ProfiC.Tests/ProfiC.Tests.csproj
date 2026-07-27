@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ProfiC.Compiler\ProfiC.Compiler.csproj" />
+    <ProjectReference Include="..\..\src\ProfiC.Runtime\ProfiC.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

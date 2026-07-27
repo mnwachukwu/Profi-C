@@ -58,10 +58,18 @@ namespace Tour
             yield base.Describe();
         end function
 
-        comment A model nested inside a model captures the enclosing instance.
+        comment A nested model, which holds no reference to the model it sits inside.
+        comment One that needs its enclosing instance takes it as a constructor argument,
+        comment exactly as a C# nested class does.
         public model Corner
-            public string function Owner()
-                yield outer.name;
+            Shape owner;
+
+            public function Corner(Shape shape)
+                this.owner = shape;
+            end function
+
+            public string function Describe()
+                yield this.owner.Describe();
             end function
         end model
     end model
@@ -171,7 +179,9 @@ namespace Tour
 
             maybeComparator = (integer a, integer b) => a - b;
 
-            comment A function nested in a function body, capturing its locals.
+            comment A function nested in a function body, capturing its locals. Functions
+            comment may be declared here; types may not, since a type introduced by a
+            comment statement would entangle name resolution with statement order.
             integer function Doubled()
                 yield explicitly * 2;
             end function

@@ -374,7 +374,7 @@ public sealed class StatementParsingTests : ParserTestBase
     }
 
     [Test]
-    public void NestedTypesParseInsideAModelAndInsideAFunction()
+    public void TypesNestInsideAModel()
     {
         CompilationUnit unit = ParseUnit(
             """
@@ -382,20 +382,70 @@ public sealed class StatementParsingTests : ParserTestBase
                 model Nested
                 end model
 
+                structure Pair
+                end structure
+
+                enumeration Color
+                    Red,
+                end enumeration
+            end model
+            """);
+
+        ModelDecl enclosing = (ModelDecl)unit.Declarations[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(enclosing.Members[0], Is.TypeOf<ModelDecl>());
+            Assert.That(enclosing.Members[1], Is.TypeOf<StructureDecl>());
+            Assert.That(enclosing.Members[2], Is.TypeOf<EnumerationDecl>());
+        });
+    }
+
+    /// <summary>
+    /// A type introduced by a statement would force name resolution to interleave collecting
+    /// types with binding bodies, rather than doing each once. C# has no local classes for
+    /// much the same reason.
+    /// </summary>
+    [TestCase("model", "        model Inner\n        end model")]
+    [TestCase("structure", "        structure Inner\n        end structure")]
+    [TestCase("enumeration", "        enumeration Inner\n            Red,\n        end enumeration")]
+    public void TypesCannotBeDeclaredInsideAFunction(string what, string declaration)
+    {
+        (_, ProfiC.Compiler.Diagnostics.DiagnosticBag diagnostics) = ParseRaw(
+            $$"""
+            global model Program
                 function Main()
-                    model Inner
-                    end model
+            {{declaration}}
                 end function
             end model
             """);
 
-        ModelDecl outer = (ModelDecl)unit.Declarations[0];
-        FunctionDecl main = (FunctionDecl)outer.Members[1];
-
         Assert.Multiple(() =>
         {
-            Assert.That(outer.Members[0], Is.TypeOf<ModelDecl>());
-            Assert.That(main.Body[0], Is.TypeOf<LocalDeclStmt>());
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0110" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain(what));
+            Assert.That(diagnostics.Single().Message, Does.Contain("Move it out"));
         });
+    }
+
+    [Test]
+    public void FunctionsMayStillBeDeclaredInsideAFunction()
+    {
+        // Only types are barred. A nested function introduces no type name, and functions
+        // are already ordered like locals, so it causes none of the trouble.
+        CompilationUnit unit = ParseUnit(
+            """
+            global model Program
+                function Main()
+                    integer function Helper()
+                        yield 1;
+                    end function
+                end function
+            end model
+            """);
+
+        FunctionDecl main = (FunctionDecl)((ModelDecl)unit.Declarations[0]).Members[0];
+
+        Assert.That(main.Body[0], Is.TypeOf<LocalDeclStmt>());
     }
 }

@@ -162,9 +162,6 @@ public sealed partial class Parser
                 Advance();
                 return new ReceiverExpr(token.Span, ReceiverKind.Base);
 
-            case TokenType.Outer:
-                return ParseOuter();
-
             case TokenType.New:
                 return ParseNew();
 
@@ -223,27 +220,6 @@ public sealed partial class Parser
             "Profi-C has no decrement operator. Write 'x = x - 1'.");
 
         return true;
-    }
-
-    /// <summary>
-    /// <para>Reads an <c>outer</c>, collapsing a chain of them into one node that counts how
-    /// many enclosing instances it reaches.</para>
-    /// <para>Reading <c>outer.outer</c> as a member access would send the resolver looking
-    /// for a field named "outer", which is not what the chain means.</para>
-    /// </summary>
-    private Expression ParseOuter()
-    {
-        Token start = Advance();
-        int depth = 1;
-
-        while (Check(TokenType.Dot) && Peek().Type == TokenType.Outer)
-        {
-            Advance();
-            Advance();
-            depth++;
-        }
-
-        return new ReceiverExpr(SpanFrom(start), ReceiverKind.Outer, depth);
     }
 
     private Expression ParseNew()

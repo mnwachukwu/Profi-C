@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>ProfiC.Runtime</RootNamespace>
+    <AssemblyName>ProfiC.Runtime</AssemblyName>
+    <Description>The Profi-C value model: fractions, sets, optionals, deep equality, and the built-in exceptions. Every compiled Profi-C program references this.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ProfiC.Tests" />
+  </ItemGroup>
+
+</Project>

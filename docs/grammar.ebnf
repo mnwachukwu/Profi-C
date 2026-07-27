@@ -78,7 +78,11 @@ Param          = Type Identifier ;
 Block          = "begin" { BlockItem } "end" ;   (* an anonymous scope; a Statement *)
 Body           = { BlockItem } ;                 (* a construct body; no opener *)
 
-BlockItem      = VarDecl | FunctionDecl | ModelDecl | StructureDecl | Statement ;
+(* Functions may be declared among statements; types may not. A type introduced by a
+   statement would force name resolution to interleave collecting types with binding
+   bodies rather than doing each once, and it would tie type lookup to statement order.
+   C# has no local classes either. *)
+BlockItem      = VarDecl | FunctionDecl | Statement ;
 
 VarDecl        = "let" Identifier "=" Expr ";"
                | [ "constant" ] Type Identifier [ "=" Expr ] ";" ;
@@ -131,7 +135,7 @@ ArgList        = Expr { "," Expr } ;
 
 Primary        = IntegerLiteral | RealLiteral | CharLiteral | StringLiteral
                | FractionLiteral | "true" | "false"
-               | Identifier | "this" | "base" | "outer"
+               | Identifier | "this" | "base"
                | "(" Expr ")"
                | CollectionLit
                | NewExpr
@@ -219,7 +223,7 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    or a ";" already separates the two, so no ambiguity can arise. At those
    four sites, almost every token that can begin a statement terminates the
    preceding expression correctly on its own, because identifiers, "this",
-   "base", "outer", every literal, "{", "new", "not", and every keyword
+   "base", every literal, "{", "new", "not", and every keyword
    have no infix binding power.
 
    Two tokens do not. "(" is the call operator at level 9 and "-" is infix

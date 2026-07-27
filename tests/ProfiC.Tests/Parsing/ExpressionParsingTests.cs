@@ -25,8 +25,7 @@ public sealed class ExpressionParsingTests : ParserTestBase
         IndexExpr n => $"{Shape(n.Receiver)}[{Shape(n.Index)}]",
         MemberExpr n => $"{Shape(n.Receiver)}.{n.MemberName}",
         IfExpr n => $"(if {Shape(n.Condition)} then {Shape(n.ThenValue)} else {Shape(n.ElseValue)})",
-        ReceiverExpr n => string.Join('.', Enumerable.Repeat(
-            n.Receiver.ToString().ToLowerInvariant(), n.Depth)),
+        ReceiverExpr n => n.Receiver.ToString().ToLowerInvariant(),
         CollectionExpr n => $"{{{string.Join(", ", n.Elements.Select(Shape))}}}",
         NewExpr n => $"new {n.TypeName}({string.Join(", ", n.Arguments.Select(Shape))})",
         _ => expression.NodeKind,
@@ -128,30 +127,20 @@ public sealed class ExpressionParsingTests : ParserTestBase
 
     [TestCase("this", "this")]
     [TestCase("base", "base")]
-    [TestCase("outer", "outer")]
     [TestCase("this.field", "this.field")]
-    [TestCase("outer.outer.field", "outer.outer.field")]
+    [TestCase("base.Area()", "base.Area()")]
     public void ReceiversParse(string source, string expected)
     {
         Assert.That(Shape(ParseExpression(source)), Is.EqualTo(expected));
     }
 
     [Test]
-    public void ChainedOuterCollapsesIntoOneNodeCountingItsDepth()
+    public void OuterIsNoLongerAReceiverAndScansAsAnOrdinaryName()
     {
-        // "outer.outer" is not a member access for a field called "outer"; it reaches two
-        // enclosing instances out, and the depth is what the resolver needs.
-        Assert.Multiple(() =>
-        {
-            Assert.That(((ReceiverExpr)ParseExpression("outer")).Depth, Is.EqualTo(1));
-            Assert.That(((ReceiverExpr)ParseExpression("outer.outer")).Depth, Is.EqualTo(2));
-            Assert.That(((ReceiverExpr)ParseExpression("outer.outer.outer")).Depth,
-                        Is.EqualTo(3));
-
-            MemberExpr field = (MemberExpr)ParseExpression("outer.outer.field");
-            Assert.That(field.MemberName, Is.EqualTo("field"));
-            Assert.That(((ReceiverExpr)field.Receiver).Depth, Is.EqualTo(2));
-        });
+        // Nested models hold no reference to their enclosing instance, so the word has
+        // nothing left to name and is available as an identifier again.
+        Assert.That(Shape(ParseExpression("outer")), Is.EqualTo("outer"));
+        Assert.That(ParseExpression("outer"), Is.TypeOf<IdentifierExpr>());
     }
 
     [TestCase("{}", "{}")]

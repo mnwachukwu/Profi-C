@@ -9,7 +9,7 @@ A condensed reference and a full comparison to C#. For the normative definition 
 
 ## 1. Reserved words
 
-### 1.1 The 55 reserved words
+### 1.1 The 54 reserved words
 
 ```
 abstract     and          as           base         begin        boolean
@@ -17,11 +17,10 @@ break        case         catch        character    constant     continue
 default      each         else         end          enumeration  extends
 false        finally      for          fraction     function     global
 if           in           integer      is           let          model
-namespace    new          not          or           outer        override
-protected    public       real         sealed       step         string
-structure    switch       then         this         throw        to
-true         try          until        using        virtual      while
-yield
+namespace    new          not          or           override     protected
+public       real         sealed       step         string       structure
+switch       then         this         throw        to           true
+try          until        using        virtual      while        yield
 ```
 
 ### 1.2 Reserved outside the keyword table (1)
@@ -175,6 +174,7 @@ The second pair is more confusable than the first, since both live near the idea
 | Reference semantics for classes | models are references |
 | Lambdas capture by reference | same trap surface, same power |
 | Private by default | C# class members are also private by default |
+| Nested types are isolated | a nested model holds no reference to the model it sits inside, exactly as a C# nested class does not. One that needs its enclosing instance takes it as a constructor argument |
 | Definite assignment | C# enforces it for locals; Profi-C extends it to all model references |
 | Truncating integer division | `7 / 2` is `3` |
 | Compiles to CIL | same runtime, same tooling |
@@ -237,9 +237,9 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **Assignment is a statement.** `if (x = 5)` is a syntax error rather than a warning.
 
-**`this.` is mandatory**, not conventional, and so are `outer.` for an enclosing instance and `ModelName.` for `global` members. Bare identifiers reach only locals and parameters. This makes the local-versus-state distinction visible at every use, which is the distinction a beginner most needs to see.
+**`this.` is mandatory**, not conventional, and so is `ModelName.` for `global` members. Bare identifiers reach only locals and parameters. This makes the local-versus-state distinction visible at every use, which is the distinction a beginner most needs to see.
 
-**Nested models capture their enclosing scope.** C# nested classes are like Java's *static* nested classes and hold no reference to an enclosing instance. Profi-C's do, reached via `outer`, and models may also be declared inside function bodies where they capture locals.
+**No local types.** A model, structure, or enumeration may be declared at namespace level or inside a model, but not inside a function. C# has no local classes either. A type introduced by a statement would entangle name resolution with statement order, which is a cost with very little to buy it.
 
 **Loop variables are fresh per iteration** and read-only inside the body. C# only did this for `foreach`, leaving the `for` capture trap intact. Profi-C has no three-clause `for` at all; `for i = 0 until n` and `for each` are the two forms.
 

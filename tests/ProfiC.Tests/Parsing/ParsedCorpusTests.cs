@@ -113,8 +113,8 @@ public sealed class ParsedCorpusTests : LexerTestBase
             seen.UnionWith(unit.Descendants().Select(n => n.NodeKind));
         }
 
-        // Absent by design: the two Missing nodes only appear on a failed parse, and
-        // BaseExpr needs a model with a parent constructor to call.
+        // Absent by design: the two Missing nodes only appear on a failed parse. Everything
+        // the grammar can build from valid source should show up somewhere.
         string[] expected =
         [
             nameof(CompilationUnit), nameof(UsingDirective), nameof(QualifiedName),
@@ -132,7 +132,7 @@ public sealed class ParsedCorpusTests : LexerTestBase
             nameof(UnaryExpr), nameof(BinaryExpr), nameof(TypeTestExpr), nameof(TypeCastExpr),
             nameof(IfExpr), nameof(CollectionExpr), nameof(NewExpr), nameof(CallExpr),
             nameof(IndexExpr), nameof(MemberExpr), nameof(LambdaExpr),
-            "ThisExpr", "BaseExpr", "OuterExpr",
+            "ThisExpr", "BaseExpr",
         ];
 
         Assert.That(expected.Where(kind => !seen.Contains(kind)), Is.Empty,

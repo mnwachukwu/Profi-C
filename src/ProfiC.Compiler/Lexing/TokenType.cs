@@ -19,7 +19,7 @@ public enum TokenType
 
     Identifier,
 
-    // ---- Reserved words, 55 -------------------------------------------------------------
+    // ---- Reserved words, 54 -------------------------------------------------------------
     // Kept alphabetical so that a missing entry is easy to spot against the keyword table.
     // Note that "comment" is reserved but never produces a token: the scanner recognizes it
     // before tokenizing and skips what follows.
@@ -58,7 +58,6 @@ public enum TokenType
     New,
     Not,
     Or,
-    Outer,
     Override,
     Protected,
     Public,

@@ -74,14 +74,15 @@ public sealed class SyntaxNodeTests : AstTestBase
     [Test]
     public void ReceiverExpr_ReportsWhichReceiverItIs()
     {
+        // There are only two. A nested model holds no reference to the model it sits inside,
+        // so there is no third receiver to name.
         Assert.Multiple(() =>
         {
             Assert.That(new ReceiverExpr(NextSpan(), ReceiverKind.This).NodeKind,
                         Is.EqualTo("ThisExpr"));
             Assert.That(new ReceiverExpr(NextSpan(), ReceiverKind.Base).NodeKind,
                         Is.EqualTo("BaseExpr"));
-            Assert.That(new ReceiverExpr(NextSpan(), ReceiverKind.Outer).NodeKind,
-                        Is.EqualTo("OuterExpr"));
+            Assert.That(Enum.GetValues<ReceiverKind>(), Has.Length.EqualTo(2));
         });
     }
 

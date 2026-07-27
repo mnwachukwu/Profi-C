@@ -67,32 +67,24 @@ public sealed class IdentifierExpr(SourceSpan span, string name) : Expression(sp
 /// <summary>Which implicit receiver an expression names.</summary>
 public enum ReceiverKind
 {
-    /// <summary>The innermost enclosing instance.</summary>
+    /// <summary>The instance the enclosing function belongs to.</summary>
     This,
 
     /// <summary>The parent type, for calling a parent implementation or constructor.</summary>
     Base,
-
-    /// <summary>The enclosing instance of a nested model. Chains as <c>outer.outer</c>.</summary>
-    Outer,
 }
 
 /// <summary>
-/// <para><c>this</c>, <c>base</c>, or <c>outer</c>.</para>
-/// <para><see cref="Depth"/> counts how many levels out an <c>outer</c> reaches, so
-/// <c>outer.outer</c> is one node of depth two rather than a member access for a field that
-/// does not exist. It is always one for <c>this</c> and <c>base</c>.</para>
+/// <para><c>this</c> or <c>base</c>.</para>
+/// <para>There is no third form. A nested model holds no reference to the instance it is
+/// nested in, exactly as a C# nested class does not, so a nested model that needs its
+/// enclosing instance takes one as a constructor argument.</para>
 /// </summary>
-public sealed class ReceiverExpr(SourceSpan span, ReceiverKind receiver, int depth = 1)
-    : Expression(span)
+public sealed class ReceiverExpr(SourceSpan span, ReceiverKind receiver) : Expression(span)
 {
     public ReceiverKind Receiver { get; } = receiver;
 
-    /// <summary>How many enclosing instances out this reaches. One unless chained.</summary>
-    public int Depth { get; } = depth;
-
-    public override string NodeKind =>
-        Depth > 1 ? $"{Receiver}Expr({Depth})" : $"{Receiver}Expr";
+    public override string NodeKind => $"{Receiver}Expr";
 
     public override IEnumerable<SyntaxNode> Children => [];
 

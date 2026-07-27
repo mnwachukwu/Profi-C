@@ -57,7 +57,7 @@ public sealed partial class Parser
             case TokenType.Model:
             case TokenType.Structure:
             case TokenType.Enumeration:
-                return ParseLocalDeclaration();
+                return RejectTypeInsideFunction();
         }
 
         // A declaration nested in a body: "constant integer x = 1;", "integer y;",
@@ -139,12 +139,28 @@ public sealed partial class Parser
         return new VarDeclStmt(SpanFrom(start), type, name, initializer, isConstant);
     }
 
-    private Statement ParseLocalDeclaration()
+    /// <summary>
+    /// <para>Reports a type declared inside a function, then parses and discards it so that
+    /// the rest of the body still reads.</para>
+    /// <para>Types live at namespace level or inside a model. Allowing one here would mean a
+    /// statement could introduce a type, which forces name resolution to interleave
+    /// collecting types with binding bodies instead of doing each once.</para>
+    /// </summary>
+    private Statement? RejectTypeInsideFunction()
     {
-        Token start = Current;
-        Declaration declaration = ParseMember(DeclarationModifiers.None, start);
+        string what = Kind switch
+        {
+            TokenType.Model => "model",
+            TokenType.Structure => "structure",
+            _ => "enumeration",
+        };
 
-        return new LocalDeclStmt(SpanFrom(start), declaration);
+        _diagnostics.Report(DiagnosticDescriptors.TypeInsideFunction, Current.Span, what);
+
+        Token start = Current;
+        _ = ParseMember(DeclarationModifiers.None, start);
+
+        return null;
     }
 
     /// <summary>

@@ -68,11 +68,22 @@ CompilationUnit
             MemberExpr 'Describe'
               BaseExpr
       ModelDecl 'Corner' [public]
-        FunctionDecl 'Owner' [public]
+        FieldDecl 'owner'
+          NamedTypeSyntax 'Shape'
+        FunctionDecl 'Corner' [public]
+          ParameterDecl 'shape'
+            NamedTypeSyntax 'Shape'
+          AssignmentStmt
+            MemberExpr 'owner'
+              ThisExpr
+            IdentifierExpr 'shape'
+        FunctionDecl 'Describe' [public]
           NamedTypeSyntax 'string'
           YieldStmt
-            MemberExpr 'name'
-              OuterExpr
+            CallExpr
+              MemberExpr 'Describe'
+                MemberExpr 'owner'
+                  ThisExpr
     ModelDecl 'Tour' [global]
       FieldDecl 'Limit' [constant]
         NamedTypeSyntax 'integer'

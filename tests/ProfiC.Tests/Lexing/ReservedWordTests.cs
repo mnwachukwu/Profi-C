@@ -10,13 +10,13 @@ namespace ProfiC.Tests.Lexing;
 [TestFixture]
 public sealed class ReservedWordTests : LexerTestBase
 {
-    /// <summary>The 55 reserved words, written out rather than derived from the table.</summary>
+    /// <summary>The 54 reserved words, written out rather than derived from the table.</summary>
     private static readonly string[] Expected =
     [
         "abstract", "and", "as", "base", "begin", "boolean", "break", "case", "catch",
         "character", "constant", "continue", "default", "each", "else", "end", "enumeration",
         "extends", "false", "finally", "for", "fraction", "function", "global", "if", "in",
-        "integer", "is", "let", "model", "namespace", "new", "not", "or", "outer", "override",
+        "integer", "is", "let", "model", "namespace", "new", "not", "or", "override",
         "protected", "public", "real", "sealed", "step", "string", "structure", "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
         "yield",
@@ -28,6 +28,10 @@ public sealed class ReservedWordTests : LexerTestBase
         "bool", "write", "read", "private", "static", "null", "void", "return", "class",
         "interface", "enum", "struct", "var", "do", "foreach", "select", "when", "const",
         "int", "func", "public2", "Model", "Program", "Console",
+
+        // Dropped along with capture on nested models: a nested model holds no reference to
+        // the model it sits inside, so there was nothing left for the word to name.
+        "outer",
     ];
 
     public static IEnumerable<string> ExpectedWords => Expected;
@@ -37,7 +41,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_ContainsExactlyFiftyFiveWords()
     {
-        Assert.That(ReservedWords.Count, Is.EqualTo(55));
+        Assert.That(ReservedWords.Count, Is.EqualTo(54));
     }
 
     [Test]
@@ -50,7 +54,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_MapsEachWordToADistinctTokenType()
     {
-        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(55));
+        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(54));
     }
 
     [Test]

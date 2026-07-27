@@ -238,7 +238,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 
 ### 2.1 Reserved words
 
-Profi-C has **55** reserved words. None may be used as an identifier.
+Profi-C has **54** reserved words. None may be used as an identifier.
 
 ```
 abstract     and          as           base         begin        boolean
@@ -246,11 +246,10 @@ break        case         catch        character    constant     continue
 default      each         else         end          enumeration  extends
 false        finally      for          fraction     function     global
 if           in           integer      is           let          model
-namespace    new          not          or           outer        override
-protected    public       real         sealed       step         string
-structure    switch       then         this         throw        to
-true         try          until        using        virtual      while
-yield
+namespace    new          not          or           override     protected
+public       real         sealed       step         string       structure
+switch       then         this         throw        to           true
+try          until        using        virtual      while        yield
 ```
 
 `comment` is reserved in addition to these, but never produces a token: it is recognized

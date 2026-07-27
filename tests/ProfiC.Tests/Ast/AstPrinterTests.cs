@@ -117,14 +117,14 @@ public sealed class AstPrinterTests : AstTestBase
     }
 
     [Test]
-    public void NamesTheReceiverForThisBaseAndOuter()
+    public void NamesTheReceiver()
     {
         Assert.Multiple(() =>
         {
             Assert.That(Print(new ReceiverExpr(NextSpan(), ReceiverKind.This)),
                         Is.EqualTo("ThisExpr\n"));
-            Assert.That(Print(new ReceiverExpr(NextSpan(), ReceiverKind.Outer)),
-                        Is.EqualTo("OuterExpr\n"));
+            Assert.That(Print(new ReceiverExpr(NextSpan(), ReceiverKind.Base)),
+                        Is.EqualTo("BaseExpr\n"));
         });
     }
 

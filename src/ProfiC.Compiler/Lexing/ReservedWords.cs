@@ -17,7 +17,7 @@ public static class ReservedWords
     /// </summary>
     public const string Comment = "comment";
 
-    /// <summary>The 55 words that scan as keywords rather than identifiers.</summary>
+    /// <summary>The 54 words that scan as keywords rather than identifiers.</summary>
     public static readonly FrozenDictionary<string, TokenType> Keywords =
         new Dictionary<string, TokenType>(StringComparer.Ordinal)
         {
@@ -55,7 +55,6 @@ public static class ReservedWords
             ["new"] = TokenType.New,
             ["not"] = TokenType.Not,
             ["or"] = TokenType.Or,
-            ["outer"] = TokenType.Outer,
             ["override"] = TokenType.Override,
             ["protected"] = TokenType.Protected,
             ["public"] = TokenType.Public,
