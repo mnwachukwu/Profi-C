@@ -1,58 +1,95 @@
 namespace ProfiC.Compiler.Lexing;
 
 /// <summary>
-/// Represents the category of a scanned token.
+/// <para>The category of a scanned token.</para>
+/// <para>There is one member per reserved word, so the keyword table and this enum must
+/// stay in step; a test asserts that they do.</para>
 /// </summary>
 public enum TokenType
 {
-    // Literals
+    // ---- Literals -----------------------------------------------------------------------
+
     IntegerLiteral,
     RealLiteral,
     CharLiteral,
     StringLiteral,
     FractionLiteral,
 
-    // Composite literals; the lexer emits their signals and the parser assembles them.
-    ArrayLiteral,
+    // ---- Identifier ---------------------------------------------------------------------
 
-    // Identifier
     Identifier,
 
-    // Types
-    Integer,
-    Real,
-    Character,
-    Bool,
-    String,
+    // ---- Reserved words, 55 -------------------------------------------------------------
+    // Kept alphabetical so that a missing entry is easy to spot against the keyword table.
+    // Note that "comment" is reserved but never produces a token: the scanner recognizes it
+    // before tokenizing and skips what follows.
 
-    // Keywords
-    If,
+    Abstract,
+    And,
+    As,
+    Base,
+    Begin,
+    Boolean,
+    Break,
+    Case,
+    Catch,
+    Character,
+    Constant,
+    Continue,
+    Default,
+    Each,
     Else,
+    End,
+    Enumeration,
+    Extends,
+    False,
+    Finally,
     For,
+    Fraction,
+    Function,
+    Global,
+    If,
+    In,
+    Integer,
+    Is,
+    Let,
+    Model,
+    Namespace,
+    New,
+    Not,
+    Or,
+    Outer,
+    Override,
+    Protected,
+    Public,
+    Real,
+    Sealed,
+    Step,
+    String,
+    Structure,
+    Switch,
+    Then,
+    This,
+    Throw,
+    To,
+    True,
+    Try,
+    Until,
+    Using,
+    Virtual,
     While,
     Yield,
-    Let,
-    Write,
-    Read,
-    Function,
-    Model,
-    Break,
-    Continue,
-    Begin,
-    End,
 
-    // Boolean literals
-    True,
-    False,
+    // ---- Arithmetic operators -----------------------------------------------------------
 
-    // Arithmetic operators
     Plus,
     Minus,
     Star,
     Slash,
     Percent,
 
-    // Comparison operators
+    // ---- Comparison operators -----------------------------------------------------------
+
     EqualEqual,
     NotEqual,
     LessThan,
@@ -60,18 +97,24 @@ public enum TokenType
     LessThanOrEqual,
     GreaterThanOrEqual,
 
-    // Assignment
+    // ---- Assignment ---------------------------------------------------------------------
+
     Equal,
 
-    // Boolean operators (keyword-driven: "or", "and", "not")
-    Or,
-    And,
-    Not,
+    // ---- Punctuation and other symbols --------------------------------------------------
 
-    // Fraction pipe; the "|" character that signals a fraction such as 3|4
+    /// <summary>The "|" that separates a fraction's numerator and denominator.</summary>
     Pipe,
 
-    // Punctuation
+    /// <summary>The "?" optional type suffix.</summary>
+    Question,
+
+    /// <summary>The ":" that ends a switch case label.</summary>
+    Colon,
+
+    /// <summary>The "=>" of an expression lambda.</summary>
+    Arrow,
+
     LeftParen,
     RightParen,
     LeftBrace,
@@ -82,7 +125,12 @@ public enum TokenType
     Semicolon,
     Dot,
 
-    // Quote delimiters; consumed by character and string literals, not emitted by lexer
-    Quote,
-    DoubleQuote,
+    // ---- End of input -------------------------------------------------------------------
+
+    /// <summary>
+    /// Always the final token. Its presence lets the parser look ahead unconditionally
+    /// instead of bounds-checking at every call site, and gives "unexpected end of file"
+    /// a real position to point at.
+    /// </summary>
+    EndOfFile,
 }

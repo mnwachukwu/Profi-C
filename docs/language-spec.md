@@ -14,8 +14,8 @@ is the best available description of the area.
 | Section | State |
 |---|---|
 | 0. Overview | Written |
-| 1. Lexical structure | Not yet written |
-| 2. Tokens and reserved words | Not yet written |
+| 1. Lexical structure | Written |
+| 2. Tokens and reserved words | Written |
 | 3. Types | Not yet written |
 | 4. Declarations | Not yet written |
 | 5. Expressions | Not yet written |
@@ -110,29 +110,229 @@ This document describes **v1**. Features named as deferred are not part of v1 an
 conforming v1 implementation must reject them:
 
 - Generics, interfaces, and properties (v2)
-- `out` and `ref` parameters, indexers, `params`, operator overloading, extension methods,
-  and boxing (v3)
+- `out` and `ref` parameters, indexers, `params`, operator overloading, and extension
+  methods (v3)
 - `async`, `await`, and `Task` (v4)
 - Direct binding to arbitrary .NET types (v5)
 
 Deferred is not rejected. Each is expected to arrive as an additive change.
 
+**Boxing is refused rather than deferred.** A value type inherits `Model`'s members but never
+converts to `Model`, in this or any later version. See section 3.
+
 ---
 
 ## 1. Lexical structure
 
-*Not yet written.* Will cover source encoding, line terminators, whitespace, the two comment
-forms, identifiers, and the five literal forms including escape sequences.
+### 1.1 Source files
+
+A source file is Unicode text. The conventional extension is `.pfc`.
+
+A **line terminator** is a carriage return followed by a line feed, or a line feed alone.
+Each counts as one terminator. A carriage return not followed by a line feed is whitespace
+but does not begin a new line. A file with no terminator in it has one line.
+
+Positions reported in diagnostics are one-based in both line and column. A tab advances the
+column by one.
+
+### 1.2 Whitespace
+
+Space, tab, carriage return, line feed, and any other Unicode whitespace character separate
+tokens and are otherwise insignificant. Profi-C is not layout-sensitive: indentation carries
+no meaning, and no construct is terminated by a line break.
+
+### 1.3 Comments
+
+Comments are delimited by words rather than by symbols.
+
+The word `comment` begins a **line comment**, which runs to the next line terminator.
+
+```
+comment this runs to the end of the line
+```
+
+The word `comment` followed by `begin`, **on the same line**, opens a **block comment**,
+which ends at the next occurrence of `end` followed by `comment`.
+
+```
+comment begin
+    as many lines as needed
+end comment
+```
+
+Both delimiters are matched only as whole words, so an identifier such as `commentary` is
+not a comment. Reaching the end of the file inside a block comment is an error, reported at
+the opener.
+
+Three consequences follow from comments being scanned as words:
+
+- If `begin` does not appear on the same line as the `comment` that precedes it, the
+  construct is a line comment and `begin` is code.
+- Neither `end` nor `comment` alone closes a block comment. Only the two in sequence do.
+- The scanner does not read string literals while skipping a comment, so the closing pair
+  closes the block wherever it occurs, including inside quotation marks. **A block comment
+  cannot contain its own closing phrase.**
+
+Comments produce no tokens.
+
+### 1.4 Identifiers
+
+An identifier begins with a **Unicode letter or an underscore**, and continues with letters,
+decimal digits, and underscores. So `count`, `_count`, `max_score`, `item2`, and `café` are
+all identifiers.
+
+Identifiers are case-sensitive, so `Model` and `model` are different words — and since one of
+them is reserved, they are different *kinds* of word.
+
+An identifier may not be one of the reserved words in section 2, nor `comment`. Adjacency to
+an underscore is enough to make a word ordinary rather than reserved: `model_` and
+`comment_text` are identifiers.
+
+This follows C#, minus its rarer allowances. Combining marks and format characters are not
+identifier characters, `\u` escapes may not be written inside a name, and there is no
+verbatim `@name` form for using a reserved word as an identifier.
+
+### 1.5 Literals
+
+**Integer literals** are one or more decimal digits. Leading zeros are permitted and
+insignificant.
+
+**Real literals** are digits, a full stop, then digits. Digits are required on *both* sides:
+`1.0` is a real, while `1.` is an integer followed by a full stop, which is what makes member
+access on a number possible.
+
+**Fraction literals** are digits, a vertical bar, then digits, and denote an exact rational:
+`22|7`, `1|3`. Digits are required on both sides here too, so `a|b` is not a fraction.
+
+**Character literals** are a single character between apostrophes: `'A'`. Exactly one
+character is required, so both `''` and `'ab'` are errors.
+
+**String literals** are a sequence of characters between quotation marks: `"text"`. A string
+literal may not span a line terminator; an unterminated one is reported at its opening quote.
+
+**Boolean literals** are the reserved words `true` and `false`.
+
+### 1.6 Escape sequences
+
+Character and string literals may contain these escapes, and no others:
+
+| Escape | Meaning |
+|---|---|
+| `\n` | line feed |
+| `\t` | tab |
+| `\r` | carriage return |
+| `\0` | null |
+| `\\` | backslash |
+| `\"` | quotation mark |
+| `\'` | apostrophe |
+| `\u####` | the character with the given four-digit hexadecimal code |
+
+An escape outside this set is an error, as is a `\u` not followed by four hexadecimal digits.
+An escape counts as one character for the purpose of the character-literal rule above.
+
+The set matches C#, so an escape a student learns here works unchanged there.
+
+---
 
 ## 2. Tokens and reserved words
 
-*Not yet written.* Profi-C has **55 reserved words**; they are listed in
-[language-summary.md](language-summary.md) section 1.
+### 2.1 Reserved words
+
+Profi-C has **55** reserved words. None may be used as an identifier.
+
+```
+abstract     and          as           base         begin        boolean
+break        case         catch        character    constant     continue
+default      each         else         end          enumeration  extends
+false        finally      for          fraction     function     global
+if           in           integer      is           let          model
+namespace    new          not          or           outer        override
+protected    public       real         sealed       step         string
+structure    switch       then         this         throw        to
+true         try          until        using        virtual      while
+yield
+```
+
+`comment` is reserved in addition to these, but never produces a token: it is recognized
+before tokenizing and what follows it is skipped.
+
+Words a C# author might expect to be reserved and which are **not**: `private`, `static`,
+`null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`,
+`const`, `bool`, `int`. Members are private by default, so `public` and `protected` opt out
+rather than `private` opting in; `global` fills the role of `static`; there is no `null`; and
+nothing the language defines is abbreviated.
+
+### 2.2 Operators and punctuation
+
+```
++   -   *   /   %
+==  !=  <   >   <=  >=
+=   =>  ?   :   |
+(   )   {   }   [   ]
+,   ;   .
+```
+
+Scanning is longest-match, so `<=` is one token rather than `<` followed by `=`, and `=>` is
+one token rather than `=` followed by `>`. No operator is longer than two characters.
+
+`?` is the optional type suffix. `:` ends a `case` label. `=>` introduces an expression
+lambda. `|` separates the parts of a fraction literal.
+
+The boolean operators are the reserved words `and`, `or`, and `not`, not symbols.
+
+There is **no** ternary conditional, no compound assignment (`+=` and its family), and no
+increment or decrement (`++`, `--`). The role of the ternary is filled by the
+`if ... then ... else` expression; the others are written out in full.
+
+Two of these absences are diagnosed at different stages, and the reason is worth stating.
+`++` and the compound assignments have no possible reading in Profi-C — there is no unary
+`+`, and `=` can never follow an arithmetic operator — so they are rejected while scanning.
+`--` is different: unary `-` *does* exist, so `x--1` is a well-formed subtraction of negative
+one and **must remain valid however it is spaced**. Distinguishing that from an intended
+decrement requires knowing whether an operand follows, which is a grammatical question, so
+`--` scans as two `-` tokens and any diagnostic about it comes from the parser.
+
+### 2.3 End of file
+
+Every token stream ends with a single end-of-file token. It carries no text and occupies a
+zero-width position just past the final character.
+
+### 2.4 Diagnostics from this stage
+
+| Identifier | Reported when |
+|---|---|
+| `PFC0001` | A character appears that begins no token |
+| `PFC0002` | A string literal is not closed before a line terminator or the end of the file |
+| `PFC0003` | A character literal is not closed |
+| `PFC0004` | A character literal does not hold exactly one character |
+| `PFC0005` | A block comment is not closed before the end of the file |
+| `PFC0006` | A character sequence is used that is an operator in C# and has no reading in Profi-C |
+| `PFC0007` | An escape sequence is not recognized |
+| `PFC0008` | A Unicode escape is not followed by four hexadecimal digits |
+
+Scanning never stops at the first error. Each of these has a defined recovery, so a file
+containing several mistakes reports all of them in one pass and still yields a usable token
+stream.
 
 ## 3. Types
 
 *Not yet written.* Will cover the base types, the `[]` set and `?` optional suffixes, the
 value and reference split, conversions, and definite assignment.
+
+One rule is settled: **`Model` is the root of every type**, values included, so every type
+inherits `ToString()` and `Equals()` from one place. Inheriting those members does not make a
+value type *convertible* to `Model`. Assigning a structure or an enumeration to a
+`Model`-typed variable is a compile error, and **this is permanent** — that conversion is
+boxing, which the language does not have.
+
+C# `ref struct` types have exactly this shape: in the `object` hierarchy, not boxable. The
+guarantees are therefore permanent rather than provisional — no assignment allocates
+invisibly, and two copies of one value can never compare unequal by reference.
+
+Neither generics nor .NET interop require boxing to be added later. .NET generics are
+reified, so a set of structures stores them inline; and a library wrapper may box internally
+when calling a .NET method that takes `object`, but that is an implementation detail of the
+call rather than a conversion the language admits.
 
 ## 4. Declarations
 
@@ -147,6 +347,14 @@ value and reference split, conversions, and definite assignment.
 
 *Not yet written.* Will cover block structure and the qualified `end`, the two `for` forms,
 `switch`, and `try`.
+
+One rule is settled ahead of the rest, because the grammar depends on it: **an expression
+statement may not begin with `(` or `-`.** A construct's body has no opening token, so a
+condition ends at the first token that cannot continue an expression — and those two can,
+which would otherwise let a condition swallow the first statement of its own body. The
+restriction applies only to a bare expression statement; `(x as Dog).Value()` remains legal
+as an assignment's right side, as an argument, after `yield`, and within a condition. See
+[grammar.ebnf](grammar.ebnf) for the full reasoning.
 
 ## 7. Models, structures, and enumerations
 
@@ -171,6 +379,18 @@ resolution.
 
 *Not yet written.* Will cover the built-in models and the curated .NET wrappers.
 
+Two rules are settled ahead of the rest. **`Console.Write` and `Console.WriteLine` accept a
+value of any type**, and behave as in C#: only the second ends the line. Neither is an
+overload set; both are compiler-known, and the compiler chooses how to render the value from
+its static type. **`ToString()` is inherited from `Model` by every type, values included**,
+and is `virtual`. Calling it on a value type does not box. Defaults: a structure prints field
+by field, an enumeration prints its member name, a model prints its type name.
+
 ## 12. Execution and entry point
 
 *Not yet written.* Will cover program structure and `Program.Main`.
+
+One rule is settled: **`Program` may be declared exactly once in a compilation, and must be
+`global model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
+and `Reference`, which may not be declared at all — every program must declare `Program`, but
+may not declare a second one, and may not use the name for an ordinary model.

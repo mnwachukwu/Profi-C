@@ -1,0 +1,51 @@
+comment A line comment, running to the end of the line.
+
+comment begin
+    A block comment. It opens with the word "comment" followed by "begin", and closes
+    with the two words "end" and "comment" in that order -- reversed rather than
+    repeated, so an opener and a closer never look alike.
+
+    A block may span as many lines as it needs.
+
+    One consequence worth knowing: a block comment cannot contain its own closing
+    phrase, not even inside quotes. The scanner does not read quotes while skipping a
+    comment, so those two words together always close the block, wherever they appear.
+end comment
+
+comment begin A block may also open and close on one line. end comment
+
+global model Comments
+
+    comment A comment may sit on its own line inside a model,
+
+    constant integer Answer = 42;      comment or trail a declaration on the same line.
+
+    function Placement()
+        comment A comment before a statement.
+        integer total = 0;
+
+        total = total + 1;             comment A comment after one.
+
+        comment begin
+            A block comment inside a function body. The word end appearing on its own
+            does not close it, and neither does the word comment on its own. Only the
+            two together do.
+        end comment
+
+        if total > 0
+            comment Comments nest inside any construct.
+            total = total - 1;
+        end if
+    end function
+
+    comment Words that merely start with the same letters are not comments, so an
+    comment identifier such as commentary below is scanned normally.
+    function Boundaries()
+        integer commentary = 1;
+        integer ending = 2;
+        integer beginning = 3;
+    end function
+
+end model
+
+comment A trailing comment at the very end of the file.

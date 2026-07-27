@@ -1,25 +1,23 @@
+using ProfiC.Compiler.Text;
+
 namespace ProfiC.Compiler.Lexing;
 
 /// <summary>
-/// <para>Represents a single scanned token.</para>
-/// <para>Pairs a lexeme string with its classified token type.</para>
+/// <para>A single scanned token: what it is, the text it came from, and where it sat.</para>
+/// <para><see cref="Lexeme"/> is always the exact source text the span covers, never a
+/// reconstruction. Decoding a literal into a value, which for a string means resolving its
+/// escape sequences, belongs to the parser rather than here.</para>
 /// </summary>
-public class Token
+public sealed record Token(TokenType Type, string Lexeme, SourceSpan Span)
 {
-    /// <summary>The raw lexeme text from the source.</summary>
-    public string Lexeme { get; }
+    /// <summary>The one-based line the token begins on.</summary>
+    public int Line => Span.Start.Line;
 
-    /// <summary>The classified token type.</summary>
-    public TokenType Type { get; }
+    /// <summary>The one-based column the token begins at.</summary>
+    public int Column => Span.Start.Column;
 
-    public Token(string lexeme, TokenType type)
-    {
-        Lexeme = lexeme;
-        Type = type;
-    }
+    /// <summary>True for the token that terminates every token stream.</summary>
+    public bool IsEndOfFile => Type == TokenType.EndOfFile;
 
-    public override string ToString()
-    {
-        return $"({Type}, '{Lexeme}')";
-    }
+    public override string ToString() => $"({Type}, '{Lexeme}')";
 }

@@ -2,6 +2,6 @@ comment The smallest legal Profi-C program.
 
 global model Program
     function Main()
-        Console.Write("Hello, World!");
+        Console.WriteLine("Hello, World!");
     end function
 end model

@@ -48,7 +48,7 @@ global model Program
         integer[] grades = {100, 95, 72, 40};
 
         for each grade in grades
-            Console.Write(Program.Describe(grade));
+            Console.WriteLine(Program.Describe(grade));
         end for
     end function
 
@@ -74,7 +74,7 @@ A source file contains model declarations and nothing else. The entry point is a
 ```
 global model Program
     function Main()
-        Console.Write("Hello, World!");
+        Console.WriteLine("Hello, World!");
     end function
 end model
 ```
@@ -128,11 +128,11 @@ An optional is written with a trailing `?`. You cannot read one without proving 
 model Greeter
     global function Greet(string? nickname)
         comment Or supplies a fallback, and does not evaluate it unless it is needed
-        Console.Write(nickname.Or("Hello, stranger"));
+        Console.WriteLine(nickname.Or("Hello, stranger"));
 
         comment HasValue narrows the optional inside the guarded block
         if nickname.HasValue()
-            Console.Write(nickname.Value());
+            Console.WriteLine(nickname.Value());
         end if
     end function
 end model
@@ -201,11 +201,12 @@ design is settled — see the specification below — but the implementation is 
 |---|---|
 | [docs/language-spec.md](docs/language-spec.md) | The normative specification. Grows section by section as each is implemented and tested |
 | [docs/language-summary.md](docs/language-summary.md) | A condensed reference and a full **comparison to C#** |
+| [docs/grammar.ebnf](docs/grammar.ebnf) | The formal grammar and the operator precedence table |
 
 The specification is written section by section as each part of the language is implemented
-and covered by tests, so it never describes more than the compiler actually does. Until a
-section lands, the summary is the best description of that area. The formal grammar joins
-them as `docs/grammar.ebnf` alongside the completed scanner.
+and covered by tests, so it never describes more than the compiler actually does. Sections 1
+and 2, the lexical rules and the token table, are complete. Until a later section lands, the
+summary is the best description of that area.
 
 ## Building
 

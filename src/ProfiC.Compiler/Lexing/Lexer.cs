@@ -1,87 +1,135 @@
+using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Text;
+
 namespace ProfiC.Compiler.Lexing;
 
 /// <summary>
-/// <para>Scans a source program and produces an ordered list of tokens.</para>
-/// <para>The whole program is consumed in one pass, skipping whitespace and comments.</para>
-/// <para>Throws a syntax error if an unrecognized character sequence is encountered.</para>
+/// <para>Scans a source program in one pass and produces an ordered list of tokens,
+/// terminated by an end-of-file token.</para>
+/// <para>The scanner never throws on malformed input. It reports a diagnostic, resynchronizes
+/// at a well-defined point, and carries on. This matters beyond tidiness: a file being edited
+/// is malformed most of the time, and a scanner that gives up at the first error yields no
+/// tokens at all, which in an editor means no highlighting and no completion.</para>
 /// </summary>
-public class Lexer
+public sealed class Lexer
 {
-    // Reserved keywords mapped to their token types.
-    // Note: "comment" is reserved but handled separately, so it is not listed here.
-    private static readonly Dictionary<string, TokenType> Keywords = new()
-    {
-            { "if",        TokenType.If },
-            { "else",      TokenType.Else },
-            { "for",       TokenType.For },
-            { "while",     TokenType.While },
-            { "yield",     TokenType.Yield },
-            { "let",       TokenType.Let },
-            { "write",     TokenType.Write },
-            { "read",      TokenType.Read },
-            { "function",  TokenType.Function },
-            { "model",     TokenType.Model },
-            { "break",     TokenType.Break },
-            { "continue",  TokenType.Continue },
-            { "begin",     TokenType.Begin },
-            { "end",       TokenType.End },
-            { "true",      TokenType.True },
-            { "false",     TokenType.False },
-            { "or",        TokenType.Or },
-            { "and",       TokenType.And },
-            { "not",       TokenType.Not },
-            { "integer",   TokenType.Integer },
-            { "real",      TokenType.Real },
-            { "character", TokenType.Character },
-            { "bool",      TokenType.Bool },
-            { "string",    TokenType.String }
-        };
+    /// <summary>
+    /// <para>Character sequences a C# author is likely to reach for that have no reading at
+    /// all in Profi-C, together with what to write instead.</para>
+    /// <para>Every entry here is unambiguous, which is what makes reporting it a scanner's
+    /// business rather than a parser's. "++" qualifies because Profi-C has no unary plus, so
+    /// "a++b" cannot be read as an addition of a positive "b"; the compound assignments
+    /// qualify because "=" can never follow an arithmetic operator.</para>
+    /// <para><b>"--" is deliberately absent.</b> Unary minus does exist, so "x--1" is a
+    /// perfectly good subtraction of negative one, and telling that apart from a decrement
+    /// requires knowing whether an operand follows. That is grammatical context the scanner
+    /// does not have, so the decrement diagnostic belongs to the parser.</para>
+    /// </summary>
+    private static readonly (string Operator, string Advice)[] NonOperators =
+    [
+        ("&&", "Use 'and'."),
+        ("||", "Use 'or'."),
+        ("+=", "Profi-C has no compound assignment. Write 'x = x + y'."),
+        ("-=", "Profi-C has no compound assignment. Write 'x = x - y'."),
+        ("*=", "Profi-C has no compound assignment. Write 'x = x * y'."),
+        ("/=", "Profi-C has no compound assignment. Write 'x = x / y'."),
+        ("%=", "Profi-C has no compound assignment. Write 'x = x % y'."),
+        ("++", "Profi-C has no increment operator. Write 'x = x + 1'."),
+    ];
 
-    // The reserved word for comments
-    private const string CommentKeyword = "comment";
-
-    private readonly string _source;
+    private readonly SourceText _source;
+    private readonly string _text;
+    private readonly DiagnosticBag _diagnostics;
     private int _index;
 
-    public Lexer(string source)
+    /// <summary>Creates a scanner over a source file, reporting into a shared bag.</summary>
+    public Lexer(SourceText source, DiagnosticBag diagnostics)
     {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(diagnostics);
+
         _source = source;
+        _text = source.Text;
+        _diagnostics = diagnostics;
         _index = 0;
     }
 
-    /// <summary>Peeks at the current character without advancing.</summary>
-    private char Current()
+    /// <summary>Convenience constructor for scanning a bare string.</summary>
+    public Lexer(string source, DiagnosticBag diagnostics)
+        : this(new SourceText(source), diagnostics)
     {
-        return _source[_index];
     }
 
-    /// <summary>Peeks at the next character without advancing.</summary>
-    private char Peek()
+    // ---- Character access ---------------------------------------------------------------
+
+    private bool IsAtEnd() => _index >= _text.Length;
+
+    private char Current() => _index < _text.Length ? _text[_index] : '\0';
+
+    private char Peek(int offset = 1) =>
+        _index + offset < _text.Length ? _text[_index + offset] : '\0';
+
+    // ---- Spans and reporting ------------------------------------------------------------
+
+    private SourceSpan SpanFrom(int start) => _source.SpanAt(start, _index - start);
+
+    private SourceSpan SpanOf(int start, int length) => _source.SpanAt(start, length);
+
+    private Token MakeToken(TokenType type, int start) =>
+        new(type, _text[start.._index], SpanFrom(start));
+
+    // ---- Scanning -----------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Scans the whole source and returns its tokens, always ending with an
+    /// end-of-file token.</para>
+    /// <para>Whitespace and comments produce no tokens. Errors produce diagnostics rather
+    /// than exceptions.</para>
+    /// </summary>
+    public List<Token> Scan()
     {
-        if (_index + 1 < _source.Length)
+        List<Token> tokens = [];
+
+        while (true)
         {
-            return _source[_index + 1];
+            SkipTrivia();
+
+            if (IsAtEnd())
+            {
+                break;
+            }
+
+            Token? token = ScanNext();
+
+            if (token is not null)
+            {
+                tokens.Add(token);
+            }
         }
 
-        return '\0';
+        tokens.Add(new Token(TokenType.EndOfFile, string.Empty, SpanOf(_text.Length, 0)));
+        return tokens;
     }
 
-    /// <summary>Returns true if the scanner has reached the end of the source.</summary>
-    private bool IsAtEnd()
+    /// <summary>Advances past any run of whitespace and comments.</summary>
+    private void SkipTrivia()
     {
-        return _index >= _source.Length;
-    }
-
-    /// <summary>Advances past any run of whitespace between tokens.</summary>
-    private void SkipWhitespace()
-    {
-        while (!IsAtEnd() && char.IsWhiteSpace(Current()))
+        while (!IsAtEnd())
         {
-            _index++;
+            if (char.IsWhiteSpace(Current()))
+            {
+                _index++;
+                continue;
+            }
+
+            if (!TrySkipComment())
+            {
+                return;
+            }
         }
     }
 
-    /// <summary>Advances past spaces and tabs only; leaves newlines in place.</summary>
+    /// <summary>Advances past spaces and tabs only, leaving line breaks in place.</summary>
     private void SkipInlineWhitespace()
     {
         while (!IsAtEnd() && (Current() == ' ' || Current() == '\t'))
@@ -92,126 +140,80 @@ public class Lexer
 
     /// <summary>
     /// <para>Returns true if the given word sits at the given position as a whole word.</para>
-    /// <para>Checks both the left and right edges so that we get whole word matching.</para>
+    /// <para>Both edges are checked, which is what lets the word-delimited comment syntax
+    /// work without mistaking "commentary" for a comment.</para>
     /// </summary>
-    private bool MatchesKeywordAt(int position, string word)
+    private bool MatchesWordAt(int position, string word)
     {
-        if (position + word.Length > _source.Length)
+        if (position < 0 || position + word.Length > _text.Length)
         {
             return false;
         }
 
-        if (_source.Substring(position, word.Length) != word)
+        if (string.CompareOrdinal(_text, position, word, 0, word.Length) != 0)
         {
             return false;
         }
 
-        if (position > 0 && char.IsLetterOrDigit(_source[position - 1]))
+        if (position > 0 && IsIdentifierPart(_text[position - 1]))
         {
             return false;
         }
 
         int after = position + word.Length;
-
-        if (after < _source.Length && char.IsLetterOrDigit(_source[after]))
-        {
-            return false;
-        }
-
-        return true;
+        return after >= _text.Length || !IsIdentifierPart(_text[after]);
     }
 
     /// <summary>
-    /// <para>Scans the full source string and returns an ordered list of tokens.</para>
-    /// <para>Whitespace and comments are skipped; neither becomes a token.</para>
-    /// <para>Throws a FormatException on unrecognized character sequences.</para>
-    /// </summary>
-    public List<Token> Scan()
-    {
-        List<Token> tokens = new List<Token>();
-
-        while (!IsAtEnd())
-        {
-            SkipWhitespace();
-
-            if (IsAtEnd())
-            {
-                break;
-            }
-
-            // Comments are skipped the same way whitespace is.
-            if (TrySkipComment())
-            {
-                continue;
-            }
-
-            Token token = ScanNext();
-            tokens.Add(token);
-        }
-
-        return tokens;
-    }
-
-    /// <summary>
-    /// <para>Skips a comment if one begins at the current position.</para>
-    /// <para>"comment begin" opens a block comment closed by "end comment".</para>
-    /// <para>"comment" followed by anything else is a line comment to end of line.</para>
-    /// <para>Returns true if a comment was skipped; leaves the position untouched otherwise.</para>
+    /// <para>Skips a comment if one begins here, returning whether it did.</para>
+    /// <para>"comment begin" opens a block closed by "end comment"; "comment" followed by
+    /// anything else runs to the end of the line.</para>
     /// </summary>
     private bool TrySkipComment()
     {
-        if (!MatchesKeywordAt(_index, CommentKeyword))
+        if (!MatchesWordAt(_index, ReservedWords.Comment))
         {
             return false;
         }
 
-        // Consume the "comment" keyword.
-        _index += CommentKeyword.Length;
+        int start = _index;
+        _index += ReservedWords.Comment.Length;
 
-        // Look on the same line for the block opener "begin".
+        // The block opener must sit on the same line as the word that introduces it.
         SkipInlineWhitespace();
 
-        if (MatchesKeywordAt(_index, "begin"))
+        if (MatchesWordAt(_index, "begin"))
         {
             _index += "begin".Length;
-            SkipBlockComment();
+            SkipBlockComment(start);
             return true;
         }
 
-        SkipLineComment();
-        return true;
-    }
-
-    /// <summary>Consumes the rest of the current line, stopping at the newline.</summary>
-    private void SkipLineComment()
-    {
         while (!IsAtEnd() && Current() != '\n')
         {
             _index++;
         }
+
+        return true;
     }
 
-    /// <summary>
-    /// <para>Consumes a block comment body up to and including "end comment".</para>
-    /// <para>Throws if the closer is never found.</para>
-    /// </summary>
-    private void SkipBlockComment()
+    /// <summary>Consumes a block comment body up to and including its "end comment" closer.</summary>
+    private void SkipBlockComment(int start)
     {
         while (!IsAtEnd())
         {
-            if (MatchesKeywordAt(_index, "end"))
+            if (MatchesWordAt(_index, "end"))
             {
                 int probe = _index + "end".Length;
 
-                while (probe < _source.Length && char.IsWhiteSpace(_source[probe]))
+                while (probe < _text.Length && char.IsWhiteSpace(_text[probe]))
                 {
                     probe++;
                 }
 
-                if (MatchesKeywordAt(probe, CommentKeyword))
+                if (MatchesWordAt(probe, ReservedWords.Comment))
                 {
-                    // Consume through the closing "comment".
-                    _index = probe + CommentKeyword.Length;
+                    _index = probe + ReservedWords.Comment.Length;
                     return;
                 }
             }
@@ -219,129 +221,85 @@ public class Lexer
             _index++;
         }
 
-        throw new FormatException("Syntax error: unclosed block comment; expected 'end comment'.");
+        // Point at the opener rather than at end of file; that is where the fix goes.
+        _diagnostics.Report(
+            DiagnosticDescriptors.UnterminatedBlockComment,
+            SpanOf(start, ReservedWords.Comment.Length));
     }
 
-    /// <summary>Scans and returns the next token from the source.</summary>
-    private Token ScanNext()
+    /// <summary>
+    /// Scans the next token. Returns null when the input was consumed without producing
+    /// one, which happens only on an unrecognized character.
+    /// </summary>
+    private Token? ScanNext()
     {
         char c = Current();
 
-        // Scan a char literal: consume opening quote, one character, closing quote.
         if (c == '\'')
         {
-            return ScanCharLiteral();
+            return ScanCharacterLiteral();
         }
 
-        // Scan a string literal: consume opening double quote, characters, closing double quote.
         if (c == '"')
         {
             return ScanStringLiteral();
         }
 
-        // Scan alphanumeric sequences: keywords, types, bool literals, or identifiers.
-        if (char.IsLetter(c))
+        if (IsIdentifierStart(c))
         {
             return ScanWord();
         }
 
-        // Scan numeric sequences: integer or real literals.
         if (char.IsDigit(c))
         {
             return ScanNumber();
         }
 
-        // Scan operators and punctuation, longest match first.
         return ScanSymbol();
     }
 
-    /// <summary>
-    /// <para>Scans a char literal of the form 'x'.</para>
-    /// <para>Throws if the literal is malformed or unclosed.</para>
-    /// </summary>
-    private Token ScanCharLiteral()
-    {
-        // Consume the opening quote.
-        _index++;
-
-        if (IsAtEnd())
-        {
-            throw new FormatException("Syntax error: unclosed char literal at end of input.");
-        }
-
-        char value = Current();
-        _index++;
-
-        if (IsAtEnd() || Current() != '\'')
-        {
-            throw new FormatException($"Syntax error: expected closing quote after '{value}'.");
-        }
-
-        // Consume the closing quote.
-        _index++;
-
-        return new Token($"'{value}'", TokenType.CharLiteral);
-    }
+    // ---- Identifiers --------------------------------------------------------------------
 
     /// <summary>
-    /// <para>Scans a string literal of the form "text".</para>
-    /// <para>Internal spaces are allowed since the lexer runs in a single pass.</para>
-    /// <para>Throws if the literal is unclosed.</para>
+    /// <para>A character that may begin an identifier: any Unicode letter, or an
+    /// underscore.</para>
+    /// <para>This follows C#, minus its rarer allowances. Combining marks, format
+    /// characters, unicode escapes within names, and verbatim identifiers written with a
+    /// leading "@" are all absent, since none of them serves a reader.</para>
     /// </summary>
-    private Token ScanStringLiteral()
-    {
-        // Consume the opening double quote.
-        _index++;
-
-        int start = _index;
-
-        while (!IsAtEnd() && Current() != '"')
-        {
-            _index++;
-        }
-
-        if (IsAtEnd())
-        {
-            throw new FormatException("Syntax error: unclosed string literal at end of input.");
-        }
-
-        string value = _source.Substring(start, _index - start);
-
-        // Consume the closing double quote.
-        _index++;
-
-        return new Token($"\"{value}\"", TokenType.StringLiteral);
-    }
+    private static bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_';
 
     /// <summary>
-    /// <para>Scans a contiguous alphanumeric sequence beginning with a letter.</para>
-    /// <para>Names like "var10" therefore form a single identifier.</para>
-    /// <para>Checks against the keyword table; falls through to IDENTIFIER.</para>
+    /// A character that may continue an identifier: a letter, a digit, or an underscore.
+    /// Also used to test word boundaries when recognizing comments, which is why an
+    /// identifier such as "comment_text" is correctly not read as a comment.
     /// </summary>
+    private static bool IsIdentifierPart(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+    /// <summary>Scans an identifier or a reserved word.</summary>
     private Token ScanWord()
     {
         int start = _index;
 
-        while (!IsAtEnd() && char.IsLetterOrDigit(Current()))
+        while (!IsAtEnd() && IsIdentifierPart(Current()))
         {
             _index++;
         }
 
-        string word = _source.Substring(start, _index - start);
+        string word = _text[start.._index];
 
-        if (Keywords.TryGetValue(word, out TokenType keywordType))
-        {
-            return new Token(word, keywordType);
-        }
-
-        return new Token(word, TokenType.Identifier);
+        return ReservedWords.Keywords.TryGetValue(word, out TokenType keyword)
+            ? new Token(keyword, word, SpanFrom(start))
+            : new Token(TokenType.Identifier, word, SpanFrom(start));
     }
 
+    // ---- Numbers ------------------------------------------------------------------------
+
     /// <summary>
-    /// <para>Scans a contiguous digit sequence.</para>
-    /// <para>If followed by a dot and more digits, produces a REAL_LITERAL.</para>
-    /// <para>If followed by a pipe and more digits, produces a FRACTION_LITERAL.</para>
-    /// <para>Otherwise produces an INTEGER_LITERAL.</para>
+    /// <para>Scans an integer, a real, or a fraction literal.</para>
+    /// <para>A real is digits, a dot, then digits; a fraction is digits, a pipe, then
+    /// digits. Requiring digits on both sides is what keeps "3." scanning as an integer
+    /// followed by a dot, which is what member access needs.</para>
     /// </summary>
     private Token ScanNumber()
     {
@@ -352,10 +310,8 @@ public class Lexer
             _index++;
         }
 
-        // Check for a real literal: digits . digits.
-        if (!IsAtEnd() && Current() == '.' && char.IsDigit(Peek()))
+        if (Current() == '.' && char.IsDigit(Peek()))
         {
-            // Consume the dot.
             _index++;
 
             while (!IsAtEnd() && char.IsDigit(Current()))
@@ -363,14 +319,11 @@ public class Lexer
                 _index++;
             }
 
-            string real = _source.Substring(start, _index - start);
-            return new Token(real, TokenType.RealLiteral);
+            return MakeToken(TokenType.RealLiteral, start);
         }
 
-        // Check for a fraction literal: digits | digits.
-        if (!IsAtEnd() && Current() == '|' && char.IsDigit(Peek()))
+        if (Current() == '|' && char.IsDigit(Peek()))
         {
-            // Consume the pipe.
             _index++;
 
             while (!IsAtEnd() && char.IsDigit(Current()))
@@ -378,58 +331,239 @@ public class Lexer
                 _index++;
             }
 
-            string fraction = _source.Substring(start, _index - start);
-            return new Token(fraction, TokenType.FractionLiteral);
+            return MakeToken(TokenType.FractionLiteral, start);
         }
 
-        string integer = _source.Substring(start, _index - start);
-        return new Token(integer, TokenType.IntegerLiteral);
+        return MakeToken(TokenType.IntegerLiteral, start);
+    }
+
+    // ---- Literals with escapes ----------------------------------------------------------
+
+    /// <summary>
+    /// <para>Scans a character literal such as 'x' or '\n'.</para>
+    /// <para>On any error a token is still produced, so that the parser sees the shape of
+    /// the program even when a literal is wrong.</para>
+    /// </summary>
+    private Token ScanCharacterLiteral()
+    {
+        int start = _index;
+        _index++;
+
+        int contentCount = 0;
+
+        while (!IsAtEnd() && Current() != '\'' && Current() != '\n')
+        {
+            if (Current() == '\\')
+            {
+                ScanEscape();
+            }
+            else
+            {
+                _index++;
+            }
+
+            contentCount++;
+        }
+
+        if (IsAtEnd() || Current() != '\'')
+        {
+            _diagnostics.Report(DiagnosticDescriptors.UnterminatedCharacter, SpanFrom(start));
+            return MakeToken(TokenType.CharLiteral, start);
+        }
+
+        _index++;
+
+        if (contentCount != 1)
+        {
+            _diagnostics.Report(DiagnosticDescriptors.MalformedCharacterLiteral, SpanFrom(start));
+        }
+
+        return MakeToken(TokenType.CharLiteral, start);
     }
 
     /// <summary>
-    /// <para>Scans a single or multi-character symbol.</para>
-    /// <para>Applies longest-match-first for operators like == != &lt;= &gt;=</para>
-    /// <para>Throws a FormatException on unrecognized characters.</para>
+    /// <para>Scans a string literal.</para>
+    /// <para>A literal may not span a line break. Letting it do so means one missing closing
+    /// quote swallows the rest of the file, turning a single real error into a cascade of
+    /// invented ones.</para>
     /// </summary>
-    private Token ScanSymbol()
+    private Token ScanStringLiteral()
     {
+        int start = _index;
+        _index++;
+
+        while (!IsAtEnd() && Current() != '"' && Current() != '\n')
+        {
+            if (Current() == '\\')
+            {
+                ScanEscape();
+            }
+            else
+            {
+                _index++;
+            }
+        }
+
+        if (IsAtEnd() || Current() != '"')
+        {
+            // Report at the opening quote, which is where the missing one belongs.
+            _diagnostics.Report(DiagnosticDescriptors.UnterminatedString, SpanOf(start, 1));
+            return MakeToken(TokenType.StringLiteral, start);
+        }
+
+        _index++;
+        return MakeToken(TokenType.StringLiteral, start);
+    }
+
+    /// <summary>
+    /// <para>Consumes one escape sequence, reporting if it is not recognized.</para>
+    /// <para>Validation happens here; turning the sequence into a character is the parser's
+    /// job, since a token's lexeme is always the exact source text.</para>
+    /// </summary>
+    private void ScanEscape()
+    {
+        int start = _index;
+        _index++;
+
+        if (IsAtEnd() || Current() == '\n')
+        {
+            _diagnostics.Report(DiagnosticDescriptors.UnrecognizedEscape, SpanOf(start, 1), "");
+            return;
+        }
+
         char c = Current();
-        char next = Peek();
-
-        // Two-character operators; checked before single-character fallbacks.
-        if (c == '=' && next == '=') { _index += 2; return new Token("==", TokenType.EqualEqual); }
-        if (c == '!' && next == '=') { _index += 2; return new Token("!=", TokenType.NotEqual); }
-        if (c == '<' && next == '=') { _index += 2; return new Token("<=", TokenType.LessThanOrEqual); }
-        if (c == '>' && next == '=') { _index += 2; return new Token(">=", TokenType.GreaterThanOrEqual); }
-
-        // Single-character symbols.
         _index++;
 
         switch (c)
         {
-            case '+': return new Token("+", TokenType.Plus);
-            case '-': return new Token("-", TokenType.Minus);
-            case '*': return new Token("*", TokenType.Star);
-            case '/': return new Token("/", TokenType.Slash);
-            case '%': return new Token("%", TokenType.Percent);
-            case '|': return new Token("|", TokenType.Pipe);
-            case '<': return new Token("<", TokenType.LessThan);
-            case '>': return new Token(">", TokenType.GreaterThan);
-            case '=': return new Token("=", TokenType.Equal);
-            case '(': return new Token("(", TokenType.LeftParen);
-            case ')': return new Token(")", TokenType.RightParen);
-            case '{': return new Token("{", TokenType.LeftBrace);
-            case '}': return new Token("}", TokenType.RightBrace);
-            case '[': return new Token("[", TokenType.LeftBracket);
-            case ']': return new Token("]", TokenType.RightBracket);
-            case ',': return new Token(",", TokenType.Comma);
-            case ';': return new Token(";", TokenType.Semicolon);
-            case '.': return new Token(".", TokenType.Dot);
+            case 'n':
+            case 't':
+            case 'r':
+            case '0':
+            case '\\':
+            case '"':
+            case '\'':
+                return;
+
+            case 'u':
+                ScanUnicodeEscape(start);
+                return;
 
             default:
-                throw new FormatException(
-                    $"Syntax error: unrecognized character '{c}' at position {_index - 1}."
-                );
+                _diagnostics.Report(
+                    DiagnosticDescriptors.UnrecognizedEscape,
+                    SpanOf(start, 2),
+                    c);
+                return;
         }
     }
+
+    /// <summary>Consumes the four hexadecimal digits of a Unicode escape.</summary>
+    private void ScanUnicodeEscape(int start)
+    {
+        int digits = 0;
+
+        while (digits < 4 && !IsAtEnd() && Uri.IsHexDigit(Current()))
+        {
+            _index++;
+            digits++;
+        }
+
+        if (digits != 4)
+        {
+            _diagnostics.Report(DiagnosticDescriptors.MalformedUnicodeEscape, SpanFrom(start));
+        }
+    }
+
+    // ---- Symbols ------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Scans an operator or punctuation mark, longest match first.</para>
+    /// <para>Sequences that are operators in C# but not here are reported with the Profi-C
+    /// spelling rather than being silently scanned as two tokens.</para>
+    /// </summary>
+    private Token? ScanSymbol()
+    {
+        int start = _index;
+
+        foreach ((string op, string advice) in NonOperators)
+        {
+            if (MatchesAt(start, op))
+            {
+                _index += op.Length;
+                _diagnostics.Report(
+                    DiagnosticDescriptors.NotAnOperator,
+                    SpanOf(start, op.Length),
+                    op,
+                    advice);
+                return null;
+            }
+        }
+
+        char c = Current();
+        char next = Peek();
+
+        // Two-character operators, checked before the single-character forms.
+        if (c == '=' && next == '=') { _index += 2; return MakeToken(TokenType.EqualEqual, start); }
+        if (c == '=' && next == '>') { _index += 2; return MakeToken(TokenType.Arrow, start); }
+        if (c == '!' && next == '=') { _index += 2; return MakeToken(TokenType.NotEqual, start); }
+        if (c == '<' && next == '=') { _index += 2; return MakeToken(TokenType.LessThanOrEqual, start); }
+        if (c == '>' && next == '=') { _index += 2; return MakeToken(TokenType.GreaterThanOrEqual, start); }
+
+        _index++;
+
+        TokenType? type = c switch
+        {
+            '+' => TokenType.Plus,
+            '-' => TokenType.Minus,
+            '*' => TokenType.Star,
+            '/' => TokenType.Slash,
+            '%' => TokenType.Percent,
+            '|' => TokenType.Pipe,
+            '?' => TokenType.Question,
+            ':' => TokenType.Colon,
+            '<' => TokenType.LessThan,
+            '>' => TokenType.GreaterThan,
+            '=' => TokenType.Equal,
+            '(' => TokenType.LeftParen,
+            ')' => TokenType.RightParen,
+            '{' => TokenType.LeftBrace,
+            '}' => TokenType.RightBrace,
+            '[' => TokenType.LeftBracket,
+            ']' => TokenType.RightBracket,
+            ',' => TokenType.Comma,
+            ';' => TokenType.Semicolon,
+            '.' => TokenType.Dot,
+            _ => null,
+        };
+
+        if (type is null)
+        {
+            // "!" on its own only reaches here when it is not part of "!=".
+            if (c == '!')
+            {
+                _diagnostics.Report(
+                    DiagnosticDescriptors.NotAnOperator,
+                    SpanOf(start, 1),
+                    "!",
+                    "Use 'not'.");
+            }
+            else
+            {
+                _diagnostics.Report(
+                    DiagnosticDescriptors.UnrecognizedCharacter,
+                    SpanOf(start, 1),
+                    c);
+            }
+
+            return null;
+        }
+
+        return MakeToken(type.Value, start);
+    }
+
+    /// <summary>True if the given text sits at the given position.</summary>
+    private bool MatchesAt(int position, string value) =>
+        position + value.Length <= _text.Length
+        && string.CompareOrdinal(_text, position, value, 0, value.Length) == 0;
 }

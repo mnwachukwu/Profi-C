@@ -1,0 +1,74 @@
+comment Every operator and punctuation mark, with each two-character form written
+comment beside the one-character form it could be confused with.
+
+global model Operators
+
+    function Arithmetic(integer a, integer b)
+        let sum = a + b;
+        let difference = a - b;
+        let product = a * b;
+        let quotient = a / b;
+        let remainder = a % b;
+        let negated = -a;
+    end function
+
+    function Comparison(integer a, integer b)
+        comment Each pair puts the longer operator next to its shorter form, which is
+        comment where a mistake in longest-match scanning would show up first.
+        let lessOrEqual = a <= b;
+        let less = a < b;
+
+        let greaterOrEqual = a >= b;
+        let greater = a > b;
+
+        let equal = a == b;
+        let notEqual = a != b;
+    end function
+
+    function Assignment(integer a)
+        integer target;
+        target = a;
+    end function
+
+    function Logical(boolean p, boolean q)
+        let both = p and q;
+        let either = p or q;
+        let negation = not p;
+    end function
+
+    function TypeOperators(Model value)
+        let isString = value is string;
+        let asString = value as string;
+    end function
+
+    function Punctuation(integer[] items, string text)
+        comment Parentheses, brackets, braces, comma, semicolon, and dot.
+        integer[] literal = {1, 2, 3};
+        let indexed = items[0];
+        let called = Operators.Arithmetic(1, 2);
+        let member = text.Count();
+    end function
+
+    function OptionalAndLambda()
+        comment The question mark is a type suffix; the arrow introduces a lambda.
+        integer? maybe;
+        integer function(integer, integer) add = (integer a, integer b) => a + b;
+        let recovered = maybe.Or(0);
+    end function
+
+    function CaseLabels(integer code)
+        comment The colon appears only at the end of a case label.
+        switch code
+            case 1:
+                Console.WriteLine("one");
+            default:
+                Console.WriteLine("other");
+        end switch
+    end function
+
+    function Fractions()
+        comment The pipe separates a fraction's numerator and denominator.
+        constant fraction ratio = 3|4;
+    end function
+
+end model

@@ -53,7 +53,7 @@ Members are private by default, so `public` and `protected` opt out and `private
 
 | Model | Role |
 |---|---|
-| `Model` | implicit root; every model extends it |
+| `Model` | the root of **every** type, values included; extended implicitly |
 | `Program` | `global model`; the entry point container |
 | `Console` | `global model`; holds `Write` and `Read` |
 | `Reference` | `global model`; holds `Equals` for reference identity |
@@ -66,6 +66,14 @@ Members are private by default, so `public` and `protected` opt out and `private
 | `ArgumentException` | thrown when an argument is invalid |
 
 Users may extend `Exception` and its subtypes. `Model` **is** extendable and is extended implicitly by everything, exactly as `object` is in C#; what cannot be done is redeclaring the name. `Console` and `Reference` are `global model`s, so neither can be extended or instantiated.
+
+**`Model` roots the value types too.** Structures and enumerations inherit its members, which is where their `ToString()` and `Equals()` come from, exactly as a C# struct inherits from `object`. What they cannot do — **permanently, not merely for now** — is be *assigned* to a `Model` variable. That conversion is boxing, and Profi-C does not have it.
+
+Inheriting members without being convertible is not a Profi-C peculiarity: a C# `ref struct` such as `Span<T>` sits in the `object` hierarchy and has `ToString()`, yet assigning one to `object` is a compile error. Unboxable value types are a shape the runtime is built around rather than a fringe case.
+
+The guarantees this buys are therefore permanent properties of the language: no allocation hiding behind an ordinary-looking assignment, no two copies of one value comparing unequal by reference, and `Reference.Equals` on a structure rejected while compiling rather than answering false at runtime.
+
+Generics do not change this. .NET generics are reified, so `Set<Point>` stores its elements inline with no boxing and no common root required — unlike Java, which erases to `Object` and therefore must box. Nor does .NET interop: a curated wrapper may box internally when calling a BCL method that takes `object`, but that is an implementation detail of the call, invisible from Profi-C, and never a conversion the language admits.
 
 ---
 
@@ -85,15 +93,39 @@ explicit form is legal and redundant.
 
 | Call | Notes |
 |---|---|
-| `Console.Write()` | blank line |
-| `Console.Write(string)` | prints the string |
+| `Console.Write(value)` | prints any value, leaving the cursor on the same line |
+| `Console.WriteLine(value)` | prints any value, then ends the line |
+| `Console.WriteLine()` | a blank line |
 | `Console.Write(string, string[])` | formats with `{0}`, `{1}`, `{2}` |
 | `Console.Read(...)` | input |
 | `Reference.Equals(Model, Model)` | reference identity |
 
-### 3.3 Members on `Model`
+`Write` and `WriteLine` behave exactly as in C#: only the second ends the line.
 
-`ToString()` and `Equals()`, both `virtual`.
+Neither is an overload set. Both accept a value of **any** type and the compiler selects how
+to render it from the static type, the same way the optional members in section 3.4 are
+compiler-known rather than generic. This is why printing an enumeration or a structure needs
+no ceremony even though neither is a `Model`.
+
+### 3.3 `ToString()`
+
+Inherited from `Model` by **every** type, values included, so there is one place it comes
+from. It is `virtual`, and structures may override it as freely as models do. Calling it on a
+value type does not box: it compiles to a direct call, the same way `5.ToString()` does in C#.
+
+The defaults differ, and the difference is forced rather than chosen:
+
+| Type | Default |
+|---|---|
+| Structure | Field by field, as `Point { X = 1, Y = 2 }` |
+| Enumeration | The member name |
+| Model | The type name |
+
+A structure cannot contain itself, so walking its fields terminates. A model can take part in
+a cycle, and while deep `==` solves that with bisimulation, no equivalent trick exists for
+printing — so models print their type name and an author who wants more overrides it.
+
+`Model` also defines `Equals()`, likewise `virtual`.
 
 ### 3.4 Built-in type members
 
@@ -187,11 +219,15 @@ The second pair is more confusable than the first, since both live near the idea
 
 Null and .NET coexist because **null is translated at the boundary and never enters Profi-C's type system.** Every .NET reference-typed return maps to `T?` unless documented non-null; an empty optional is what a Profi-C program sees. This makes the v1 curated wrappers do exactly what an automatic binder would do later, so no signature churn when one arrives.
 
-**Models are references, structures are values.** Both are user-definable in v1. Structures cannot inherit, cannot contain themselves, and compare field by field.
+**Models are references, structures are values.** Both are user-definable in v1. Structures cannot inherit from another type, cannot contain themselves, and compare field by field.
+
+They do inherit `Model`'s members, which is where `ToString()` and `Equals()` come from, but they can never be **assigned** to a `Model` variable — that conversion is boxing, which Profi-C does not have and does not plan to add. So `Reference.Equals` on a structure stays a compile error rather than a runtime puzzle, and no assignment allocates behind your back. C# is looser here: assigning a struct to `object` compiles and quietly allocates.
 
 **Sets and strings are reference types**, like models. `string` is immutable and is `System.String` outright; sets are mutable and are `List<T>`. Assignment aliases rather than copying, as in C#.
 
 **`string` and `character[]` convert implicitly, in both directions.** Each conversion copies, since one is immutable and the other is not. C# requires `ToCharArray()` and `new string(...)`.
+
+**`+` concatenates when either side is a string**, converting the other side implicitly through its `ToString()`. `"score: " + 42` is a string, in either order. As in C#, and deliberately without requiring an explicit call.
 
 **`==` on models and sets is deep by default**, comparing fields and elements recursively with cycle-safe bisimulation. C# gives reference equality unless you override. `Reference.Equals(a, b)` is the C# default behavior, spelled explicitly.
 
@@ -216,7 +252,7 @@ Null and .NET coexist because **null is translated at the boundary and never ent
 | Stage | Contents | Lift |
 |---|---|---|
 | v2 | generics, interfaces, properties | large; the keystone |
-| v3 | `out`/`ref`, indexers, `params`, operator overloading, extension methods, boxing | medium, and freely splittable |
+| v3 | `out`/`ref`, indexers, `params`, operator overloading, extension methods | medium, and freely splittable |
 | v4 | `async`/`await`/`Task` | very large on its own |
 | v5 | attributes, CLR array type, variance, assembly references, the import mechanism | larger than the v1 compiler |
 

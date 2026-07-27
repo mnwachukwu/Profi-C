@@ -1,0 +1,266 @@
+(* ==========================================================================
+   The Profi-C grammar.
+
+   Metasyntax: braces mean zero or more, square brackets mean optional,
+   parentheses group, a vertical bar separates alternatives, and quoted
+   items are terminals.
+
+   Two notes for a reader comparing this against the language documentation:
+
+     - "Model" is not a keyword. It is a reserved type name, spelled in
+       PascalCase like every other built-in, and it scans as an identifier.
+       Enforcement that it cannot be redeclared belongs to name resolution,
+       alongside Exception, Console, and Reference.
+
+     - A construct body has no opener. Only "begin" opens a block, and a
+       block is always an anonymous scope rather than any construct's body.
+       See the note on statement boundaries at the foot of this file.
+   ========================================================================== *)
+
+
+(* ---- Compilation unit -------------------------------------------------- *)
+
+CompilationUnit = { UsingDirective }
+                  ( FileScopedNamespace
+                  | { NamespaceDecl | ModelDecl | StructureDecl } ) EOF ;
+
+UsingDirective      = "using" QualifiedName ";" ;
+
+FileScopedNamespace = "namespace" QualifiedName ";"
+                      { NamespaceDecl | ModelDecl | StructureDecl } ;
+
+NamespaceDecl       = "namespace" QualifiedName
+                      { NamespaceDecl | ModelDecl | StructureDecl | EnumerationDecl }
+                      "end" "namespace" ;
+
+QualifiedName       = Identifier { "." Identifier } ;
+
+
+(* ---- Type declarations -------------------------------------------------- *)
+
+ModelDecl      = TypeModifiers "model" Identifier [ "extends" Identifier ]
+                 { ModelMember } "end" "model" ;
+
+StructureDecl  = [ Visibility ] "structure" Identifier
+                 { ModelMember } "end" "structure" ;
+
+EnumerationDecl = [ Visibility ] "enumeration" Identifier
+                  EnumMember { "," EnumMember } [ "," ]
+                  "end" "enumeration" ;
+
+EnumMember     = Identifier [ "=" IntegerLiteral ] ;
+
+ModelMember    = FieldDecl | FunctionDecl | ModelDecl | StructureDecl
+               | EnumerationDecl ;
+
+
+(* ---- Modifiers ---------------------------------------------------------- *)
+
+Visibility     = "public" | "protected" ;
+Modifiers      = [ Visibility ] [ "global" ] [ "virtual" | "override" ] ;
+TypeModifiers  = [ Visibility ] [ "global" ] [ "sealed" | "abstract" ] ;
+
+
+(* ---- Members ------------------------------------------------------------ *)
+
+FieldDecl      = [ Visibility ] [ "global" ] [ "constant" ]
+                 Type Identifier [ "=" Expr ] ";" ;
+
+FunctionDecl   = Modifiers [ Type ] "function" Identifier
+                 "(" [ ParamList ] ")" Body "end" "function" ;
+
+ParamList      = Param { "," Param } ;
+Param          = Type Identifier ;
+
+
+(* ---- Blocks and statements ---------------------------------------------- *)
+
+Block          = "begin" { BlockItem } "end" ;   (* an anonymous scope; a Statement *)
+Body           = { BlockItem } ;                 (* a construct body; no opener *)
+
+BlockItem      = VarDecl | FunctionDecl | ModelDecl | StructureDecl | Statement ;
+
+VarDecl        = "let" Identifier "=" Expr ";"
+               | [ "constant" ] Type Identifier [ "=" Expr ] ";" ;
+
+Statement      = Block | IfStmt | WhileStmt | ForStmt | ForEachStmt
+               | SwitchStmt | TryStmt | ThrowStmt | YieldStmt
+               | "break" ";" | "continue" ";" | ExprStmt ;
+
+IfStmt         = "if" Expr Body { "else" "if" Expr Body } [ "else" Body ]
+                 "end" "if" ;
+
+WhileStmt      = "while" Expr Body "end" "while" ;
+
+ForStmt        = "for" Type Identifier "=" Expr ( "to" | "until" ) Expr
+                 [ "step" Expr ] Body "end" "for" ;
+
+ForEachStmt    = "for" "each" Identifier "in" Expr Body "end" "for" ;
+
+SwitchStmt     = "switch" Expr { CaseGroup } [ DefaultClause ] "end" "switch" ;
+CaseGroup      = CaseLabel { CaseLabel } { Statement } ;
+CaseLabel      = "case" ConstantExpr ":" ;
+DefaultClause  = "default" ":" { Statement } ;
+
+TryStmt        = "try" Body { CatchClause } [ "finally" Body ] "end" "try" ;
+CatchClause    = "catch" Type Identifier Body ;
+
+ThrowStmt      = "throw" Expr ";" ;
+YieldStmt      = "yield" [ Expr ] ";" ;
+
+(* An expression statement may not begin with "(" or "-". See the note on
+   statement boundaries at the foot of this file. *)
+ExprStmt       = Expr [ "=" Expr ] ";" ;
+
+
+(* ---- Types -------------------------------------------------------------- *)
+
+Type           = ( BaseType | FunctionType ) { TypeSuffix } ;
+TypeSuffix     = "[" "]" | "?" ;
+
+BaseType       = "integer" | "real" | "character" | "boolean" | "string"
+               | "fraction" | Identifier ;
+
+FunctionType   = [ Type ] "function" "(" [ TypeList ] ")" ;
+TypeList       = Type { "," Type } ;
+
+
+(* ---- Expressions -------------------------------------------------------- *)
+
+ArgList        = Expr { "," Expr } ;
+
+Primary        = IntegerLiteral | RealLiteral | CharLiteral | StringLiteral
+               | FractionLiteral | "true" | "false"
+               | Identifier | "this" | "base" | "outer"
+               | "(" Expr ")"
+               | CollectionLit
+               | NewExpr
+               | Lambda
+               | IfExpr ;
+
+Lambda         = "function" "(" [ ParamList ] ")" Body "end" "function"
+               | "(" [ ParamList ] ")" "=>" Expr ;
+
+IfExpr         = "if" Expr "then" Expr "else" Expr ;
+TypeTest       = Expr "is" Type ;      (* yields boolean *)
+TypeCast       = Expr "as" Type ;      (* yields Type? *)
+
+CollectionLit  = "{" [ Expr { "," Expr } ] "}" ;
+NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
+
+
+(* ==========================================================================
+   Operator precedence
+
+   Expressions are parsed by precedence climbing rather than by a ladder of
+   nonterminals, so the table below is normative and the Expr production is
+   deliberately not expanded above. Adding an operator is adding a row.
+
+     Level  Operator                       Position   Associativity
+     -----  -----------------------------  ---------  -------------
+       1    or                             infix      left
+       2    and                            infix      left
+       3    not                            prefix     right
+       4    ==  !=                         infix      left
+       5    <  >  <=  >=  is  as           infix      left
+       6    +  -                           infix      left
+       7    *  /  %                        infix      left
+       8    -                              prefix     right
+       9    (  call   [  index   .  member postfix     left
+
+   "not" sits looser than comparison, as in Python, so "not a == b" groups
+   as "not (a == b)". The C-style alternative would group "(not a) == b",
+   which is almost always a mistake.
+
+   "is" and "as" take a type name rather than an expression on the right,
+   which the expression parser special-cases. They sit at relational
+   precedence, matching C#, so they bind tighter than equality.
+   ========================================================================== *)
+
+
+(* ==========================================================================
+   Notes on parsing
+
+   Type suffixes nest and read left to right. "Node?[]" is a set of
+   optionals; "Node[]?" is an optional set. Both are legal and they differ.
+
+   ForStmt and ForEachStmt are told apart by the "each" that follows "for".
+   Both close with "end" "for".
+
+   A qualified "end" is verified. The parser records which construct opened
+   and rejects a mismatched closer with a diagnostic naming both.
+
+   Conditions take no parentheses.
+
+   Assignment lives in ExprStmt. Parse a full expression, check for "=",
+   then validate that the left side is an identifier, an index, or a member
+   access. This is why assignment is a statement and not an expression, so
+   "if x = 5" cannot be written at all.
+
+   There is no dangling-else problem. "else if" belongs to the IfStmt
+   production rather than being a nested IfStmt, and a whole chain closes
+   with one "end" "if".
+
+   DEFERRED TO THE PARSER, the decrement diagnostic. "--" is scanned as two
+   minus signs, because unary minus exists and "x--1" is a valid subtraction
+   of negative one that must keep working however it is spaced. The parser
+   should recognize the shape "operand -- <token that cannot begin an
+   operand>", as in "i--;", and report that Profi-C has no decrement
+   operator. "++" needs no such handling and is rejected while scanning,
+   since there is no unary plus for the second sign to belong to.
+
+   STATEMENT BOUNDARIES. Because a body has no opener, a condition ends at
+   the first token that cannot continue an expression. Read literally that
+   rule is not quite sufficient, and the exception is worth understanding
+   before reading the restriction on ExprStmt above.
+
+   An expression is followed directly by a body in exactly four places:
+   IfStmt, WhileStmt, ForStmt, and ForEachStmt. Everywhere else a keyword
+   or a ";" already separates the two, so no ambiguity can arise. At those
+   four sites, almost every token that can begin a statement terminates the
+   preceding expression correctly on its own, because identifiers, "this",
+   "base", "outer", every literal, "{", "new", "not", and every keyword
+   have no infix binding power.
+
+   Two tokens do not. "(" is the call operator at level 9 and "-" is infix
+   at level 6, so both continue an expression rather than starting a new
+   statement. Without a rule, this
+
+       if c
+           (x as Dog).Value();
+       end if
+
+   parses its condition as "c(x as Dog)" and swallows the body's first
+   statement.
+
+   THE RULE: an expression statement may not begin with "(" or "-".
+
+   This restricts less than it appears. It applies only to a bare
+   expression statement, so an in-place cast remains legal everywhere else,
+   including as the right side of an assignment, as an argument, after
+   "yield", and inside a condition:
+
+       let d = (x as Dog).Value();      (* legal *)
+       Register((x as Dog).Value());    (* legal *)
+       if (x as Dog).Value().IsReady()  (* legal, a condition *)
+       (x as Dog).Bark();               (* NOT legal, a bare statement *)
+
+   The last is written by naming the value first:
+
+       let d = x as Dog;
+       d.Value().Bark();
+
+   which is exactly equivalent, including the exception it throws, because
+   the compiler tracks that the optional came from a cast. A statement
+   beginning with "-" computes a value and discards it, so nothing useful
+   is lost there either.
+
+   The parser should reject both with a diagnostic in the syntax range that
+   names the rewrite rather than merely reporting an unexpected token.
+
+   Alternatives considered and rejected: requiring parentheses around
+   conditions does not fix ForStmt or ForEachStmt unless the loop bounds
+   are parenthesised too; making line breaks significant contradicts the
+   language being layout-insensitive; and reinstating a body opener
+   reverses the block structure the language is built around.
+   ========================================================================== *)

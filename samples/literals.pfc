@@ -1,0 +1,61 @@
+comment Every literal form Profi-C can write.
+
+global model Literals
+
+    comment ---- Integers ----------------------------------------------------------------
+
+    constant integer Zero = 0;
+    constant integer Small = 7;
+    constant integer Padded = 007;
+    constant integer Large = 2147483647;
+
+    comment ---- Reals, which need digits on both sides of the point --------------------
+
+    constant real Half = 0.5;
+    constant real Pi = 3.14159;
+    constant real Whole = 1.0;
+
+    comment ---- Fractions, which are exact rationals ---------------------------------
+
+    constant fraction Third = 1|3;
+    constant fraction Sixth = 1|6;
+    constant fraction Approximation = 22|7;
+
+    comment ---- Characters, including every escape ----------------------------------
+
+    constant character Letter = 'A';
+    constant character Digit = '7';
+    constant character Space = ' ';
+    constant character Newline = '\n';
+    constant character Tab = '\t';
+    constant character Return = '\r';
+    constant character Nul = '\0';
+    constant character Backslash = '\\';
+    constant character Quote = '\'';
+    constant character DoubleQuote = '\"';
+    constant character Unicode = 'é';
+
+    comment ---- Strings ------------------------------------------------------------------
+
+    constant string Empty = "";
+    constant string Word = "Profi-C";
+    constant string Spaced = "with several spaces";
+    constant string Punctuated = "commas, semicolons; braces {} and brackets []";
+    constant string Escaped = "a newline \n a tab \t a backslash \\ a quote \"";
+    constant string Accented = "café";
+
+    comment ---- Booleans ---------------------------------------------------------------
+
+    constant boolean Yes = true;
+    constant boolean No = false;
+
+    comment ---- Sets, whose literals use braces ------------------------------------
+
+    function Sets()
+        integer[] numbers = {1, 2, 3};
+        string[] words = {"one", "two"};
+        integer[] empty = {};
+        integer[][] nested = {{1, 2}, {3}};
+    end function
+
+end model
