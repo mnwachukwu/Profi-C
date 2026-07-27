@@ -30,6 +30,7 @@ internal static class Program
             "tokens" => RunTokens(args),
             "ast" => RunAst(args),
             "check" => RunCheck(args),
+            "lower" => RunLower(args),
             _ => UnknownCommand(args[0]),
         };
     }
@@ -41,7 +42,8 @@ internal static class Program
         Console.WriteLine("Usage:");
         Console.WriteLine("  profic tokens <file>    Scan a .pfc file and print its token stream");
         Console.WriteLine("  profic ast <file>       Parse a .pfc file and print its syntax tree");
-        Console.WriteLine("  profic check <file>     Parse and resolve a .pfc file, reporting problems");
+        Console.WriteLine("  profic check <file>     Check a .pfc file and report any problems");
+        Console.WriteLine("  profic lower <file>     Print the simplified tree the back end sees");
         Console.WriteLine("  profic --version        Print the compiler version");
         Console.WriteLine("  profic --help           Print this message");
     }
@@ -167,5 +169,45 @@ internal static class Program
         }
 
         return diagnostics.HasErrors ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Checks a file and prints the simplified tree that the interpreter and the emitter
+    /// actually work from, with conversions made explicit and iteration rewritten.
+    /// </summary>
+    private static int RunLower(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("profic: 'lower' requires a file path.");
+            return 1;
+        }
+
+        string path = args[1];
+
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"profic: file not found: {path}");
+            return 1;
+        }
+
+        SourceText source = SourceText.FromFile(path);
+        DiagnosticBag diagnostics = new();
+
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+        SemanticModel model = Resolver.Resolve(unit, diagnostics);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+        if (diagnostics.HasErrors)
+        {
+            DiagnosticRenderer.WriteAll(source, diagnostics);
+            return 1;
+        }
+
+        CompilationUnit lowered = Lowering.Lower(unit, model);
+        Console.Out.Write(AstPrinter.Print(lowered));
+
+        return 0;
     }
 }

@@ -92,6 +92,10 @@ public abstract class SyntaxVisitor
 
     public virtual void VisitMissingExpr(MissingExpr node) => DefaultVisit(node);
     public virtual void VisitMissingType(MissingType node) => DefaultVisit(node);
+
+    // ---- Introduced while lowering ------------------------------------------------------
+
+    public virtual void VisitConversionExpr(ConversionExpr node) => DefaultVisit(node);
 }
 
 /// <summary>
@@ -176,4 +180,8 @@ public abstract class SyntaxVisitor<TResult>
 
     public virtual TResult VisitMissingExpr(MissingExpr node) => DefaultVisit(node);
     public virtual TResult VisitMissingType(MissingType node) => DefaultVisit(node);
+
+    // ---- Introduced while lowering ------------------------------------------------------
+
+    public virtual TResult VisitConversionExpr(ConversionExpr node) => DefaultVisit(node);
 }

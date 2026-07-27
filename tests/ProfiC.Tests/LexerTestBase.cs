@@ -80,6 +80,9 @@ public abstract class LexerTestBase
         }
     }
 
+    /// <summary>The repository root, for fixtures that do not derive from this class.</summary>
+    public static string RepositoryRootForTests => RepositoryRoot;
+
     /// <summary>Every .pfc file in the repository's samples directory.</summary>
     protected static IEnumerable<string> SampleFiles =>
         Directory.EnumerateFiles(Path.Combine(RepositoryRoot, "samples"), "*.pfc")

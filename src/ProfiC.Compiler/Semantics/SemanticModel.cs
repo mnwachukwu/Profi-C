@@ -12,6 +12,8 @@ public sealed class SemanticModel
 {
     private readonly Dictionary<SyntaxNode, Symbol> _symbols = [];
     private readonly Dictionary<SyntaxNode, TypeSymbol> _types = [];
+    private readonly Dictionary<SyntaxNode, (ConversionOperation Operation, TypeSymbol Target)>
+        _conversions = [];
 
     /// <summary>The global namespace, holding everything declared at the top level.</summary>
     public NamespaceSymbol GlobalNamespace { get; } = new(string.Empty, parent: null);
@@ -32,6 +34,23 @@ public sealed class SemanticModel
     /// <summary>The type a node denotes, or null if none was recorded.</summary>
     public TypeSymbol? GetType(SyntaxNode node) =>
         _types.TryGetValue(node, out TypeSymbol? type) ? type : null;
+
+    /// <summary>
+    /// <para>Records that a value needs converting where it sits.</para>
+    /// <para>Written down by the type checker, because it is the only pass that knows both
+    /// what a value is and what is expected of it. Lowering then makes the conversion a real
+    /// node rather than working the question out a second time.</para>
+    /// </summary>
+    internal void RecordConversion(SyntaxNode node, ConversionOperation operation, TypeSymbol target) =>
+        _conversions[node] = (operation, target);
+
+    /// <summary>
+    /// The conversion a node needs and the type it produces, or null when it needs none. The
+    /// target is recorded rather than derived, since the node's own type is what it was
+    /// <em>before</em> converting.
+    /// </summary>
+    public (ConversionOperation Operation, TypeSymbol Target)? GetConversion(SyntaxNode node) =>
+        _conversions.TryGetValue(node, out (ConversionOperation, TypeSymbol) found) ? found : null;
 
     /// <summary>Every type declared anywhere, for tooling and for tests.</summary>
     public IEnumerable<TypeSymbol> AllTypes()

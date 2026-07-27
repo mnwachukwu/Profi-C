@@ -198,7 +198,10 @@ public sealed partial class TypeChecker
         switch (Conversions.Classify(from, to))
         {
             case ConversionKind.Identity:
+                return;
+
             case ConversionKind.Implicit:
+                RecordConversion(node, from, to);
                 return;
 
             case ConversionKind.Explicit:
@@ -222,6 +225,40 @@ public sealed partial class TypeChecker
 
                 Report(DiagnosticDescriptors.CannotConvert, node, from.WithArticle(), to.WithArticle());
                 return;
+        }
+    }
+
+    /// <summary>
+    /// Writes down what a conversion will have to do, so that lowering can make it a node and
+    /// the emitter can turn it into an instruction. Nothing is recorded when the value is
+    /// already what is wanted.
+    /// </summary>
+    private void RecordConversion(SyntaxNode node, TypeSymbol from, TypeSymbol to)
+    {
+        ConversionOperation? operation = (from, to) switch
+        {
+            _ when to is OptionalType optional && !Conversions.SameType(from, optional)
+                   && from is not OptionalType => ConversionOperation.WrapOptional,
+
+            _ when ReferenceEquals(from, PrimitiveType.Integer)
+                   && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.IntegerToReal,
+
+            _ when ReferenceEquals(from, PrimitiveType.Integer)
+                   && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.IntegerToFraction,
+
+            _ when ReferenceEquals(from, PrimitiveType.String)
+                   && to is SetType => ConversionOperation.StringToCharacters,
+
+            _ when from is SetType
+                   && ReferenceEquals(to, PrimitiveType.String) => ConversionOperation.CharactersToString,
+
+            // Reaching an ancestor changes nothing at run time, so it is not recorded.
+            _ => null,
+        };
+
+        if (operation is { } needed)
+        {
+            _model.RecordConversion(node, needed, to);
         }
     }
 
