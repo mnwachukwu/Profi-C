@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ProfiC.Cli</RootNamespace>
+    <AssemblyName>profic</AssemblyName>
+    <Description>The profic command line driver.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProfiC.Compiler\ProfiC.Compiler.csproj" />
+  </ItemGroup>
+
+</Project>

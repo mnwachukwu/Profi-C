@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>ProfiC.Compiler</RootNamespace>
+    <AssemblyName>ProfiC.Compiler</AssemblyName>
+    <Description>The Profi-C compiler front end: lexer, parser, semantic analysis, and CIL emitter.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ProfiC.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,46 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+*.dll
+*.exe
+*.pdb
+
+# Emitted Profi-C assemblies
+*.pfc.dll
+*.pfc.exe
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+coverage*.xml
+coverage*.json
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temp
+*.log
+*.tmp

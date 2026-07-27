@@ -1,0 +1,34 @@
+<Project>
+
+  <!--
+    Shared settings for every project in the repository.
+
+    Note on <Nullable>: this is the C# compiler's nullable-reference-type analysis,
+    applied to the compiler's own source. It has nothing to do with Profi-C, which
+    has no null at all; optionals with a "?" suffix replace it. See the language
+    specification, section on optionals.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: missing XML comment on a public member. We generate the doc file for
+         tooling, but do not require a comment on every member. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>Profi-C</Product>
+    <Authors>Matt Nwachukwu</Authors>
+    <Company>Profi-C</Company>
+    <Copyright>Copyright (c) Matt Nwachukwu</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <VersionPrefix>0.1.0</VersionPrefix>
+  </PropertyGroup>
+
+</Project>
