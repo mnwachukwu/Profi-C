@@ -1,5 +1,7 @@
+using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
+using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Text;
 
 namespace ProfiC.Cli;
@@ -25,6 +27,7 @@ internal static class Program
         {
             "--version" or "-v" => WriteVersion(),
             "tokens" => RunTokens(args),
+            "ast" => RunAst(args),
             _ => UnknownCommand(args[0]),
         };
     }
@@ -35,6 +38,7 @@ internal static class Program
         Console.WriteLine();
         Console.WriteLine("Usage:");
         Console.WriteLine("  profic tokens <file>    Scan a .pfc file and print its token stream");
+        Console.WriteLine("  profic ast <file>       Parse a .pfc file and print its syntax tree");
         Console.WriteLine("  profic --version        Print the compiler version");
         Console.WriteLine("  profic --help           Print this message");
     }
@@ -77,6 +81,42 @@ internal static class Program
         List<Token> tokens = new Lexer(source, diagnostics).Scan();
 
         Console.Out.Write(TokenPrinter.Print(tokens));
+
+        if (diagnostics.Count > 0)
+        {
+            DiagnosticRenderer.WriteAll(source, diagnostics);
+        }
+
+        return diagnostics.HasErrors ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Parses a file and prints its syntax tree. Like scanning, parsing recovers, so a file
+    /// with a mistake in it still produces a tree worth looking at.
+    /// </summary>
+    private static int RunAst(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("profic: 'ast' requires a file path.");
+            return 1;
+        }
+
+        string path = args[1];
+
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"profic: file not found: {path}");
+            return 1;
+        }
+
+        bool withPositions = args.Contains("--positions");
+
+        SourceText source = SourceText.FromFile(path);
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+
+        Console.Out.Write(AstPrinter.Print(unit, withPositions));
 
         if (diagnostics.Count > 0)
         {

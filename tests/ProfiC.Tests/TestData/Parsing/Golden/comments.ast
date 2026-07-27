@@ -1,0 +1,33 @@
+CompilationUnit
+  ModelDecl 'Comments' [global]
+    FieldDecl 'Answer' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 42 [Integer]
+    FunctionDecl 'Placement'
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      AssignmentStmt
+        IdentifierExpr 'total'
+        BinaryExpr '+'
+          IdentifierExpr 'total'
+          LiteralExpr 1 [Integer]
+      IfStmt
+        BinaryExpr '>'
+          IdentifierExpr 'total'
+          LiteralExpr 0 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'total'
+          BinaryExpr '-'
+            IdentifierExpr 'total'
+            LiteralExpr 1 [Integer]
+    FunctionDecl 'Boundaries'
+      VarDeclStmt 'commentary'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+      VarDeclStmt 'ending'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 2 [Integer]
+      VarDeclStmt 'beginning'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 3 [Integer]

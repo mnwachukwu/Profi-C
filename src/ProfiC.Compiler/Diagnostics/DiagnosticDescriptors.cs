@@ -67,4 +67,71 @@ public static class DiagnosticDescriptors
         "PFC0008",
         "Malformed Unicode escape sequence",
         "A Unicode escape must be '\\u' followed by four hexadecimal digits.");
+
+    // ---- Syntax, PFC0100 to PFC0199 -----------------------------------------------------
+
+    public static readonly DiagnosticDescriptor UnexpectedToken = Error(
+        "PFC0100",
+        "Unexpected token",
+        "Expected {0}, but found {1}.");
+
+    public static readonly DiagnosticDescriptor ExpectedExpression = Error(
+        "PFC0101",
+        "Expected an expression",
+        "Expected an expression, but found {0}.");
+
+    public static readonly DiagnosticDescriptor ExpectedType = Error(
+        "PFC0102",
+        "Expected a type",
+        "Expected a type, but found {0}.");
+
+    public static readonly DiagnosticDescriptor ExpectedIdentifier = Error(
+        "PFC0103",
+        "Expected a name",
+        "Expected a name, but found {0}.");
+
+    /// <summary>
+    /// The diagnostic qualified <c>end</c> exists to produce. Naming both the closer written
+    /// and the construct it fails to match is the whole point of requiring the qualifier.
+    /// </summary>
+    public static readonly DiagnosticDescriptor MismatchedEnd = Error(
+        "PFC0104",
+        "Mismatched block closer",
+        "Expected 'end {0}' to close the {0} beginning on line {1}, but found 'end {2}'.");
+
+    public static readonly DiagnosticDescriptor UnterminatedConstruct = Error(
+        "PFC0105",
+        "Unterminated construct",
+        "The {0} beginning on line {1} is never closed; expected 'end {0}'.");
+
+    /// <summary>
+    /// A construct's body has no opening token, so a condition ends at the first token that
+    /// cannot continue an expression. Both '(' and '-' can continue one, so a statement
+    /// starting with either would be swallowed by the condition before it.
+    /// </summary>
+    public static readonly DiagnosticDescriptor StatementCannotStartWith = Error(
+        "PFC0106",
+        "Statement cannot start here",
+        "A statement may not begin with '{0}'. Give the value a name first, "
+        + "as in 'let value = ...;', and then use it.");
+
+    public static readonly DiagnosticDescriptor ExpectedStatement = Error(
+        "PFC0107",
+        "Expected a statement",
+        "Expected a statement, but found {0}.");
+
+    public static readonly DiagnosticDescriptor ExpectedDeclaration = Error(
+        "PFC0108",
+        "Expected a declaration",
+        "Expected a declaration, but found {0}.");
+
+    public static readonly DiagnosticDescriptor AssignmentTargetNotAssignable = Error(
+        "PFC0109",
+        "Cannot assign to this expression",
+        "The left side of an assignment must be a name, an index, or a member access.");
+
+    public static readonly DiagnosticDescriptor TooManyErrors = Error(
+        "PFC0199",
+        "Too many errors",
+        "Too many errors; parsing stopped.");
 }

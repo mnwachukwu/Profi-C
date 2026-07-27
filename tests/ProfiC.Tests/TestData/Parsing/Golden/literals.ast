@@ -1,0 +1,117 @@
+CompilationUnit
+  ModelDecl 'Literals' [global]
+    FieldDecl 'Zero' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0 [Integer]
+    FieldDecl 'Small' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 7 [Integer]
+    FieldDecl 'Padded' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 007 [Integer]
+    FieldDecl 'Large' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 2147483647 [Integer]
+    FieldDecl 'Half' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 0.5 [Real]
+    FieldDecl 'Pi' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 3.14159 [Real]
+    FieldDecl 'Whole' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 1.0 [Real]
+    FieldDecl 'Third' [constant]
+      NamedTypeSyntax 'fraction'
+      LiteralExpr 1|3 [Fraction]
+    FieldDecl 'Sixth' [constant]
+      NamedTypeSyntax 'fraction'
+      LiteralExpr 1|6 [Fraction]
+    FieldDecl 'Approximation' [constant]
+      NamedTypeSyntax 'fraction'
+      LiteralExpr 22|7 [Fraction]
+    FieldDecl 'Letter' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr 'A' [Character]
+    FieldDecl 'Digit' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '7' [Character]
+    FieldDecl 'Space' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr ' ' [Character]
+    FieldDecl 'Newline' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\n' [Character]
+    FieldDecl 'Tab' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\t' [Character]
+    FieldDecl 'Return' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\r' [Character]
+    FieldDecl 'Nul' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\0' [Character]
+    FieldDecl 'Backslash' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\\' [Character]
+    FieldDecl 'Quote' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\'' [Character]
+    FieldDecl 'DoubleQuote' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr '\"' [Character]
+    FieldDecl 'Unicode' [constant]
+      NamedTypeSyntax 'character'
+      LiteralExpr 'é' [Character]
+    FieldDecl 'Empty' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "" [String]
+    FieldDecl 'Word' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "Profi-C" [String]
+    FieldDecl 'Spaced' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "with several spaces" [String]
+    FieldDecl 'Punctuated' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "commas, semicolons; braces {} and brackets []" [String]
+    FieldDecl 'Escaped' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "a newline \n a tab \t a backslash \\ a quote \"" [String]
+    FieldDecl 'Accented' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "café" [String]
+    FieldDecl 'Yes' [constant]
+      NamedTypeSyntax 'boolean'
+      LiteralExpr true [Boolean]
+    FieldDecl 'No' [constant]
+      NamedTypeSyntax 'boolean'
+      LiteralExpr false [Boolean]
+    FunctionDecl 'Sets'
+      VarDeclStmt 'numbers'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'words'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CollectionExpr
+          LiteralExpr "one" [String]
+          LiteralExpr "two" [String]
+      VarDeclStmt 'empty'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+      VarDeclStmt 'nested'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 2 [Integer]
+          CollectionExpr
+            LiteralExpr 3 [Integer]

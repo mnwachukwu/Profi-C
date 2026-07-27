@@ -1,0 +1,432 @@
+CompilationUnit
+  UsingDirective
+    QualifiedName 'Standard'
+  NamespaceDecl 'Tour'
+    QualifiedName 'Tour'
+    EnumerationDecl 'Color' [public]
+      EnumMemberDecl 'Red'
+      EnumMemberDecl 'Green'
+        LiteralExpr 10 [Integer]
+      EnumMemberDecl 'Blue'
+    StructureDecl 'Pair' [public]
+      FieldDecl 'Left' [public]
+        NamedTypeSyntax 'integer'
+      FieldDecl 'Right' [public]
+        NamedTypeSyntax 'integer'
+      FunctionDecl 'Pair' [public]
+        ParameterDecl 'left'
+          NamedTypeSyntax 'integer'
+        ParameterDecl 'right'
+          NamedTypeSyntax 'integer'
+        AssignmentStmt
+          MemberExpr 'Left'
+            ThisExpr
+          IdentifierExpr 'left'
+        AssignmentStmt
+          MemberExpr 'Right'
+            ThisExpr
+          IdentifierExpr 'right'
+    ModelDecl 'Shape' [public abstract]
+      FieldDecl 'name' [protected]
+        NamedTypeSyntax 'string'
+      FieldDecl 'sides'
+        NamedTypeSyntax 'integer'
+      FunctionDecl 'Shape' [public]
+        ParameterDecl 'label'
+          NamedTypeSyntax 'string'
+        AssignmentStmt
+          MemberExpr 'name'
+            ThisExpr
+          IdentifierExpr 'label'
+        AssignmentStmt
+          MemberExpr 'sides'
+            ThisExpr
+          LiteralExpr 0 [Integer]
+      FunctionDecl 'Describe' [public virtual]
+        NamedTypeSyntax 'string'
+        YieldStmt
+          MemberExpr 'name'
+            ThisExpr
+    ModelDecl 'Square' [public sealed] extends Shape
+      FieldDecl 'edge'
+        NamedTypeSyntax 'real'
+      FunctionDecl 'Square' [public]
+        ParameterDecl 'length'
+          NamedTypeSyntax 'real'
+        ExpressionStmt
+          CallExpr
+            BaseExpr
+            LiteralExpr "square" [String]
+        AssignmentStmt
+          MemberExpr 'edge'
+            ThisExpr
+          IdentifierExpr 'length'
+      FunctionDecl 'Describe' [public override]
+        NamedTypeSyntax 'string'
+        YieldStmt
+          CallExpr
+            MemberExpr 'Describe'
+              BaseExpr
+      ModelDecl 'Corner' [public]
+        FunctionDecl 'Owner' [public]
+          NamedTypeSyntax 'string'
+          YieldStmt
+            MemberExpr 'name'
+              OuterExpr
+    ModelDecl 'Tour' [global]
+      FieldDecl 'Limit' [constant]
+        NamedTypeSyntax 'integer'
+        LiteralExpr 10 [Integer]
+      FieldDecl 'Half' [constant]
+        NamedTypeSyntax 'real'
+        BinaryExpr '/'
+          LiteralExpr 1.0 [Real]
+          LiteralExpr 2.0 [Real]
+      FunctionDecl 'Statements'
+        ParameterDecl 'input'
+          NamedTypeSyntax 'integer'
+        ParameterDecl 'text'
+          NamedTypeSyntax 'string'
+        ParameterDecl 'shape'
+          NamedTypeSyntax 'Shape'
+        VarDeclStmt 'inferred' [inferred]
+          LiteralExpr 1 [Integer]
+        VarDeclStmt 'explicitly'
+          NamedTypeSyntax 'integer'
+          LiteralExpr 2 [Integer]
+        VarDeclStmt 'uninitialized'
+          NamedTypeSyntax 'integer'
+        VarDeclStmt 'Marker' [constant]
+          NamedTypeSyntax 'character'
+          LiteralExpr 'x' [Character]
+        VarDeclStmt 'numbers'
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 2 [Integer]
+            LiteralExpr 3 [Integer]
+        VarDeclStmt 'maybeShape'
+          OptionalTypeSyntax
+            NamedTypeSyntax 'Shape'
+        VarDeclStmt 'optionalShapes'
+          SetTypeSyntax
+            OptionalTypeSyntax
+              NamedTypeSyntax 'Shape'
+          CollectionExpr
+        VarDeclStmt 'maybeShapes'
+          OptionalTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'Shape'
+        VarDeclStmt 'comparator'
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+            NamedTypeSyntax 'integer'
+            NamedTypeSyntax 'integer'
+        VarDeclStmt 'maybeComparator'
+          OptionalTypeSyntax
+            FunctionTypeSyntax
+              NamedTypeSyntax 'integer'
+              NamedTypeSyntax 'integer'
+              NamedTypeSyntax 'integer'
+        VarDeclStmt 'handlers'
+          SetTypeSyntax
+            FunctionTypeSyntax
+              NamedTypeSyntax 'string'
+          CollectionExpr
+        BlockStmt
+          VarDeclStmt 'scratch'
+            NamedTypeSyntax 'integer'
+            LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'scratch'
+            BinaryExpr '+'
+              IdentifierExpr 'scratch'
+              LiteralExpr 1 [Integer]
+        IfStmt
+          BinaryExpr '>'
+            IdentifierExpr 'input'
+            MemberExpr 'Limit'
+              IdentifierExpr 'Tour'
+          AssignmentStmt
+            IdentifierExpr 'explicitly'
+            LiteralExpr 1 [Integer]
+          ElseIfClause
+            BinaryExpr '=='
+              IdentifierExpr 'input'
+              MemberExpr 'Limit'
+                IdentifierExpr 'Tour'
+            AssignmentStmt
+              IdentifierExpr 'explicitly'
+              LiteralExpr 2 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'explicitly'
+            LiteralExpr 3 [Integer]
+        VarDeclStmt 'label' [inferred]
+          IfExpr
+            BinaryExpr '>'
+              IdentifierExpr 'input'
+              LiteralExpr 0 [Integer]
+            LiteralExpr "positive" [String]
+            LiteralExpr "other" [String]
+        ForStmt 'i' to
+          NamedTypeSyntax 'integer'
+          LiteralExpr 1 [Integer]
+          LiteralExpr 10 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'explicitly'
+            BinaryExpr '+'
+              IdentifierExpr 'explicitly'
+              IdentifierExpr 'i'
+        ForStmt 'i' until
+          NamedTypeSyntax 'integer'
+          LiteralExpr 10 [Integer]
+          LiteralExpr 0 [Integer]
+          UnaryExpr '-'
+            LiteralExpr 1 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'explicitly'
+            BinaryExpr '-'
+              IdentifierExpr 'explicitly'
+              IdentifierExpr 'i'
+        ForEachStmt 'letter'
+          IdentifierExpr 'text'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "saw a letter" [String]
+        WhileStmt
+          BinaryExpr '>'
+            IdentifierExpr 'explicitly'
+            LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'explicitly'
+            BinaryExpr '-'
+              IdentifierExpr 'explicitly'
+              LiteralExpr 1 [Integer]
+          IfStmt
+            BinaryExpr '=='
+              IdentifierExpr 'explicitly'
+              LiteralExpr 5 [Integer]
+            ContinueStmt
+          IfStmt
+            BinaryExpr '=='
+              IdentifierExpr 'explicitly'
+              LiteralExpr 2 [Integer]
+            BreakStmt
+        SwitchStmt
+          IdentifierExpr 'input'
+          CaseGroup
+            LiteralExpr 1 [Integer]
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                LiteralExpr "one" [String]
+          CaseGroup
+            LiteralExpr 2 [Integer]
+            LiteralExpr 3 [Integer]
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                LiteralExpr "two or three" [String]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "something else" [String]
+        TryStmt
+          ThrowStmt
+            NewExpr 'ArgumentException'
+          CatchClause 'problem'
+            NamedTypeSyntax 'ArgumentException'
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                LiteralExpr "caught it" [String]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "always runs" [String]
+        VarDeclStmt 'isSquare' [inferred]
+          TypeTestExpr
+            IdentifierExpr 'shape'
+            NamedTypeSyntax 'Square'
+        VarDeclStmt 'asSquare' [inferred]
+          TypeCastExpr
+            IdentifierExpr 'shape'
+            NamedTypeSyntax 'Square'
+        IfStmt
+          CallExpr
+            MemberExpr 'HasValue'
+              IdentifierExpr 'maybeShape'
+          VarDeclStmt 'unwrapped' [inferred]
+            CallExpr
+              MemberExpr 'Value'
+                IdentifierExpr 'maybeShape'
+        VarDeclStmt 'fallback' [inferred]
+          CallExpr
+            MemberExpr 'Or'
+              IdentifierExpr 'maybeShape'
+            IdentifierExpr 'shape'
+        AssignmentStmt
+          IdentifierExpr 'comparator'
+          LambdaExpr block
+            ParameterDecl 'a'
+              NamedTypeSyntax 'integer'
+            ParameterDecl 'b'
+              NamedTypeSyntax 'integer'
+            YieldStmt
+              BinaryExpr '-'
+                IdentifierExpr 'a'
+                IdentifierExpr 'b'
+        AssignmentStmt
+          IdentifierExpr 'maybeComparator'
+          LambdaExpr arrow
+            ParameterDecl 'a'
+              NamedTypeSyntax 'integer'
+            ParameterDecl 'b'
+              NamedTypeSyntax 'integer'
+            BinaryExpr '-'
+              IdentifierExpr 'a'
+              IdentifierExpr 'b'
+        LocalDeclStmt
+          FunctionDecl 'Doubled'
+            NamedTypeSyntax 'integer'
+            YieldStmt
+              BinaryExpr '*'
+                IdentifierExpr 'explicitly'
+                LiteralExpr 2 [Integer]
+        VarDeclStmt 'square' [inferred]
+          NewExpr 'Square'
+            LiteralExpr 2.0 [Real]
+        VarDeclStmt 'pair' [inferred]
+          NewExpr 'Pair'
+            LiteralExpr 3 [Integer]
+            LiteralExpr 4 [Integer]
+        VarDeclStmt 'first' [inferred]
+          IndexExpr
+            IdentifierExpr 'numbers'
+            LiteralExpr 0 [Integer]
+        VarDeclStmt 'described' [inferred]
+          CallExpr
+            MemberExpr 'Describe'
+              IdentifierExpr 'square'
+        VarDeclStmt 'total' [inferred]
+          CallExpr
+            MemberExpr 'Count'
+              IdentifierExpr 'numbers'
+        VarDeclStmt 'arithmetic' [inferred]
+          BinaryExpr '-'
+            BinaryExpr '+'
+              LiteralExpr 1 [Integer]
+              LiteralExpr 2 [Integer]
+            BinaryExpr '%'
+              BinaryExpr '/'
+                BinaryExpr '*'
+                  LiteralExpr 3 [Integer]
+                  LiteralExpr 4 [Integer]
+                LiteralExpr 5 [Integer]
+              LiteralExpr 6 [Integer]
+        VarDeclStmt 'negated' [inferred]
+          UnaryExpr '-'
+            IdentifierExpr 'arithmetic'
+        VarDeclStmt 'compared' [inferred]
+          BinaryExpr 'or'
+            BinaryExpr 'and'
+              BinaryExpr '<'
+                LiteralExpr 1 [Integer]
+                LiteralExpr 2 [Integer]
+              BinaryExpr '>'
+                LiteralExpr 3 [Integer]
+                LiteralExpr 2 [Integer]
+            BinaryExpr 'and'
+              UnaryExpr 'not'
+                ParenthesizedExpr
+                  BinaryExpr '<='
+                    LiteralExpr 4 [Integer]
+                    LiteralExpr 5 [Integer]
+              BinaryExpr '>='
+                LiteralExpr 6 [Integer]
+                LiteralExpr 7 [Integer]
+        VarDeclStmt 'equated' [inferred]
+          BinaryExpr 'or'
+            BinaryExpr '=='
+              LiteralExpr 1 [Integer]
+              LiteralExpr 2 [Integer]
+            BinaryExpr '!='
+              LiteralExpr 1 [Integer]
+              LiteralExpr 2 [Integer]
+        VarDeclStmt 'mixed' [inferred]
+          LiteralExpr 22|7 [Fraction]
+        VarDeclStmt 'flag' [inferred]
+          BinaryExpr 'and'
+            LiteralExpr true [Boolean]
+            LiteralExpr false [Boolean]
+        VarDeclStmt 'color' [inferred]
+          MemberExpr 'Green'
+            IdentifierExpr 'Color'
+        VarDeclStmt 'ordinal' [inferred]
+          CallExpr
+            MemberExpr 'ToInteger'
+              IdentifierExpr 'color'
+        VarDeclStmt 'recovered' [inferred]
+          TypeCastExpr
+            LiteralExpr 10 [Integer]
+            NamedTypeSyntax 'Color'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr "no newline after this" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'explicitly'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            MemberExpr 'Half'
+              IdentifierExpr 'Tour'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'Marker'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'flag'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'mixed'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'shape'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "the answer is " [String]
+              IdentifierExpr 'explicitly'
+        YieldStmt
+      FunctionDecl 'WithValue'
+        NamedTypeSyntax 'string'
+        YieldStmt
+          LiteralExpr "a value" [String]

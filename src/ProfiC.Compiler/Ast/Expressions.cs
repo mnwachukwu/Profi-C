@@ -77,12 +77,22 @@ public enum ReceiverKind
     Outer,
 }
 
-/// <summary><c>this</c>, <c>base</c>, or <c>outer</c>.</summary>
-public sealed class ReceiverExpr(SourceSpan span, ReceiverKind receiver) : Expression(span)
+/// <summary>
+/// <para><c>this</c>, <c>base</c>, or <c>outer</c>.</para>
+/// <para><see cref="Depth"/> counts how many levels out an <c>outer</c> reaches, so
+/// <c>outer.outer</c> is one node of depth two rather than a member access for a field that
+/// does not exist. It is always one for <c>this</c> and <c>base</c>.</para>
+/// </summary>
+public sealed class ReceiverExpr(SourceSpan span, ReceiverKind receiver, int depth = 1)
+    : Expression(span)
 {
     public ReceiverKind Receiver { get; } = receiver;
 
-    public override string NodeKind => $"{Receiver}Expr";
+    /// <summary>How many enclosing instances out this reaches. One unless chained.</summary>
+    public int Depth { get; } = depth;
+
+    public override string NodeKind =>
+        Depth > 1 ? $"{Receiver}Expr({Depth})" : $"{Receiver}Expr";
 
     public override IEnumerable<SyntaxNode> Children => [];
 

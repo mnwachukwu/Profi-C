@@ -1,0 +1,8 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Hello, World!" [String]

@@ -182,18 +182,20 @@ read-only inside the body, which removes the classic closure-capture trap.
 
 ## Status
 
-**Early. The lexer works; nothing else runs yet.**
+**Early. Profi-C parses; nothing runs yet.**
 
 | Stage | State |
 |---|---|
-| Lexer | Working, being completed |
-| Parser | Not started |
+| Lexer | Complete |
+| Parser | Complete |
 | Resolver, type checker | Not started |
 | Interpreter | Not started |
 | CIL emitter | Not started |
 
-The examples above show the intended syntax and are **not yet executable**. The language
-design is settled — see the specification below — but the implementation is at the front end.
+Source becomes a syntax tree, and both stages report errors with positions and recover rather
+than stopping at the first mistake. Nothing is checked for meaning yet, so the examples above
+are valid syntax but are **not yet executable**. The language design is settled — see the
+specification below.
 
 ## Documentation
 
@@ -222,6 +224,10 @@ dotnet test
 
 ```bash
 dotnet run --project src/ProfiC.Cli -- tokens samples/hello.pfc
+```
+
+```bash
+dotnet run --project src/ProfiC.Cli -- ast samples/tour.pfc
 ```
 
 ## Repository layout

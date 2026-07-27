@@ -87,6 +87,11 @@ public abstract class SyntaxVisitor
     public virtual void VisitIndexExpr(IndexExpr node) => DefaultVisit(node);
     public virtual void VisitMemberExpr(MemberExpr node) => DefaultVisit(node);
     public virtual void VisitLambdaExpr(LambdaExpr node) => DefaultVisit(node);
+
+    // ---- Parse failures -----------------------------------------------------------------
+
+    public virtual void VisitMissingExpr(MissingExpr node) => DefaultVisit(node);
+    public virtual void VisitMissingType(MissingType node) => DefaultVisit(node);
 }
 
 /// <summary>
@@ -166,4 +171,9 @@ public abstract class SyntaxVisitor<TResult>
     public virtual TResult VisitIndexExpr(IndexExpr node) => DefaultVisit(node);
     public virtual TResult VisitMemberExpr(MemberExpr node) => DefaultVisit(node);
     public virtual TResult VisitLambdaExpr(LambdaExpr node) => DefaultVisit(node);
+
+    // ---- Parse failures -----------------------------------------------------------------
+
+    public virtual TResult VisitMissingExpr(MissingExpr node) => DefaultVisit(node);
+    public virtual TResult VisitMissingType(MissingType node) => DefaultVisit(node);
 }

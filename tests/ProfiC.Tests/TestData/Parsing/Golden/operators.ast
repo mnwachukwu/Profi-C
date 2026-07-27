@@ -1,0 +1,164 @@
+CompilationUnit
+  ModelDecl 'Operators' [global]
+    FunctionDecl 'Arithmetic'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'b'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'sum' [inferred]
+        BinaryExpr '+'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'difference' [inferred]
+        BinaryExpr '-'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'product' [inferred]
+        BinaryExpr '*'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'quotient' [inferred]
+        BinaryExpr '/'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'remainder' [inferred]
+        BinaryExpr '%'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'negated' [inferred]
+        UnaryExpr '-'
+          IdentifierExpr 'a'
+    FunctionDecl 'Comparison'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'b'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'lessOrEqual' [inferred]
+        BinaryExpr '<='
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'less' [inferred]
+        BinaryExpr '<'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'greaterOrEqual' [inferred]
+        BinaryExpr '>='
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'greater' [inferred]
+        BinaryExpr '>'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'equal' [inferred]
+        BinaryExpr '=='
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+      VarDeclStmt 'notEqual' [inferred]
+        BinaryExpr '!='
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+    FunctionDecl 'Assignment'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'target'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        IdentifierExpr 'target'
+        IdentifierExpr 'a'
+    FunctionDecl 'Logical'
+      ParameterDecl 'p'
+        NamedTypeSyntax 'boolean'
+      ParameterDecl 'q'
+        NamedTypeSyntax 'boolean'
+      VarDeclStmt 'both' [inferred]
+        BinaryExpr 'and'
+          IdentifierExpr 'p'
+          IdentifierExpr 'q'
+      VarDeclStmt 'either' [inferred]
+        BinaryExpr 'or'
+          IdentifierExpr 'p'
+          IdentifierExpr 'q'
+      VarDeclStmt 'negation' [inferred]
+        UnaryExpr 'not'
+          IdentifierExpr 'p'
+    FunctionDecl 'TypeOperators'
+      ParameterDecl 'value'
+        NamedTypeSyntax 'Model'
+      VarDeclStmt 'isString' [inferred]
+        TypeTestExpr
+          IdentifierExpr 'value'
+          NamedTypeSyntax 'string'
+      VarDeclStmt 'asString' [inferred]
+        TypeCastExpr
+          IdentifierExpr 'value'
+          NamedTypeSyntax 'string'
+    FunctionDecl 'Punctuation'
+      ParameterDecl 'items'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'text'
+        NamedTypeSyntax 'string'
+      VarDeclStmt 'literal'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'indexed' [inferred]
+        IndexExpr
+          IdentifierExpr 'items'
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'called' [inferred]
+        CallExpr
+          MemberExpr 'Arithmetic'
+            IdentifierExpr 'Operators'
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+      VarDeclStmt 'member' [inferred]
+        CallExpr
+          MemberExpr 'Count'
+            IdentifierExpr 'text'
+    FunctionDecl 'OptionalAndLambda'
+      VarDeclStmt 'maybe'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'add'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        LambdaExpr arrow
+          ParameterDecl 'a'
+            NamedTypeSyntax 'integer'
+          ParameterDecl 'b'
+            NamedTypeSyntax 'integer'
+          BinaryExpr '+'
+            IdentifierExpr 'a'
+            IdentifierExpr 'b'
+      VarDeclStmt 'recovered' [inferred]
+        CallExpr
+          MemberExpr 'Or'
+            IdentifierExpr 'maybe'
+          LiteralExpr 0 [Integer]
+    FunctionDecl 'CaseLabels'
+      ParameterDecl 'code'
+        NamedTypeSyntax 'integer'
+      SwitchStmt
+        IdentifierExpr 'code'
+        CaseGroup
+          LiteralExpr 1 [Integer]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "one" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "other" [String]
+    FunctionDecl 'Fractions'
+      VarDeclStmt 'ratio' [constant]
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 3|4 [Fraction]
