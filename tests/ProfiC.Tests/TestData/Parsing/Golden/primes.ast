@@ -26,7 +26,6 @@ CompilationUnit
                 IdentifierExpr 'Program'
             LiteralExpr ":" [String]
       ForStmt 'n' to
-        NamedTypeSyntax 'integer'
         LiteralExpr 2 [Integer]
         MemberExpr 'Limit'
           IdentifierExpr 'Program'
@@ -74,7 +73,6 @@ CompilationUnit
           NamedTypeSyntax 'boolean'
         CollectionExpr
       ForStmt 'i' to
-        NamedTypeSyntax 'integer'
         LiteralExpr 0 [Integer]
         IdentifierExpr 'limit'
         ExpressionStmt
@@ -83,7 +81,6 @@ CompilationUnit
               IdentifierExpr 'composite'
             LiteralExpr false [Boolean]
       ForStmt 'n' to
-        NamedTypeSyntax 'integer'
         LiteralExpr 2 [Integer]
         IdentifierExpr 'limit'
         IfStmt

@@ -9,18 +9,28 @@ public sealed class AstPrinterTests : AstTestBase
     private static string Print(SyntaxNode node) =>
         AstPrinter.Print(node).ReplaceLineEndings("\n");
 
+    /// <summary>
+    /// <para>The expected tree, with its line endings normalized to match the printer's.</para>
+    /// <para>A raw string literal carries whatever endings the source file has, and this
+    /// repository is checked out with <c>core.autocrlf=true</c> — so on Windows the literal is
+    /// CRLF while the printer emits LF, and the comparison fails for a reason that has nothing
+    /// to do with the tree. Normalizing both sides makes these tests independent of how the
+    /// file happened to arrive.</para>
+    /// </summary>
+    private static string Tree(string expected) => expected.ReplaceLineEndings("\n");
+
     [Test]
     public void PrintsAnIndentedTree()
     {
         BinaryExpr tree = Binary(Id("a"), BinaryOperator.Add, Int("1"));
 
-        Assert.That(Print(tree), Is.EqualTo(
+        Assert.That(Print(tree), Is.EqualTo(Tree(
             """
             BinaryExpr '+'
               IdentifierExpr 'a'
               LiteralExpr 1 [Integer]
 
-            """));
+            """)));
     }
 
     [Test]
@@ -31,12 +41,12 @@ public sealed class AstPrinterTests : AstTestBase
             DeclarationModifiers.Global | DeclarationModifiers.Public,
             members: [Function("Main")]);
 
-        Assert.That(Print(model), Is.EqualTo(
+        Assert.That(Print(model), Is.EqualTo(Tree(
             """
             ModelDecl 'Program' [public global]
               FunctionDecl 'Main'
 
-            """));
+            """)));
     }
 
     [Test]
@@ -45,11 +55,11 @@ public sealed class AstPrinterTests : AstTestBase
         Assert.Multiple(() =>
         {
             Assert.That(Print(Model("Circle", baseTypeName: "Shape")),
-                        Is.EqualTo("ModelDecl 'Circle' extends Shape\n"));
+                        Is.EqualTo(Tree("ModelDecl 'Circle' extends Shape\n")));
 
             // No extends clause means the model extends Model implicitly, and nothing is
             // printed for it.
-            Assert.That(Print(Model("Shape")), Is.EqualTo("ModelDecl 'Shape'\n"));
+            Assert.That(Print(Model("Shape")), Is.EqualTo(Tree("ModelDecl 'Shape'\n")));
         });
     }
 
@@ -58,21 +68,21 @@ public sealed class AstPrinterTests : AstTestBase
     {
         Assert.Multiple(() =>
         {
-            Assert.That(Print(SetOf(OptionalOf(Named("Node")))), Is.EqualTo(
+            Assert.That(Print(SetOf(OptionalOf(Named("Node")))), Is.EqualTo(Tree(
                 """
                 SetTypeSyntax
                   OptionalTypeSyntax
                     NamedTypeSyntax 'Node'
 
-                """));
+                """)));
 
-            Assert.That(Print(OptionalOf(SetOf(Named("Node")))), Is.EqualTo(
+            Assert.That(Print(OptionalOf(SetOf(Named("Node")))), Is.EqualTo(Tree(
                 """
                 OptionalTypeSyntax
                   SetTypeSyntax
                     NamedTypeSyntax 'Node'
 
-                """));
+                """)));
         });
     }
 
@@ -93,9 +103,9 @@ public sealed class AstPrinterTests : AstTestBase
     public void MarksWhetherARangeLoopIsInclusive()
     {
         ForStmt inclusive =
-            new(NextSpan(), Named("integer"), "i", Int("1"), Int("10"), true, null, []);
+            new(NextSpan(), "i", Int("1"), Int("10"), true, null, []);
         ForStmt exclusive =
-            new(NextSpan(), Named("integer"), "i", Int("0"), Int("10"), false, null, []);
+            new(NextSpan(), "i", Int("0"), Int("10"), false, null, []);
 
         Assert.Multiple(() =>
         {
@@ -122,9 +132,9 @@ public sealed class AstPrinterTests : AstTestBase
         Assert.Multiple(() =>
         {
             Assert.That(Print(new ReceiverExpr(NextSpan(), ReceiverKind.This)),
-                        Is.EqualTo("ThisExpr\n"));
+                        Is.EqualTo(Tree("ThisExpr\n")));
             Assert.That(Print(new ReceiverExpr(NextSpan(), ReceiverKind.Base)),
-                        Is.EqualTo("BaseExpr\n"));
+                        Is.EqualTo(Tree("BaseExpr\n")));
         });
     }
 
@@ -158,7 +168,7 @@ public sealed class AstPrinterTests : AstTestBase
                         ]),
                 ]));
 
-        Assert.That(Print(unit), Is.EqualTo(
+        Assert.That(Print(unit), Is.EqualTo(Tree(
             """
             CompilationUnit
               ModelDecl 'Program' [global]
@@ -171,6 +181,6 @@ public sealed class AstPrinterTests : AstTestBase
                       IdentifierExpr 'total'
                       LiteralExpr 1 [Integer]
 
-            """));
+            """)));
     }
 }

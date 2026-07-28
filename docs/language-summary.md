@@ -197,7 +197,7 @@ The second pair is more confusable than the first, since both live near the idea
 | `let x = 5;` | `var x = 5;` |
 | `integer function Add(...)` | `int Add(...)` |
 | `for each c in name` | `foreach (char c in name)` |
-| `for integer i = 0 until n` | `for (int i = 0; i < n; i++)` |
+| `for i = 0 until n` | `for (int i = 0; i < n; i++)` |
 | `if c ... end if`, no parens | `if (c) { ... }` |
 | `if c then a else b` expression | `c ? a : b` |
 | `x as Dog` yields `Dog?` | `x as Dog` yields null on failure |

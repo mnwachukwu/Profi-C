@@ -117,11 +117,11 @@ namespace Tour
             let label = if input > 0 then "positive" else "other";
 
             comment Loops. "to" is inclusive, "until" is exclusive.
-            for integer i = 1 to 10
+            for i = 1 to 10
                 explicitly = explicitly + i;
             end for
 
-            for integer i = 10 until 0 step -1
+            for i = 10 until 0 step -1
                 explicitly = explicitly - i;
             end for
 

@@ -146,6 +146,19 @@ public static class DiagnosticDescriptors
         "A {0} cannot be declared inside a function. Move it out to the enclosing model or "
         + "namespace.");
 
+    /// <summary>
+    /// <para>A range loop's counter is written without a type.</para>
+    /// <para>Counting is done with integers, so there was never a choice to record — and a
+    /// loop that says <c>integer</c> reads as though some other type were available. This
+    /// exists because a reader arriving from C# or Java will write one out of habit, and
+    /// "expected '='" would explain nothing.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = Error(
+        "PFC0111",
+        "A range loop's counter has no written type",
+        "A range loop counts with integers, so its counter takes no type. Remove the "
+        + "'{0}'.");
+
     public static readonly DiagnosticDescriptor TooManyErrors = Error(
         "PFC0199",
         "Too many errors",

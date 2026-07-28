@@ -54,7 +54,6 @@ CompilationUnit
               IdentifierExpr 'result'
             IdentifierExpr 'value'
       ForStmt 'i' until
-        NamedTypeSyntax 'integer'
         LiteralExpr 1 [Integer]
         CallExpr
           MemberExpr 'Count'
@@ -111,7 +110,6 @@ CompilationUnit
         NamedTypeSyntax 'string'
         LiteralExpr "" [String]
       ForStmt 'i' until
-        NamedTypeSyntax 'integer'
         LiteralExpr 0 [Integer]
         CallExpr
           MemberExpr 'Count'

@@ -127,7 +127,6 @@ public sealed class Lowering
             case ForStmt loop:
                 return Carry(loop, new ForStmt(
                     loop.Span,
-                    loop.Type,
                     loop.VariableName,
                     LowerExpression(loop.Start),
                     LowerExpression(loop.Bound),
@@ -226,7 +225,6 @@ public sealed class Lowering
 
         ForStmt indexLoop = new(
             span,
-            IntegerTypeSyntax(span),
             index.Name,
             zero,
             count,

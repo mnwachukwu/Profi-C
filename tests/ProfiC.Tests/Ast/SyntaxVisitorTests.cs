@@ -102,7 +102,7 @@ public sealed class SyntaxVisitorTests : AstTestBase
             new VarDeclStmt(NextSpan(), Named("integer"), "x", Int("1"), isConstant: false),
             new IfStmt(NextSpan(), Id("c"), [], [], null),
             new WhileStmt(NextSpan(), Id("c"), []),
-            new ForStmt(NextSpan(), Named("integer"), "i", Int("1"), Int("10"), true, null, []),
+            new ForStmt(NextSpan(), "i", Int("1"), Int("10"), true, null, []),
             new ForEachStmt(NextSpan(), "item", Id("items"), []),
             new SwitchStmt(NextSpan(), Id("code"), [], null),
             new TryStmt(NextSpan(), [], [], null),

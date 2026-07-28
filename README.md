@@ -148,7 +148,7 @@ model Counting
     global integer function SumTo(integer limit)
         integer total = 0;
 
-        for integer i = 1 to limit
+        for i = 1 to limit
             total = total + i;
         end for
 
@@ -158,7 +158,7 @@ model Counting
     global integer function CountDown()
         integer total = 0;
 
-        for integer i = 10 until 0 step -1
+        for i = 10 until 0 step -1
             total = total + i;
         end for
 
@@ -224,6 +224,10 @@ summary is the best description of that area.
 ## Building
 
 Requires the .NET 10 SDK.
+
+There is no `global.json`, deliberately. The build uses whichever SDK is newest on your
+machine, so that a break caused by a new SDK shows up as a break rather than being hidden
+behind a pin nobody remembers to revisit.
 
 ```bash
 dotnet build

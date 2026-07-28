@@ -181,7 +181,6 @@ CompilationUnit
             LiteralExpr "positive" [String]
             LiteralExpr "other" [String]
         ForStmt 'i' to
-          NamedTypeSyntax 'integer'
           LiteralExpr 1 [Integer]
           LiteralExpr 10 [Integer]
           AssignmentStmt
@@ -190,7 +189,6 @@ CompilationUnit
               IdentifierExpr 'explicitly'
               IdentifierExpr 'i'
         ForStmt 'i' until
-          NamedTypeSyntax 'integer'
           LiteralExpr 10 [Integer]
           LiteralExpr 0 [Integer]
           UnaryExpr '-'

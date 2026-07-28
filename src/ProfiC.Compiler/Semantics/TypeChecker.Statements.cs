@@ -180,13 +180,7 @@ public sealed partial class TypeChecker
 
     private void CheckRangeLoop(ForStmt loop)
     {
-        TypeSymbol variable = (_model.GetSymbol(loop) as LocalSymbol)?.Type ?? ErrorType.Instance;
-
-        if (!variable.IsError && !ReferenceEquals(variable, PrimitiveType.Integer))
-        {
-            Report(DiagnosticDescriptors.RangeLoopNeedsInteger, loop, variable.WithArticle());
-        }
-
+        // The counter is an integer by construction, so only the bounds can disagree.
         RequireInteger(CheckExpression(loop.Start), loop.Start);
         RequireInteger(CheckExpression(loop.Bound), loop.Bound);
 

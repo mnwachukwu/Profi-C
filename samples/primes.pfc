@@ -19,7 +19,7 @@ global model Program
 
         Console.WriteLine("Primes up to " + Program.Limit + ":");
 
-        for integer n = 2 to Program.Limit
+        for n = 2 to Program.Limit
             if not composite[n]
                 Console.Write(n);
                 Console.Write(" ");
@@ -38,11 +38,11 @@ global model Program
     boolean[] function Sieve(integer limit)
         boolean[] composite = {};
 
-        for integer i = 0 to limit
+        for i = 0 to limit
             composite.Insert(false);
         end for
 
-        for integer n = 2 to limit
+        for n = 2 to limit
             if not composite[n]
                 integer multiple = n * n;
 

@@ -150,7 +150,6 @@ public sealed class WhileStmt(
 /// </summary>
 public sealed class ForStmt(
     SourceSpan span,
-    TypeSyntax type,
     string variableName,
     Expression start,
     Expression bound,
@@ -158,8 +157,13 @@ public sealed class ForStmt(
     Expression? step,
     IReadOnlyList<Statement> body) : Statement(span)
 {
-    public TypeSyntax Type { get; } = type;
-
+    /// <summary>
+    /// <para>The counter's name. It has no written type: a range loop counts, and counting is
+    /// done with integers.</para>
+    /// <para>This is not inference — nothing is worked out from the bounds. The type is fixed
+    /// by the construct, the way <c>for each</c> takes its element's type from the sequence.
+    /// </para>
+    /// </summary>
     public string VariableName { get; } = variableName;
 
     public Expression Start { get; } = start;
@@ -174,7 +178,7 @@ public sealed class ForStmt(
     public IReadOnlyList<Statement> Body { get; } = body;
 
     public override IEnumerable<SyntaxNode> Children =>
-        NonNull(Type, Start, Bound, Step).Concat(Body);
+        NonNull(Start, Bound, Step).Concat(Body);
 
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitForStmt(this);
 

@@ -44,3 +44,6 @@ desktop.ini
 # Logs and temp
 *.log
 *.tmp
+
+# Local publish output, for putting profi-c and pfc on PATH
+dist/

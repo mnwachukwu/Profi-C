@@ -1,4 +1,5 @@
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Diagnostics;
 
 namespace ProfiC.Tests.Parsing;
 
@@ -89,7 +90,7 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         ForStmt statement = (ForStmt)ParseStatements(
             $"""
-                    for integer i = 1 {keyword} 10
+                    for i = 1 {keyword} 10
                         yield;
                     end for
             """)[0];
@@ -97,15 +98,43 @@ public sealed class StatementParsingTests : ParserTestBase
         Assert.That(statement.IsInclusive, Is.EqualTo(inclusive));
     }
 
+    /// <summary>
+    /// A range loop's counter carries no type, because counting is done with integers and
+    /// there was never a second option to record. A reader arriving from C# writes one anyway,
+    /// so it earns a diagnostic that names the fix rather than a bare "expected '='".
+    /// </summary>
+    [TestCase("integer")]
+    [TestCase("real")]
+    [TestCase("string")]
+    public void WritingATypeOnTheCounterIsRejectedAndOnlyOnce(string type)
+    {
+        (_, DiagnosticBag diagnostics) = ParseRaw(
+            $$"""
+            global model Program
+                function Main()
+                    for {{type}} i = 1 to 10
+                        yield;
+                    end for
+                end function
+            end model
+            """);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0111" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain($"Remove the '{type}'"));
+        });
+    }
+
     [Test]
     public void RangeLoopStepIsOptional()
     {
         IReadOnlyList<Statement> statements = ParseStatements(
             """
-                    for integer i = 1 to 10
+                    for i = 1 to 10
                         yield;
                     end for
-                    for integer i = 10 until 0 step -1
+                    for i = 10 until 0 step -1
                         yield;
                     end for
             """);
@@ -122,7 +151,7 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         IReadOnlyList<Statement> statements = ParseStatements(
             """
-                    for integer i = 1 to 10
+                    for i = 1 to 10
                         yield;
                     end for
                     for each item in items

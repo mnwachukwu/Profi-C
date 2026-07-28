@@ -52,7 +52,7 @@ global model Program
     fraction function Harmonic(integer n)
         fraction total = 0;
 
-        for integer i = 1 to n
+        for i = 1 to n
             total = total + 1|1 / i;
         end for
 

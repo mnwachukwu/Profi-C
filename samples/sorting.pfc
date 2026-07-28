@@ -29,7 +29,7 @@ global model Program
             result.Insert(value);
         end for
 
-        for integer i = 1 until result.Count()
+        for i = 1 until result.Count()
             integer current = result[i];
             integer j = i - 1;
 
@@ -51,7 +51,7 @@ global model Program
     string function Render(integer[] values)
         string text = "";
 
-        for integer i = 0 until values.Count()
+        for i = 0 until values.Count()
             if i > 0
                 text = text + ", ";
             end if

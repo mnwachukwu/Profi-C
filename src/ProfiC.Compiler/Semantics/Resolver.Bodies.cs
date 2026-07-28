@@ -328,9 +328,8 @@ public sealed partial class Resolver
 
         InScope(() =>
         {
-            TypeSymbol type = ResolveType(loop.Type);
-
-            LocalSymbol variable = new(loop.VariableName, type, isConstant: false)
+            // Fixed by the construct rather than written or inferred: a range loop counts.
+            LocalSymbol variable = new(loop.VariableName, PrimitiveType.Integer, isConstant: false)
             {
                 Declaration = loop,
                 IsLoopVariable = true,

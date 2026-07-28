@@ -387,7 +387,7 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(CheckBody(
             """
-                    for integer i = 1 to 2.5
+                    for i = 1 to 2.5
                         yield;
                     end for
             """)), Is.EqualTo(new[] { "PFC0317" }));
@@ -709,6 +709,26 @@ public sealed class TypeCheckerTests
                     let z = y * 2;
             """)), Is.EqualTo(new[] { "PFC0200" }));
     }
+
+    // ---- Range loops -------------------------------------------------------------------------
+
+    /// <summary>The counter is an integer by construction, so it needs no annotation to be one.</summary>
+    [Test]
+    public void TheCounterIsAnIntegerWithoutBeingDeclaredOne() =>
+        Assert.That(
+            IdsOf(CheckBody("""
+                    for i = 1 to 10
+                        integer doubled = i * 2;
+                    end for
+            """)),
+            Is.Empty);
+
+    /// <summary>The bounds are the only part left that can disagree.</summary>
+    [TestCase("        for i = 1 to 2.5\n            yield;\n        end for")]
+    [TestCase("        for i = 1|2 to 10\n            yield;\n        end for")]
+    [TestCase("        for i = 1 to 10 step 0.5\n            yield;\n        end for")]
+    public void ARangeLoopStillCountsWithIntegers(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0317" }));
 
     // ---- Collection literals take their type from what is wanted ---------------------------------
 

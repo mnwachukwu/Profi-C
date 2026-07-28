@@ -10,7 +10,6 @@ CompilationUnit
             IdentifierExpr 'Console'
           LiteralExpr "n    recursive   iterative" [String]
       ForStmt 'n' to
-        NamedTypeSyntax 'integer'
         LiteralExpr 0 [Integer]
         MemberExpr 'Limit'
           IdentifierExpr 'Program'
@@ -70,7 +69,6 @@ CompilationUnit
         NamedTypeSyntax 'integer'
         LiteralExpr 1 [Integer]
       ForStmt 'i' until
-        NamedTypeSyntax 'integer'
         LiteralExpr 0 [Integer]
         IdentifierExpr 'n'
         VarDeclStmt 'next'
@@ -98,7 +96,6 @@ CompilationUnit
         NamedTypeSyntax 'string'
         IdentifierExpr 'text'
       ForStmt 'i' until
-        NamedTypeSyntax 'integer'
         CallExpr
           MemberExpr 'Count'
             IdentifierExpr 'text'

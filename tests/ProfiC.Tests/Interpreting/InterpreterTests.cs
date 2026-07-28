@@ -167,7 +167,7 @@ public sealed class InterpreterTests
     [Test]
     public void IfElseIfElseTakesExactlyOneBranch() => Assert.That(
         RunBody("""
-                for integer n = 1 to 3
+                for n = 1 to 3
                     if n == 1
                         Console.WriteLine("one");
                     else if n == 2
@@ -193,11 +193,11 @@ public sealed class InterpreterTests
     [Test]
     public void ForToIsInclusiveAndForUntilIsNot() => Assert.That(
         RunBody("""
-                for integer i = 1 to 3
+                for i = 1 to 3
                     Console.Write(i);
                 end for
                 Console.WriteLine("");
-                for integer i = 1 until 3
+                for i = 1 until 3
                     Console.Write(i);
                 end for
                 Console.WriteLine("");
@@ -207,7 +207,7 @@ public sealed class InterpreterTests
     [Test]
     public void ANegativeStepCountsDown() => Assert.That(
         RunBody("""
-                for integer i = 3 until 0 step -1
+                for i = 3 until 0 step -1
                     Console.Write(i);
                 end for
                 Console.WriteLine("");
@@ -217,7 +217,7 @@ public sealed class InterpreterTests
     [Test]
     public void ALoopWhoseBoundIsAlreadyPassedNeverRuns() => Assert.That(
         RunBody("""
-                for integer i = 5 to 1
+                for i = 5 to 1
                     Console.WriteLine("unreachable");
                 end for
                 Console.WriteLine("done");
@@ -227,7 +227,7 @@ public sealed class InterpreterTests
     [Test]
     public void BreakAndContinueApplyToTheNearestLoop() => Assert.That(
         RunBody("""
-                for integer i = 1 to 10
+                for i = 1 to 10
                     if i == 2
                         continue;
                     end if
@@ -243,7 +243,7 @@ public sealed class InterpreterTests
     [Test]
     public void SwitchHasNoFallthroughButCaseLabelsGroup() => Assert.That(
         RunBody("""
-                for integer i = 1 to 4
+                for i = 1 to 4
                     switch i
                         case 1:
                             Console.WriteLine("one");
@@ -260,7 +260,7 @@ public sealed class InterpreterTests
     [Test]
     public void TheConditionalExpressionYieldsOneSide() => Assert.That(
         RunBody("""
-                for integer n = 1 to 2
+                for n = 1 to 2
                     Console.WriteLine(if n == 1 then "first" else "second");
                 end for
         """),

@@ -17,7 +17,7 @@ global model Program
     function Main()
         Console.WriteLine("n    recursive   iterative");
 
-        for integer n = 0 to Program.Limit
+        for n = 0 to Program.Limit
             Console.WriteLine(
                 Program.Pad(n) + Program.Pad(Program.Recursive(n)) + Program.Iterative(n));
         end for
@@ -37,7 +37,7 @@ global model Program
         integer previous = 0;
         integer current = 1;
 
-        for integer i = 0 until n
+        for i = 0 until n
             integer next = previous + current;
             previous = current;
             current = next;
@@ -51,7 +51,7 @@ global model Program
         let text = "" + value;
         string padded = text;
 
-        for integer i = text.Count() until 12
+        for i = text.Count() until 12
             padded = padded + " ";
         end for
 

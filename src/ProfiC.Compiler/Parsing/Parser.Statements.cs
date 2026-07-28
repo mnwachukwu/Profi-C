@@ -229,7 +229,17 @@ public sealed partial class Parser
             return new ForEachStmt(SpanFrom(start), eachName, sequence, eachBody);
         }
 
-        TypeSyntax type = ParseType();
+        // A range loop counts, and counting is done with integers, so the counter carries no
+        // written type. Someone arriving from a language that wants one writes "for integer i",
+        // which is caught here rather than left as a confusing "expected '='".
+        if (Current.Type is TokenType.Integer or TokenType.Real or TokenType.Boolean
+            or TokenType.Character or TokenType.String or TokenType.Fraction)
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.RangeLoopTakesNoType, Current.Span, Current.Lexeme);
+            Advance();
+        }
+
         string name = ExpectIdentifier();
 
         Expect(TokenType.Equal);
@@ -256,7 +266,7 @@ public sealed partial class Parser
         List<Statement> body = ParseBody(TokenType.For);
         ExpectEnd(TokenType.For, "for", start);
 
-        return new ForStmt(SpanFrom(start), type, name, from, bound, inclusive, step, body);
+        return new ForStmt(SpanFrom(start), name, from, bound, inclusive, step, body);
     }
 
     /// <summary>

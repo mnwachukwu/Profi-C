@@ -2,7 +2,6 @@ CompilationUnit
   ModelDecl 'Program' [global]
     FunctionDecl 'Main'
       ForStmt 'n' to
-        NamedTypeSyntax 'integer'
         LiteralExpr 1 [Integer]
         LiteralExpr 20 [Integer]
         ExpressionStmt

@@ -158,7 +158,7 @@ public sealed class FlowAnalysisTests
     {
         Assert.That(IdsOf(CheckBody(
             """
-                    for integer i = 1 to 10
+                    for i = 1 to 10
                         let copy = i;
                     end for
             """)), Is.Empty);

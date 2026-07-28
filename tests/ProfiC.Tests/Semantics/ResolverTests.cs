@@ -196,7 +196,7 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = ResolveBody(
             """
-                    for integer i = 1 to 10
+                    for i = 1 to 10
                         let inside = i;
                     end for
                     let outside = i;
@@ -255,7 +255,7 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = ResolveBody(
             """
-                    for integer i = 1 to 10
+                    for i = 1 to 10
                         i = 5;
                     end for
             """);

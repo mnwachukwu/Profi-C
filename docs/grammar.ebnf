@@ -96,7 +96,11 @@ IfStmt         = "if" Expr Body { "else" "if" Expr Body } [ "else" Body ]
 
 WhileStmt      = "while" Expr Body "end" "while" ;
 
-ForStmt        = "for" Type Identifier "=" Expr ( "to" | "until" ) Expr
+(* Neither loop writes a type for the variable it binds. A range loop counts, and
+   counting is done with integers; a for-each takes its element's type from the
+   sequence. Both are fixed by the construct rather than inferred from a value, which
+   is why neither needs "let". Bounds and step must be integers -- see PFC0317. *)
+ForStmt        = "for" Identifier "=" Expr ( "to" | "until" ) Expr
                  [ "step" Expr ] Body "end" "for" ;
 
 ForEachStmt    = "for" "each" Identifier "in" Expr Body "end" "for" ;

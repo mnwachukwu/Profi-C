@@ -167,7 +167,6 @@ CompilationUnit
         NamedTypeSyntax 'fraction'
         LiteralExpr 0 [Integer]
       ForStmt 'i' to
-        NamedTypeSyntax 'integer'
         LiteralExpr 1 [Integer]
         IdentifierExpr 'n'
         AssignmentStmt

@@ -9,7 +9,7 @@ end comment
 global model Program
 
     function Main()
-        for integer n = 1 to 20
+        for n = 1 to 20
             Console.WriteLine(Program.Describe(n));
         end for
     end function
