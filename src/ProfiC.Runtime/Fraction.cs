@@ -124,6 +124,54 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
     /// <summary>Multiplies two fractions.</summary>
     public static Fraction Multiply(Fraction left, Fraction right) => left * right;
 
+    /// <summary>
+    /// <para>Raises a fraction to a whole power, exactly.</para>
+    /// <para>The exponent is an integer rather than a fraction because a rational raised to a
+    /// fractional power is generally irrational — the square root of one half cannot be
+    /// written as a ratio at all — so there would be nothing exact to give back.</para>
+    /// <para>A negative exponent inverts, which is where this earns its place: two to the
+    /// minus three is exactly one eighth here, where a real would only approach it.</para>
+    /// </summary>
+    /// <exception cref="DivideByZeroException">Zero raised to a negative power.</exception>
+    /// <exception cref="OverflowException">The result does not fit in 64 bits.</exception>
+    public static Fraction Pow(Fraction value, long exponent)
+    {
+        if (exponent == 0)
+        {
+            return One;
+        }
+
+        if (exponent < 0)
+        {
+            if (value.Numerator == 0)
+            {
+                throw new DivideByZeroException("Cannot raise zero to a negative power.");
+            }
+
+            return One / Pow(value, -exponent);
+        }
+
+        // Exponentiation by squaring: the same answer as multiplying it out, in far fewer
+        // steps, which matters because each step can overflow and every one is checked.
+        Fraction result = One;
+        Fraction factor = value;
+
+        for (long remaining = exponent; remaining > 0; remaining /= 2)
+        {
+            if (remaining % 2 == 1)
+            {
+                result = checked(result * factor);
+            }
+
+            if (remaining > 1)
+            {
+                factor = checked(factor * factor);
+            }
+        }
+
+        return result;
+    }
+
     /// <summary>Divides one fraction by another.</summary>
     public static Fraction Divide(Fraction left, Fraction right) => left / right;
 

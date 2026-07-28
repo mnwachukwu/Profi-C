@@ -138,6 +138,57 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
+          LiteralExpr "== raising to a power stays exact ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "(1|2) ^ 3  is " [String]
+            BinaryExpr '^'
+              ParenthesizedExpr
+                LiteralExpr 1|2 [Fraction]
+              LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "(2|3) ^ 2  is " [String]
+            BinaryExpr '^'
+              ParenthesizedExpr
+                LiteralExpr 2|3 [Fraction]
+              LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "(3|1) ^ -1 is " [String]
+            BinaryExpr '^'
+              ParenthesizedExpr
+                LiteralExpr 3|1 [Fraction]
+              UnaryExpr '-'
+                LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "as a real:    " [String]
+            BinaryExpr '^'
+              LiteralExpr 3.0 [Real]
+              UnaryExpr '-'
+                LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
           LiteralExpr "== an integer widens to a fraction on its own ==" [String]
       VarDeclStmt 'whole'
         NamedTypeSyntax 'fraction'

@@ -118,6 +118,41 @@ public sealed class RecoveryTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// Python's spelling for raising to a power. Named rather than scanned as two
+    /// multiplications, and pointed at the one Profi-C uses.
+    /// </summary>
+    [Test]
+    public void PythonExponentiationOperator_PointsAtCaret()
+    {
+        (_, DiagnosticBag diagnostics) = ScanRaw("a ** b");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain("'^'"));
+        });
+    }
+
+    /// <summary>
+    /// The caret is an operator here, so it must scan cleanly rather than being reported as
+    /// a character with no reading.
+    /// </summary>
+    [Test]
+    public void TheCaretScansWithoutComplaint()
+    {
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("a ^ b");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.Empty);
+            Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
+            {
+                TokenType.Identifier, TokenType.Caret, TokenType.Identifier, TokenType.EndOfFile,
+            }));
+        });
+    }
+
     [TestCase("+=")]
     [TestCase("-=")]
     [TestCase("*=")]

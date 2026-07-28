@@ -476,6 +476,23 @@ public static class DiagnosticDescriptors
         "'{0}' belongs to each {1} rather than to the {1} type, so it cannot be reached "
         + "through the name '{1}'. Mark it 'global', or read it from a value.");
 
+    // PFC0332 rejected a fraction-typed exponent. Withdrawn, and the identifier is not reused:
+    // raising to m/n is the nth root of the mth power, which is ordinary arithmetic, and
+    // "2 ^ (1|3)" says one third more faithfully than "2 ^ (1.0/3.0)" does. The answer is a
+    // real either way. The rule that a fraction never widens to a real protects exactness that
+    // could have been kept, and a root has none to keep.
+
+    /// <summary>
+    /// <para>A negative exponent on an integer base, caught while compiling.</para>
+    /// <para>Two to the minus one is one half, which is not an integer. The same expression
+    /// written on fractions is exact and allowed, which is what the message points at.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NegativeIntegerExponent = Error(
+        "PFC0333",
+        "Negative exponent on an integer",
+        "An integer raised to the power {0} is not a whole number. Raise a fraction instead, "
+        + "as in '(1|2) ^ {0}', or use 'Math.Pow(...)' for a real result.");
+
     // ---- Definite assignment and flow, PFC0400 to PFC0499 --------------------------------
 
     /// <summary>

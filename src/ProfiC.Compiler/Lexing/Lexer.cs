@@ -35,6 +35,11 @@ public sealed class Lexer
         ("/=", "Profi-C has no compound assignment. Write 'x = x / y'."),
         ("%=", "Profi-C has no compound assignment. Write 'x = x % y'."),
         ("++", "Profi-C has no increment operator. Write 'x = x + 1'."),
+
+        // Raising to a power is written "^". A reader arriving from Python reaches for this
+        // spelling, so it is named rather than scanned as two multiplications.
+        ("**", "Profi-C raises to a power with '^'. Write 'base ^ exponent', "
+               + "or 'Math.Pow(base, exponent)' for a real result."),
     ];
 
     private readonly SourceText _source;
@@ -519,6 +524,7 @@ public sealed class Lexer
             '*' => TokenType.Star,
             '/' => TokenType.Slash,
             '%' => TokenType.Percent,
+            '^' => TokenType.Caret,
             '|' => TokenType.Pipe,
             '?' => TokenType.Question,
             ':' => TokenType.Colon,

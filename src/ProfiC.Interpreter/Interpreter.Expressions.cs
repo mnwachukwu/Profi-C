@@ -77,6 +77,7 @@ public sealed partial class Interpreter
         {
             ConversionOperation.IntegerToReal => (double)AsInteger(value),
             ConversionOperation.IntegerToFraction => Fraction.FromInteger(AsInteger(value)),
+            ConversionOperation.FractionToReal => value is Fraction f ? f.ToReal() : value,
             ConversionOperation.WrapOptional => value,
             ConversionOperation.StringToCharacters =>
                 new ProfiCSet<object?>(((string?)value ?? string.Empty).Select(c => (object?)c)),
@@ -139,6 +140,14 @@ public sealed partial class Interpreter
             return ModelOperations.ToDisplayString(left) + ModelOperations.ToDisplayString(right);
         }
 
+        // Raising to a power is the one operator whose sides may differ in type: the exponent
+        // is a count, not a second value of the base's kind, so it is handled before the
+        // matching-pair dispatch below could reject it.
+        if (binary.Operator == BinaryOperator.Power)
+        {
+            return Power(left, right);
+        }
+
         return (left, right) switch
         {
             (long a, long b) => IntegerOperation(binary.Operator, a, b),
@@ -147,6 +156,57 @@ public sealed partial class Interpreter
             (char a, char b) => CharacterOperation(binary.Operator, a, b),
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// <para>Raises a value to a power. The type checker has already settled which of these
+    /// three shapes can arrive.</para>
+    /// <para>Integers stay integers, so <c>2 ^ 10</c> is 1024 rather than 1024 rendered as a
+    /// real. A fraction stays exact.</para>
+    /// </summary>
+    private static object? Power(object? left, object? right) => (left, right) switch
+    {
+        (Fraction b, long e) => Fraction.Pow(b, e),
+        (long b, long e) => IntegerPower(b, e),
+        (double b, double e) => Math.Pow(b, e),
+        _ => null,
+    };
+
+    /// <summary>
+    /// <para>A whole power of a whole number, by squaring.</para>
+    /// <para>Every step is checked, so a result too large to hold stops the program rather
+    /// than wrapping silently into a wrong answer.</para>
+    /// </summary>
+    private static long IntegerPower(long value, long exponent)
+    {
+        if (exponent < 0)
+        {
+            // Rejected while compiling wherever the exponent can be seen; a variable one
+            // reaches here instead. Thrown as an ArgumentException rather than an interpreter
+            // failure so that a program can catch it, exactly as it can catch dividing by a
+            // variable that turned out to be zero.
+            throw new ArgumentException(
+                $"An integer raised to the power {exponent} is not a whole number. Raise a "
+                + "fraction instead, or use Math.Pow for a real result.");
+        }
+
+        long result = 1;
+        long factor = value;
+
+        for (long remaining = exponent; remaining > 0; remaining /= 2)
+        {
+            if (remaining % 2 == 1)
+            {
+                result = checked(result * factor);
+            }
+
+            if (remaining > 1)
+            {
+                factor = checked(factor * factor);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>

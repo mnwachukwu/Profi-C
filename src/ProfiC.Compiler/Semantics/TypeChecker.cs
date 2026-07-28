@@ -246,6 +246,9 @@ public sealed partial class TypeChecker
             _ when ReferenceEquals(from, PrimitiveType.Integer)
                    && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.IntegerToFraction,
 
+            _ when ReferenceEquals(from, PrimitiveType.Fraction)
+                   && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.FractionToReal,
+
             _ when ReferenceEquals(from, PrimitiveType.String)
                    && to is SetType => ConversionOperation.StringToCharacters,
 

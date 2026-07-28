@@ -123,6 +123,28 @@ public static class ConstantFolder
         }
     }
 
+    /// <summary>By squaring, checked, so an overflowing constant declines to fold.</summary>
+    private static long FoldIntegerPower(long value, long exponent)
+    {
+        long result = 1;
+        long factor = value;
+
+        for (long remaining = exponent; remaining > 0; remaining /= 2)
+        {
+            if (remaining % 2 == 1)
+            {
+                result = checked(result * factor);
+            }
+
+            if (remaining > 1)
+            {
+                factor = checked(factor * factor);
+            }
+        }
+
+        return result;
+    }
+
     private static object? FoldIntegers(BinaryOperator op, long a, long b) => op switch
     {
         BinaryOperator.Add => checked(a + b),
@@ -132,6 +154,10 @@ public static class ConstantFolder
         // Integer division truncates, so "1 / 3" really is zero.
         BinaryOperator.Divide => b == 0 ? null : checked(a / b),
         BinaryOperator.Remainder => b == 0 ? null : checked(a % b),
+
+        // A negative exponent has no whole answer; the type checker reports it, so folding
+        // declines rather than producing one.
+        BinaryOperator.Power => b < 0 ? null : FoldIntegerPower(a, b),
 
         BinaryOperator.Equal => a == b,
         BinaryOperator.NotEqual => a != b,

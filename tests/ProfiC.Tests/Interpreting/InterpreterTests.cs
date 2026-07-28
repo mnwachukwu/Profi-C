@@ -77,6 +77,59 @@ public sealed class InterpreterTests
     public void RealArithmeticIsFloatingPoint(string expression, string expected) =>
         Assert.That(Print(expression), Is.EqualTo(expected));
 
+    [TestCase("2 ^ 10", "1024")]
+    [TestCase("7 ^ 2", "49")]
+    [TestCase("5 ^ 0", "1")]
+    [TestCase("2 ^ 3 ^ 2", "512")]
+    [TestCase("-2 ^ 2", "-4")]
+    [TestCase("2 * 3 ^ 2", "18")]
+    [TestCase("10 ^ 2 - 2 / 2 + 5", "104")]
+    public void RaisingAnIntegerToAPowerStaysAnInteger(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [TestCase("(1|2) ^ 3", "1|8")]
+    [TestCase("(1|2) ^ -3", "8|1")]
+    [TestCase("(2|3) ^ 2", "4|9")]
+    [TestCase("(1|2) ^ 0", "1|1")]
+    public void RaisingAFractionToAWholePowerStaysExact(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    /// <summary>
+    /// A fraction exponent is a root, so it reads the way it is written on paper. The answer
+    /// is a real, and is the same as spelling the exponent out in reals.
+    /// </summary>
+    [TestCase("9 ^ 1|2", "3")]
+    [TestCase("8 ^ 1|3", "2")]
+    [TestCase("16 ^ 3|4", "8")]
+    [TestCase("32 ^ 1|5", "2")]
+    [TestCase("(1|4) ^ 1|2", "0.5")]
+    public void AFractionExponentTakesARoot(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [Test]
+    public void BothSpellingsOfAnExponentAgree() => Assert.That(
+        Print("2 ^ 1|3"), Is.EqualTo(Print("2.0 ^ (1.0 / 3.0)")));
+
+    [Test]
+    public void AnIntegerPowerTooLargeToHoldFailsRatherThanWrapping() =>
+        Assert.That(() => Print("2 ^ 100"), Throws.InstanceOf<OverflowException>());
+
+    /// <summary>
+    /// A variable exponent cannot be checked while compiling, so it throws — and it throws
+    /// something a program can catch, as dividing by a variable zero does.
+    /// </summary>
+    [Test]
+    public void ANegativeExponentFromAVariableThrowsAndIsCatchable() => Assert.That(
+        RunBody("""
+                integer e = -1;
+                try
+                    Console.WriteLine(2 ^ e);
+                catch Exception problem
+                    Console.WriteLine("caught");
+                end try
+        """),
+        Is.EqualTo("caught\n"));
+
     [TestCase("1|3 + 1|6", "1|2")]
     [TestCase("1|2 * 2|3", "1|3")]
     [TestCase("1|2 - 1|2", "0|1")]

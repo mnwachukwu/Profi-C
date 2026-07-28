@@ -208,6 +208,125 @@ The interpreter is not a stopgap. It runs the same lowered tree the emitter will
 exist it stays on as the oracle: where the two disagree about what a program means, the
 compiler has the bug.
 
+## Writing and running a program
+
+You need the .NET 10 SDK and a clone of this repository. There is no installer yet — one
+arrives once the compiler emits assemblies. Until then you build the tool from source, which
+takes one command.
+
+### 1. Build the tool
+
+```bash
+dotnet publish src/ProfiC.Cli.Alias -p:PublishProfile=dist
+```
+
+That writes two identical executables into `dist/`: `profi-c`, and the shorter `pfc`. Either
+name works everywhere below. (In Visual Studio, right-click **ProfiC.Cli.Alias → Publish** and
+pick the `dist` profile — it does the same thing.)
+
+### 2. Put `dist` on your PATH
+
+For the current terminal only, from the repository root:
+
+```powershell
+$env:PATH = "$PWD\dist;$env:PATH"
+```
+
+```bash
+export PATH="$PWD/dist:$PATH"
+```
+
+To make it permanent, add the same line to your PowerShell `$PROFILE` or your `~/.bashrc`.
+Adding the folder to your account's PATH through the system dialog also works — but note that
+an already-running terminal, editor, or file manager keeps the environment it started with, so
+open a new window afterwards.
+
+Prefer to skip PATH entirely? Every command below also works as
+`dotnet run --project src/ProfiC.Cli -- run <file>`, straight from the repository root.
+
+### 3. Write a program
+
+This is the smallest legal Profi-C program. It compiles, runs, and does nothing:
+
+```
+global model Program
+    function Main()
+    end function
+end model
+```
+
+A source file contains model declarations and nothing else — there is no top-level code. The
+entry point is a function called `Main` inside a `global model` named `Program`, which is
+Profi-C's spelling of C#'s `static class`. Members of a `global model` are already global, so
+writing `global function Main()` is allowed but adds nothing.
+
+Save something worth watching as `hello.pfc`, anywhere you like:
+
+```
+global model Program
+    function Main()
+        Console.WriteLine("Hello, World!");
+
+        for i = 1 to 5
+            Console.WriteLine(i + " squared is " + (i * i));
+        end for
+    end function
+end model
+```
+
+### 4. Run it
+
+```bash
+pfc run hello.pfc
+```
+
+`run` checks the program and then executes it on the interpreter. Nothing runs until
+everything checks, so a program that reaches execution has already been proved free of every
+mistake the front end can see. No file is produced — the CIL emitter is what will change that.
+
+To check without running:
+
+```bash
+pfc check hello.pfc
+```
+
+Errors come back all at once rather than one per run, with positions, in the format editors
+already parse. A file with several mistakes in it reports like this:
+
+```
+scratch.pfc(4,27): error PFC0330: 'Count' is a function, so it has to be called: write 'Count()'.
+scratch.pfc(7,27): error PFC0400: 'total' is used here before it has been given a value.
+scratch.pfc(10,27): error PFC0303: '+' is not defined for an integer? and an integer.
+```
+
+Three mistakes, three messages, one run — and each caught by a different part of the compiler.
+
+### Seeing the machinery
+
+The remaining commands print each stage of compilation, which is most of why the tool exists:
+
+```bash
+pfc tokens hello.pfc
+```
+
+```bash
+pfc ast hello.pfc
+```
+
+```bash
+pfc lower samples/sorting.pfc
+```
+
+`lower` is the interesting one — it shows the simplified tree the interpreter actually walks,
+with `for each` already rewritten into an index loop and every implicit conversion made
+explicit.
+
+### One thing to remember
+
+`dist` holds a **copy** of the tool from when you published it. If you change the compiler's
+own source, re-run step 1 or `pfc` will keep running the old build. While working on the
+compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go stale.
+
 ## Documentation
 
 | Document | What it is |
@@ -237,34 +356,8 @@ dotnet build
 dotnet test
 ```
 
-```bash
-dotnet run --project src/ProfiC.Cli -- run samples/hello.pfc
-```
-
-```bash
-dotnet run --project src/ProfiC.Cli -- check samples/tour.pfc
-```
-
-`profi-c` also prints each stage of compilation, which is most of why it exists:
-
-```bash
-dotnet run --project src/ProfiC.Cli -- tokens samples/hello.pfc
-```
-
-```bash
-dotnet run --project src/ProfiC.Cli -- ast samples/tour.pfc
-```
-
-```bash
-dotnet run --project src/ProfiC.Cli -- lower samples/hello.pfc
-```
-
-The build produces two identical executables, `profi-c` and the shorter `pfc`. Put either on
-your PATH and the commands above become:
-
-```bash
-pfc run samples/fizzbuzz.pfc
-```
+To build and run Profi-C programs rather than the compiler itself, see
+[Writing and running a program](#writing-and-running-a-program) above.
 
 ## Samples
 

@@ -197,4 +197,47 @@ public sealed class FractionTests
     {
         Assert.Throws<OverflowException>(() => _ = Fraction.FromReal(value));
     }
+
+    // ---- Raising to a power -------------------------------------------------------------
+
+    [TestCase(1, 2, 3L, "1|8")]
+    [TestCase(2, 3, 2L, "4|9")]
+    [TestCase(3, 1, 4L, "81|1")]
+    [TestCase(1, 2, 0L, "1|1")]
+    [TestCase(-1, 2, 3L, "-1|8")]
+    [TestCase(-1, 2, 2L, "1|4")]
+    public void PowerIsExact(long n, long d, long exponent, string expected)
+    {
+        Assert.That(Fraction.Pow(F(n, d), exponent).ToString(), Is.EqualTo(expected));
+    }
+
+    /// <summary>
+    /// The reason a fraction is worth raising at all: a negative power inverts exactly, where
+    /// a real could only approach the answer.
+    /// </summary>
+    [TestCase(1, 2, -3L, "8|1")]
+    [TestCase(2, 3, -2L, "9|4")]
+    [TestCase(5, 1, -1L, "1|5")]
+    public void ANegativePowerInvertsExactly(long n, long d, long exponent, string expected)
+    {
+        Assert.That(Fraction.Pow(F(n, d), exponent).ToString(), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void ZeroToANegativePowerIsRejected()
+    {
+        Assert.Throws<DivideByZeroException>(() => _ = Fraction.Pow(Fraction.Zero, -1));
+    }
+
+    [Test]
+    public void ZeroToTheZeroIsOne()
+    {
+        Assert.That(Fraction.Pow(Fraction.Zero, 0), Is.EqualTo(Fraction.One));
+    }
+
+    [Test]
+    public void APowerTooLargeToHoldFailsRatherThanWrapping()
+    {
+        Assert.Throws<OverflowException>(() => _ = Fraction.Pow(F(3, 2), 200));
+    }
 }

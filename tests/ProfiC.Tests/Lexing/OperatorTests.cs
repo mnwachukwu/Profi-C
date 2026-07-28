@@ -14,6 +14,7 @@ public sealed class OperatorTests : LexerTestBase
     [TestCase("*", TokenType.Star)]
     [TestCase("/", TokenType.Slash)]
     [TestCase("%", TokenType.Percent)]
+    [TestCase("^", TokenType.Caret)]
     [TestCase("|", TokenType.Pipe)]
     [TestCase("?", TokenType.Question)]
     [TestCase(":", TokenType.Colon)]

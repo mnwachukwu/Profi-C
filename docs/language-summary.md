@@ -203,6 +203,7 @@ The second pair is more confusable than the first, since both live near the idea
 | `x as Dog` yields `Dog?` | `x as Dog` yields null on failure |
 | `global` | `static` |
 | `3\|4` fraction literal | no equivalent |
+| `2 ^ 10` raises to a power | `^` is exclusive-or; use `Math.Pow` |
 | `enumeration Color` | `enum Color` |
 | `global model` | `static class` |
 | a `global model` has global members | a `static class` marks each member `static` |
@@ -234,6 +235,8 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 **Deferred to v2:** generics, interfaces, and properties. `abstract` exists in v1 but is a marker only; with no bodiless functions, contracts wait for interfaces. Every C# property becomes a method here, which is why `Count()` has parentheses.
 
 **Fractions are a primitive** with exact rational arithmetic. `fraction` and `real` never implicitly convert in either direction; both are explicit.
+
+**`^` raises to a power** and is the only right-associative operator, so `2 ^ 3 ^ 2` is 512. It binds tighter than a leading minus, making `-2 ^ 2` equal to `-4` as on paper. A **whole** exponent preserves the base's type: an integer base gives an integer, and a fraction base stays exact, so `(1|2) ^ -3` is `8|1`. Any other exponent takes a root and gives a real, so `9 ^ 1|2` is `3` and `16 ^ 3|4` is `8` — this is the one place a fraction widens to a real unasked, because a root has no exact rational form to preserve. **This is a deliberate divergence from C#**, where `^` is exclusive-or — Profi-C has no bitwise operators, so the symbol was free.
 
 **Assignment is a statement.** `if (x = 5)` is a syntax error rather than a warning.
 

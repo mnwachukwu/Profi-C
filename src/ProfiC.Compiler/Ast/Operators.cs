@@ -28,6 +28,7 @@ public enum BinaryOperator
     Multiply,
     Divide,
     Remainder,
+    Power,
 }
 
 /// <summary>
@@ -61,6 +62,7 @@ public static class Operators
         TokenType.Star => BinaryOperator.Multiply,
         TokenType.Slash => BinaryOperator.Divide,
         TokenType.Percent => BinaryOperator.Remainder,
+        TokenType.Caret => BinaryOperator.Power,
         _ => null,
     };
 
@@ -88,6 +90,7 @@ public static class Operators
         BinaryOperator.Multiply => "*",
         BinaryOperator.Divide => "/",
         BinaryOperator.Remainder => "%",
+        BinaryOperator.Power => "^",
         _ => op.ToString(),
     };
 
@@ -107,6 +110,11 @@ public static class Operators
             or TokenType.Is or TokenType.As => (8, 9),
         TokenType.Plus or TokenType.Minus => (10, 11),
         TokenType.Star or TokenType.Slash or TokenType.Percent => (12, 13),
+
+        // Exponentiation binds tighter than a leading minus, so "-2 ^ 2" is -(2 ^ 2)
+        // as it is in mathematics, and its right power is the lower of the pair, which
+        // is what makes it right associative: "2 ^ 3 ^ 2" is 2 ^ (3 ^ 2).
+        TokenType.Caret => (15, 14),
         _ => null,
     };
 

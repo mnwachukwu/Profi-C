@@ -34,6 +34,22 @@ global model Program
         Console.WriteLine("and as a real:        " + Program.Harmonic(8).ToReal());
 
         Console.WriteLine("");
+        Console.WriteLine("== raising to a power stays exact ==");
+        Console.WriteLine("(1|2) ^ 3  is " + (1|2) ^ 3);
+        Console.WriteLine("(2|3) ^ 2  is " + (2|3) ^ 2);
+
+        comment begin
+            A negative power inverts, and inverting is where the two part company. One third
+            has no finite binary expansion, so a real can only get close to it; the fraction
+            is the number itself.
+
+            Note that one eighth would prove nothing here — it is a power of two, so a real
+            holds it exactly. The gap only shows on a denominator that is not.
+        end comment
+        Console.WriteLine("(3|1) ^ -1 is " + (3|1) ^ -1);
+        Console.WriteLine("as a real:    " + 3.0 ^ -1.0);
+
+        Console.WriteLine("");
         Console.WriteLine("== an integer widens to a fraction on its own ==");
         fraction whole = 3;
         Console.WriteLine("3 as a fraction is " + whole);

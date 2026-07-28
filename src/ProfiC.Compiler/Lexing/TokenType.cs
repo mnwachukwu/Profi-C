@@ -86,6 +86,7 @@ public enum TokenType
     Star,
     Slash,
     Percent,
+    Caret,
 
     // ---- Comparison operators -----------------------------------------------------------
 

@@ -72,6 +72,26 @@ public sealed class ExpressionParsingTests : ParserTestBase
         Assert.That(Shape(ParseExpression(source)), Is.EqualTo(expected));
     }
 
+    /// <summary>
+    /// Exponentiation is the one right-associative infix operator, and the one that binds
+    /// tighter than a leading minus. Both match how the notation is read on paper.
+    /// </summary>
+    [TestCase("2 ^ 3", "(2 ^ 3)")]
+    [TestCase("2 ^ 3 ^ 2", "(2 ^ (3 ^ 2))")]
+    [TestCase("2 ^ 3 ^ 2 ^ 1", "(2 ^ (3 ^ (2 ^ 1)))")]
+    [TestCase("-2 ^ 2", "(- (2 ^ 2))")]
+    [TestCase("2 * 3 ^ 2", "(2 * (3 ^ 2))")]
+    [TestCase("3 ^ 2 * 2", "((3 ^ 2) * 2)")]
+    [TestCase("1 + 2 ^ 3", "(1 + (2 ^ 3))")]
+    [TestCase("2 ^ -1", "(2 ^ (- 1))")]
+    [TestCase("a.b ^ c", "(a.b ^ c)")]
+    [TestCase("(-2) ^ 2", "((- 2) ^ 2)")]
+    public void ExponentiationIsRightAssociativeAndBindsTighterThanUnaryMinus(
+        string source, string expected)
+    {
+        Assert.That(Shape(ParseExpression(source)), Is.EqualTo(expected));
+    }
+
     [TestCase("-a * b", "((- a) * b)")]
     [TestCase("-a + b", "((- a) + b)")]
     [TestCase("a - -b", "(a - (- b))")]

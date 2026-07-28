@@ -174,11 +174,21 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
        6    +  -                           infix      left
        7    *  /  %                        infix      left
        8    -                              prefix     right
-       9    (  call   [  index   .  member postfix     left
+       9    ^                              infix      RIGHT
+      10    (  call   [  index   .  member postfix     left
 
    "not" sits looser than comparison, as in Python, so "not a == b" groups
    as "not (a == b)". The C-style alternative would group "(not a) == b",
    which is almost always a mistake.
+
+   "^" raises to a power. It is the only right-associative infix operator, so
+   "2 ^ 3 ^ 2" is 2 ^ (3 ^ 2) rather than (2 ^ 3) ^ 2, matching how the
+   notation is read on paper. It also binds tighter than the leading minus at
+   level 8, so "-2 ^ 2" is -(2 ^ 2) and not (-2) ^ 2 -- again as written by
+   hand. Its two sides are not the same kind of thing: the exponent counts
+   multiplications rather than being a second value of the base's type, which
+   is what allows a fraction base to stay exact. See the language
+   specification for the typing rules.
 
    "is" and "as" take a type name rather than an expression on the right,
    which the expression parser special-cases. They sit at relational

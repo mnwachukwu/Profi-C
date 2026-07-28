@@ -30,6 +30,7 @@ public static class TokenTypeExtensions
         TokenType.Star => "*",
         TokenType.Slash => "/",
         TokenType.Percent => "%",
+        TokenType.Caret => "^",
         TokenType.EqualEqual => "==",
         TokenType.NotEqual => "!=",
         TokenType.LessThan => "<",

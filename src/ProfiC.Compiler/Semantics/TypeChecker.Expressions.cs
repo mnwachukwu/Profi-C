@@ -176,6 +176,11 @@ public sealed partial class TypeChecker
             return ErrorType.Instance;
         }
 
+        if (binary.Operator == BinaryOperator.Power)
+        {
+            return CheckPower(binary, left, right);
+        }
+
         TypeSymbol? result = UnifyNumeric(left, right);
 
         if (result is null)
@@ -199,6 +204,46 @@ public sealed partial class TypeChecker
 
         WidenOperands(binary, left, right, result);
         return result;
+    }
+
+    /// <summary>
+    /// <para>Raising to a power, which is the one arithmetic operator whose two sides are not
+    /// the same kind of thing.</para>
+    /// <para>Everywhere else the operands unify: adding an integer to a real makes both real.
+    /// Here the exponent counts how many times the base is multiplied, so it stands on its own.
+    /// That is what lets a fraction keep being exact — <c>(1|2) ^ 3</c> is <c>1|8</c> — while
+    /// <c>(1|2) ^ (1|2)</c> has no rational answer at all and is rejected.</para>
+    /// </summary>
+    private TypeSymbol CheckPower(BinaryExpr binary, TypeSymbol left, TypeSymbol right)
+    {
+        // A whole exponent counts multiplications, so the base's own type survives it.
+        if (ReferenceEquals(right, PrimitiveType.Integer))
+        {
+            if (ReferenceEquals(left, PrimitiveType.Fraction))
+            {
+                return PrimitiveType.Fraction;
+            }
+
+            // Integers stay integers, so "2 ^ 10" is 1024 rather than 1024 as a real. A
+            // negative exponent has no whole answer, caught here where it can be seen.
+            if (ReferenceEquals(left, PrimitiveType.Integer))
+            {
+                if (ConstantFolder.TryFold(binary.Right, _model) is long folded && folded < 0)
+                {
+                    Report(DiagnosticDescriptors.NegativeIntegerExponent, binary.Right, folded);
+                }
+
+                return PrimitiveType.Integer;
+            }
+        }
+
+        // Otherwise the answer is a root, or involves a real, and is a real either way. A
+        // fraction exponent is admitted here even though a fraction never widens to a real
+        // elsewhere: that rule protects exactness which could have been kept, and a root has
+        // none to keep. "2 ^ (1|3)" is simply a truer way of writing "2 ^ (1.0/3.0)".
+        RecordConversion(binary.Left, left, PrimitiveType.Real);
+        RecordConversion(binary.Right, right, PrimitiveType.Real);
+        return PrimitiveType.Real;
     }
 
     /// <summary>

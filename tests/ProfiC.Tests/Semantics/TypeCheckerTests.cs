@@ -710,6 +710,47 @@ public sealed class TypeCheckerTests
             """)), Is.EqualTo(new[] { "PFC0200" }));
     }
 
+    // ---- Raising to a power ------------------------------------------------------------------
+
+    /// <summary>
+    /// The result follows the base, not a unification of both sides — an exponent counts
+    /// multiplications rather than being a second value of the base's kind.
+    /// </summary>
+    [TestCase("        integer n = 2 ^ 10;")]
+    [TestCase("        fraction f = 1|2 ^ 3;")]
+    [TestCase("        fraction g = (1|2) ^ -3;")]
+    [TestCase("        real r = 2.0 ^ 0.5;")]
+    [TestCase("        real m = 2 ^ 0.5;")]
+    public void RaisingToAPowerKeepsTheBaseType(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    /// <summary>
+    /// <para>Raising to m/n is the nth root of the mth power — ordinary arithmetic, and
+    /// allowed. The answer is a real, because a root of a rational is usually irrational.</para>
+    /// <para>This is the one place a fraction widens to a real without being asked. The rule
+    /// against that elsewhere protects exactness that could have been kept; here there is
+    /// none to keep, and <c>2 ^ (1|3)</c> says one third more faithfully than
+    /// <c>2 ^ (1.0/3.0)</c> does.</para>
+    /// </summary>
+    [TestCase("        real x = (1|2) ^ (1|2);")]
+    [TestCase("        real x = 2 ^ 1|2;")]
+    [TestCase("        real x = 2.0 ^ 1|3;")]
+    public void AFractionalExponentIsAllowedAndGivesAReal(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    /// <summary>
+    /// Two to the minus one is a half. Caught while compiling wherever the exponent can be
+    /// seen; the same expression on a fraction base is exact and allowed.
+    /// </summary>
+    [Test]
+    public void ANegativeExponentOnAnIntegerIsRejected() =>
+        Assert.That(IdsOf(CheckBody("        let x = 2 ^ -1;")),
+                    Is.EqualTo(new[] { "PFC0333" }));
+
+    [Test]
+    public void ANegativeExponentOnAFractionIsFine() =>
+        Assert.That(IdsOf(CheckBody("        let x = (1|2) ^ -1;")), Is.Empty);
+
     // ---- Range loops -------------------------------------------------------------------------
 
     /// <summary>The counter is an integer by construction, so it needs no annotation to be one.</summary>

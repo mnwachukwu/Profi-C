@@ -11,6 +11,15 @@ public enum ConversionOperation
     /// <summary>Widen an integer to a fraction. Always exact.</summary>
     IntegerToFraction,
 
+    /// <summary>
+    /// <para>Approximate a fraction as a real.</para>
+    /// <para>Never implicit in ordinary arithmetic, where mixing the two must be written out,
+    /// because there an exact answer was available and choosing to lose it is a decision. It
+    /// is implicit in one place only: the exponent of <c>^</c>, where the result is a root and
+    /// so has no exact form to preserve in the first place.</para>
+    /// </summary>
+    FractionToReal,
+
     /// <summary>Wrap a present value into an optional.</summary>
     WrapOptional,
 

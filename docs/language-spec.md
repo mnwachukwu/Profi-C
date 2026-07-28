@@ -264,7 +264,7 @@ nothing the language defines is abbreviated.
 ### 2.2 Operators and punctuation
 
 ```
-+   -   *   /   %
++   -   *   /   %   ^
 ==  !=  <   >   <=  >=
 =   =>  ?   :   |
 (   )   {   }   [   ]
@@ -275,7 +275,13 @@ Scanning is longest-match, so `<=` is one token rather than `<` followed by `=`,
 one token rather than `=` followed by `>`. No operator is longer than two characters.
 
 `?` is the optional type suffix. `:` ends a `case` label. `=>` introduces an expression
-lambda. `|` separates the parts of a fraction literal.
+lambda. `|` separates the parts of a fraction literal. `^` raises to a power.
+
+**`^` is exponentiation here, not exclusive-or.** That is a deliberate divergence from C#,
+where `^` is a bitwise operation and `10 ^ 2` evaluates to 8. Profi-C has no bitwise
+operators at all, so the symbol was free, and raising to a power is common enough in the
+arithmetic a beginner writes to deserve reaching for. It is worth knowing that the meaning
+does not carry across.
 
 The boolean operators are the reserved words `and`, `or`, and `not`, not symbols.
 
@@ -342,12 +348,57 @@ call rather than a conversion the language admits.
 *Not yet written.* Will cover the nine precedence levels, `is` and `as`, the
 `if ... then ... else` expression, lambdas, and collection literals.
 
+One rule is settled: **`^` is the only arithmetic operator whose two sides are not the same
+kind of thing.** Everywhere else the operands unify — adding an integer to a real makes both
+real. An exponent instead counts how many times the base is multiplied, so it stands on its
+own, and the result follows the base:
+
+| Base | Exponent | Result | |
+|---|---|---|---|
+| `integer` | `integer` | `integer` | `2 ^ 10` is `1024`, not `1024` rendered as a real |
+| `fraction` | `integer` | `fraction` | exact; a negative exponent inverts, so `(1\|2) ^ -3` is `8\|1` |
+| anything else | | `real` | including any `fraction` exponent |
+
+A whole exponent counts multiplications, so the base's own type survives it. Any other
+exponent means a root — raising to `m/n` is the nth root of the mth power — and the root of a
+rational is usually irrational, so the answer is a real. `9 ^ 1|2` is `3`, and `16 ^ 3|4`
+is `8`.
+
+This is the **only** place a `fraction` widens to a `real` without being asked, and the
+exception is deliberate. That rule exists to stop exactness being lost silently where it
+could have been kept: in `1|2 + 0.5` an exact answer exists, so the language makes you say
+which you meant. A root has no exact rational form at all, so there is nothing to protect —
+and `2 ^ (1|3)` states one third more faithfully than `2 ^ (1.0/3.0)` does.
+
+An `integer` raised to a negative power has no whole answer. Where the exponent can be seen
+while compiling this is an error; where it cannot, as with a variable, it throws at run time,
+exactly as dividing by a variable that turns out to be zero does.
+
+A second rule is settled: **a collection literal takes its element type from what is expected
+of it, where anything expects one.** In a variable or field initializer, an assignment, or a
+`yield`, each element is checked against the wanted element type and converts on its own — so
+a set of shapes may be written as the several kinds of shape it holds, and
+`integer?[] xs = {1, 2}` wraps each element. Where nothing says what is wanted, as in
+`let xs = {a, b};`, the elements must already agree on one type.
+
+This is the same principle as C# array initializers, and it is deliberately not inference from
+a common ancestor: two unrelated models share only `Model`, which no value type can be
+assigned to, so inferring one would produce a set nothing could be put into and report the
+mistake somewhere other than where it was made.
+
 ## 6. Statements
 
 *Not yet written.* Will cover block structure and the qualified `end`, the two `for` forms,
 `switch`, and `try`.
 
-One rule is settled ahead of the rest, because the grammar depends on it: **an expression
+One rule is settled because the grammar depends on it: **neither `for` form writes a type for
+the variable it binds.** A range loop counts, and counting is done with integers, so
+`for i = 1 to 10` has no type to write and writing one is an error; a `for each` takes its
+element's type from the sequence. Both are fixed by the construct rather than inferred from a
+value, which is why neither needs `let`. A range loop's bounds and step must themselves be
+integers.
+
+A second rule is settled, also because the grammar depends on it: **an expression
 statement may not begin with `(` or `-`.** A construct's body has no opening token, so a
 condition ends at the first token that cannot continue an expression — and those two can,
 which would otherwise let a condition swallow the first statement of its own body. The
