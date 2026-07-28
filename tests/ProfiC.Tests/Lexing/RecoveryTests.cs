@@ -1,5 +1,8 @@
+using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
+using ProfiC.Compiler.Parsing;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Tests.Lexing;
 
@@ -153,26 +156,84 @@ public sealed class RecoveryTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// A compound assignment has no single token that means it, so <c>=</c> stands in. That
+    /// keeps the statement's shape, which is what stops the parser reporting on the wreckage;
+    /// the message carries the rewrite.
+    /// </summary>
     [TestCase("+=")]
     [TestCase("-=")]
     [TestCase("*=")]
     [TestCase("/=")]
     [TestCase("%=")]
-    [TestCase("++")]
-    public void CSharpAssignmentOperator_IsReportedRatherThanSplit(string source)
+    public void CompoundAssignment_StandsInAsAPlainAssignment(string source)
     {
         (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw($"x {source} 1");
 
         Assert.Multiple(() =>
         {
             Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
+            {
+                TokenType.Identifier, TokenType.Equal, TokenType.IntegerLiteral,
+                TokenType.EndOfFile,
+            }));
 
-            // The operator produces no tokens at all, rather than two misleading ones.
+            // The stand-in keeps the text that was actually written, so a token still slices
+            // exactly out of the source and a printed stream does not lie about it.
+            Assert.That(tokens[1].Lexeme, Is.EqualTo(source));
+        });
+    }
+
+    /// <summary>
+    /// Incrementing is the one with nothing to stand in for it — and it needs none, since
+    /// dropping it leaves "x", already a well-formed expression statement.
+    /// </summary>
+    [Test]
+    public void Increment_IsDroppedBecauseNothingStandsInForIt()
+    {
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("x++ 1");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
             Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
             {
                 TokenType.Identifier, TokenType.IntegerLiteral, TokenType.EndOfFile,
             }));
         });
+    }
+
+    /// <summary>
+    /// <para>The point of standing a token in: one mistake produces one message.</para>
+    /// <para>Reporting and then emitting nothing leaves two operands adjacent, and the parser
+    /// reports on every shape that follows. <c>10 ** 2 - 2 / 2 + 5</c> used to yield seven
+    /// diagnostics for one stray character, which reads as though something is badly broken
+    /// rather than mistyped.</para>
+    /// </summary>
+    [TestCase("Console.WriteLine(10 ** 2 - 2 / 2 + 5);")]
+    [TestCase("integer x = 1;\n        x += 2;")]
+    [TestCase("integer x = 1;\n        x++;")]
+    [TestCase("if true && false\n            yield;\n        end if")]
+    [TestCase("if true || false\n            yield;\n        end if")]
+    [TestCase("if !true\n            yield;\n        end if")]
+    public void OneMistakeProducesExactlyOneDiagnostic(string body)
+    {
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(
+            new SourceText(
+                $$"""
+                global model Program
+                    function Main()
+                        {{body}}
+                    end function
+                end model
+                """,
+                "<test>"),
+            diagnostics);
+
+        _ = unit;
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
     }
 
     /// <summary>

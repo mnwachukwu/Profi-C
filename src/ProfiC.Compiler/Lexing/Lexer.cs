@@ -25,20 +25,37 @@ public sealed class Lexer
     /// requires knowing whether an operand follows. That is grammatical context the scanner
     /// does not have, so the decrement diagnostic belongs to the parser.</para>
     /// </summary>
-    private static readonly (string Operator, string Advice)[] NonOperators =
+    /// <summary>
+    /// <para>Sequences that are operators in C# but not here, each with the token it stands in
+    /// for while recovering.</para>
+    /// <para>The substitution is what keeps one mistake to one message. Reporting and then
+    /// emitting nothing leaves two operands side by side, and the parser reports on every
+    /// shape that follows — seven diagnostics for one stray character, which reads to a
+    /// beginner as though something is badly broken rather than mistyped. Standing in the
+    /// intended operator instead lets the rest of the line parse, so the only thing reported
+    /// is the thing that was actually wrong.</para>
+    /// <para>Several of these have an exact stand-in, since Profi-C spells the same operation
+    /// differently. The compound assignments do not: their meaning needs a statement rather
+    /// than a token, so <c>=</c> stands in to keep the shape and the message carries the
+    /// rewrite. A null means nothing sensible stands in and the sequence is dropped.</para>
+    /// </summary>
+    private static readonly (string Operator, TokenType? StandsIn, string Advice)[] NonOperators =
     [
-        ("&&", "Use 'and'."),
-        ("||", "Use 'or'."),
-        ("+=", "Profi-C has no compound assignment. Write 'x = x + y'."),
-        ("-=", "Profi-C has no compound assignment. Write 'x = x - y'."),
-        ("*=", "Profi-C has no compound assignment. Write 'x = x * y'."),
-        ("/=", "Profi-C has no compound assignment. Write 'x = x / y'."),
-        ("%=", "Profi-C has no compound assignment. Write 'x = x % y'."),
-        ("++", "Profi-C has no increment operator. Write 'x = x + 1'."),
+        ("&&", TokenType.And, "Use 'and'."),
+        ("||", TokenType.Or, "Use 'or'."),
+        ("+=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x + y'."),
+        ("-=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x - y'."),
+        ("*=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x * y'."),
+        ("/=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x / y'."),
+        ("%=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x % y'."),
+
+        // "x++" leaves "x", which is already a well-formed expression statement, so dropping
+        // it cascades no further than standing something in would.
+        ("++", null, "Profi-C has no increment operator. Write 'x = x + 1'."),
 
         // Raising to a power is written "^". A reader arriving from Python reaches for this
         // spelling, so it is named rather than scanned as two multiplications.
-        ("**", "Profi-C raises to a power with '^'. Write 'base ^ exponent', "
+        ("**", TokenType.Caret, "Profi-C raises to a power with '^'. Write 'base ^ exponent', "
                + "or 'Math.Pow(base, exponent)' for a real result."),
     ];
 
@@ -491,7 +508,7 @@ public sealed class Lexer
     {
         int start = _index;
 
-        foreach ((string op, string advice) in NonOperators)
+        foreach ((string op, TokenType? standsIn, string advice) in NonOperators)
         {
             if (MatchesAt(start, op))
             {
@@ -501,7 +518,10 @@ public sealed class Lexer
                     SpanOf(start, op.Length),
                     op,
                     advice);
-                return null;
+
+                // The stand-in keeps its own lexeme, so the token still slices exactly out of
+                // the source and a printed stream shows what was really written.
+                return standsIn is { } replacement ? MakeToken(replacement, start) : null;
             }
         }
 
@@ -545,7 +565,11 @@ public sealed class Lexer
 
         if (type is null)
         {
-            // "!" on its own only reaches here when it is not part of "!=".
+            // "!" on its own only reaches here when it is not part of "!=", which is why it
+            // cannot live in the table above: that is checked first and would swallow the "!"
+            // of a "!=". It stands in as "not" for the same reason the others do, and here
+            // there is a second reason — dropping it would leave a condition meaning the
+            // opposite of what was written.
             if (c == '!')
             {
                 _diagnostics.Report(
@@ -553,6 +577,8 @@ public sealed class Lexer
                     SpanOf(start, 1),
                     "!",
                     "Use 'not'.");
+
+                return MakeToken(TokenType.Not, start);
             }
             else
             {
