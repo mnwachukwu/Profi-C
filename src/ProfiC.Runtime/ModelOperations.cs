@@ -30,6 +30,9 @@ public static class ModelOperations
         double real => real.ToString("R", CultureInfo.InvariantCulture),
         float real => real.ToString("R", CultureInfo.InvariantCulture),
         Enum member => member.ToString(),
+
+        // An enumeration member shows the name that was written, not the number behind it.
+        EnumValue member => member.MemberName,
         IFormattable number => number.ToString(null, CultureInfo.InvariantCulture),
         _ => value.ToString() ?? string.Empty,
     };

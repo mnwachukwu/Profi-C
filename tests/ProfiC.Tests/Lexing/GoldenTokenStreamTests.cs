@@ -7,7 +7,7 @@ namespace ProfiC.Tests.Lexing;
 
 /// <summary>
 /// <para>Pins the exact token stream produced for each sample against a checked-in file.</para>
-/// <para>The recorded format is the one <c>profic tokens</c> prints, so a golden file is
+/// <para>The recorded format is the one <c>profi-c tokens</c> prints, so a golden file is
 /// simultaneously a regression test and a worked example of a shipped command. Keeping one
 /// format rather than two is the whole reason this is hand-rolled instead of using a
 /// snapshot library.</para>

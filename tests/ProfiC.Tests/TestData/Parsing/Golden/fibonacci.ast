@@ -1,0 +1,112 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FieldDecl 'Limit' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 15 [Integer]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "n    recursive   iterative" [String]
+      ForStmt 'n' to
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+        MemberExpr 'Limit'
+          IdentifierExpr 'Program'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                CallExpr
+                  MemberExpr 'Pad'
+                    IdentifierExpr 'Program'
+                  IdentifierExpr 'n'
+                CallExpr
+                  MemberExpr 'Pad'
+                    IdentifierExpr 'Program'
+                  CallExpr
+                    MemberExpr 'Recursive'
+                      IdentifierExpr 'Program'
+                    IdentifierExpr 'n'
+              CallExpr
+                MemberExpr 'Iterative'
+                  IdentifierExpr 'Program'
+                IdentifierExpr 'n'
+    FunctionDecl 'Recursive'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr '<'
+          IdentifierExpr 'n'
+          LiteralExpr 2 [Integer]
+        YieldStmt
+          IdentifierExpr 'n'
+      YieldStmt
+        BinaryExpr '+'
+          CallExpr
+            MemberExpr 'Recursive'
+              IdentifierExpr 'Program'
+            BinaryExpr '-'
+              IdentifierExpr 'n'
+              LiteralExpr 1 [Integer]
+          CallExpr
+            MemberExpr 'Recursive'
+              IdentifierExpr 'Program'
+            BinaryExpr '-'
+              IdentifierExpr 'n'
+              LiteralExpr 2 [Integer]
+    FunctionDecl 'Iterative'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'previous'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      VarDeclStmt 'current'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+      ForStmt 'i' until
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+        IdentifierExpr 'n'
+        VarDeclStmt 'next'
+          NamedTypeSyntax 'integer'
+          BinaryExpr '+'
+            IdentifierExpr 'previous'
+            IdentifierExpr 'current'
+        AssignmentStmt
+          IdentifierExpr 'previous'
+          IdentifierExpr 'current'
+        AssignmentStmt
+          IdentifierExpr 'current'
+          IdentifierExpr 'next'
+      YieldStmt
+        IdentifierExpr 'previous'
+    FunctionDecl 'Pad'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'value'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'text' [inferred]
+        BinaryExpr '+'
+          LiteralExpr "" [String]
+          IdentifierExpr 'value'
+      VarDeclStmt 'padded'
+        NamedTypeSyntax 'string'
+        IdentifierExpr 'text'
+      ForStmt 'i' until
+        NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Count'
+            IdentifierExpr 'text'
+        LiteralExpr 12 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'padded'
+          BinaryExpr '+'
+            IdentifierExpr 'padded'
+            LiteralExpr " " [String]
+      YieldStmt
+        IdentifierExpr 'padded'

@@ -1,0 +1,59 @@
+comment begin
+    The Sieve of Eratosthenes.
+
+    Rather than testing each number for divisibility, this crosses out the multiples of every
+    prime it finds. Each number is visited a handful of times instead of being divided by
+    everything below it, which is why the sieve is the one everybody still teaches.
+
+    The crossing-out starts at n * n. Every smaller multiple of n has a factor below n, so it
+    was already crossed out when that smaller factor had its turn.
+end comment
+
+global model Program
+
+    constant integer Limit = 60;
+
+    function Main()
+        boolean[] composite = Program.Sieve(Program.Limit);
+        integer found = 0;
+
+        Console.WriteLine("Primes up to " + Program.Limit + ":");
+
+        for integer n = 2 to Program.Limit
+            if not composite[n]
+                Console.Write(n);
+                Console.Write(" ");
+                found = found + 1;
+            end if
+        end for
+
+        Console.WriteLine("");
+        Console.WriteLine("That is " + found + " of them.");
+    end function
+
+    comment begin
+        Yields a set where position n says whether n is composite. Position 0 and 1 are never
+        read: neither is prime, and neither is composite either.
+    end comment
+    boolean[] function Sieve(integer limit)
+        boolean[] composite = {};
+
+        for integer i = 0 to limit
+            composite.Insert(false);
+        end for
+
+        for integer n = 2 to limit
+            if not composite[n]
+                integer multiple = n * n;
+
+                while multiple <= limit
+                    composite[multiple] = true;
+                    multiple = multiple + n;
+                end while
+            end if
+        end for
+
+        yield composite;
+    end function
+
+end model

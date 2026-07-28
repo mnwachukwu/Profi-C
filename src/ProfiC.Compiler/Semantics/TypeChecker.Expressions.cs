@@ -15,6 +15,37 @@ public sealed partial class TypeChecker
         return type;
     }
 
+    /// <summary>
+    /// <para>Works out an expression's type where the surrounding code already says what is
+    /// wanted.</para>
+    /// <para>Only a collection literal is treated differently, and it is the only construct
+    /// that needs to be: a literal has no type of its own beyond what is in it, so
+    /// <c>{ new Rectangle(...), new Circle(...) }</c> has nothing to be until something says
+    /// these are shapes. Everything else has a type on its own terms and is checked against
+    /// what is wanted afterwards, as before.</para>
+    /// </summary>
+    private TypeSymbol CheckExpressionAgainst(Expression expression, TypeSymbol expected) =>
+        expression is CollectionExpr collection && expected is SetType set
+            ? CheckCollectionAgainst(collection, set)
+            : CheckExpression(expression);
+
+    /// <summary>
+    /// Checks every element against the element type that was asked for, rather than against
+    /// whichever element happened to come first. Each element converts on its own, which is
+    /// also what makes <c>integer?[] xs = {1, 2}</c> work — inference could never produce it.
+    /// </summary>
+    private TypeSymbol CheckCollectionAgainst(CollectionExpr collection, SetType expected)
+    {
+        foreach (Expression element in collection.Elements)
+        {
+            TypeSymbol actual = CheckExpressionAgainst(element, expected.ElementType);
+            RequireAssignable(actual, expected.ElementType, element);
+        }
+
+        _model.BindType(collection, expected);
+        return expected;
+    }
+
     private TypeSymbol CheckExpressionCore(Expression expression) => expression switch
     {
         MissingExpr => ErrorType.Instance,
@@ -166,13 +197,37 @@ public sealed partial class TypeChecker
             Report(DiagnosticDescriptors.DivisionByZero, binary.Right);
         }
 
+        WidenOperands(binary, left, right, result);
         return result;
+    }
+
+    /// <summary>
+    /// <para>Records the widening each side of a mixed-numeric operator needs.</para>
+    /// <para>Without this the operator's <em>type</em> is right while its operands are not, and
+    /// nothing downstream can tell: the type checker is the only pass that knows one side was
+    /// narrower than the answer. Adding a fraction to an integer would then reach the back end
+    /// as a fraction and an integer, with no instruction to reconcile them.</para>
+    /// </summary>
+    private void WidenOperands(BinaryExpr binary, TypeSymbol left, TypeSymbol right, TypeSymbol unified)
+    {
+        if (!Conversions.SameType(left, unified))
+        {
+            RecordConversion(binary.Left, left, unified);
+        }
+
+        if (!Conversions.SameType(right, unified))
+        {
+            RecordConversion(binary.Right, right, unified);
+        }
     }
 
     private TypeSymbol CheckComparison(BinaryExpr binary, TypeSymbol left, TypeSymbol right)
     {
-        if (IsNumeric(left) && IsNumeric(right) && UnifyNumeric(left, right) is not null)
+        if (IsNumeric(left) && IsNumeric(right) && UnifyNumeric(left, right) is { } unified)
         {
+            // Comparing across numeric types compares them as the wider one, so the same
+            // widening an arithmetic operator needs applies here.
+            WidenOperands(binary, left, right, unified);
             return PrimitiveType.Boolean;
         }
 
@@ -209,6 +264,15 @@ public sealed partial class TypeChecker
                 binary.Operator.Spelling(),
                 left.WithArticle(),
                 right.WithArticle());
+
+            return PrimitiveType.Boolean;
+        }
+
+        // Two numbers of different types are equal when they denote the same value, so the
+        // narrower one widens first. Everything else is compared structurally as it stands.
+        if (IsNumeric(left) && IsNumeric(right) && UnifyNumeric(left, right) is { } unified)
+        {
+            WidenOperands(binary, left, right, unified);
         }
 
         return PrimitiveType.Boolean;

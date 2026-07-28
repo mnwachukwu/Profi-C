@@ -306,13 +306,26 @@ public sealed partial class Resolver
 
             if (!_typesByName.TryGetValue(baseName, out DeclaredTypeSymbol? baseType))
             {
-                // "extends Model" is legal and redundant, exactly as ": object" is in C#,
-                // and Exception and its subtypes may be extended too.
                 if (!BuiltInTypeNames.Contains(baseName))
                 {
                     Report(DiagnosticDescriptors.TypeNotFound, declaration, baseName);
                 }
+                else if (baseName == "Exception" || BuiltInExceptionNames.Contains(baseName))
+                {
+                    // Recorded rather than merely permitted, so that a model extending
+                    // Exception inherits Message and one catch clause takes it.
+                    model.BaseType = BuiltInModel(baseName);
+                }
+                else if (baseName != "Model")
+                {
+                    // Console and the rest are models only so that their members resolve.
+                    // None of them has anything to inherit, and saying so is far better than
+                    // accepting the line and quietly producing a model with no base at all.
+                    Report(DiagnosticDescriptors.CannotExtendBuiltInType, declaration, baseName);
+                }
 
+                // What remains is "extends Model": legal and redundant, exactly as ": object"
+                // is in C#, and it leaves the base where it already was.
                 continue;
             }
 

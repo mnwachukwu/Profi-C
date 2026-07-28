@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>ProfiC.Interpreter</RootNamespace>
+    <AssemblyName>ProfiC.Interpreter</AssemblyName>
+    <Description>Runs a checked Profi-C program by walking its lowered tree. Stays afterwards as the oracle the compiler is checked against.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ProfiC.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProfiC.Compiler\ProfiC.Compiler.csproj" />
+    <ProjectReference Include="..\ProfiC.Runtime\ProfiC.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,114 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FieldDecl 'Limit' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 60 [Integer]
+    FunctionDecl 'Main'
+      VarDeclStmt 'composite'
+        SetTypeSyntax
+          NamedTypeSyntax 'boolean'
+        CallExpr
+          MemberExpr 'Sieve'
+            IdentifierExpr 'Program'
+          MemberExpr 'Limit'
+            IdentifierExpr 'Program'
+      VarDeclStmt 'found'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "Primes up to " [String]
+              MemberExpr 'Limit'
+                IdentifierExpr 'Program'
+            LiteralExpr ":" [String]
+      ForStmt 'n' to
+        NamedTypeSyntax 'integer'
+        LiteralExpr 2 [Integer]
+        MemberExpr 'Limit'
+          IdentifierExpr 'Program'
+        IfStmt
+          UnaryExpr 'not'
+            IndexExpr
+              IdentifierExpr 'composite'
+              IdentifierExpr 'n'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Write'
+                IdentifierExpr 'Console'
+              IdentifierExpr 'n'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Write'
+                IdentifierExpr 'Console'
+              LiteralExpr " " [String]
+          AssignmentStmt
+            IdentifierExpr 'found'
+            BinaryExpr '+'
+              IdentifierExpr 'found'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "That is " [String]
+              IdentifierExpr 'found'
+            LiteralExpr " of them." [String]
+    FunctionDecl 'Sieve'
+      SetTypeSyntax
+        NamedTypeSyntax 'boolean'
+      ParameterDecl 'limit'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'composite'
+        SetTypeSyntax
+          NamedTypeSyntax 'boolean'
+        CollectionExpr
+      ForStmt 'i' to
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+        IdentifierExpr 'limit'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'composite'
+            LiteralExpr false [Boolean]
+      ForStmt 'n' to
+        NamedTypeSyntax 'integer'
+        LiteralExpr 2 [Integer]
+        IdentifierExpr 'limit'
+        IfStmt
+          UnaryExpr 'not'
+            IndexExpr
+              IdentifierExpr 'composite'
+              IdentifierExpr 'n'
+          VarDeclStmt 'multiple'
+            NamedTypeSyntax 'integer'
+            BinaryExpr '*'
+              IdentifierExpr 'n'
+              IdentifierExpr 'n'
+          WhileStmt
+            BinaryExpr '<='
+              IdentifierExpr 'multiple'
+              IdentifierExpr 'limit'
+            AssignmentStmt
+              IndexExpr
+                IdentifierExpr 'composite'
+                IdentifierExpr 'multiple'
+              LiteralExpr true [Boolean]
+            AssignmentStmt
+              IdentifierExpr 'multiple'
+              BinaryExpr '+'
+                IdentifierExpr 'multiple'
+                IdentifierExpr 'n'
+      YieldStmt
+        IdentifierExpr 'composite'

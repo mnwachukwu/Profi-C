@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ProfiC.Cli.Alias</RootNamespace>
+    <AssemblyName>pfc</AssemblyName>
+    <Description>The pfc alias for the profi-c command.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProfiC.Cli\ProfiC.Cli.csproj" />
+  </ItemGroup>
+
+</Project>

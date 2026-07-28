@@ -1,0 +1,131 @@
+comment begin
+    Inheritance and virtual dispatch.
+
+    Three shapes, each computing its own area. The loop at the bottom does not ask what kind
+    of shape it is holding — it calls Area() and the shape decides. That is the whole idea,
+    and it is worth watching happen: one line of calling code, three different answers.
+
+    'abstract' marks a model that exists to be extended rather than instantiated. 'virtual'
+    marks a function a child may replace, and 'override' is required on the replacement — the
+    compiler will not let a child shadow a parent's function by accident.
+end comment
+
+abstract model Shape
+
+    protected string name;
+
+    public function Shape(string label)
+        this.name = label;
+    end function
+
+    comment A default worth overriding. Every shape below does.
+    public virtual real function Area()
+        yield 0.0;
+    end function
+
+    public virtual string function Describe()
+        yield this.name + " with area " + this.Area();
+    end function
+
+end model
+
+model Rectangle extends Shape
+
+    real width;
+    real height;
+
+    public function Rectangle(real across, real down)
+        base("rectangle");
+        this.width = across;
+        this.height = down;
+    end function
+
+    public override real function Area()
+        yield this.width * this.height;
+    end function
+
+end model
+
+comment begin
+    A square is a rectangle whose sides agree, so it extends one rather than repeating the
+    arithmetic. 'sealed' says nothing may extend it further — there is no narrower square.
+end comment
+sealed model Square extends Rectangle
+
+    public function Square(real side)
+        base(side, side);
+    end function
+
+    public override string function Describe()
+        yield "square with area " + this.Area();
+    end function
+
+end model
+
+model Circle extends Shape
+
+    comment begin
+        'constant' says it never changes; 'global' says there is one of it rather than one
+        per circle. Both are needed to reach it as Circle.Pi.
+    end comment
+    global constant real Pi = 3.14159265358979;
+
+    real radius;
+
+    public function Circle(real r)
+        base("circle");
+        this.radius = r;
+    end function
+
+    public override real function Area()
+        yield Circle.Pi * this.radius * this.radius;
+    end function
+
+end model
+
+global model Program
+
+    function Main()
+        comment begin
+            The elements are three different kinds of shape, and the declared type is what
+            says they belong together. Each is checked against Shape on its own, so this is
+            a set of shapes rather than a set of whichever kind came first.
+        end comment
+        Shape[] shapes = {new Rectangle(3.0, 4.0), new Square(5.0), new Circle(1.0)};
+
+        comment begin
+            Each of these is a Shape as far as this loop is concerned. Which Area() runs is
+            decided by what the value actually is, not by the type the variable was declared
+            with — so a Square answers 25 even though nothing here mentions squares.
+        end comment
+        for each shape in shapes
+            Console.WriteLine(shape.Describe());
+        end for
+
+        Console.WriteLine("");
+        Console.WriteLine("total area: " + Program.TotalArea(shapes));
+
+        comment 'is' asks, and 'as' yields an optional rather than failing.
+        Console.WriteLine("");
+        for each shape in shapes
+            if shape is Square
+                Console.WriteLine("found a square");
+            else if (shape as Circle).HasValue()
+                Console.WriteLine("found a circle");
+            else
+                Console.WriteLine("found something else");
+            end if
+        end for
+    end function
+
+    real function TotalArea(Shape[] shapes)
+        real total = 0.0;
+
+        for each shape in shapes
+            total = total + shape.Area();
+        end for
+
+        yield total;
+    end function
+
+end model

@@ -31,6 +31,10 @@ public sealed partial class TypeChecker
         // optional answers HasValue() without either being declared anywhere.
         if (FindBuiltIn(member.Receiver, receiver, member.MemberName) is { } builtIn)
         {
+            // Only an uncalled access reaches here; a call is handled by CheckMemberCall. Every
+            // member the language provides is a function, so this is always the missing "()".
+            Report(DiagnosticDescriptors.BuiltInMemberNeedsCall, member, member.MemberName);
+
             _model.BindType(member, TypeOfBuiltIn(builtIn));
             return TypeOfBuiltIn(builtIn);
         }
@@ -65,11 +69,34 @@ public sealed partial class TypeChecker
 
         if (found.Count > 0)
         {
+            RequireGlobal(member, type, found[0]);
             return BindMember(member, found);
         }
 
         Report(DiagnosticDescriptors.MemberNotFound, member, type.WithArticleCapitalized(), member.MemberName);
         return ErrorType.Instance;
+    }
+
+    /// <summary>
+    /// <para>Rejects an instance member reached through the name of its type.</para>
+    /// <para>Without this the member binds, produces its declared type, and yields nothing at
+    /// all when the program runs — the mistake stays quiet right up until the wrong answer
+    /// appears. Enumeration members and nested types belong to the type itself, so they pass.
+    /// </para>
+    /// </summary>
+    private void RequireGlobal(MemberExpr member, DeclaredTypeSymbol type, Symbol found)
+    {
+        bool needsInstance = found switch
+        {
+            FieldSymbol field => !field.IsGlobal,
+            FunctionSymbol function => !function.IsGlobal && !function.IsConstructor,
+            _ => false,
+        };
+
+        if (needsInstance)
+        {
+            Report(DiagnosticDescriptors.MemberNeedsInstance, member, member.MemberName, type.Name);
+        }
     }
 
     /// <summary>
@@ -207,6 +234,15 @@ public sealed partial class TypeChecker
 
         if (constructors.Count == 0)
         {
+            // The built-in Exception declares nothing a program can see, but it does take the
+            // message every exception carries. That one form is allowed through.
+            if (BuiltInMembers.IsException(parent)
+                && arguments is [{ } only]
+                && Conversions.IsAssignable(only, PrimitiveType.String))
+            {
+                return PrimitiveType.Nothing;
+            }
+
             // A parent with no constructor takes no arguments, so only an empty call fits.
             if (arguments.Count > 0)
             {
@@ -284,6 +320,11 @@ public sealed partial class TypeChecker
         if (chosen is null)
         {
             return ErrorType.Instance;
+        }
+
+        if (onType)
+        {
+            RequireGlobal(member, declared, chosen);
         }
 
         _model.Bind(member, chosen);

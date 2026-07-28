@@ -248,6 +248,18 @@ public static class DiagnosticDescriptors
         "No parent to reach",
         "'base' needs a parent model, and '{0}' extends nothing.");
 
+    /// <summary>
+    /// <para>Separate from <see cref="CannotExtendNonModel"/>, which names the kind the base
+    /// turned out to be. These are models as far as the compiler is concerned — that is only
+    /// how their members resolve — so that message would read "'Console' is a model, and only
+    /// a model can be extended", which explains nothing.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CannotExtendBuiltInType = Error(
+        "PFC0217",
+        "Cannot extend a built-in type",
+        "'{0}' is provided by the language and has nothing to inherit. Of the built-in types "
+        + "only 'Model' and the exceptions may follow 'extends'.");
+
     // ---- Type checking, PFC0300 to PFC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(
@@ -331,10 +343,18 @@ public static class DiagnosticDescriptors
         "The type of an empty set cannot be worked out from the set alone. "
         + "Write the type, as in 'integer[] values = {};'.");
 
+    /// <summary>
+    /// <para>Reported only where nothing says what the set should hold.</para>
+    /// <para>Given a type to measure against, elements of several kinds are fine and each is
+    /// converted on its own — a set of shapes may be written as the rectangles and circles it
+    /// holds. It is inference that needs one type, so the fix is to say which.</para>
+    /// </summary>
     public static readonly DiagnosticDescriptor CollectionElementsDiffer = Error(
         "PFC0314",
         "Set elements have different types",
-        "Every element of a set must have the same type; found {0} and {1}.");
+        "With no type to measure them against, every element of a set must have the same "
+        + "type; found {0} and {1}. Write the type the set should have, as in "
+        + "'Shape[] values = {{...}};'.");
 
     public static readonly DiagnosticDescriptor NotSwitchable = Error(
         "PFC0315",
@@ -418,6 +438,30 @@ public static class DiagnosticDescriptors
         "Optional must be unwrapped first",
         "This is {0}, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a "
         + "fallback, or 'Value()' to insist.");
+
+    /// <summary>
+    /// <para>The language provides no properties, so every member it provides is a function
+    /// and every use of one is a call.</para>
+    /// <para>Worth its own diagnostic because the mistake is quiet otherwise — a reader coming
+    /// from a language with properties writes <c>xs.Count</c>, means the number, and gets
+    /// something that is not one.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BuiltInMemberNeedsCall = Error(
+        "PFC0330",
+        "This member is a function",
+        "'{0}' is a function, so it has to be called: write '{0}()'.");
+
+    /// <summary>
+    /// <para>An instance member reached through the name of its type.</para>
+    /// <para>There is no instance for it to belong to, so there is nothing to read. Marking
+    /// the member <c>global</c> is usually what was meant — a <c>constant</c> is not global on
+    /// its own, exactly as it is written <c>global constant</c> when it should be.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor MemberNeedsInstance = Error(
+        "PFC0331",
+        "Member needs an instance",
+        "'{0}' belongs to each {1} rather than to the {1} type, so it cannot be reached "
+        + "through the name '{1}'. Mark it 'global', or read it from a value.");
 
     // ---- Definite assignment and flow, PFC0400 to PFC0499 --------------------------------
 

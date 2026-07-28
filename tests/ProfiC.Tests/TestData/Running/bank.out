@@ -1,0 +1,15 @@
+
+ada withdraws 60
+  done
+  (attempt closed)
+
+alan withdraws 60
+  declined: alan is 20 short
+  (attempt closed)
+
+grace withdraws 10
+  no account for grace
+
+final balances
+  ada: 40
+  alan: 40

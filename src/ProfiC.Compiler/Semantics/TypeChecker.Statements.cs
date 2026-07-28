@@ -161,7 +161,9 @@ public sealed partial class TypeChecker
             return;
         }
 
-        TypeSymbol actual = CheckExpression(declaration.Initializer);
+        // The declared type is what a collection literal is measured against, so that a set of
+        // shapes may be written as a literal of the several kinds of shape it holds.
+        TypeSymbol actual = CheckExpressionAgainst(declaration.Initializer, declared);
 
         // An empty set takes the declared element type, which is why writing the type is what
         // makes an empty literal usable.
@@ -311,7 +313,9 @@ public sealed partial class TypeChecker
             return;
         }
 
-        TypeSymbol actual = CheckExpression(yieldStmt.Value);
+        TypeSymbol actual = expected is null
+            ? CheckExpression(yieldStmt.Value)
+            : CheckExpressionAgainst(yieldStmt.Value, expected);
 
         if (expected is null)
         {
@@ -327,7 +331,7 @@ public sealed partial class TypeChecker
         // The declared type, not the narrowed one: assigning to a narrowed optional may put
         // an empty value back into it, and the declaration is what says whether that fits.
         TypeSymbol target = DeclaredTypeOf(assignment.Target);
-        TypeSymbol value = CheckExpression(assignment.Value);
+        TypeSymbol value = CheckExpressionAgainst(assignment.Value, target);
 
         RequireAssignable(value, target, assignment.Value);
         UpdateNarrowingAfterAssignment(assignment.Target, value);

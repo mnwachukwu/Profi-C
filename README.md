@@ -182,7 +182,7 @@ read-only inside the body, which removes the classic closure-capture trap.
 
 ## Status
 
-**Early. Profi-C parses; nothing runs yet.**
+**Profi-C runs.** Programs execute on a tree-walking interpreter; the CIL emitter is next.
 
 | Stage | State |
 |---|---|
@@ -191,7 +191,8 @@ read-only inside the body, which removes the classic closure-capture trap.
 | Resolver | Complete |
 | Type checker | Complete |
 | Definite assignment, optional narrowing | Complete |
-| Interpreter | Not started |
+| Lowering | Complete |
+| Interpreter | Complete |
 | CIL emitter | Not started |
 
 **The front end is finished.** Source becomes a syntax tree, every name resolves, every
@@ -199,7 +200,13 @@ expression has a type, nothing can be read before it holds a value, and an optio
 read at all until presence is proven. All of it reports errors with positions and recovers
 rather than stopping at the first mistake.
 
-Nothing executes yet — the examples above are fully checked but are **not yet runnable**.
+```bash
+dotnet run --project src/ProfiC.Cli -- run samples/hello.pfc
+```
+
+The interpreter is not a stopgap. It runs the same lowered tree the emitter will, so once both
+exist it stays on as the oracle: where the two disagree about what a program means, the
+compiler has the bug.
 
 ## Documentation
 
@@ -227,6 +234,16 @@ dotnet test
 ```
 
 ```bash
+dotnet run --project src/ProfiC.Cli -- run samples/hello.pfc
+```
+
+```bash
+dotnet run --project src/ProfiC.Cli -- check samples/tour.pfc
+```
+
+`profi-c` also prints each stage of compilation, which is most of why it exists:
+
+```bash
 dotnet run --project src/ProfiC.Cli -- tokens samples/hello.pfc
 ```
 
@@ -235,15 +252,48 @@ dotnet run --project src/ProfiC.Cli -- ast samples/tour.pfc
 ```
 
 ```bash
-dotnet run --project src/ProfiC.Cli -- check samples/tour.pfc
+dotnet run --project src/ProfiC.Cli -- lower samples/hello.pfc
 ```
+
+The build produces two identical executables, `profi-c` and the shorter `pfc`. Put either on
+your PATH and the commands above become:
+
+```bash
+pfc run samples/fizzbuzz.pfc
+```
+
+## Samples
+
+Every one of these runs. Each is a complete program, and each is there to show one thing.
+
+| Sample | What it is for |
+|---|---|
+| [hello.pfc](samples/hello.pfc) | The smallest legal program |
+| [fizzbuzz.pfc](samples/fizzbuzz.pfc) | Range loops and an if/else-if chain |
+| [fibonacci.pfc](samples/fibonacci.pfc) | The same sequence written recursively and iteratively, side by side |
+| [primes.pfc](samples/primes.pfc) | The Sieve of Eratosthenes; sets used as a workspace |
+| [sorting.pfc](samples/sorting.pfc) | Insertion sort, and why `and` short-circuiting matters |
+| [binary-search.pfc](samples/binary-search.pfc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
+| [fractions.pfc](samples/fractions.pfc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
+| [shapes.pfc](samples/shapes.pfc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
+| [bank.pfc](samples/bank.pfc) | Exceptions, including one the program declares — and when to yield an optional instead |
+| [tour.pfc](samples/tour.pfc) | Every construct in the grammar, once. Not a program; it checks but does not run |
+
+`literals.pfc`, `operators.pfc`, and `comments.pfc` exercise the scanner and likewise declare
+no entry point.
+
+Each runnable sample's output is recorded under `tests/ProfiC.Tests/TestData/Running/` and
+asserted on every build, so a sample that starts printing the wrong answer fails the suite.
 
 ## Repository layout
 
 ```
 src/
-  ProfiC.Compiler/     lexer, parser, semantic analysis, CIL emitter
-  ProfiC.Cli/          the profic command
+  ProfiC.Compiler/     lexer, parser, semantic analysis, lowering, CIL emitter
+  ProfiC.Runtime/      the value types a program uses: fraction, set, deep equality
+  ProfiC.Interpreter/  runs the lowered tree
+  ProfiC.Cli/          the profi-c command
+  ProfiC.Cli.Alias/    pfc, the short name for the same command
 tests/
   ProfiC.Tests/
 docs/

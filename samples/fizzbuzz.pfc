@@ -1,0 +1,33 @@
+comment begin
+    FizzBuzz.
+
+    The classic first exercise, and a fair look at Profi-C's control flow: a range loop that
+    reads as a sentence, an if/else-if chain with no parentheses around the conditions, and a
+    function that yields a string.
+end comment
+
+global model Program
+
+    function Main()
+        for integer n = 1 to 20
+            Console.WriteLine(Program.Describe(n));
+        end for
+    end function
+
+    comment begin
+        Divisibility by 15 has to be tested first. Testing it last would never be reached,
+        because 15 is divisible by 3 and the chain stops at the first branch that matches.
+    end comment
+    string function Describe(integer n)
+        if n % 15 == 0
+            yield "FizzBuzz";
+        else if n % 3 == 0
+            yield "Fizz";
+        else if n % 5 == 0
+            yield "Buzz";
+        end if
+
+        yield "" + n;
+    end function
+
+end model

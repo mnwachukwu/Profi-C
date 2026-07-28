@@ -1,0 +1,258 @@
+CompilationUnit
+  ModelDecl 'InsufficientFundsException' extends Exception
+    FunctionDecl 'InsufficientFundsException' [public]
+      ParameterDecl 'owner'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'short'
+        NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                IdentifierExpr 'owner'
+                LiteralExpr " is " [String]
+              IdentifierExpr 'short'
+            LiteralExpr " short" [String]
+  ModelDecl 'Account'
+    FieldDecl 'owner'
+      NamedTypeSyntax 'string'
+    FieldDecl 'balance'
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Account' [public]
+      ParameterDecl 'who'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'opening'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'owner'
+          ThisExpr
+        IdentifierExpr 'who'
+      AssignmentStmt
+        MemberExpr 'balance'
+          ThisExpr
+        IdentifierExpr 'opening'
+    FunctionDecl 'Owner' [public]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        MemberExpr 'owner'
+          ThisExpr
+    FunctionDecl 'Balance' [public]
+      NamedTypeSyntax 'integer'
+      YieldStmt
+        MemberExpr 'balance'
+          ThisExpr
+    FunctionDecl 'Deposit' [public]
+      ParameterDecl 'amount'
+        NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr '<='
+          IdentifierExpr 'amount'
+          LiteralExpr 0 [Integer]
+        ThrowStmt
+          NewExpr 'ArgumentException'
+      AssignmentStmt
+        MemberExpr 'balance'
+          ThisExpr
+        BinaryExpr '+'
+          MemberExpr 'balance'
+            ThisExpr
+          IdentifierExpr 'amount'
+    FunctionDecl 'Withdraw' [public]
+      ParameterDecl 'amount'
+        NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr '>'
+          IdentifierExpr 'amount'
+          MemberExpr 'balance'
+            ThisExpr
+        ThrowStmt
+          NewExpr 'InsufficientFundsException'
+            MemberExpr 'owner'
+              ThisExpr
+            BinaryExpr '-'
+              IdentifierExpr 'amount'
+              MemberExpr 'balance'
+                ThisExpr
+      AssignmentStmt
+        MemberExpr 'balance'
+          ThisExpr
+        BinaryExpr '-'
+          MemberExpr 'balance'
+            ThisExpr
+          IdentifierExpr 'amount'
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      VarDeclStmt 'accounts'
+        SetTypeSyntax
+          NamedTypeSyntax 'Account'
+        CollectionExpr
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'accounts'
+          NewExpr 'Account'
+            LiteralExpr "ada" [String]
+            LiteralExpr 100 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'accounts'
+          NewExpr 'Account'
+            LiteralExpr "alan" [String]
+            LiteralExpr 40 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Attempt'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'accounts'
+          LiteralExpr "ada" [String]
+          LiteralExpr 60 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Attempt'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'accounts'
+          LiteralExpr "alan" [String]
+          LiteralExpr 60 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Attempt'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'accounts'
+          LiteralExpr "grace" [String]
+          LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "final balances" [String]
+      ForEachStmt 'account'
+        IdentifierExpr 'accounts'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  LiteralExpr "  " [String]
+                  CallExpr
+                    MemberExpr 'Owner'
+                      IdentifierExpr 'account'
+                LiteralExpr ": " [String]
+              CallExpr
+                MemberExpr 'Balance'
+                  IdentifierExpr 'account'
+    FunctionDecl 'Attempt'
+      ParameterDecl 'accounts'
+        SetTypeSyntax
+          NamedTypeSyntax 'Account'
+      ParameterDecl 'who'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'amount'
+        NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              IdentifierExpr 'who'
+              LiteralExpr " withdraws " [String]
+            IdentifierExpr 'amount'
+      VarDeclStmt 'found'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'Account'
+        CallExpr
+          MemberExpr 'Find'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'accounts'
+          IdentifierExpr 'who'
+      IfStmt
+        UnaryExpr 'not'
+          CallExpr
+            MemberExpr 'HasValue'
+              IdentifierExpr 'found'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "  no account for " [String]
+              IdentifierExpr 'who'
+        YieldStmt
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Withdraw'
+              CallExpr
+                MemberExpr 'Value'
+                  IdentifierExpr 'found'
+            IdentifierExpr 'amount'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  done" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'InsufficientFundsException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "  declined: " [String]
+                CallExpr
+                  MemberExpr 'Message'
+                    IdentifierExpr 'problem'
+        CatchClause 'problem'
+          NamedTypeSyntax 'Exception'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "  failed: " [String]
+                CallExpr
+                  MemberExpr 'Message'
+                    IdentifierExpr 'problem'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  (attempt closed)" [String]
+    FunctionDecl 'Find'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'Account'
+      ParameterDecl 'accounts'
+        SetTypeSyntax
+          NamedTypeSyntax 'Account'
+      ParameterDecl 'who'
+        NamedTypeSyntax 'string'
+      ForEachStmt 'account'
+        IdentifierExpr 'accounts'
+        IfStmt
+          BinaryExpr '=='
+            CallExpr
+              MemberExpr 'Owner'
+                IdentifierExpr 'account'
+            IdentifierExpr 'who'
+          YieldStmt
+            IdentifierExpr 'account'
+      VarDeclStmt 'missing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'Account'
+      YieldStmt
+        IdentifierExpr 'missing'

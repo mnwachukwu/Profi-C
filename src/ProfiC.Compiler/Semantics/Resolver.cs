@@ -38,6 +38,13 @@ public sealed partial class Resolver
         "Math", "Random", "DateTime",
     };
 
+    /// <summary>The exceptions the language throws itself, all of which extend Exception.</summary>
+    private static readonly HashSet<string> BuiltInExceptionNames = new(StringComparer.Ordinal)
+    {
+        "DivideByZeroException", "IndexOutOfRangeException", "EmptyOptionalException",
+        "InvalidCastException", "FormatException", "ArgumentException",
+    };
+
     private readonly DiagnosticBag _diagnostics;
     private readonly SemanticModel _model = new();
 
@@ -183,10 +190,20 @@ public sealed partial class Resolver
 
     private ModelSymbol BuiltInModel(string name)
     {
-        if (!_builtIns.TryGetValue(name, out ModelSymbol? model))
+        if (_builtIns.TryGetValue(name, out ModelSymbol? model))
         {
-            model = new ModelSymbol(name, DeclarationModifiers.Public);
-            _builtIns[name] = model;
+            return model;
+        }
+
+        model = new ModelSymbol(name, DeclarationModifiers.Public);
+        _builtIns[name] = model;
+
+        // The built-in exceptions really do descend from Exception, so one catch clause takes
+        // them all and Message is inherited rather than repeated on each. Recorded before
+        // anything asks, and the entry above is already in place, so this cannot recur.
+        if (BuiltInExceptionNames.Contains(name))
+        {
+            model.BaseType = BuiltInModel("Exception");
         }
 
         return model;

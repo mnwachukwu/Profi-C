@@ -710,6 +710,135 @@ public sealed class TypeCheckerTests
             """)), Is.EqualTo(new[] { "PFC0200" }));
     }
 
+    // ---- Collection literals take their type from what is wanted ---------------------------------
+
+    /// <summary>
+    /// The declared type decides, not whichever element came first. Without this a set of
+    /// shapes cannot be written as the rectangles and circles it holds.
+    /// </summary>
+    [Test]
+    public void ASetLiteralIsMeasuredAgainstTheDeclaredElementType() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Shape
+                end model
+
+                model Rectangle extends Shape
+                end model
+
+                model Circle extends Shape
+                end model
+
+                global model Program
+                    global Shape[] Known = {new Rectangle(), new Circle()};
+
+                    function Main()
+                        Shape[] shapes = {new Rectangle(), new Circle()};
+                        shapes = {new Circle()};
+                        Console.WriteLine(Program.Make().Count());
+                    end function
+
+                    Shape[] function Make()
+                        yield {new Rectangle(), new Circle()};
+                    end function
+                end model
+                """)),
+            Is.Empty,
+            "a declaration, a field, an assignment and a yield all say what is wanted");
+
+    /// <summary>
+    /// Each element converts on its own, which is the thing inference could never produce:
+    /// there is no single element type here that both 1 and 2 already have.
+    /// </summary>
+    [Test]
+    public void EachElementConvertsOnItsOwn() =>
+        Assert.That(IdsOf(CheckBody("        integer?[] maybes = {1, 2};")), Is.Empty);
+
+    [Test]
+    public void AnElementThatDoesNotFitIsStillRejected() =>
+        Assert.That(
+            IdsOf(CheckBody("        integer[] wrong = {1, \"two\"};")),
+            Is.EqualTo(new[] { "PFC0300" }),
+            "measured against integer, not against the first element");
+
+    /// <summary>With nothing to measure against, inference still needs one type.</summary>
+    [Test]
+    public void WithNoTargetTheElementsMustAgree() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Shape
+                end model
+
+                model Rectangle extends Shape
+                end model
+
+                model Circle extends Shape
+                end model
+
+                global model Program
+                    function Main()
+                        let guessed = {new Rectangle(), new Circle()};
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PFC0314" }));
+
+    // ---- The members the language provides ------------------------------------------------------
+
+    /// <summary>
+    /// The language has no properties, so every member it provides is a function. Leaving the
+    /// parentheses off used to produce a value of the return type that was never computed.
+    /// </summary>
+    [TestCase("        integer[] xs = {1};\n        let n = xs.Count;")]
+    [TestCase("        let n = \"abc\".Count;")]
+    [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue;")]
+    public void ABuiltInMemberHasToBeCalled(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0330" }));
+
+    [TestCase("        integer[] xs = {1};\n        let n = xs.Count();")]
+    [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue();")]
+    public void CallingItIsFine(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    // ---- Exceptions -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// The exceptions the language throws itself really do extend Exception, so one clause
+    /// takes them all and Message is inherited rather than declared on each.
+    /// </summary>
+    [TestCase("DivideByZeroException")]
+    [TestCase("IndexOutOfRangeException")]
+    [TestCase("Exception")]
+    public void EveryExceptionCarriesItsMessage(string type) =>
+        Assert.That(
+            IdsOf(CheckBody($"""
+                    try
+                        yield;
+                    catch {type} problem
+                        Console.WriteLine(problem.Message());
+                    end try
+            """)),
+            Is.Empty);
+
+    [Test]
+    public void AModelExtendingExceptionInheritsMessage() =>
+        Assert.That(
+            IdsOf(Check("""
+                model NotFoundException extends Exception
+                end model
+
+                global model Program
+                    function Main()
+                        try
+                            yield;
+                        catch NotFoundException problem
+                            Console.WriteLine(problem.Message());
+                        end try
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
     [Test]
     public void CheckingNeverThrows()
     {

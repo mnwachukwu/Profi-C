@@ -1,0 +1,47 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ForStmt 'n' to
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+        LiteralExpr 20 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'Describe'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'n'
+    FunctionDecl 'Describe'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr '=='
+          BinaryExpr '%'
+            IdentifierExpr 'n'
+            LiteralExpr 15 [Integer]
+          LiteralExpr 0 [Integer]
+        YieldStmt
+          LiteralExpr "FizzBuzz" [String]
+        ElseIfClause
+          BinaryExpr '=='
+            BinaryExpr '%'
+              IdentifierExpr 'n'
+              LiteralExpr 3 [Integer]
+            LiteralExpr 0 [Integer]
+          YieldStmt
+            LiteralExpr "Fizz" [String]
+        ElseIfClause
+          BinaryExpr '=='
+            BinaryExpr '%'
+              IdentifierExpr 'n'
+              LiteralExpr 5 [Integer]
+            LiteralExpr 0 [Integer]
+          YieldStmt
+            LiteralExpr "Buzz" [String]
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "" [String]
+          IdentifierExpr 'n'

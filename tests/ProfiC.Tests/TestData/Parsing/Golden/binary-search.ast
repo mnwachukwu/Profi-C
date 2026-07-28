@@ -1,0 +1,134 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      VarDeclStmt 'sorted'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 2 [Integer]
+          LiteralExpr 5 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 12 [Integer]
+          LiteralExpr 16 [Integer]
+          LiteralExpr 23 [Integer]
+          LiteralExpr 38 [Integer]
+          LiteralExpr 56 [Integer]
+          LiteralExpr 72 [Integer]
+          LiteralExpr 91 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Report'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'sorted'
+          LiteralExpr 23 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Report'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'sorted'
+          LiteralExpr 91 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Report'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'sorted'
+          LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Report'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'sorted'
+          LiteralExpr 40 [Integer]
+    FunctionDecl 'Report'
+      ParameterDecl 'sorted'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'wanted'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'found'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'IndexOf'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'sorted'
+          IdentifierExpr 'wanted'
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'found'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                IdentifierExpr 'wanted'
+                LiteralExpr " is at index " [String]
+              IdentifierExpr 'found'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              IdentifierExpr 'wanted'
+              LiteralExpr " is not in the set" [String]
+    FunctionDecl 'IndexOf'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'sorted'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'wanted'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'low'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      VarDeclStmt 'high'
+        NamedTypeSyntax 'integer'
+        BinaryExpr '-'
+          CallExpr
+            MemberExpr 'Count'
+              IdentifierExpr 'sorted'
+          LiteralExpr 1 [Integer]
+      WhileStmt
+        BinaryExpr '<='
+          IdentifierExpr 'low'
+          IdentifierExpr 'high'
+        VarDeclStmt 'middle'
+          NamedTypeSyntax 'integer'
+          BinaryExpr '/'
+            ParenthesizedExpr
+              BinaryExpr '+'
+                IdentifierExpr 'low'
+                IdentifierExpr 'high'
+            LiteralExpr 2 [Integer]
+        IfStmt
+          BinaryExpr '=='
+            IndexExpr
+              IdentifierExpr 'sorted'
+              IdentifierExpr 'middle'
+            IdentifierExpr 'wanted'
+          YieldStmt
+            IdentifierExpr 'middle'
+          ElseIfClause
+            BinaryExpr '<'
+              IndexExpr
+                IdentifierExpr 'sorted'
+                IdentifierExpr 'middle'
+              IdentifierExpr 'wanted'
+            AssignmentStmt
+              IdentifierExpr 'low'
+              BinaryExpr '+'
+                IdentifierExpr 'middle'
+                LiteralExpr 1 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'high'
+            BinaryExpr '-'
+              IdentifierExpr 'middle'
+              LiteralExpr 1 [Integer]
+      VarDeclStmt 'missing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      YieldStmt
+        IdentifierExpr 'missing'

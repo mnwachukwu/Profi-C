@@ -233,6 +233,23 @@ public sealed class FlowAnalysisTests
             """)), Is.EqualTo(new[] { "PFC0400" }));
     }
 
+    /// <summary>
+    /// The caught variable is the one thing a catch clause <em>can</em> rely on: catching is
+    /// what gives it its value.
+    /// </summary>
+    [Test]
+    public void TheCaughtVariableIsAssignedByTheCatch()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    try
+                        yield;
+                    catch Exception problem
+                        Console.WriteLine(problem.Message());
+                    end try
+            """)), Is.Empty);
+    }
+
     [Test]
     public void AFinallyClauseCannotRelyOnWhatTheTryAssignedEither()
     {

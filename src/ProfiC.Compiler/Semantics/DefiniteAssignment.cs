@@ -371,7 +371,12 @@ public sealed class DefiniteAssignment
         {
             // From the entry state, not from after the body: the exception may have been
             // thrown before anything in the body ran.
-            FlowState afterCatch = AnalyzeStatements(clause.Body, onEntry.Clone());
+            // Catching is what gives the variable its value, so the body may read it.
+            FlowState entering = _model.GetSymbol(clause) is { } caught
+                ? onEntry.With(caught)
+                : onEntry.Clone();
+
+            FlowState afterCatch = AnalyzeStatements(clause.Body, entering);
             result = FlowState.Merge(result, afterCatch);
         }
 

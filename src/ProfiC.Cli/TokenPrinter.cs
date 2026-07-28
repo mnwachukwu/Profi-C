@@ -4,7 +4,7 @@ using ProfiC.Compiler.Lexing;
 namespace ProfiC.Cli;
 
 /// <summary>
-/// <para>Renders a token stream in the format <c>profic tokens</c> prints.</para>
+/// <para>Renders a token stream in the format <c>profi-c tokens</c> prints.</para>
 /// <para>The test suite pins lexer behavior against this same format, so the golden files
 /// double as documentation of a shipped command rather than being a second format that has
 /// to be maintained alongside it.</para>

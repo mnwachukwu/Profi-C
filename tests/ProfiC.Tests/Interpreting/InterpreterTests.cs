@@ -1,0 +1,1033 @@
+using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Parsing;
+using ProfiC.Compiler.Semantics;
+using ProfiC.Compiler.Text;
+using ProfiC.Runtime;
+
+namespace ProfiC.Tests.Interpreting;
+
+/// <summary>
+/// <para>The interpreter, tested the way a user meets it: give it a program, read what it
+/// printed.</para>
+/// <para>Assertions are on output rather than on internal state deliberately. The interpreter
+/// exists to be the oracle the emitter is checked against, and an oracle is only useful if it
+/// is tested through the same surface the emitter will be — what the program produced.</para>
+/// </summary>
+[TestFixture]
+public sealed class InterpreterTests
+{
+    /// <summary>
+    /// Compiles and runs a whole program, returning everything it wrote. Fails the test if the
+    /// program does not check cleanly, so that a broken fixture never masquerades as a broken
+    /// interpreter.
+    /// </summary>
+    private static string Run(string source)
+    {
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(new SourceText(source, "<test>"), diagnostics);
+        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+        Assert.That(
+            diagnostics.Select(d => $"{d.Descriptor.Id}: {d.Message}"),
+            Is.Empty,
+            "the program should check cleanly before it is run");
+
+        StringWriter output = new();
+        ProfiC.Interpreter.Interpreter.Run(Lowering.Lower(unit, model), model, output);
+
+        return output.ToString().ReplaceLineEndings("\n");
+    }
+
+    /// <summary>Runs statements inside <c>Main</c>, which is what most of these tests want.</summary>
+    private static string RunBody(string body) => Run($$"""
+        global model Program
+            function Main()
+        {{body}}
+            end function
+        end model
+        """);
+
+    /// <summary>The lines a program printed, with the trailing blank one dropped.</summary>
+    private static string[] Lines(string output) =>
+        output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>Runs an expression and returns what printing it produced.</summary>
+    private static string Print(string expression) =>
+        RunBody($"        Console.WriteLine({expression});").TrimEnd('\n');
+
+    // ---- Arithmetic -------------------------------------------------------------------------
+
+    [TestCase("1 + 2", "3")]
+    [TestCase("7 - 10", "-3")]
+    [TestCase("6 * 7", "42")]
+    [TestCase("7 / 2", "3")]
+    [TestCase("-7 / 2", "-3")]
+    [TestCase("7 % 3", "1")]
+    [TestCase("2 - -1", "3")]
+    [TestCase("1 + 2 * 3", "7")]
+    [TestCase("(1 + 2) * 3", "9")]
+    public void IntegerArithmeticIsExact(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [TestCase("1.5 + 2.25", "3.75")]
+    [TestCase("7.0 / 2.0", "3.5")]
+    public void RealArithmeticIsFloatingPoint(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [TestCase("1|3 + 1|6", "1|2")]
+    [TestCase("1|2 * 2|3", "1|3")]
+    [TestCase("1|2 - 1|2", "0|1")]
+    [TestCase("2|4", "1|2")]
+    [TestCase("1|3 / 1|3", "1|1")]
+    public void FractionArithmeticStaysExact(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [Test]
+    public void AFractionIsNotSilentlyRounded() =>
+        Assert.That(Print("1|3 + 1|3 + 1|3"), Is.EqualTo("1|1"));
+
+    [TestCase("true and false", "false")]
+    [TestCase("true or false", "true")]
+    [TestCase("not true", "false")]
+    [TestCase("1 < 2", "true")]
+    [TestCase("2 <= 2", "true")]
+    [TestCase("3 > 4", "false")]
+    [TestCase("\"a\" == \"a\"", "true")]
+    [TestCase("'a' != 'b'", "true")]
+    public void ComparisonsAndLogicProduceBooleans(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [Test]
+    public void AndShortCircuits() => Assert.That(
+        RunBody("""
+                integer calls = 0;
+                boolean function(integer) note = (integer n) => n > 0;
+                if false and note(1)
+                    Console.WriteLine("unreachable");
+                end if
+                Console.WriteLine("survived");
+        """),
+        Is.EqualTo("survived\n"));
+
+    // ---- Strings ----------------------------------------------------------------------------
+
+    [TestCase("\"ab\" + \"cd\"", "abcd")]
+    [TestCase("\"n is \" + 5", "n is 5")]
+    [TestCase("\"exact: \" + 1|2", "exact: 1|2")]
+    [TestCase("\"yes: \" + true", "yes: true")]
+    public void ConcatenationConvertsTheOtherSide(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [TestCase("\"hello\".Count()", "5")]
+    [TestCase("\"hello\".Substring(1, 3)", "ell")]
+    [TestCase("\"hello\".IndexOf(\"ll\")", "2")]
+    [TestCase("\"hello\".Contains(\"ell\")", "true")]
+    public void StringMembersWork(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    // ---- Sets -------------------------------------------------------------------------------
+
+    [Test]
+    public void ASetIsIndexedAndCounted() => Assert.That(
+        RunBody("""
+                integer[] xs = {10, 20, 30};
+                Console.WriteLine(xs.Count());
+                Console.WriteLine(xs[0]);
+                Console.WriteLine(xs[2]);
+        """),
+        Is.EqualTo("3\n10\n30\n"));
+
+    [Test]
+    public void ASetGrowsAndShrinks() => Assert.That(
+        RunBody("""
+                integer[] xs = {1};
+                xs.Insert(2);
+                xs.Insert(3);
+                Console.WriteLine(xs.Count());
+                xs.RemoveAt(0);
+                Console.WriteLine(xs[0]);
+                Console.WriteLine(xs.Contains(3));
+        """),
+        Is.EqualTo("3\n2\ntrue\n"));
+
+    [Test]
+    public void IndexingPastTheEndFails() => Assert.That(
+        () => RunBody("""
+                integer[] xs = {1};
+                integer i = 5;
+                Console.WriteLine(xs[i]);
+        """),
+        Throws.InstanceOf<IndexOutOfRangeException>());
+
+    // ---- Control flow -----------------------------------------------------------------------
+
+    [Test]
+    public void IfElseIfElseTakesExactlyOneBranch() => Assert.That(
+        RunBody("""
+                for integer n = 1 to 3
+                    if n == 1
+                        Console.WriteLine("one");
+                    else if n == 2
+                        Console.WriteLine("two");
+                    else
+                        Console.WriteLine("many");
+                    end if
+                end for
+        """),
+        Is.EqualTo("one\ntwo\nmany\n"));
+
+    [Test]
+    public void WhileRunsUntilItsConditionFails() => Assert.That(
+        RunBody("""
+                integer n = 3;
+                while n > 0
+                    Console.WriteLine(n);
+                    n = n - 1;
+                end while
+        """),
+        Is.EqualTo("3\n2\n1\n"));
+
+    [Test]
+    public void ForToIsInclusiveAndForUntilIsNot() => Assert.That(
+        RunBody("""
+                for integer i = 1 to 3
+                    Console.Write(i);
+                end for
+                Console.WriteLine("");
+                for integer i = 1 until 3
+                    Console.Write(i);
+                end for
+                Console.WriteLine("");
+        """),
+        Is.EqualTo("123\n12\n"));
+
+    [Test]
+    public void ANegativeStepCountsDown() => Assert.That(
+        RunBody("""
+                for integer i = 3 until 0 step -1
+                    Console.Write(i);
+                end for
+                Console.WriteLine("");
+        """),
+        Is.EqualTo("321\n"));
+
+    [Test]
+    public void ALoopWhoseBoundIsAlreadyPassedNeverRuns() => Assert.That(
+        RunBody("""
+                for integer i = 5 to 1
+                    Console.WriteLine("unreachable");
+                end for
+                Console.WriteLine("done");
+        """),
+        Is.EqualTo("done\n"));
+
+    [Test]
+    public void BreakAndContinueApplyToTheNearestLoop() => Assert.That(
+        RunBody("""
+                for integer i = 1 to 10
+                    if i == 2
+                        continue;
+                    end if
+                    if i == 4
+                        break;
+                    end if
+                    Console.Write(i);
+                end for
+                Console.WriteLine("");
+        """),
+        Is.EqualTo("13\n"));
+
+    [Test]
+    public void SwitchHasNoFallthroughButCaseLabelsGroup() => Assert.That(
+        RunBody("""
+                for integer i = 1 to 4
+                    switch i
+                        case 1:
+                            Console.WriteLine("one");
+                        case 2:
+                        case 3:
+                            Console.WriteLine("two or three");
+                        default:
+                            Console.WriteLine("other");
+                    end switch
+                end for
+        """),
+        Is.EqualTo("one\ntwo or three\ntwo or three\nother\n"));
+
+    [Test]
+    public void TheConditionalExpressionYieldsOneSide() => Assert.That(
+        RunBody("""
+                for integer n = 1 to 2
+                    Console.WriteLine(if n == 1 then "first" else "second");
+                end for
+        """),
+        Is.EqualTo("first\nsecond\n"));
+
+    // ---- for each, which only exists after lowering ------------------------------------------
+
+    [Test]
+    public void ForEachVisitsEveryElementInOrder() => Assert.That(
+        RunBody("""
+                integer[] xs = {10, 20, 30};
+                integer total = 0;
+                for each x in xs
+                    Console.Write(x);
+                    total = total + x;
+                end for
+                Console.WriteLine("");
+                Console.WriteLine(total);
+        """),
+        Is.EqualTo("102030\n60\n"));
+
+    [Test]
+    public void ForEachOverAnEmptySetRunsNothing() => Assert.That(
+        RunBody("""
+                integer[] xs = {};
+                for each x in xs
+                    Console.WriteLine("unreachable");
+                end for
+                Console.WriteLine("done");
+        """),
+        Is.EqualTo("done\n"));
+
+    [Test]
+    public void ForEachNestsWithoutTheTemporariesColliding() => Assert.That(
+        RunBody("""
+                integer[] xs = {1, 2};
+                integer[] ys = {3, 4};
+                for each x in xs
+                    for each y in ys
+                        Console.Write(x * y);
+                    end for
+                end for
+                Console.WriteLine("");
+        """),
+        Is.EqualTo("3468\n"));
+
+    [Test]
+    public void ForEachOverAStringVisitsCharacters() => Assert.That(
+        RunBody("""
+                character[] letters = "abc";
+                for each c in letters
+                    Console.Write(c);
+                    Console.Write("-");
+                end for
+                Console.WriteLine("");
+        """),
+        Is.EqualTo("a-b-c-\n"));
+
+    /// <summary>
+    /// The interpreter must run the <em>lowered</em> tree. Running the tree the resolver saw
+    /// instead is silent rather than loud — <c>for each</c> simply does nothing — so this pins
+    /// it directly.
+    /// </summary>
+    [Test]
+    public void TheInterpreterRunsTheLoweredTreeInsideEveryFunction() => Assert.That(
+        Run("""
+            global model Program
+                function Main()
+                    Console.WriteLine(Program.Sum());
+                end function
+
+                integer function Sum()
+                    integer[] xs = {1, 2, 3};
+                    integer total = 0;
+                    for each x in xs
+                        total = total + x;
+                    end for
+                    yield total;
+                end function
+            end model
+            """),
+        Is.EqualTo("6\n"),
+        "a for each inside a non-entry function must run too");
+
+    // ---- Functions --------------------------------------------------------------------------
+
+    [Test]
+    public void AFunctionYieldsAValueToItsCaller() => Assert.That(
+        Run("""
+            global model Program
+                function Main()
+                    Console.WriteLine(Program.Double(21));
+                end function
+
+                integer function Double(integer n)
+                    yield n * 2;
+                end function
+            end model
+            """),
+        Is.EqualTo("42\n"));
+
+    [Test]
+    public void RecursionTerminatesAtItsBaseCase() => Assert.That(
+        Run("""
+            global model Program
+                function Main()
+                    Console.WriteLine(Program.Factorial(5));
+                end function
+
+                integer function Factorial(integer n)
+                    if n <= 1
+                        yield 1;
+                    end if
+                    yield n * Program.Factorial(n - 1);
+                end function
+            end model
+            """),
+        Is.EqualTo("120\n"));
+
+    [Test]
+    public void RunawayRecursionFailsWithAnExplanationRatherThanAStackOverflow() => Assert.That(
+        () => Run("""
+            global model Program
+                function Main()
+                    Program.Forever(1);
+                end function
+
+                integer function Forever(integer n)
+                    yield Program.Forever(n + 1);
+                end function
+            end model
+            """),
+        Throws.InstanceOf<ProfiC.Interpreter.ProfiCRuntimeException>()
+              .With.Message.Contains("nested calls"));
+
+    [Test]
+    public void ALocalFunctionSeesTheEnclosingScope() => Assert.That(
+        RunBody("""
+                integer offset = 100;
+                integer function Shift(integer n)
+                    yield n + offset;
+                end function
+                Console.WriteLine(Shift(5));
+        """),
+        Is.EqualTo("105\n"));
+
+    [Test]
+    public void OverloadsAreSelectedByArgumentType() => Assert.That(
+        Run("""
+            global model Program
+                function Main()
+                    Console.WriteLine(Program.Name(1));
+                    Console.WriteLine(Program.Name("x"));
+                end function
+
+                string function Name(integer n)
+                    yield "integer";
+                end function
+
+                string function Name(string s)
+                    yield "string";
+                end function
+            end model
+            """),
+        Is.EqualTo("integer\nstring\n"));
+
+    // ---- Lambdas and capture ------------------------------------------------------------------
+
+    [Test]
+    public void AnExpressionLambdaIsCalledLikeAFunction() => Assert.That(
+        RunBody("""
+                integer function(integer, integer) add = (integer a, integer b) => a + b;
+                Console.WriteLine(add(2, 3));
+        """),
+        Is.EqualTo("5\n"));
+
+    [Test]
+    public void ABlockLambdaYieldsAValue() => Assert.That(
+        RunBody("""
+                integer function(integer) square = function(integer n)
+                    yield n * n;
+                end function;
+                Console.WriteLine(square(7));
+        """),
+        Is.EqualTo("49\n"));
+
+    [Test]
+    public void CaptureIsByReferenceNotByValue() => Assert.That(
+        RunBody("""
+                integer captured = 10;
+                integer function(integer) add = (integer n) => n + captured;
+                Console.WriteLine(add(5));
+                captured = 100;
+                Console.WriteLine(add(5));
+        """),
+        Is.EqualTo("15\n105\n"),
+        "the lambda must see the variable, not a copy of its value");
+
+    [Test]
+    public void ALambdaCanBePassedToAFunction() => Assert.That(
+        Run("""
+            global model Program
+                function Main()
+                    Console.WriteLine(Program.Apply((integer n) => n * 3, 5));
+                end function
+
+                integer function Apply(integer function(integer) f, integer n)
+                    yield f(n);
+                end function
+            end model
+            """),
+        Is.EqualTo("15\n"));
+
+    // ---- Models -----------------------------------------------------------------------------
+
+    [Test]
+    public void AConstructorRunsAndFieldsPersist() => Assert.That(
+        Run("""
+            model Counter
+                integer count;
+
+                public function Counter(integer start)
+                    this.count = start;
+                end function
+
+                public function Bump()
+                    this.count = this.count + 1;
+                end function
+
+                public integer function Value()
+                    yield this.count;
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Counter c = new Counter(5);
+                    c.Bump();
+                    c.Bump();
+                    Console.WriteLine(c.Value());
+                end function
+            end model
+            """),
+        Is.EqualTo("7\n"));
+
+    [Test]
+    public void AFieldInitializerRunsBeforeTheConstructorBody() => Assert.That(
+        Run("""
+            model Box
+                integer value = 41;
+
+                public function Box()
+                    this.value = this.value + 1;
+                end function
+
+                public integer function Value()
+                    yield this.value;
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Console.WriteLine(new Box().Value());
+                end function
+            end model
+            """),
+        Is.EqualTo("42\n"));
+
+    [Test]
+    public void VirtualDispatchPicksTheOverride() => Assert.That(
+        Run("""
+            model Shape
+                protected string name;
+
+                public function Shape(string label)
+                    this.name = label;
+                end function
+
+                public virtual string function Describe()
+                    yield this.name;
+                end function
+            end model
+
+            model Square extends Shape
+                integer side;
+
+                public function Square(integer length)
+                    base("square");
+                    this.side = length;
+                end function
+
+                public override string function Describe()
+                    yield base.Describe() + " of side " + this.side;
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Shape s = new Square(4);
+                    Console.WriteLine(s.Describe());
+                end function
+            end model
+            """),
+        Is.EqualTo("square of side 4\n"),
+        "the runtime type decides, and base reaches the version that was overridden");
+
+    [Test]
+    public void AModelIsAReferenceAndIsSharedNotCopied() => Assert.That(
+        Run("""
+            model Holder
+                public integer value;
+            end model
+
+            global model Program
+                function Main()
+                    Holder a = new Holder();
+                    Holder b = a;
+                    b.value = 9;
+                    Console.WriteLine(a.value);
+                    Console.WriteLine(Reference.Equals(a, b));
+                end function
+            end model
+            """),
+        Is.EqualTo("9\ntrue\n"));
+
+    [Test]
+    public void AGlobalModelHoldsStateAcrossCalls() => Assert.That(
+        Run("""
+            global model Program
+                global integer seen = 0;
+
+                function Main()
+                    Program.Note();
+                    Program.Note();
+                    Console.WriteLine(Program.seen);
+                end function
+
+                function Note()
+                    Program.seen = Program.seen + 1;
+                end function
+            end model
+            """),
+        Is.EqualTo("2\n"));
+
+    // ---- Structures -------------------------------------------------------------------------
+
+    [Test]
+    public void AStructureIsCopiedOnAssignment() => Assert.That(
+        Run("""
+            structure Point
+                public integer x;
+                public integer y;
+            end structure
+
+            global model Program
+                function Main()
+                    Point a = new Point();
+                    a.x = 1;
+                    Point b = a;
+                    b.x = 99;
+                    Console.WriteLine(a.x);
+                    Console.WriteLine(b.x);
+                end function
+            end model
+            """),
+        Is.EqualTo("1\n99\n"),
+        "assigning a structure copies it, which is the whole of value semantics");
+
+    [Test]
+    public void AStructureIsCopiedWhenPassedToAFunction() => Assert.That(
+        Run("""
+            structure Point
+                public integer x;
+            end structure
+
+            global model Program
+                function Main()
+                    Point p = new Point();
+                    p.x = 1;
+                    Program.Change(p);
+                    Console.WriteLine(p.x);
+                end function
+
+                function Change(Point q)
+                    q.x = 99;
+                end function
+            end model
+            """),
+        Is.EqualTo("1\n"));
+
+    // ---- Enumerations -------------------------------------------------------------------------
+
+    [Test]
+    public void EnumerationMembersCompareAndPrintByName() => Assert.That(
+        Run("""
+            enumeration Colour
+                Red,
+                Green,
+                Blue
+            end enumeration
+
+            global model Program
+                function Main()
+                    Colour c = Colour.Green;
+                    Console.WriteLine(c);
+                    Console.WriteLine(c == Colour.Green);
+                    Console.WriteLine(c == Colour.Red);
+                end function
+            end model
+            """),
+        Is.EqualTo("Green\ntrue\nfalse\n"));
+
+    // ---- Optionals --------------------------------------------------------------------------
+
+    [Test]
+    public void AnOptionalStartsEmptyAndOrSuppliesAFallback() => Assert.That(
+        RunBody("""
+                integer? missing;
+                Console.WriteLine(missing.HasValue());
+                Console.WriteLine(missing.Or(7));
+        """),
+        Is.EqualTo("false\n7\n"));
+
+    [Test]
+    public void AValueWidensIntoAnOptionalAndComesBackOut() => Assert.That(
+        RunBody("""
+                integer? present = 5;
+                Console.WriteLine(present.HasValue());
+                Console.WriteLine(present.Value());
+        """),
+        Is.EqualTo("true\n5\n"));
+
+    [Test]
+    public void ReadingAnEmptyOptionalFails() => Assert.That(
+        () => RunBody("""
+                integer? missing;
+                Console.WriteLine(missing.Value());
+        """),
+        Throws.InstanceOf<EmptyOptionalException>());
+
+    [Test]
+    public void NarrowingLetsTheValueBeUsedDirectly() => Assert.That(
+        RunBody("""
+                integer? maybe = 12;
+                if maybe.HasValue()
+                    Console.WriteLine(maybe + 1);
+                end if
+        """),
+        Is.EqualTo("13\n"));
+
+    /// <summary>
+    /// An optional holding a model <em>is</em> that model, so <c>Value</c> can mean either the
+    /// optional's or the one the model declared. The declared one wins.
+    /// </summary>
+    [Test]
+    public void ADeclaredMemberWinsOverTheOneTheLanguageProvides() => Assert.That(
+        Run("""
+            model Counter
+                integer count;
+
+                public function Counter(integer start)
+                    this.count = start;
+                end function
+
+                public integer function Value()
+                    yield this.count;
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Counter c = new Counter(7);
+                    Console.WriteLine(c.Value());
+
+                    Counter? maybe = c;
+                    if maybe.HasValue()
+                        Console.WriteLine(maybe.Value());
+                    end if
+                end function
+            end model
+            """),
+        Is.EqualTo("7\n7\n"));
+
+    [Test]
+    public void CastingYieldsAnOptionalRatherThanFailing() => Assert.That(
+        Run("""
+            model Animal
+            end model
+
+            model Dog extends Animal
+                public string function Speak()
+                    yield "woof";
+                end function
+            end model
+
+            model Cat extends Animal
+            end model
+
+            global model Program
+                function Main()
+                    Animal a = new Dog();
+                    Animal b = new Cat();
+                    Console.WriteLine((a as Dog).HasValue());
+                    Console.WriteLine((b as Dog).HasValue());
+                    Console.WriteLine((a as Dog).Value().Speak());
+                    Console.WriteLine(a is Dog);
+                end function
+            end model
+            """),
+        Is.EqualTo("true\nfalse\nwoof\ntrue\n"));
+
+    // ---- Deep equality ----------------------------------------------------------------------
+
+    [Test]
+    public void EqualityOnSetsIsStructural() => Assert.That(
+        RunBody("""
+                integer[] a = {1, 2, 3};
+                integer[] b = {1, 2, 3};
+                integer[] c = {1, 2};
+                Console.WriteLine(a == b);
+                Console.WriteLine(a == c);
+                Console.WriteLine(Reference.Equals(a, b));
+        """),
+        Is.EqualTo("true\nfalse\nfalse\n"));
+
+    [Test]
+    public void EqualityOnModelsComparesFields() => Assert.That(
+        Run("""
+            model Point
+                public integer x;
+                public integer y;
+            end model
+
+            global model Program
+                function Main()
+                    Point a = new Point();
+                    Point b = new Point();
+                    a.x = 1;
+                    b.x = 1;
+                    Console.WriteLine(a == b);
+                    b.y = 2;
+                    Console.WriteLine(a == b);
+                end function
+            end model
+            """),
+        Is.EqualTo("true\nfalse\n"));
+
+    [Test]
+    public void EqualityTerminatesOnACycle() => Assert.That(
+        Run("""
+            model Node
+                public Node? next;
+            end model
+
+            global model Program
+                function Main()
+                    Node a = new Node();
+                    Node b = new Node();
+                    a.next = a;
+                    b.next = b;
+                    Console.WriteLine(a == b);
+                end function
+            end model
+            """),
+        Is.EqualTo("true\n"),
+        "two identically shaped cycles are equal, and comparing them must not hang");
+
+    // ---- Exceptions -------------------------------------------------------------------------
+
+    [Test]
+    public void CatchRunsForTheMatchingTypeAndFinallyAlwaysRuns() => Assert.That(
+        RunBody("""
+                integer zero = 0;
+                try
+                    Console.WriteLine(1 / zero);
+                catch DivideByZeroException problem
+                    Console.WriteLine("caught");
+                finally
+                    Console.WriteLine("finally");
+                end try
+        """),
+        Is.EqualTo("caught\nfinally\n"));
+
+    [Test]
+    public void FinallyRunsEvenWhenNothingWentWrong() => Assert.That(
+        RunBody("""
+                try
+                    Console.WriteLine("body");
+                finally
+                    Console.WriteLine("finally");
+                end try
+        """),
+        Is.EqualTo("body\nfinally\n"));
+
+    [Test]
+    public void AThrownExceptionCarriesItsMessage() => Assert.That(
+        RunBody("""
+                try
+                    throw new Exception("something specific");
+                catch Exception problem
+                    Console.WriteLine(problem.Message());
+                end try
+        """),
+        Is.EqualTo("something specific\n"));
+
+    [Test]
+    public void AnUnmatchedCatchLetsTheExceptionPastIt() => Assert.That(
+        () => RunBody("""
+                integer zero = 0;
+                try
+                    Console.WriteLine(1 / zero);
+                catch IndexOutOfRangeException problem
+                    Console.WriteLine("wrong handler");
+                end try
+        """),
+        Throws.InstanceOf<DivideByZeroException>());
+
+    /// <summary>
+    /// A declared exception is an ordinary model, not a .NET one, so it travels differently.
+    /// Both kinds have to reach the same catch clause.
+    /// </summary>
+    [TestCase("NotFoundException", "specific")]
+    [TestCase("Exception", "general")]
+    public void ADeclaredExceptionIsThrownCaughtAndCarriesItsMessage(string caught, string label) =>
+        Assert.That(
+            Run($$"""
+                model NotFoundException extends Exception
+                    public function NotFoundException(string what)
+                        base("could not find " + what);
+                    end function
+                end model
+
+                global model Program
+                    function Main()
+                        try
+                            throw new NotFoundException("the key");
+                        catch {{caught}} problem
+                            Console.WriteLine("{{label}}: " + problem.Message());
+                        end try
+                    end function
+                end model
+                """),
+            Is.EqualTo($"{label}: could not find the key\n"));
+
+    [Test]
+    public void ADeclaredExceptionThatNothingCatchesReachesTheTop() => Assert.That(
+        () => Run("""
+            model NotFoundException extends Exception
+            end model
+
+            global model Program
+                function Main()
+                    try
+                        throw new NotFoundException();
+                    catch DivideByZeroException problem
+                        Console.WriteLine("wrong handler");
+                    end try
+                end function
+            end model
+            """),
+        Throws.Exception.With.Message.Contains("NotFoundException"));
+
+    [Test]
+    public void FinallyRunsWhileAnExceptionIsOnItsWayOut()
+    {
+        string output = string.Empty;
+
+        Assert.That(
+            () => output = RunBody("""
+                    integer zero = 0;
+                    try
+                        try
+                            Console.WriteLine(1 / zero);
+                        finally
+                            Console.WriteLine("inner finally");
+                        end try
+                    catch DivideByZeroException problem
+                        Console.WriteLine("outer caught");
+                    end try
+            """),
+            Throws.Nothing);
+
+        Assert.That(output, Is.EqualTo("inner finally\nouter caught\n"));
+    }
+
+    // ---- Whole programs ------------------------------------------------------------------------
+
+    [Test]
+    public void HelloWorldRuns()
+    {
+        string path = Path.Combine(LexerTestBase.RepositoryRootForTests, "samples", "hello.pfc");
+
+        Assert.That(Run(File.ReadAllText(path)), Does.Contain("Hello, World!"));
+    }
+
+    [Test]
+    public void ALongerProgramProducesTheWholeExpectedTranscript()
+    {
+        string[] lines = Lines(Run("""
+            model Account
+                string owner;
+                integer balance;
+
+                public function Account(string who, integer opening)
+                    this.owner = who;
+                    this.balance = opening;
+                end function
+
+                public function Deposit(integer amount)
+                    if amount <= 0
+                        throw new Exception("a deposit must be positive");
+                    end if
+
+                    this.balance = this.balance + amount;
+                end function
+
+                public virtual string function Describe()
+                    yield this.owner + ": " + this.balance;
+                end function
+            end model
+
+            model Savings extends Account
+                public function Savings(string who, integer opening)
+                    base(who, opening);
+                end function
+
+                public override string function Describe()
+                    yield "savings " + base.Describe();
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Account[] accounts = {new Account("ada", 100), new Savings("alan", 50)};
+
+                    for each account in accounts
+                        account.Deposit(25);
+                        Console.WriteLine(account.Describe());
+                    end for
+
+                    try
+                        accounts[0].Deposit(-1);
+                    catch Exception problem
+                        Console.WriteLine("rejected: " + problem.Message());
+                    end try
+
+                    integer total = 0;
+                    for each account in accounts
+                        total = total + Program.BalanceOf(account);
+                    end for
+
+                    Console.WriteLine("total " + total);
+                end function
+
+                integer function BalanceOf(Account account)
+                    let described = account.Describe();
+                    yield described.Count();
+                end function
+            end model
+            """));
+
+        Assert.That(lines, Is.EqualTo(new[]
+        {
+            "ada: 125",
+            "savings alan: 75",
+            "rejected: a deposit must be positive",
+            "total 24",
+        }));
+    }
+}

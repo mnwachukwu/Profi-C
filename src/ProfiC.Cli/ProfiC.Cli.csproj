@@ -3,12 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>ProfiC.Cli</RootNamespace>
-    <AssemblyName>profic</AssemblyName>
-    <Description>The profic command line driver.</Description>
+    <AssemblyName>profi-c</AssemblyName>
+    <Description>The profi-c command line driver.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ProfiC.Compiler\ProfiC.Compiler.csproj" />
+    <ProjectReference Include="..\ProfiC.Interpreter\ProfiC.Interpreter.csproj" />
   </ItemGroup>
 
 </Project>

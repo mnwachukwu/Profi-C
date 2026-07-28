@@ -1,0 +1,190 @@
+CompilationUnit
+  ModelDecl 'Shape' [abstract]
+    FieldDecl 'name' [protected]
+      NamedTypeSyntax 'string'
+    FunctionDecl 'Shape' [public]
+      ParameterDecl 'label'
+        NamedTypeSyntax 'string'
+      AssignmentStmt
+        MemberExpr 'name'
+          ThisExpr
+        IdentifierExpr 'label'
+    FunctionDecl 'Area' [public virtual]
+      NamedTypeSyntax 'real'
+      YieldStmt
+        LiteralExpr 0.0 [Real]
+    FunctionDecl 'Describe' [public virtual]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          BinaryExpr '+'
+            MemberExpr 'name'
+              ThisExpr
+            LiteralExpr " with area " [String]
+          CallExpr
+            MemberExpr 'Area'
+              ThisExpr
+  ModelDecl 'Rectangle' extends Shape
+    FieldDecl 'width'
+      NamedTypeSyntax 'real'
+    FieldDecl 'height'
+      NamedTypeSyntax 'real'
+    FunctionDecl 'Rectangle' [public]
+      ParameterDecl 'across'
+        NamedTypeSyntax 'real'
+      ParameterDecl 'down'
+        NamedTypeSyntax 'real'
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          LiteralExpr "rectangle" [String]
+      AssignmentStmt
+        MemberExpr 'width'
+          ThisExpr
+        IdentifierExpr 'across'
+      AssignmentStmt
+        MemberExpr 'height'
+          ThisExpr
+        IdentifierExpr 'down'
+    FunctionDecl 'Area' [public override]
+      NamedTypeSyntax 'real'
+      YieldStmt
+        BinaryExpr '*'
+          MemberExpr 'width'
+            ThisExpr
+          MemberExpr 'height'
+            ThisExpr
+  ModelDecl 'Square' [sealed] extends Rectangle
+    FunctionDecl 'Square' [public]
+      ParameterDecl 'side'
+        NamedTypeSyntax 'real'
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          IdentifierExpr 'side'
+          IdentifierExpr 'side'
+    FunctionDecl 'Describe' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "square with area " [String]
+          CallExpr
+            MemberExpr 'Area'
+              ThisExpr
+  ModelDecl 'Circle' extends Shape
+    FieldDecl 'Pi' [global constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 3.14159265358979 [Real]
+    FieldDecl 'radius'
+      NamedTypeSyntax 'real'
+    FunctionDecl 'Circle' [public]
+      ParameterDecl 'r'
+        NamedTypeSyntax 'real'
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          LiteralExpr "circle" [String]
+      AssignmentStmt
+        MemberExpr 'radius'
+          ThisExpr
+        IdentifierExpr 'r'
+    FunctionDecl 'Area' [public override]
+      NamedTypeSyntax 'real'
+      YieldStmt
+        BinaryExpr '*'
+          BinaryExpr '*'
+            MemberExpr 'Pi'
+              IdentifierExpr 'Circle'
+            MemberExpr 'radius'
+              ThisExpr
+          MemberExpr 'radius'
+            ThisExpr
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      VarDeclStmt 'shapes'
+        SetTypeSyntax
+          NamedTypeSyntax 'Shape'
+        CollectionExpr
+          NewExpr 'Rectangle'
+            LiteralExpr 3.0 [Real]
+            LiteralExpr 4.0 [Real]
+          NewExpr 'Square'
+            LiteralExpr 5.0 [Real]
+          NewExpr 'Circle'
+            LiteralExpr 1.0 [Real]
+      ForEachStmt 'shape'
+        IdentifierExpr 'shapes'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'Describe'
+                IdentifierExpr 'shape'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "total area: " [String]
+            CallExpr
+              MemberExpr 'TotalArea'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'shapes'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ForEachStmt 'shape'
+        IdentifierExpr 'shapes'
+        IfStmt
+          TypeTestExpr
+            IdentifierExpr 'shape'
+            NamedTypeSyntax 'Square'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "found a square" [String]
+          ElseIfClause
+            CallExpr
+              MemberExpr 'HasValue'
+                ParenthesizedExpr
+                  TypeCastExpr
+                    IdentifierExpr 'shape'
+                    NamedTypeSyntax 'Circle'
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                LiteralExpr "found a circle" [String]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "found something else" [String]
+    FunctionDecl 'TotalArea'
+      NamedTypeSyntax 'real'
+      ParameterDecl 'shapes'
+        SetTypeSyntax
+          NamedTypeSyntax 'Shape'
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'real'
+        LiteralExpr 0.0 [Real]
+      ForEachStmt 'shape'
+        IdentifierExpr 'shapes'
+        AssignmentStmt
+          IdentifierExpr 'total'
+          BinaryExpr '+'
+            IdentifierExpr 'total'
+            CallExpr
+              MemberExpr 'Area'
+                IdentifierExpr 'shape'
+      YieldStmt
+        IdentifierExpr 'total'

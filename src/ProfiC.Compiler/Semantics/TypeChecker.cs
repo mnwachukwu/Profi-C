@@ -130,7 +130,7 @@ public sealed partial class TypeChecker
             return;
         }
 
-        TypeSymbol actual = CheckExpression(field.Initializer);
+        TypeSymbol actual = CheckExpressionAgainst(field.Initializer, declared);
         RequireAssignable(actual, declared, field.Initializer);
 
         if (isConstant)

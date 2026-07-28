@@ -1,0 +1,136 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      VarDeclStmt 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 29 [Integer]
+          LiteralExpr 10 [Integer]
+          LiteralExpr 14 [Integer]
+          LiteralExpr 37 [Integer]
+          LiteralExpr 13 [Integer]
+          LiteralExpr 5 [Integer]
+          LiteralExpr 42 [Integer]
+          LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "before: " [String]
+            CallExpr
+              MemberExpr 'Render'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'values'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "after:  " [String]
+            CallExpr
+              MemberExpr 'Render'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Sorted'
+                  IdentifierExpr 'Program'
+                IdentifierExpr 'values'
+    FunctionDecl 'Sorted'
+      SetTypeSyntax
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'result'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForEachStmt 'value'
+        IdentifierExpr 'values'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'result'
+            IdentifierExpr 'value'
+      ForStmt 'i' until
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+        CallExpr
+          MemberExpr 'Count'
+            IdentifierExpr 'result'
+        VarDeclStmt 'current'
+          NamedTypeSyntax 'integer'
+          IndexExpr
+            IdentifierExpr 'result'
+            IdentifierExpr 'i'
+        VarDeclStmt 'j'
+          NamedTypeSyntax 'integer'
+          BinaryExpr '-'
+            IdentifierExpr 'i'
+            LiteralExpr 1 [Integer]
+        WhileStmt
+          BinaryExpr 'and'
+            BinaryExpr '>='
+              IdentifierExpr 'j'
+              LiteralExpr 0 [Integer]
+            BinaryExpr '>'
+              IndexExpr
+                IdentifierExpr 'result'
+                IdentifierExpr 'j'
+              IdentifierExpr 'current'
+          AssignmentStmt
+            IndexExpr
+              IdentifierExpr 'result'
+              BinaryExpr '+'
+                IdentifierExpr 'j'
+                LiteralExpr 1 [Integer]
+            IndexExpr
+              IdentifierExpr 'result'
+              IdentifierExpr 'j'
+          AssignmentStmt
+            IdentifierExpr 'j'
+            BinaryExpr '-'
+              IdentifierExpr 'j'
+              LiteralExpr 1 [Integer]
+        AssignmentStmt
+          IndexExpr
+            IdentifierExpr 'result'
+            BinaryExpr '+'
+              IdentifierExpr 'j'
+              LiteralExpr 1 [Integer]
+          IdentifierExpr 'current'
+      YieldStmt
+        IdentifierExpr 'result'
+    FunctionDecl 'Render'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'text'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      ForStmt 'i' until
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+        CallExpr
+          MemberExpr 'Count'
+            IdentifierExpr 'values'
+        IfStmt
+          BinaryExpr '>'
+            IdentifierExpr 'i'
+            LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'text'
+            BinaryExpr '+'
+              IdentifierExpr 'text'
+              LiteralExpr ", " [String]
+        AssignmentStmt
+          IdentifierExpr 'text'
+          BinaryExpr '+'
+            IdentifierExpr 'text'
+            IndexExpr
+              IdentifierExpr 'values'
+              IdentifierExpr 'i'
+      YieldStmt
+        IdentifierExpr 'text'

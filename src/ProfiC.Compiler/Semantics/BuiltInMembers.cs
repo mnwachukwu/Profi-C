@@ -199,7 +199,15 @@ public static class BuiltInMembers
                 };
 
             default:
-                return FindOnEveryType(name);
+                // Every exception carries the message it was constructed with, and a model a
+                // program declares by extending Exception inherits it like any other member.
+                return IsException(model) && name == "Message"
+                    ? new BuiltInMember(name, PrimitiveType.String, [])
+                    : FindOnEveryType(name);
         }
     }
+
+    /// <summary>Whether a type is, or descends from, the built-in <c>Exception</c>.</summary>
+    public static bool IsException(TypeSymbol type) =>
+        type is ModelSymbol model && model.SelfAndAncestors().Any(m => m.Name == "Exception");
 }

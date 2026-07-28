@@ -1,0 +1,62 @@
+comment begin
+    Exact arithmetic.
+
+    'fraction' is a first-class numeric type written with a vertical bar: 22|7 is
+    twenty-two sevenths, not a division that has already happened. Fractions are kept in
+    lowest terms and are never rounded, so a third really is a third.
+
+    This matters the first time a student is told that 0.1 + 0.2 is not 0.3. That is true of
+    'real', and this program shows it — but it is a fact about binary floating point, not
+    about arithmetic, and having both types available is what makes the difference visible.
+end comment
+
+global model Program
+
+    function Main()
+        Console.WriteLine("== thirds ==");
+        Console.WriteLine("1|3 + 1|3 + 1|3 = " + (1|3 + 1|3 + 1|3));
+        Console.WriteLine("as real:          " + (1.0 / 3.0 + 1.0 / 3.0 + 1.0 / 3.0));
+
+        Console.WriteLine("");
+        Console.WriteLine("== tenths ==");
+        Console.WriteLine("1|10 + 2|10 = " + (1|10 + 2|10));
+        Console.WriteLine("as real:      " + (0.1 + 0.2));
+
+        Console.WriteLine("");
+        Console.WriteLine("== lowest terms, always ==");
+        Console.WriteLine("6|8   is " + 6|8);
+        Console.WriteLine("100|4 is " + 100|4);
+        Console.WriteLine("3|1   is " + 3|1);
+
+        Console.WriteLine("");
+        Console.WriteLine("== a harmonic sum, exactly ==");
+        Console.WriteLine("1 + 1|2 + ... + 1|8 = " + Program.Harmonic(8));
+        Console.WriteLine("and as a real:        " + Program.Harmonic(8).ToReal());
+
+        Console.WriteLine("");
+        Console.WriteLine("== an integer widens to a fraction on its own ==");
+        fraction whole = 3;
+        Console.WriteLine("3 as a fraction is " + whole);
+        Console.WriteLine("3 + 1|2 is         " + (whole + 1|2));
+    end function
+
+    comment begin
+        The sum of 1|1 through 1|n. Every partial sum is exact, so the answer is the true
+        rational value rather than the nearest number a real could hold.
+
+        Note 1|1 / i rather than 1|i. A fraction literal is written with numerals on both
+        sides — it is one token, the way 3.14 is — so a fraction built from a variable is
+        built by dividing. The division is exact, because both sides are fractions once the
+        integer widens.
+    end comment
+    fraction function Harmonic(integer n)
+        fraction total = 0;
+
+        for integer i = 1 to n
+            total = total + 1|1 / i;
+        end for
+
+        yield total;
+    end function
+
+end model

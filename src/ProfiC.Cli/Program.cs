@@ -4,20 +4,47 @@ using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
+using ProfiC.Interpreter;
+using ProfiC.Runtime;
 
 namespace ProfiC.Cli;
 
 /// <summary>
-/// <para>Entry point for the <c>profic</c> command.</para>
+/// <para>Entry point for the <c>profi-c</c> command, and for the <c>pfc</c> alias that shares
+/// it.</para>
 /// <para>Diagnostic formatting belongs here rather than in the compiler, so that the front
 /// end stays free of console output and can later back a language server.</para>
 /// </summary>
-internal static class Program
+public static class Program
 {
     private const string Version = "0.1.0";
 
-    private static int Main(string[] args)
+    /// <summary>
+    /// <para>The name this was invoked as, so that messages name the command the reader
+    /// actually typed.</para>
+    /// <para>Falls back to the long name when the process is the .NET host itself, which is
+    /// what happens under <c>dotnet run</c>.</para>
+    /// </summary>
+    private static string ToolName
     {
+        get
+        {
+            string? invoked = Path.GetFileNameWithoutExtension(System.Environment.ProcessPath);
+
+            return string.IsNullOrEmpty(invoked)
+                   || invoked.Equals("dotnet", StringComparison.OrdinalIgnoreCase)
+                ? "profi-c"
+                : invoked;
+        }
+    }
+
+    private static int Main(string[] args) => Run(args);
+
+    /// <summary>Runs the command. Public so that the <c>pfc</c> alias can forward to it.</summary>
+    public static int Run(string[] args)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+
         if (args.Length == 0 || args[0] is "--help" or "-h" or "help")
         {
             WriteUsage();
@@ -31,21 +58,23 @@ internal static class Program
             "ast" => RunAst(args),
             "check" => RunCheck(args),
             "lower" => RunLower(args),
+            "run" => RunProgram(args),
             _ => UnknownCommand(args[0]),
         };
     }
 
     private static void WriteUsage()
     {
-        Console.WriteLine("profic - the Profi-C compiler");
+        Console.WriteLine($"{ToolName} - the Profi-C compiler");
         Console.WriteLine();
         Console.WriteLine("Usage:");
-        Console.WriteLine("  profic tokens <file>    Scan a .pfc file and print its token stream");
-        Console.WriteLine("  profic ast <file>       Parse a .pfc file and print its syntax tree");
-        Console.WriteLine("  profic check <file>     Check a .pfc file and report any problems");
-        Console.WriteLine("  profic lower <file>     Print the simplified tree the back end sees");
-        Console.WriteLine("  profic --version        Print the compiler version");
-        Console.WriteLine("  profic --help           Print this message");
+        Console.WriteLine($"  {ToolName} run <file>       Run a .pfc program");
+        Console.WriteLine($"  {ToolName} tokens <file>    Scan a .pfc file and print its token stream");
+        Console.WriteLine($"  {ToolName} ast <file>       Parse a .pfc file and print its syntax tree");
+        Console.WriteLine($"  {ToolName} check <file>     Check a .pfc file and report any problems");
+        Console.WriteLine($"  {ToolName} lower <file>     Print the simplified tree the back end sees");
+        Console.WriteLine($"  {ToolName} --version        Print the compiler version");
+        Console.WriteLine($"  {ToolName} --help           Print this message");
     }
 
     private static int WriteVersion()
@@ -56,7 +85,8 @@ internal static class Program
 
     private static int UnknownCommand(string command)
     {
-        Console.Error.WriteLine($"profic: unknown command '{command}'. Try 'profic --help'.");
+        Console.Error.WriteLine(
+            $"{ToolName}: unknown command '{command}'. Try '{ToolName} --help'.");
         return 1;
     }
 
@@ -69,7 +99,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("profic: 'tokens' requires a file path.");
+            Console.Error.WriteLine($"{ToolName}: 'tokens' requires a file path.");
             return 1;
         }
 
@@ -77,7 +107,7 @@ internal static class Program
 
         if (!File.Exists(path))
         {
-            Console.Error.WriteLine($"profic: file not found: {path}");
+            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
             return 1;
         }
 
@@ -103,7 +133,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("profic: 'ast' requires a file path.");
+            Console.Error.WriteLine($"{ToolName}: 'ast' requires a file path.");
             return 1;
         }
 
@@ -111,7 +141,7 @@ internal static class Program
 
         if (!File.Exists(path))
         {
-            Console.Error.WriteLine($"profic: file not found: {path}");
+            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
             return 1;
         }
 
@@ -139,7 +169,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("profic: 'check' requires a file path.");
+            Console.Error.WriteLine($"{ToolName}: 'check' requires a file path.");
             return 1;
         }
 
@@ -147,7 +177,7 @@ internal static class Program
 
         if (!File.Exists(path))
         {
-            Console.Error.WriteLine($"profic: file not found: {path}");
+            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
             return 1;
         }
 
@@ -179,7 +209,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("profic: 'lower' requires a file path.");
+            Console.Error.WriteLine($"{ToolName}: 'lower' requires a file path.");
             return 1;
         }
 
@@ -187,7 +217,7 @@ internal static class Program
 
         if (!File.Exists(path))
         {
-            Console.Error.WriteLine($"profic: file not found: {path}");
+            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
             return 1;
         }
 
@@ -209,5 +239,73 @@ internal static class Program
         Console.Out.Write(AstPrinter.Print(lowered));
 
         return 0;
+    }
+
+    /// <summary>
+    /// <para>Checks a program and runs it.</para>
+    /// <para>Nothing runs until everything checks, so a program that reaches execution has
+    /// already been proved free of the mistakes the front end can see.</para>
+    /// </summary>
+    private static int RunProgram(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine($"{ToolName}: 'run' requires a file path.");
+            return 1;
+        }
+
+        string path = args[1];
+
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
+            return 1;
+        }
+
+        SourceText source = SourceText.FromFile(path);
+        DiagnosticBag diagnostics = new();
+
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+        if (diagnostics.Count > 0)
+        {
+            DiagnosticRenderer.WriteAll(source, diagnostics);
+        }
+
+        if (diagnostics.HasErrors)
+        {
+            return 1;
+        }
+
+        CompilationUnit lowered = Lowering.Lower(unit, model);
+
+        try
+        {
+            // Qualified because the class shares its name with its namespace.
+            return ProfiC.Interpreter.Interpreter.Run(lowered, model);
+        }
+        catch (ProfiCRuntimeException failure)
+        {
+            Console.Error.WriteLine($"{source.FileName}: {failure.Message}");
+            return 1;
+        }
+        catch (Exception thrown) when (thrown
+            is DivideByZeroException
+            or IndexOutOfRangeException
+            or EmptyOptionalException
+            or InvalidCastException
+            or FormatException
+            or ArgumentException
+            or OverflowException)
+        {
+            // An exception the program could have caught but did not.
+            Console.Error.WriteLine(
+                $"{source.FileName}: unhandled {thrown.GetType().Name}: {thrown.Message}");
+
+            return 1;
+        }
     }
 }
