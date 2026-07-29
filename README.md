@@ -284,6 +284,10 @@ pc run hello.pc
 everything checks, so a program that reaches execution has already been proved free of every
 mistake the front end can see. No file is produced — the CIL emitter is what will change that.
 
+The extension can be left off — `pc run hello` finds `hello.pc`, and finds `hello.pcp` if that
+is what is there instead. Write it out when both exist and you mean one of them; anything that
+is neither is refused rather than read hopefully.
+
 To check without running:
 
 ```bash

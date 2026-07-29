@@ -211,6 +211,104 @@ public sealed class MultiFileTests : LexerTestBase
         });
     }
 
+    // ---- Finding the file that was named ----------------------------------------------------
+
+    [Test]
+    public void AnExtensionMayBeLeftOffASource()
+    {
+        Write("Program.pc", ProgramCalling("\"x\""));
+
+        SourceDiscovery.FileTarget? target =
+            SourceDiscovery.Locate(Path.Combine(_folder, "Program"), out string problem);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(problem, Is.Empty);
+            Assert.That(Path.GetFileName(target!.Value.Path), Is.EqualTo("Program.pc"));
+            Assert.That(target.Value.IsProject, Is.False);
+        });
+    }
+
+    [Test]
+    public void AnExtensionMayBeLeftOffAProject()
+    {
+        Write("Program.pc", ProgramCalling("\"x\""));
+        Write("build.pcp", "project Build\n    source Program.pc\nend project\n");
+
+        SourceDiscovery.FileTarget? target =
+            SourceDiscovery.Locate(Path.Combine(_folder, "build"), out _);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Path.GetFileName(target!.Value.Path), Is.EqualTo("build.pcp"));
+            Assert.That(target.Value.IsProject, Is.True);
+        });
+    }
+
+    /// <summary>
+    /// The one case leaving the extension off cannot answer. Writing it is the way to say
+    /// which is meant, so the message asks for that rather than choosing.
+    /// </summary>
+    [Test]
+    public void ANameMeaningBothIsAmbiguous()
+    {
+        Write("Program.pc", ProgramCalling("\"x\""));
+        Write("Program.pcp", "project P\n    source Program.pc\nend project\n");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                SourceDiscovery.Locate(Path.Combine(_folder, "Program"), out string problem),
+                Is.Null);
+
+            Assert.That(problem, Does.Contain("Program.pc").And.Contain("Program.pcp"));
+        });
+    }
+
+    [Test]
+    public void AWrittenExtensionIsExact()
+    {
+        Write("Program.pc", ProgramCalling("\"x\""));
+        Write("Program.pcp", "project P\n    source Program.pc\nend project\n");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                SourceDiscovery.Locate(Path.Combine(_folder, "Program.pc"), out _)!.Value.IsProject,
+                Is.False);
+
+            Assert.That(
+                SourceDiscovery.Locate(Path.Combine(_folder, "Program.pcp"), out _)!.Value.IsProject,
+                Is.True);
+        });
+    }
+
+    /// <summary>A file is Profi-C because it says so, not because something tried to read it.</summary>
+    [Test]
+    public void AnythingElseIsRefused()
+    {
+        Write("notes.txt", "global model Program function Main() end function end model");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                SourceDiscovery.Locate(Path.Combine(_folder, "notes.txt"), out string problem),
+                Is.Null);
+
+            Assert.That(problem, Is.EqualTo("Not a valid Profi-C source or project file."));
+        });
+    }
+
+    [Test]
+    public void AMissingFileSaysBothNamesItLookedFor()
+    {
+        Assert.That(
+            SourceDiscovery.Locate(Path.Combine(_folder, "absent"), out string problem),
+            Is.Null);
+
+        Assert.That(problem, Does.Contain("absent.pc").And.Contain("absent.pcp"));
+    }
+
     // ---- Project files ---------------------------------------------------------------------
 
     [Test]

@@ -28,6 +28,76 @@ public static class SourceDiscovery
     /// </summary>
     public sealed record Compilation(string Label, IReadOnlyList<CompilationUnit> Units);
 
+    /// <summary>A file a command was pointed at, and which of the two kinds it is.</summary>
+    public readonly record struct FileTarget(string Path, bool IsProject);
+
+    /// <summary>
+    /// <para>Works out which file a written path names, or says why it names none.</para>
+    /// <para>An extension may be left off: <c>Program</c> finds <c>Program.pc</c> or
+    /// <c>Program.pcp</c>, whichever is there. Writing one keeps its exactness, which is the
+    /// way to say which is meant when both exist — the only case where leaving it off is
+    /// ambiguous, and one the reader is told about rather than guessed at.</para>
+    /// <para>An extension that is neither is refused rather than read hopefully. A file is
+    /// Profi-C because it says so, not because something tried.</para>
+    /// </summary>
+    public static FileTarget? Locate(string written, out string problem)
+    {
+        ArgumentNullException.ThrowIfNull(written);
+
+        string extension = System.IO.Path.GetExtension(written);
+
+        if (extension.Length > 0)
+        {
+            bool project = extension.Equals(ProjectExtension, StringComparison.OrdinalIgnoreCase);
+            bool source = extension.Equals(SourceExtension, StringComparison.OrdinalIgnoreCase);
+
+            if (!project && !source)
+            {
+                problem = "Not a valid Profi-C source or project file.";
+                return null;
+            }
+
+            if (!File.Exists(written))
+            {
+                problem = $"file not found: {written}";
+                return null;
+            }
+
+            problem = string.Empty;
+            return new FileTarget(written, project);
+        }
+
+        string asSource = written + SourceExtension;
+        string asProject = written + ProjectExtension;
+        bool hasSource = File.Exists(asSource);
+        bool hasProject = File.Exists(asProject);
+
+        if (hasSource && hasProject)
+        {
+            problem =
+                $"'{written}' could mean {System.IO.Path.GetFileName(asSource)} or "
+                + $"{System.IO.Path.GetFileName(asProject)}, and both are here. "
+                + "Write the extension of the one you mean.";
+
+            return null;
+        }
+
+        problem = string.Empty;
+
+        if (hasSource)
+        {
+            return new FileTarget(asSource, false);
+        }
+
+        if (hasProject)
+        {
+            return new FileTarget(asProject, true);
+        }
+
+        problem = $"file not found: {asSource}, and no {asProject} either";
+        return null;
+    }
+
     /// <summary>
     /// <para>Gathers the files to compile, parsing each one.</para>
     /// <para>Naming a source file compiles it together with the shared code beside it: every

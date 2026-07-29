@@ -79,13 +79,16 @@ public static class Program
         Console.WriteLine("Naming a .pc file compiles it together with the shared code beside");
         Console.WriteLine("it: every other .pc in the same folder that declares no Program.");
         Console.WriteLine("A .pcp project compiles exactly what it lists, across any folders.");
+        Console.WriteLine();
+        Console.WriteLine("The extension may be left off: 'run Program' finds Program.pc or");
+        Console.WriteLine("Program.pcp. Write it when both are there and you mean one.");
     }
 
     /// <summary>
-    /// Checks the argument list and reports what is missing. Returns the path, or null when the
-    /// command cannot proceed.
+    /// Finds the file a command was pointed at, reporting what is wrong with the argument if
+    /// anything is. Null means the command cannot proceed and has already said why.
     /// </summary>
-    private static string? PathArgument(string[] args, string command)
+    private static SourceDiscovery.FileTarget? Target(string[] args, string command)
     {
         if (args.Length < 2)
         {
@@ -93,13 +96,36 @@ public static class Program
             return null;
         }
 
-        if (!File.Exists(args[1]))
+        if (SourceDiscovery.Locate(args[1], out string problem) is not { } target)
         {
-            Console.Error.WriteLine($"{ToolName}: file not found: {args[1]}");
+            Console.Error.WriteLine($"{ToolName}: {problem}");
             return null;
         }
 
-        return args[1];
+        return target;
+    }
+
+    /// <summary>
+    /// Finds a source file for the commands that read one at a time. A project describes a
+    /// build rather than being Profi-C, so there is nothing in one for them to show.
+    /// </summary>
+    private static string? SourceArgument(string[] args, string command)
+    {
+        if (Target(args, command) is not { } target)
+        {
+            return null;
+        }
+
+        if (target.IsProject)
+        {
+            Console.Error.WriteLine(
+                $"{ToolName}: '{command}' reads one {SourceDiscovery.SourceExtension} file, and "
+                + $"{target.Path} is a project.");
+
+            return null;
+        }
+
+        return target.Path;
     }
 
     private static int WriteVersion()
@@ -122,7 +148,7 @@ public static class Program
     /// </summary>
     private static int RunTokens(string[] args)
     {
-        if (PathArgument(args, "tokens") is not { } path)
+        if (SourceArgument(args, "tokens") is not { } path)
         {
             return 1;
         }
@@ -143,7 +169,7 @@ public static class Program
     /// </summary>
     private static int RunAst(string[] args)
     {
-        if (PathArgument(args, "ast") is not { } path)
+        if (SourceArgument(args, "ast") is not { } path)
         {
             return 1;
         }
@@ -163,14 +189,14 @@ public static class Program
     /// </summary>
     private static int RunCheck(string[] args)
     {
-        if (PathArgument(args, "check") is not { } path)
+        if (Target(args, "check") is not { } target)
         {
             return 1;
         }
 
         DiagnosticBag diagnostics = new();
 
-        if (Compile(path, diagnostics, requireEntryPoint: false) is not var (compilation, model))
+        if (Compile(target.Path, diagnostics, requireEntryPoint: false) is not var (compilation, model))
         {
             DiagnosticRenderer.WriteAll(diagnostics);
             return 1;
@@ -222,14 +248,14 @@ public static class Program
     /// </summary>
     private static int RunLower(string[] args)
     {
-        if (PathArgument(args, "lower") is not { } path)
+        if (Target(args, "lower") is not { } target)
         {
             return 1;
         }
 
         DiagnosticBag diagnostics = new();
 
-        if (Compile(path, diagnostics, requireEntryPoint: false) is not var (compilation, model)
+        if (Compile(target.Path, diagnostics, requireEntryPoint: false) is not var (compilation, model)
             || diagnostics.HasErrors)
         {
             DiagnosticRenderer.WriteAll(diagnostics);
@@ -260,14 +286,14 @@ public static class Program
     /// </summary>
     private static int RunProgram(string[] args)
     {
-        if (PathArgument(args, "run") is not { } path)
+        if (Target(args, "run") is not { } target)
         {
             return 1;
         }
 
         DiagnosticBag diagnostics = new();
 
-        if (Compile(path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
+        if (Compile(target.Path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
         {
             DiagnosticRenderer.WriteAll(diagnostics);
             return 1;
