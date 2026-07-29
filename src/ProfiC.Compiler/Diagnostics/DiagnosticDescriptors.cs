@@ -72,6 +72,22 @@ public static class DiagnosticDescriptors
         "Malformed Unicode escape sequence",
         "A Unicode escape must be '\\u' followed by four hexadecimal digits.");
 
+    /// <summary>
+    /// <para>An <c>@</c> before a name that needed no escaping.</para>
+    /// <para>A warning, not an error: the name means what it says either way. It is worth
+    /// saying because the mark tells a reader "this word is otherwise taken", and one in front
+    /// of a word that never was misleads them.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor UnnecessaryEscapedName = Warning(
+        "PC0009",
+        "This name needs no '@'",
+        "'{0}' is not a reserved word, so the '@' does nothing. Write '{0}'.");
+
+    public static readonly DiagnosticDescriptor EscapeNeedsAName = Error(
+        "PC0010",
+        "Nothing to escape",
+        "'@' marks a reserved word being used as a name, so a name must follow it.");
+
     // ---- Syntax, PC0100 to PC0113 -----------------------------------------------------
 
     public static readonly DiagnosticDescriptor UnexpectedToken = Error(
@@ -93,6 +109,39 @@ public static class DiagnosticDescriptors
         "PC0103",
         "Expected a name",
         "Expected a name, but found {0}.");
+
+    /// <summary>
+    /// <para>A reserved word written where a name was wanted.</para>
+    /// <para>Its own message rather than the general one above, because the general one names
+    /// the symptom and leaves the reader to guess. Several reserved words — <c>end</c>,
+    /// <c>base</c>, <c>to</c>, <c>each</c>, <c>step</c> — are ordinary things to call a
+    /// variable, so this is met by anyone writing real code, and the fix belongs in the
+    /// message.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ReservedWordAsName = Error(
+        "PC0114",
+        "This word is reserved",
+        "'{0}' is a reserved word, so it cannot be a name on its own. Write '@{0}' to use it "
+        + "as one.");
+
+    /// <summary>
+    /// <para>A lambda parameter written with a type the surrounding code already supplies.</para>
+    /// <para>The same argument as the range loop above: the program says one thing, and says
+    /// it twice. A declared type, a set's element type, the parameter being passed to, and the
+    /// result being yielded each settle the whole list, so a type written under one of them
+    /// adds nothing that was not already fixed.</para>
+    /// <para>This leaves exactly one place a lambda writes its own types — a <c>let</c>, where
+    /// nothing on the left says anything, and where leaving them out instead reports
+    /// <c>PC0336</c>. The two rules meet with no gap and no overlap: a lambda writes its types
+    /// where it must, and nowhere else.</para>
+    /// <para>A warning rather than an error, since the type written is the one that was going
+    /// to be used either way and nothing about the program is in doubt.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ParameterTypeAlreadyKnown = Warning(
+        "PC0115",
+        "This parameter's type is already known",
+        "The surrounding code already says what '{0}' holds, so writing its type says it "
+        + "twice. Leave the type out.");
 
     /// <summary>
     /// The diagnostic qualified <c>end</c> exists to produce. Naming both the closer written
@@ -488,10 +537,48 @@ public static class DiagnosticDescriptors
         "Duplicate case label",
         "The value {0} is already handled by another case.");
 
-    public static readonly DiagnosticDescriptor CannotTestOrCast = Error(
+    /// <summary>
+    /// <para>A type test whose answer follows from the types alone.</para>
+    /// <para>A warning rather than an error, for the reason a redundant loop counter is: the
+    /// program says exactly one thing and nothing about its meaning is in doubt. The answer is
+    /// settled while compiling and the test does not run.</para>
+    /// <para>Both directions are worth saying. A test that can never pass is usually a mistake
+    /// about which types are related; one that always passes is usually a guard someone thinks
+    /// is doing something.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeTestIsAlwaysFalse = Warning(
         "PC0327",
-        "Types are unrelated",
-        "{0} can never be {1}, so this test can only ever give one answer.");
+        "This test is always false",
+        "{0} can never be {1}, so this is always false.");
+
+    public static readonly DiagnosticDescriptor TypeTestIsAlwaysTrue = Warning(
+        "PC0334",
+        "This test is always true",
+        "{0} is always {1}, so this is always true.");
+
+    /// <summary>
+    /// <para>A cast naming a structure or a primitive.</para>
+    /// <para>An error rather than a warning, because unlike the two above there is no answer
+    /// to settle on: value types have no inheritance, so asking whether one value is some
+    /// other value type is not a question about identity at all. An enumeration is exempt,
+    /// since an integer names one of its members.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CannotCastToValueType = Error(
+        "PC0335",
+        "Cannot cast to a value type",
+        "{0} is a value type, and value types have no inheritance for a cast to follow.");
+
+    /// <summary>
+    /// <para>A lambda parameter written as a bare name where nothing says what it holds.</para>
+    /// <para>Leaving a type out asks the surrounding code for it, so this is reported where
+    /// there is no surrounding code to ask: a <c>let</c>, an argument to a name that could not
+    /// be resolved, or a lambda standing on its own. The fix is to write the type, which is
+    /// also the only form that reads on its own terms.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ParameterTypeNotInferable = Error(
+        "PC0336",
+        "Parameter needs a type",
+        "Nothing here says what '{0}' holds. Write its type, as in '(integer {0})'.");
 
     public static readonly DiagnosticDescriptor CannotInstantiate = Error(
         "PC0328",

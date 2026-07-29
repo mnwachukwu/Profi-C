@@ -32,6 +32,13 @@ global model Program
         comment Python raises to a power with '**'; Profi-C uses '^'.
         Console.WriteLine(2 ** 8);
 
+        comment A lambda's body follows 'yield', not an arrow.
+        integer function(integer) twice = (integer n) => n * 2;
+        integer function(integer) thrice = (integer n) -> n * 3;
+
+        comment Leaving a type out asks the surrounding code, and 'let' has nothing to say.
+        let unknown = (n) yield n + 1;
+
         comment A range loop's counter carries no type.
         for integer i = 1 to 3
             Console.WriteLine(i);

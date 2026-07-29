@@ -52,6 +52,24 @@ public abstract class ParserTestBase
         return ((VarDeclStmt)statements[0]).Initializer!;
     }
 
+    /// <summary>Parses one expression and returns both it and whatever was reported.</summary>
+    protected static (Expression Expression, DiagnosticBag Diagnostics)
+        ParseExpressionWithDiagnostics(string expression)
+    {
+        (CompilationUnit unit, DiagnosticBag diagnostics) = ParseRaw($$"""
+            global model Program
+                function Main()
+                    let value = {{expression}};
+                end function
+            end model
+            """);
+
+        ModelDecl model = (ModelDecl)unit.Declarations[0];
+        Statement statement = ((FunctionDecl)model.Members[0]).Body[0];
+
+        return (((VarDeclStmt)statement).Initializer!, diagnostics);
+    }
+
     /// <summary>Parses a single type by way of a variable declaration.</summary>
     protected static TypeSyntax ParseType(string type)
     {

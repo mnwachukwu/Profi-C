@@ -114,7 +114,6 @@ public enum TokenType
     Colon,
 
     /// <summary>The "=>" of an expression lambda.</summary>
-    Arrow,
 
     LeftParen,
     RightParen,

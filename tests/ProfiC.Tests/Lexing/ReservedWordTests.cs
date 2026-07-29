@@ -1,3 +1,4 @@
+using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
 
 namespace ProfiC.Tests.Lexing;
@@ -10,7 +11,7 @@ namespace ProfiC.Tests.Lexing;
 [TestFixture]
 public sealed class ReservedWordTests : LexerTestBase
 {
-    /// <summary>The 54 reserved words, written out rather than derived from the table.</summary>
+    /// <summary>The 55 reserved words, written out rather than derived from the table.</summary>
     private static readonly string[] Expected =
     [
         "abstract", "and", "as", "base", "begin", "boolean", "break", "case", "catch",
@@ -37,6 +38,51 @@ public sealed class ReservedWordTests : LexerTestBase
     public static IEnumerable<string> ExpectedWords => Expected;
 
     public static IEnumerable<string> NonReservedWords => NotReserved;
+
+    // ---- Taking a reserved word back as a name ---------------------------------------------
+
+    /// <summary>
+    /// <para>A reserved word may be used as a name by writing '@' in front of it.</para>
+    /// <para>Twelve of the reserved words are ordinary things to call a variable — 'end',
+    /// 'base', 'to', 'each', 'step' among them — and no amount of renaming keywords frees them
+    /// all. The mark takes one back deliberately, and it is the only place a name may begin
+    /// with something other than a letter.</para>
+    /// </summary>
+    [TestCase("@end")]
+    [TestCase("@base")]
+    [TestCase("@to")]
+    [TestCase("@each")]
+    [TestCase("@step")]
+    [TestCase("@this")]
+    public void AnEscapedReservedWordScansAsAName(string written)
+    {
+        Token token = ScanSingle(written);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(token.Type, Is.EqualTo(TokenType.Identifier));
+            Assert.That(token.Lexeme, Is.EqualTo(written), "a lexeme is the exact source slice");
+            Assert.That(token.Name, Is.EqualTo(written[1..]), "the mark is no part of the name");
+        });
+    }
+
+    /// <summary>The mark says "this word is otherwise taken", so one that is not misleads.</summary>
+    [Test]
+    public void AnEscapeOnAWordThatNeedsNoneIsReported()
+    {
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("@total");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0009" }));
+            Assert.That(diagnostics.Single().Severity, Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(tokens[0].Name, Is.EqualTo("total"), "and it still means that name");
+        });
+    }
+
+    [Test]
+    public void AnEscapeWithNoNameAfterItIsReported() =>
+        Assert.That(ScanRaw("@ ").Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0010" }));
 
     [Test]
     public void KeywordTable_ContainsExactlyFiftyFiveWords()

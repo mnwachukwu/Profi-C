@@ -266,6 +266,14 @@ public sealed partial class Interpreter
     private object? EvaluateTypeTest(TypeTestExpr test, Environment scope, Instance? receiver)
     {
         object? value = Evaluate(test.Operand, scope, receiver);
+
+        // The types settled some tests while compiling. Those are not asked again here, because
+        // the value cannot answer them: a set carries no element type, a function no signature.
+        if (_model.GetSettledTest(test) is { } settled)
+        {
+            return settled;
+        }
+
         return _model.GetType(test.TargetType) is { } target && IsOfType(value, target);
     }
 
@@ -279,6 +287,13 @@ public sealed partial class Interpreter
     private object? EvaluateTypeCast(TypeCastExpr cast, Environment scope, Instance? receiver)
     {
         object? value = Evaluate(cast.Operand, scope, receiver);
+
+        // Settled while compiling, for the same reason a test is: one that always succeeds
+        // gives the value back, one that never does gives nothing.
+        if (_model.GetSettledTest(cast) is { } settled)
+        {
+            return settled ? value : null;
+        }
 
         if (_model.GetType(cast.TargetType) is not { } target)
         {
@@ -457,17 +472,37 @@ public sealed partial class Interpreter
                 FieldSymbol field => _globals.Lookup(field)?.Value,
                 EnumMemberSymbol enumMember => new EnumValue(
                     enumMember.Owner.Name, enumMember.Name, enumMember.Value),
+
+                // Functions are values, so naming one without calling it produces the function
+                // itself. It closes over nothing but the globals, since a global member has no
+                // instance to remember.
+                FunctionSymbol function when BodyOf(function) is { } declared =>
+                    new FunctionValue(
+                        declared.Parameters, declared.Body, expressionBody: null, _globals, null),
+
                 _ => null,
             };
         }
 
         object? target = Evaluate(member.Receiver, scope, receiver);
 
-        if (target is Instance instance
-            && _model.GetSymbol(member) is FieldSymbol field2
-            && instance.Fields.TryGetValue(field2, out object? value))
+        if (target is Instance instance)
         {
-            return value;
+            if (_model.GetSymbol(member) is FieldSymbol field2
+                && instance.Fields.TryGetValue(field2, out object? value))
+            {
+                return value;
+            }
+
+            // A method named through a value is that method bound to the value, so calling it
+            // later still knows which one it belongs to. Which method is the checker's
+            // decision, as it is for a call.
+            if (_model.GetSymbol(member) is FunctionSymbol method
+                && BodyOf(method) is { } body)
+            {
+                return new FunctionValue(
+                    body.Parameters, body.Body, expressionBody: null, _globals, instance);
+            }
         }
 
         return null;

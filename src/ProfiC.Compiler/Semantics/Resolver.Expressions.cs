@@ -233,7 +233,13 @@ public sealed partial class Resolver
         {
             foreach (ParameterDecl parameter in lambda.Parameters)
             {
-                TypeSymbol type = ResolveType(parameter.Type);
+                // A parameter written as a bare name has no type yet. The type checker fills
+                // it in from whatever the lambda is being written into, so it starts as the
+                // error type — which is also the right answer if nothing ever supplies one.
+                TypeSymbol type = parameter.Type is null
+                    ? ErrorType.Instance
+                    : ResolveType(parameter.Type);
+
                 ParameterSymbol symbol = new(parameter.Name, type) { Declaration = parameter };
 
                 Declare(symbol, parameter);

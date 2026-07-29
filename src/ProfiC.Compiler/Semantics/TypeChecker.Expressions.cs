@@ -18,16 +18,89 @@ public sealed partial class TypeChecker
     /// <summary>
     /// <para>Works out an expression's type where the surrounding code already says what is
     /// wanted.</para>
-    /// <para>Only a collection literal is treated differently, and it is the only construct
-    /// that needs to be: a literal has no type of its own beyond what is in it, so
-    /// <c>{ new Rectangle(...), new Circle(...) }</c> has nothing to be until something says
-    /// these are shapes. Everything else has a type on its own terms and is checked against
-    /// what is wanted afterwards, as before.</para>
+    /// <para>Two constructs are treated differently, and they are the two with nothing to be
+    /// on their own. A collection literal has no type beyond what is in it, so
+    /// <c>{ new Rectangle(...), new Circle(...) }</c> is nothing until something says these
+    /// are shapes. A lambda whose parameters are bare names is the same case one level up:
+    /// <c>(n) yield n * 2</c> says what to do with an <c>n</c> without saying what an
+    /// <c>n</c> is. Everything else has a type on its own terms and is checked against what
+    /// is wanted afterwards.</para>
     /// </summary>
-    private TypeSymbol CheckExpressionAgainst(Expression expression, TypeSymbol expected) =>
-        expression is CollectionExpr collection && expected is SetType set
-            ? CheckCollectionAgainst(collection, set)
-            : CheckExpression(expression);
+    private TypeSymbol CheckExpressionAgainst(Expression expression, TypeSymbol expected)
+    {
+        switch (expression)
+        {
+            case CollectionExpr collection when expected is SetType set:
+                return CheckCollectionAgainst(collection, set);
+
+            case LambdaExpr lambda when TargetFor(expected) is { } wanted:
+                MatchParametersToTarget(lambda, wanted);
+                break;
+        }
+
+        return CheckExpression(expression);
+    }
+
+    /// <summary>
+    /// <para>The function type a lambda is being written into, looking through an optional to
+    /// find it.</para>
+    /// <para>A lambda assigned to <c>integer function(integer)?</c> is wrapped on the way in,
+    /// and what it has to be is the type underneath — so the optional says what the parameters
+    /// hold just as plainly as the bare form does.</para>
+    /// </summary>
+    private static FunctionType? TargetFor(TypeSymbol expected) => expected switch
+    {
+        FunctionType function => function,
+        OptionalType optional => TargetFor(optional.UnderlyingType),
+        _ => null,
+    };
+
+    /// <summary>
+    /// <para>Reads a lambda's parameter list against the type it is being written into: a
+    /// bare name is given the type the target says it has, and a written one is reported,
+    /// since the target had already fixed it.</para>
+    /// <para>Both halves are the same fact stated from either side — the target settles the
+    /// whole list — so they belong in one place rather than in two rules that could drift.</para>
+    /// <para>A count that does not match settles nothing and is left alone. The lambda then
+    /// reports the parameters it was actually given, and the mismatch is said once where the
+    /// two types are compared rather than a second time per parameter.</para>
+    /// </summary>
+    private void MatchParametersToTarget(LambdaExpr lambda, FunctionType wanted)
+    {
+        if (lambda.Parameters.Count != wanted.ParameterTypes.Count)
+        {
+            return;
+        }
+
+        for (int index = 0; index < lambda.Parameters.Count; index++)
+        {
+            ParameterDecl parameter = lambda.Parameters[index];
+
+            switch (parameter.Type)
+            {
+                case null when _model.GetSymbol(parameter) is ParameterSymbol symbol
+                               && wanted.ParameterTypes[index] is { } type:
+                    symbol.Type = type;
+                    break;
+
+                // A type that failed to parse has been reported already, and telling its
+                // author it was unnecessary explains nothing about what went wrong.
+                case not null and not MissingType:
+                    Report(
+                        DiagnosticDescriptors.ParameterTypeAlreadyKnown,
+                        parameter.Type,
+                        parameter.Name);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// True for a lambda that cannot be checked until something says what it is being written
+    /// into, because at least one of its parameters is a bare name.
+    /// </summary>
+    private static bool NeedsATarget(Expression expression) =>
+        expression is LambdaExpr lambda && lambda.Parameters.Any(p => p.Type is null);
 
     /// <summary>
     /// Checks every element against the element type that was asked for, rather than against
@@ -339,12 +412,44 @@ public sealed partial class TypeChecker
         TypeSymbol operand = CheckExpression(test.Operand);
         TypeSymbol target = _model.GetType(test.TargetType) ?? ErrorType.Instance;
 
-        if (!operand.IsError && !target.IsError && !CouldBe(operand, target))
+        if (!operand.IsError && !target.IsError)
         {
-            Report(DiagnosticDescriptors.CannotTestOrCast, test, operand.WithArticleCapitalized(), target.WithArticle());
+            SettleIfTheTypesDecide(test, operand, target);
         }
 
         return PrimitiveType.Boolean;
+    }
+
+    /// <summary>
+    /// <para>Writes down a type test's answer when the types alone give one.</para>
+    /// <para>A value that could never be the named type gives false; one that always is gives
+    /// true. Anything in between is a real question about the value — a base-typed name holding
+    /// a derived value, or an optional that may be empty — and is left to run.</para>
+    /// </summary>
+    private void SettleIfTheTypesDecide(Expression test, TypeSymbol operand, TypeSymbol target)
+    {
+        if (!CouldBe(operand, target))
+        {
+            Report(
+                DiagnosticDescriptors.TypeTestIsAlwaysFalse,
+                test,
+                operand.WithArticleCapitalized(),
+                target.WithArticle());
+
+            _model.SettleTest(test, false);
+            return;
+        }
+
+        if (Conversions.IsAssignable(operand, target))
+        {
+            Report(
+                DiagnosticDescriptors.TypeTestIsAlwaysTrue,
+                test,
+                operand.WithArticleCapitalized(),
+                target.WithArticle());
+
+            _model.SettleTest(test, true);
+        }
     }
 
     /// <summary>
@@ -362,21 +467,20 @@ public sealed partial class TypeChecker
             return ErrorType.Instance;
         }
 
-        if (target.IsValueType)
+        // Asking whether a value is some other value type is not a question about identity or
+        // inheritance, so there is no answer to settle on. An enumeration is exempt: an integer
+        // names one of its members, which is a real question with a real answer.
+        if (target.IsValueType && target is not EnumerationSymbol)
         {
-            // Asking whether a value is some other value type is not a question about
-            // identity or inheritance, so it has no meaning here.
-            if (target is not EnumerationSymbol)
-            {
-                Report(DiagnosticDescriptors.CannotTestOrCast, cast, operand.WithArticleCapitalized(), target.WithArticle());
-                return ErrorType.Instance;
-            }
-        }
-        else if (!CouldBe(operand, target))
-        {
-            Report(DiagnosticDescriptors.CannotTestOrCast, cast, operand.WithArticleCapitalized(), target.WithArticle());
+            Report(
+                DiagnosticDescriptors.CannotCastToValueType,
+                cast,
+                target.WithArticleCapitalized());
+
             return ErrorType.Instance;
         }
+
+        SettleIfTheTypesDecide(cast, operand, target);
 
         return new OptionalType(target);
     }
@@ -519,19 +623,47 @@ public sealed partial class TypeChecker
         return ErrorType.Instance;
     }
 
+    /// <summary>
+    /// <para>The type a bare parameter name was given by the surrounding code.</para>
+    /// <para>The resolver leaves one as the error type, and <see cref="MatchParametersToTarget"/>
+    /// replaces it once a target is known. Still finding the error type here means no target
+    /// ever arrived, which is the one case the writer has to hear about.</para>
+    /// </summary>
+    private TypeSymbol InferredParameterType(ParameterDecl parameter)
+    {
+        TypeSymbol type = _model.GetSymbol(parameter) is ParameterSymbol symbol
+            ? symbol.Type
+            : ErrorType.Instance;
+
+        if (type.IsError)
+        {
+            Report(DiagnosticDescriptors.ParameterTypeNotInferable, parameter, parameter.Name);
+        }
+
+        return type;
+    }
+
     private TypeSymbol CheckLambda(LambdaExpr lambda)
     {
         List<TypeSymbol> parameters = [];
 
         foreach (ParameterDecl parameter in lambda.Parameters)
         {
-            parameters.Add(_model.GetType(parameter.Type) ?? ErrorType.Instance);
+            parameters.Add(parameter.Type is null
+                ? InferredParameterType(parameter)
+                : _model.GetType(parameter.Type) ?? ErrorType.Instance);
         }
 
         if (lambda.ExpressionBody is not null)
         {
             TypeSymbol result = CheckExpression(lambda.ExpressionBody);
-            return new FunctionType(result, parameters);
+
+            // A lambda whose expression produces no value yields nothing, which a function type
+            // spells as a null result rather than as a result of the void type. Both say the
+            // same thing, and a type carrying one never matches a type carrying the other.
+            return new FunctionType(
+                ReferenceEquals(result, PrimitiveType.Void) ? null : result,
+                parameters);
         }
 
         if (lambda.Body is null)

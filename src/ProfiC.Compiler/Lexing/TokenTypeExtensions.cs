@@ -41,7 +41,6 @@ public static class TokenTypeExtensions
         TokenType.Pipe => "|",
         TokenType.Question => "?",
         TokenType.Colon => ":",
-        TokenType.Arrow => "=>",
         TokenType.LeftParen => "(",
         TokenType.RightParen => ")",
         TokenType.LeftBrace => "{",

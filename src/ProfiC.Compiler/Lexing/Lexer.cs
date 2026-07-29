@@ -55,6 +55,14 @@ public sealed class Lexer
         // spelling, so it is named rather than scanned as two multiplications.
         ("**", TokenType.Caret, "Profi-C raises to a power with '^'. Write 'base ^ exponent', "
                + "or 'Math.Pow(base, exponent)' for a real result."),
+
+        // A lambda's body follows "yield", the same word every other function uses to say what
+        // it produces. Standing "yield" in means the rest of the lambda parses, so a reader
+        // arriving from C# or Java gets one sentence rather than a cascade.
+        ("=>", TokenType.Yield, "A function's body follows 'yield'. "
+               + "Write '(integer n) yield n + 1'."),
+        ("->", TokenType.Yield, "A function's body follows 'yield'. "
+               + "Write '(integer n) yield n + 1'."),
     ];
 
     private readonly SourceText _source;
@@ -267,6 +275,11 @@ public sealed class Lexer
             return ScanStringLiteral();
         }
 
+        if (c == '@')
+        {
+            return ScanEscapedName();
+        }
+
         if (IsIdentifierStart(c))
         {
             return ScanWord();
@@ -286,8 +299,8 @@ public sealed class Lexer
     /// <para>A character that may begin an identifier: any Unicode letter, or an
     /// underscore.</para>
     /// <para>This follows C#, minus its rarer allowances. Combining marks, format
-    /// characters, unicode escapes within names, and verbatim identifiers written with a
-    /// leading "@" are all absent, since none of them serves a reader.</para>
+    /// characters, and unicode escapes within names are all absent, since none of them serves
+    /// a reader.</para>
     /// </summary>
     private static bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_';
 
@@ -297,6 +310,44 @@ public sealed class Lexer
     /// identifier such as "comment_text" is correctly not read as a comment.
     /// </summary>
     private static bool IsIdentifierPart(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+    /// <summary>
+    /// <para>Scans a reserved word being used as a name, written with a leading <c>@</c>.</para>
+    /// <para>Several reserved words are ordinary things to call a variable — <c>end</c>,
+    /// <c>base</c>, <c>to</c> — and a language cannot give every such word back without
+    /// leaving the grammar guessing. The mark is the way to take one back deliberately, and it
+    /// is the only place a name may begin with something other than a letter.</para>
+    /// <para>The token is always an identifier, since that is the whole point. Its lexeme keeps
+    /// the mark, because a lexeme is the exact source slice; the name without it is
+    /// <see cref="Token.Name"/>.</para>
+    /// </summary>
+    private Token ScanEscapedName()
+    {
+        int start = _index;
+        _index++;
+
+        if (IsAtEnd() || !IsIdentifierStart(Current()))
+        {
+            _diagnostics.Report(DiagnosticDescriptors.EscapeNeedsAName, SpanFrom(start));
+            return new Token(TokenType.Identifier, _text[start.._index], SpanFrom(start));
+        }
+
+        while (!IsAtEnd() && IsIdentifierPart(Current()))
+        {
+            _index++;
+        }
+
+        string written = _text[start.._index];
+        string name = written[1..];
+
+        if (!ReservedWords.IsReserved(name))
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.UnnecessaryEscapedName, SpanFrom(start), name);
+        }
+
+        return new Token(TokenType.Identifier, written, SpanFrom(start));
+    }
 
     /// <summary>Scans an identifier or a reserved word.</summary>
     private Token ScanWord()
@@ -530,7 +581,6 @@ public sealed class Lexer
 
         // Two-character operators, checked before the single-character forms.
         if (c == '=' && next == '=') { _index += 2; return MakeToken(TokenType.EqualEqual, start); }
-        if (c == '=' && next == '>') { _index += 2; return MakeToken(TokenType.Arrow, start); }
         if (c == '!' && next == '=') { _index += 2; return MakeToken(TokenType.NotEqual, start); }
         if (c == '<' && next == '=') { _index += 2; return MakeToken(TokenType.LessThanOrEqual, start); }
         if (c == '>' && next == '=') { _index += 2; return MakeToken(TokenType.GreaterThanOrEqual, start); }

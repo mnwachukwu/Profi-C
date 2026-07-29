@@ -1,4 +1,5 @@
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Diagnostics;
 
 namespace ProfiC.Tests.Parsing;
 
@@ -181,10 +182,48 @@ public sealed class ExpressionParsingTests : ParserTestBase
 
     // ---- Lambda versus parenthesized expression -----------------------------------------
 
+    /// <summary>
+    /// A parameter may be a bare name, which the type checker settles from the surrounding
+    /// code. The parser records the absence rather than inventing a type for it.
+    /// </summary>
+    [TestCase("(a) yield a + 1", 1)]
+    [TestCase("(a, b) yield a + b", 2)]
+    public void ALambdaParameterMayBeWrittenWithoutAType(string source, int count)
+    {
+        LambdaExpr lambda = (LambdaExpr)ParseExpression(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lambda.Parameters, Has.Count.EqualTo(count));
+            Assert.That(lambda.Parameters.Select(p => p.Type), Is.All.Null);
+        });
+    }
+
+    /// <summary>
+    /// One written and one left out. Whether writing either was worth doing is a question
+    /// about what surrounds the lambda, which the parser cannot see, so it records both forms
+    /// and says nothing.
+    /// </summary>
+    [Test]
+    public void MixingTheTwoFormsParsesWithoutComment()
+    {
+        (Expression expression, DiagnosticBag diagnostics) =
+            ParseExpressionWithDiagnostics("(integer a, b) yield a + b");
+
+        LambdaExpr lambda = (LambdaExpr)expression;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lambda.Parameters[0].Type, Is.Not.Null);
+            Assert.That(lambda.Parameters[1].Type, Is.Null);
+            Assert.That(diagnostics, Is.Empty);
+        });
+    }
+
     [Test]
     public void ArrowLambdaIsToldApartFromAParenthesizedExpression()
     {
-        Expression lambda = ParseExpression("(integer a, integer b) => a + b");
+        Expression lambda = ParseExpression("(integer a, integer b) yield a + b");
         Expression grouped = ParseExpression("(a + b)");
 
         Assert.Multiple(() =>
@@ -200,7 +239,7 @@ public sealed class ExpressionParsingTests : ParserTestBase
     [Test]
     public void ArrowLambdaWithNoParametersParses()
     {
-        Expression lambda = ParseExpression("() => 1");
+        Expression lambda = ParseExpression("() yield 1");
 
         Assert.That(lambda, Is.TypeOf<LambdaExpr>());
         Assert.That(((LambdaExpr)lambda).Parameters, Is.Empty);
@@ -213,7 +252,7 @@ public sealed class ExpressionParsingTests : ParserTestBase
         Assert.Multiple(() =>
         {
             Assert.That(ParseExpression("((a + b) * c)"), Is.TypeOf<ParenthesizedExpr>());
-            Assert.That(ParseExpression("(integer a) => (a + 1)"), Is.TypeOf<LambdaExpr>());
+            Assert.That(ParseExpression("(integer a) yield (a + 1)"), Is.TypeOf<LambdaExpr>());
         });
     }
 

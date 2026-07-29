@@ -141,7 +141,14 @@ public sealed partial class Resolver
     /// <summary>Declares a local or parameter, reporting a clash within the same scope.</summary>
     private void Declare(Symbol symbol, SyntaxNode node)
     {
-        if (!_scope.TryDeclare(symbol))
+        if (_scope.TryDeclare(symbol))
+        {
+            return;
+        }
+
+        // A name that failed to parse is empty, and two of those are not a clash worth
+        // reporting — whatever went wrong has already been said once each.
+        if (symbol.Name.Length > 0)
         {
             Report(DiagnosticDescriptors.DuplicateDeclaration, node, symbol.Name);
         }
@@ -159,6 +166,14 @@ public sealed partial class Resolver
         _model.BindType(syntax, resolved);
         return resolved;
     }
+
+    /// <summary>
+    /// The type written on a declared function's parameter. Only a lambda may leave one out
+    /// for the surrounding code to settle, so a missing one here is a parse failure and reads
+    /// as the error type rather than as something to work out.
+    /// </summary>
+    private TypeSymbol ResolveWrittenType(ParameterDecl parameter) =>
+        parameter.Type is null ? ErrorType.Instance : ResolveType(parameter.Type);
 
     private TypeSymbol ResolveTypeCore(TypeSyntax syntax)
     {

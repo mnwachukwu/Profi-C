@@ -98,7 +98,7 @@ public sealed partial class Parser
 
         string name = token.Type switch
         {
-            TokenType.Identifier => token.Lexeme,
+            TokenType.Identifier => token.Name,
             _ => token.Type.Text() ?? token.Lexeme,
         };
 

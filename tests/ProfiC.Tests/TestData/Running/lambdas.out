@@ -1,0 +1,15 @@
+* hello, 42, 9
+halved:  5
+doubled: 20
+stepped: 11 9
+doubled: {2, 4, 6, 8}
+squared: {1, 4, 9, 16}
+clamped: {1, 2, 3, 3}
+step of 7: 17
+step of 7: 70
+add five to 1:    6
+add hundred to 1: 101
+twice of 6:       12
+1 2 3 
+tripled: {3, 6, 9}
+counting: 11 12 13

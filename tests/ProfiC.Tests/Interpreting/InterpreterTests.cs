@@ -41,6 +41,32 @@ public sealed class InterpreterTests
         return output.ToString().ReplaceLineEndings("\n");
     }
 
+    /// <summary>
+    /// Compiles and runs a program that is expected to warn, returning what it wrote and the
+    /// identifiers it reported. Errors still fail the test; a warning is a program the compiler
+    /// accepted, so it must still run.
+    /// </summary>
+    private static (string Output, string[] Ids) RunAllowingWarnings(string source)
+    {
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(new SourceText(source, "<test>"), diagnostics);
+        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+        Assert.That(
+            diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
+                       .Select(d => $"{d.Id}: {d.Message}"),
+            Is.Empty,
+            "the program should have no errors");
+
+        StringWriter output = new();
+        ProfiC.Interpreter.Interpreter.Run(Lowering.Lower(unit, model), model, output);
+
+        return (output.ToString().ReplaceLineEndings("\n"),
+                [.. diagnostics.Sorted().Select(d => d.Id)]);
+    }
+
     /// <summary>Runs statements inside <c>Main</c>, which is what most of these tests want.</summary>
     private static string RunBody(string body) => Run($$"""
         global model Program
@@ -207,7 +233,7 @@ public sealed class InterpreterTests
     public void AndShortCircuits() => Assert.That(
         RunBody("""
                 integer calls = 0;
-                boolean function(integer) note = (integer n) => n > 0;
+                boolean function(integer) note = (n) yield n > 0;
                 if false and note(1)
                     Console.WriteLine("unreachable");
                 end if
@@ -535,15 +561,32 @@ public sealed class InterpreterTests
     [Test]
     public void AnExpressionLambdaIsCalledLikeAFunction() => Assert.That(
         RunBody("""
-                integer function(integer, integer) add = (integer a, integer b) => a + b;
+                integer function(integer, integer) add = (a, b) yield a + b;
                 Console.WriteLine(add(2, 3));
         """),
         Is.EqualTo("5\n"));
 
+    /// <summary>
+    /// A parameter left as a bare name runs as the type the surrounding code gave it, which is
+    /// the point of settling it while checking rather than deciding anything at run time.
+    /// </summary>
+    [Test]
+    public void ALambdaWithBareParameterNamesRuns() => Assert.That(
+        RunBody("""
+                integer function(integer, integer) add = (a, b) yield a + b;
+                string function(string, integer) tag = function(text, count)
+                    yield text + ":" + count;
+                end function;
+
+                Console.WriteLine(add(2, 3));
+                Console.WriteLine(tag("n", add(1, 1)));
+        """),
+        Is.EqualTo("5\nn:2\n"));
+
     [Test]
     public void ABlockLambdaYieldsAValue() => Assert.That(
         RunBody("""
-                integer function(integer) square = function(integer n)
+                integer function(integer) square = function(n)
                     yield n * n;
                 end function;
                 Console.WriteLine(square(7));
@@ -554,7 +597,7 @@ public sealed class InterpreterTests
     public void CaptureIsByReferenceNotByValue() => Assert.That(
         RunBody("""
                 integer captured = 10;
-                integer function(integer) add = (integer n) => n + captured;
+                integer function(integer) add = (n) yield n + captured;
                 Console.WriteLine(add(5));
                 captured = 100;
                 Console.WriteLine(add(5));
@@ -567,7 +610,7 @@ public sealed class InterpreterTests
         Run("""
             global model Program
                 function Main()
-                    Console.WriteLine(Program.Apply((integer n) => n * 3, 5));
+                    Console.WriteLine(Program.Apply((n) yield n * 3, 5));
                 end function
 
                 integer function Apply(integer function(integer) f, integer n)
@@ -1145,12 +1188,15 @@ public sealed class InterpreterTests
         """;
 
     /// <summary>
-    /// A value is of its own type. Obvious, and worth pinning: a value crossing into the
-    /// runtime keeps no symbol, so each kind has to be recognized on its own terms.
+    /// <para>A value is of its own type — settled while compiling, not asked at run time.</para>
+    /// <para>The types decide it, so the test is folded and warned about rather than being
+    /// carried out. What is pinned here is that the settled answer reaches the running program
+    /// intact, which it can only do by travelling on the node through lowering.</para>
     /// </summary>
     [Test]
-    public void AValueIsOfItsOwnType() => Assert.That(
-        Lines(Run($$"""
+    public void AValueIsOfItsOwnTypeAndTheAnswerIsSettledWhileCompiling()
+    {
+        (string output, string[] ids) = RunAllowingWarnings($$"""
             {{Suits}}
 
             structure Point
@@ -1171,8 +1217,14 @@ public sealed class InterpreterTests
                     Console.WriteLine(p is Point);
                 end function
             end model
-            """)),
-        Is.EqualTo(new[] { "true", "true", "true" }));
+            """);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Lines(output), Is.EqualTo(new[] { "true", "true", "true" }));
+            Assert.That(ids, Is.EqualTo(new[] { "PC0334", "PC0334", "PC0334" }));
+        });
+    }
 
     /// <summary>
     /// <para>An ordinal names a member, or names none.</para>

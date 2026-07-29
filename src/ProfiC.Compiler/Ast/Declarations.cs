@@ -262,14 +262,18 @@ public sealed class FunctionDecl(
 }
 
 /// <summary>One parameter of a function or lambda.</summary>
-public sealed class ParameterDecl(SourceSpan span, TypeSyntax type, string name)
+public sealed class ParameterDecl(SourceSpan span, TypeSyntax? type, string name)
     : Declaration(span)
 {
-    public TypeSyntax Type { get; } = type;
+    /// <summary>
+    /// The written type, or null for a lambda parameter left for the surrounding code to
+    /// settle. A declared function's parameters always carry one.
+    /// </summary>
+    public TypeSyntax? Type { get; } = type;
 
     public string Name { get; } = name;
 
-    public override IEnumerable<SyntaxNode> Children => [Type];
+    public override IEnumerable<SyntaxNode> Children => NonNull(Type);
 
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitParameterDecl(this);
 

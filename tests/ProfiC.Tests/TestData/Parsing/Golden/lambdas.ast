@@ -1,0 +1,436 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WritingThemDown'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhereTheTypesGo'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'PassingThemAlong'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'HandingThemBack'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Remembering'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'NamingOneThatAlreadyExists'
+            IdentifierExpr 'Program'
+    FunctionDecl 'WritingThemDown'
+      VarDeclStmt 'increment'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        LambdaExpr inline
+          ParameterDecl 'a'
+          BinaryExpr '+'
+            IdentifierExpr 'a'
+            LiteralExpr 1 [Integer]
+      VarDeclStmt 'larger'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        LambdaExpr block
+          ParameterDecl 'a'
+          ParameterDecl 'b'
+          IfStmt
+            BinaryExpr '>'
+              IdentifierExpr 'a'
+              IdentifierExpr 'b'
+            YieldStmt
+              IdentifierExpr 'a'
+            YieldStmt
+              IdentifierExpr 'b'
+      VarDeclStmt 'greet'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'string'
+        LambdaExpr inline
+          LiteralExpr "hello" [String]
+      VarDeclStmt 'announce'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'string'
+        LambdaExpr inline
+          ParameterDecl 'what'
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "* " [String]
+              IdentifierExpr 'what'
+      ExpressionStmt
+        CallExpr
+          IdentifierExpr 'announce'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  CallExpr
+                    IdentifierExpr 'greet'
+                  LiteralExpr ", " [String]
+                CallExpr
+                  IdentifierExpr 'increment'
+                  LiteralExpr 41 [Integer]
+              LiteralExpr ", " [String]
+            CallExpr
+              IdentifierExpr 'larger'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 9 [Integer]
+    FunctionDecl 'WhereTheTypesGo'
+      VarDeclStmt 'halve' [inferred]
+        LambdaExpr inline
+          ParameterDecl 'n'
+            NamedTypeSyntax 'integer'
+          BinaryExpr '/'
+            IdentifierExpr 'n'
+            LiteralExpr 2 [Integer]
+      VarDeclStmt 'double'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        LambdaExpr inline
+          ParameterDecl 'n'
+          BinaryExpr '*'
+            IdentifierExpr 'n'
+            LiteralExpr 2 [Integer]
+      VarDeclStmt 'steps'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          LambdaExpr inline
+            ParameterDecl 'n'
+            BinaryExpr '+'
+              IdentifierExpr 'n'
+              LiteralExpr 1 [Integer]
+          LambdaExpr inline
+            ParameterDecl 'n'
+            BinaryExpr '-'
+              IdentifierExpr 'n'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "halved:  " [String]
+            CallExpr
+              IdentifierExpr 'halve'
+              LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "doubled: " [String]
+            CallExpr
+              IdentifierExpr 'double'
+              LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "stepped: " [String]
+                CallExpr
+                  IndexExpr
+                    IdentifierExpr 'steps'
+                    LiteralExpr 0 [Integer]
+                  LiteralExpr 10 [Integer]
+              LiteralExpr " " [String]
+            CallExpr
+              IndexExpr
+                IdentifierExpr 'steps'
+                LiteralExpr 1 [Integer]
+              LiteralExpr 10 [Integer]
+    FunctionDecl 'Apply'
+      SetTypeSyntax
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'transform'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'results'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForEachStmt 'value'
+        IdentifierExpr 'values'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'results'
+            CallExpr
+              IdentifierExpr 'transform'
+              IdentifierExpr 'value'
+      YieldStmt
+        IdentifierExpr 'results'
+    FunctionDecl 'PassingThemAlong'
+      VarDeclStmt 'numbers'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+          LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "doubled: " [String]
+            CallExpr
+              MemberExpr 'Apply'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'numbers'
+              LambdaExpr inline
+                ParameterDecl 'n'
+                BinaryExpr '*'
+                  IdentifierExpr 'n'
+                  LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "squared: " [String]
+            CallExpr
+              MemberExpr 'Apply'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'numbers'
+              LambdaExpr inline
+                ParameterDecl 'n'
+                BinaryExpr '*'
+                  IdentifierExpr 'n'
+                  IdentifierExpr 'n'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "clamped: " [String]
+            CallExpr
+              MemberExpr 'Apply'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'numbers'
+              LambdaExpr block
+                ParameterDecl 'n'
+                IfStmt
+                  BinaryExpr '>'
+                    IdentifierExpr 'n'
+                    LiteralExpr 3 [Integer]
+                  YieldStmt
+                    LiteralExpr 3 [Integer]
+                YieldStmt
+                  IdentifierExpr 'n'
+      VarDeclStmt 'steps'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          LambdaExpr inline
+            ParameterDecl 'n'
+            BinaryExpr '+'
+              IdentifierExpr 'n'
+              LiteralExpr 10 [Integer]
+          LambdaExpr inline
+            ParameterDecl 'n'
+            BinaryExpr '*'
+              IdentifierExpr 'n'
+              LiteralExpr 10 [Integer]
+      ForEachStmt 'operation'
+        IdentifierExpr 'steps'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "step of 7: " [String]
+              CallExpr
+                IdentifierExpr 'operation'
+                LiteralExpr 7 [Integer]
+    FunctionDecl 'AdderOf'
+      FunctionTypeSyntax
+        NamedTypeSyntax 'integer'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'by'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        LambdaExpr inline
+          ParameterDecl 'n'
+          BinaryExpr '+'
+            IdentifierExpr 'n'
+            IdentifierExpr 'by'
+    FunctionDecl 'HandingThemBack'
+      VarDeclStmt 'addFive'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'AdderOf'
+            IdentifierExpr 'Program'
+          LiteralExpr 5 [Integer]
+      VarDeclStmt 'addHundred'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'AdderOf'
+            IdentifierExpr 'Program'
+          LiteralExpr 100 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "add five to 1:    " [String]
+            CallExpr
+              IdentifierExpr 'addFive'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "add hundred to 1: " [String]
+            CallExpr
+              IdentifierExpr 'addHundred'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "twice of 6:       " [String]
+            CallExpr
+              CallExpr
+                MemberExpr 'AdderOf'
+                  IdentifierExpr 'Program'
+                LiteralExpr 6 [Integer]
+              LiteralExpr 6 [Integer]
+    FunctionDecl 'Remembering'
+      VarDeclStmt 'reporters'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 3 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'reporters'
+            LambdaExpr inline
+              IdentifierExpr 'i'
+      ForEachStmt 'reporter'
+        IdentifierExpr 'reporters'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                IdentifierExpr 'reporter'
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'Triple'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr '*'
+          IdentifierExpr 'n'
+          LiteralExpr 3 [Integer]
+    FunctionDecl 'NamingOneThatAlreadyExists'
+      VarDeclStmt 'tripled'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        MemberExpr 'Triple'
+          IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "tripled: " [String]
+            CallExpr
+              MemberExpr 'Apply'
+                IdentifierExpr 'Program'
+              CollectionExpr
+                LiteralExpr 1 [Integer]
+                LiteralExpr 2 [Integer]
+                LiteralExpr 3 [Integer]
+              IdentifierExpr 'tripled'
+      VarDeclStmt 'counter'
+        NamedTypeSyntax 'Counter'
+        NewExpr 'Counter'
+          LiteralExpr 10 [Integer]
+      VarDeclStmt 'advance'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+        MemberExpr 'Next'
+          IdentifierExpr 'counter'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  BinaryExpr '+'
+                    LiteralExpr "counting: " [String]
+                    CallExpr
+                      IdentifierExpr 'advance'
+                  LiteralExpr " " [String]
+                CallExpr
+                  IdentifierExpr 'advance'
+              LiteralExpr " " [String]
+            CallExpr
+              MemberExpr 'Next'
+                IdentifierExpr 'counter'
+  ModelDecl 'Counter'
+    FieldDecl 'count'
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Counter' [public]
+      ParameterDecl 'start'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'count'
+          ThisExpr
+        IdentifierExpr 'start'
+    FunctionDecl 'Next' [public]
+      NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'count'
+          ThisExpr
+        BinaryExpr '+'
+          MemberExpr 'count'
+            ThisExpr
+          LiteralExpr 1 [Integer]
+      YieldStmt
+        MemberExpr 'count'
+          ThisExpr

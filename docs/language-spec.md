@@ -202,6 +202,19 @@ An identifier may not be one of the reserved words in section 2, nor `comment`. 
 an underscore is enough to make a word ordinary rather than reserved: `model_` and
 `comment_text` are identifiers.
 
+**A reserved word may be used as a name by writing `@` before it**: `@end`, `@base`, `@to`.
+The mark is no part of the name — `@end` names `end` — and it is the only place an identifier
+may begin with something other than a letter or an underscore.
+
+This exists because several reserved words are ordinary things to call a variable. `end` pairs
+with `start`, `base` pairs with `height`, `to` pairs with `from`, and `each` and `step` are
+natural names for what a loop is given. Freeing them by renaming the keywords would cost the
+vocabulary and still leave the rest taken, so the language keeps its words and hands one back
+on request.
+
+An `@` before a word that is not reserved does nothing, and is reported as such. An `@`
+followed by no name at all is an error.
+
 This follows C#, minus its rarer allowances. Combining marks and format characters are not
 identifier characters, `\u` escapes may not be written inside a name, and there is no
 verbatim `@name` form for using a reserved word as an identifier.
@@ -252,18 +265,20 @@ The set matches C#, so an escape a student learns here works unchanged there.
 
 ### 2.1 Reserved words
 
-Profi-C has **54** reserved words. None may be used as an identifier.
+Profi-C has **55** reserved words. A name may take one back by writing `@` in front of it —
+`@end`, `@step` — which is the only place a name may begin with something other than a letter.
 
 ```
 abstract     and          as           base         begin        boolean
 break        case         catch        character    constant     continue
 default      each         else         end          enumeration  extends
 false        finally      for          fraction     function     global
-if           in           integer      is           let          model
-namespace    new          not          or           override     protected
-public       real         sealed       step         string       structure
-switch       then         this         throw        to           true
-try          until        using        virtual      while        yield
+if           import       in           integer      is           let
+model        namespace    new          not          or           override
+protected    public       real         sealed       step         string
+structure    switch       then         this         throw        to
+true         try          until        using        virtual      while
+yield
 ```
 
 `comment` is reserved in addition to these, but never produces a token: it is recognized
@@ -280,16 +295,20 @@ nothing the language defines is abbreviated.
 ```
 +   -   *   /   %   ^
 ==  !=  <   >   <=  >=
-=   =>  ?   :   |
+=   ?   :   |
 (   )   {   }   [   ]
 ,   ;   .
 ```
 
-Scanning is longest-match, so `<=` is one token rather than `<` followed by `=`, and `=>` is
-one token rather than `=` followed by `>`. No operator is longer than two characters.
+Scanning is longest-match, so `<=` is one token rather than `<` followed by `=`. No operator
+is longer than two characters.
 
-`?` is the optional type suffix. `:` ends a `case` label. `=>` introduces an expression
-lambda. `|` separates the parts of a fraction literal. `^` raises to a power.
+`?` is the optional type suffix. `:` ends a `case` label. `|` separates the parts of a
+fraction literal. `^` raises to a power.
+
+**There is no `=>`.** A lambda's body follows `yield`, the word every other function uses to
+say what it produces, so `(integer n) yield n + 1` is read with vocabulary already learned.
+Writing `=>` or `->` reports `PC0006` and names the word to use instead.
 
 **`^` is exponentiation, not exclusive-or.** Profi-C has no bitwise operators. In C# the same
 symbol is a bitwise operation, where `10 ^ 2` evaluates to 8, so the meaning does not carry
@@ -326,6 +345,8 @@ zero-width position just past the final character.
 | `PC0006` | A character sequence is used that is an operator in C# and has no reading in Profi-C |
 | `PC0007` | An escape sequence is not recognized |
 | `PC0008` | A Unicode escape is not followed by four hexadecimal digits |
+| `PC0009` | `@` is written in front of a word that is not reserved, so it takes nothing back |
+| `PC0010` | `@` is written with no name after it |
 
 Scanning never stops at the first error. Each of these has a defined recovery, so a file
 containing several mistakes reports all of them in one pass and still yields a usable token
@@ -470,6 +491,71 @@ applies.
 
 *Not yet written.* Will cover function types, overload resolution, capture, and name
 resolution.
+
+### 9.1 Writing a function as a value
+
+A function value is written in one of two forms, and both say what they produce with `yield`:
+
+```
+integer function(integer) increment = (integer a) yield a + 1;
+
+integer function(integer, integer) larger = function(integer a, integer b)
+    if a > b
+        yield a;
+    else
+        yield b;
+    end if
+end function;
+```
+
+The first form has one expression for a body. The second is a whole body, closed the way a
+declared function is, and may hold as many statements as it needs.
+
+### 9.2 Where a lambda's parameter types go
+
+A lambda's parameter is a bare name where the surrounding code already says what it holds:
+
+```
+integer function(integer) increment = (a) yield a + 1;
+```
+
+Four things say it, and between them they cover every place a lambda can be written: a
+declared type, the element type of a set being built, the parameter of the function being
+called, and the result of the function doing the yielding.
+
+```
+integer function(integer)[] steps = { (n) yield n + 1 };     comment element type
+Console.WriteLine(Program.Apply(numbers, (n) yield n * 2));  comment parameter
+yield (n) yield n + by;                                      comment result
+```
+
+An optional function type is a target like any other, since the lambda is wrapped on the way
+in and what it has to be is the type underneath.
+
+**Where the type is already said, writing it again is reported.** `PC0115` is a warning: the
+program says one thing and says it twice, which is the same argument `PC0111` makes about a
+range loop's counter.
+
+**Where nothing says it, leaving it out is reported.** `PC0336` names the parameter that has
+no type.
+
+The two rules meet with no gap and no overlap, which leaves exactly one place a lambda writes
+its own types — a `let`, where nothing on the left says anything:
+
+```
+let halve = (integer n) yield n / 2;              comment nothing else says it, so this does
+integer function(integer) double = (n) yield n * 2;   comment the declared type says it
+```
+
+So a lambda always has exactly one spelling that says nothing twice and leaves nothing unsaid.
+
+Mixing the two forms in one list needs no rule of its own. Each written type is reported for
+the same reason it would be alone, and taking the advice leaves a list written one way.
+Nothing ever suggests writing the other types out, so the two rules never point in opposite
+directions.
+
+A declared function's parameters always carry a type, because a declaration has nothing to
+take one from.
 
 ## 10. Exceptions
 

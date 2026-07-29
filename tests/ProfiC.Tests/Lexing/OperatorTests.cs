@@ -38,7 +38,6 @@ public sealed class OperatorTests : LexerTestBase
     [TestCase("!=", TokenType.NotEqual)]
     [TestCase("<=", TokenType.LessThanOrEqual)]
     [TestCase(">=", TokenType.GreaterThanOrEqual)]
-    [TestCase("=>", TokenType.Arrow)]
     public void TwoCharacterOperator_Scans(string source, TokenType expected)
     {
         Token token = ScanSingle(source);
@@ -56,7 +55,6 @@ public sealed class OperatorTests : LexerTestBase
     [TestCase("a>b", TokenType.GreaterThan)]
     [TestCase("a==b", TokenType.EqualEqual)]
     [TestCase("a=b", TokenType.Equal)]
-    [TestCase("a=>b", TokenType.Arrow)]
     [TestCase("a!=b", TokenType.NotEqual)]
     public void LongestMatch_PicksTheRightOperatorBetweenOperands(string source, TokenType expected)
     {
@@ -72,13 +70,13 @@ public sealed class OperatorTests : LexerTestBase
     }
 
     [Test]
-    public void Arrow_AndEqualEqual_DoNotInterfere()
+    public void RunsOfEqualSigns_DoNotInterfere()
     {
-        List<Token> tokens = ScanWithoutEof("= == => =");
+        List<Token> tokens = ScanWithoutEof("= == = ==");
 
         Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
         {
-            TokenType.Equal, TokenType.EqualEqual, TokenType.Arrow, TokenType.Equal,
+            TokenType.Equal, TokenType.EqualEqual, TokenType.Equal, TokenType.EqualEqual,
         }));
     }
 
@@ -128,7 +126,7 @@ public sealed class OperatorTests : LexerTestBase
     {
         Assert.Multiple(() =>
         {
-            Assert.That(TokenType.Arrow.Text(), Is.EqualTo("=>"));
+            Assert.That(TokenType.Yield.Text(), Is.EqualTo("yield"));
             Assert.That(TokenType.Question.Text(), Is.EqualTo("?"));
             Assert.That(TokenType.End.Text(), Is.EqualTo("end"));
             Assert.That(TokenType.Identifier.Text(), Is.Null);

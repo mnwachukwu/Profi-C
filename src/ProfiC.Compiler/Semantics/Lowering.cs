@@ -339,7 +339,7 @@ public sealed class Lowering
 
             case LambdaExpr lambda:
                 return Carry(lambda, lambda.IsExpressionBodied
-                    ? LambdaExpr.Arrow(lambda.Span, lambda.Parameters,
+                    ? LambdaExpr.Inline(lambda.Span, lambda.Parameters,
                                        LowerExpression(lambda.ExpressionBody!))
                     : LambdaExpr.Block(lambda.Span, lambda.Parameters,
                                        LowerStatements(lambda.Body!)));
@@ -371,6 +371,14 @@ public sealed class Lowering
         if (_model.GetBuiltIn(original) is { } builtIn)
         {
             _model.BindBuiltIn(replacement, builtIn);
+        }
+
+        // A type test the types already answered travels with the node too. The back end could
+        // not work it out again: a set does not carry its element type, nor a function its
+        // signature.
+        if (_model.GetSettledTest(original) is { } settled)
+        {
+            _model.SettleTest(replacement, settled);
         }
 
         return replacement;

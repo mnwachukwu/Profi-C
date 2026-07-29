@@ -35,7 +35,9 @@ public sealed class RecoveryTests : LexerTestBase
     [Test]
     public void SeveralUnrecognizedCharacters_AreAllReportedInOnePass()
     {
-        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("# @ $ ~");
+        // '@' is deliberately absent: it is recognized now, as the mark that lets a reserved
+        // word be a name.
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("# & $ ~");
 
         Assert.Multiple(() =>
         {
@@ -182,6 +184,25 @@ public sealed class RecoveryTests : LexerTestBase
             // The stand-in keeps the text that was actually written, so a token still slices
             // exactly out of the source and a printed stream does not lie about it.
             Assert.That(tokens[1].Lexeme, Is.EqualTo(source));
+        });
+    }
+
+    /// <summary>
+    /// The two arrows other languages put before a lambda's body. Profi-C writes the word
+    /// every other function writes, so "yield" stands in and the rest of the lambda parses.
+    /// </summary>
+    [TestCase("=>")]
+    [TestCase("->")]
+    public void LambdaArrow_StandsInAsYield(string source)
+    {
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw($"(integer n) {source} n + 1");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain("yield"));
+            Assert.That(tokens[4].Type, Is.EqualTo(TokenType.Yield));
+            Assert.That(tokens[4].Lexeme, Is.EqualTo(source));
         });
     }
 

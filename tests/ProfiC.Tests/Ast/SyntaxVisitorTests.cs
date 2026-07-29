@@ -126,7 +126,7 @@ public sealed class SyntaxVisitorTests : AstTestBase
     [Test]
     public void Visitor_HandlesBothLambdaForms()
     {
-        LambdaExpr arrow = LambdaExpr.Arrow(
+        LambdaExpr inline = LambdaExpr.Inline(
             NextSpan(),
             [Param("integer", "a")],
             Binary(Id("a"), BinaryOperator.Add, Int("1")));
@@ -138,12 +138,12 @@ public sealed class SyntaxVisitorTests : AstTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(arrow.IsExpressionBodied, Is.True);
-            Assert.That(arrow.Body, Is.Null);
+            Assert.That(inline.IsExpressionBodied, Is.True);
+            Assert.That(inline.Body, Is.Null);
             Assert.That(block.IsExpressionBodied, Is.False);
             Assert.That(block.ExpressionBody, Is.Null);
 
-            Assert.That(new IdentifierCounter().Also(v => v.Visit(arrow)).Count, Is.EqualTo(1));
+            Assert.That(new IdentifierCounter().Also(v => v.Visit(inline)).Count, Is.EqualTo(1));
             Assert.That(new IdentifierCounter().Also(v => v.Visit(block)).Count, Is.EqualTo(1));
         });
     }

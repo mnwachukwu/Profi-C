@@ -119,8 +119,8 @@ public sealed class AstPrinterTests : AstTestBase
     {
         Assert.Multiple(() =>
         {
-            Assert.That(Print(LambdaExpr.Arrow(NextSpan(), [], Int("1"))),
-                        Does.StartWith("LambdaExpr arrow"));
+            Assert.That(Print(LambdaExpr.Inline(NextSpan(), [], Int("1"))),
+                        Does.StartWith("LambdaExpr inline"));
             Assert.That(Print(LambdaExpr.Block(NextSpan(), [], [])),
                         Does.StartWith("LambdaExpr block"));
         });

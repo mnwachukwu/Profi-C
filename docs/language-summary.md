@@ -1,4 +1,4 @@
-# Profi-C; Language Summary
+# Profi-C Language Summary
 
 A condensed reference and a full comparison to C#. For the normative definition see
 [language-spec.md](language-spec.md).

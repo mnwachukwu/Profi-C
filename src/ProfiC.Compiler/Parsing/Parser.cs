@@ -117,7 +117,17 @@ public sealed partial class Parser
     {
         if (Check(TokenType.Identifier))
         {
-            return Advance().Lexeme;
+            return Advance().Name;
+        }
+
+        // A reserved word here is worth its own message. Several of them — 'end', 'base', 'to'
+        // — are ordinary things to call a variable, so this is met by anyone writing real code,
+        // and "expected a name" leaves them to work out both the cause and the fix.
+        if (Current.Type.IsKeyword() && Current.Type.Text() is { } word)
+        {
+            _diagnostics.Report(DiagnosticDescriptors.ReservedWordAsName, Current.Span, word);
+            Advance();
+            return string.Empty;
         }
 
         _diagnostics.Report(

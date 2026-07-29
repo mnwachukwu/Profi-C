@@ -119,7 +119,12 @@ public sealed partial class Parser
         Parser probe = new(_source, _tokens, scratch) { _position = _position };
         probe.ParseType();
 
-        return probe.Check(TokenType.Identifier) || probe.AtFunctionDeclaration();
+        // A reserved word after a type is a declaration whose name is a word already taken.
+        // Committing to the declaration is what lets that be reported as the naming mistake it
+        // is, rather than as a statement that could not start.
+        return probe.Check(TokenType.Identifier)
+               || probe.AtFunctionDeclaration()
+               || probe.Kind.IsKeyword();
     }
 
     private Statement ParseBlock()
@@ -461,7 +466,7 @@ public sealed partial class Parser
             return true;
         }
 
-        // An arrow lambda cannot begin a statement either, and reporting the paren rule for
+        // An inline lambda cannot begin a statement either, and reporting the paren rule for
         // it is the more useful message.
         _diagnostics.Report(
             DiagnosticDescriptors.StatementCannotStartWith,

@@ -223,7 +223,7 @@ public sealed partial class TypeChecker
     /// </summary>
     private TypeSymbol CheckCall(CallExpr call)
     {
-        List<TypeSymbol> arguments = [.. call.Arguments.Select(CheckExpression)];
+        List<TypeSymbol> arguments = [.. call.Arguments.Select(CheckArgument)];
 
         // A member call is the common shape, and needs the receiver to pick the overload.
         if (call.Callee is MemberExpr member)
@@ -460,6 +460,17 @@ public sealed partial class TypeChecker
     }
 
     /// <summary>
+    /// <para>Works out one argument's type, or holds it back if it has none yet.</para>
+    /// <para>A lambda written with bare parameter names is the only argument that cannot be
+    /// checked where it stands, since what it means depends on the parameter it is being
+    /// passed to — and which parameter that is depends on which version of an overloaded name
+    /// was chosen. It stands as the error type until <see cref="CheckArgumentsAgainst"/> knows,
+    /// which also keeps it from steering the choice it is waiting on.</para>
+    /// </summary>
+    private TypeSymbol CheckArgument(Expression argument) =>
+        NeedsATarget(argument) ? ErrorType.Instance : CheckExpression(argument);
+
+    /// <summary>
     /// Checks arguments against a fixed parameter list. A null parameter type accepts
     /// anything, which is how a member that takes a value of any kind is described.
     /// </summary>
@@ -483,6 +494,26 @@ public sealed partial class TypeChecker
 
         for (int i = 0; i < parameters.Count; i++)
         {
+            // The lambdas held back in CheckCall are checked here, now that the parameter they
+            // are being passed to says what their bare names stand for. A parameter that takes
+            // a value of any kind says nothing, so the lambda is checked without a target and
+            // reports the names it could not settle rather than passing silently.
+            if (NeedsATarget(call.Arguments[i]))
+            {
+                arguments[i] = parameters[i] is { } target
+                    ? CheckExpressionAgainst(call.Arguments[i], target)
+                    : CheckExpression(call.Arguments[i]);
+            }
+            else if (call.Arguments[i] is LambdaExpr written
+                     && parameters[i] is { } declared
+                     && TargetFor(declared) is { } wanted)
+            {
+                // One whose types were all written needed no target and was checked on its own
+                // terms above. The target is still worth reading against it, since it is what
+                // makes those types unnecessary.
+                MatchParametersToTarget(written, wanted);
+            }
+
             // A parameter that takes a value of any kind still takes a value. Nothing is not a
             // kind of value, so a call that produced none is refused here rather than passed on
             // as though it had.

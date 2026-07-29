@@ -19,5 +19,13 @@ public sealed record Token(TokenType Type, string Lexeme, SourceSpan Span)
     /// <summary>True for the token that terminates every token stream.</summary>
     public bool IsEndOfFile => Type == TokenType.EndOfFile;
 
+    /// <summary>
+    /// <para>The name an identifier stands for, without the <c>@</c> that may mark it.</para>
+    /// <para>The mark says "this reserved word is a name here" and is no part of the name
+    /// itself, so <c>@end</c> and a name spelled <c>end</c> are the same name. The lexeme keeps
+    /// the mark because a lexeme is always the exact source slice.</para>
+    /// </summary>
+    public string Name => Lexeme.StartsWith('@') ? Lexeme[1..] : Lexeme;
+
     public override string ToString() => $"({Type}, '{Lexeme}')";
 }

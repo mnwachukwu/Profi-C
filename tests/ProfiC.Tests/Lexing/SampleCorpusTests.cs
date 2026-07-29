@@ -171,7 +171,7 @@ public sealed class SampleCorpusTests : LexerTestBase
             TokenType.Plus, TokenType.Minus, TokenType.Star, TokenType.Slash, TokenType.Percent,
             TokenType.EqualEqual, TokenType.NotEqual, TokenType.LessThan, TokenType.GreaterThan,
             TokenType.LessThanOrEqual, TokenType.GreaterThanOrEqual, TokenType.Equal,
-            TokenType.Question, TokenType.Colon, TokenType.Arrow,
+            TokenType.Question, TokenType.Colon,
             TokenType.LeftParen, TokenType.RightParen, TokenType.LeftBrace, TokenType.RightBrace,
             TokenType.LeftBracket, TokenType.RightBracket, TokenType.Comma, TokenType.Semicolon,
             TokenType.Dot,

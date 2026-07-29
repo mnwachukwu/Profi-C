@@ -172,12 +172,16 @@ namespace Tour
 
             let fallback = maybeShape.Or(shape);
 
-            comment Both lambda forms.
-            comparator = function(integer a, integer b)
+            comment Both lambda forms. The type being assigned to says what the parameters
+            comment hold, so both leave them out.
+            comparator = function(a, b)
                 yield a - b;
             end function;
 
-            maybeComparator = (integer a, integer b) => a - b;
+            maybeComparator = (a, b) yield a - b;
+
+            comment A "let" says nothing about what it holds, so this one writes its own.
+            let flipped = (integer n) yield -n;
 
             comment A function nested in a function body, capturing its locals. Functions
             comment may be declared here; types may not, since a type introduced by a

@@ -1,0 +1,206 @@
+comment begin
+    Functions as values.
+
+    A function in Profi-C is a value like any other: it has a type, it can be stored in a
+    variable, held in a set, passed to another function, and handed back from one. Everything
+    below is that one idea in different shapes.
+
+    A function's type is written the way its declaration is: the result, then 'function', then
+    what it takes. So 'integer function(integer)' takes an integer and yields one, and
+    'function(string)' takes a string and yields nothing.
+end comment
+
+global model Program
+
+    function Main()
+        Program.WritingThemDown();
+        Program.WhereTheTypesGo();
+        Program.PassingThemAlong();
+        Program.HandingThemBack();
+        Program.Remembering();
+        Program.NamingOneThatAlreadyExists();
+    end function
+
+    comment ---- The two ways to write one ------------------------------------------------
+
+    comment begin
+        A short function is written on one line: its parameters, then 'yield', then the one
+        thing it produces. A longer one is written out with 'function' and closed with
+        'end function', and yields its result the way any other function does.
+
+        Both spell producing a value the same way, because it is the same act. Nothing new has
+        to be learned to read the short form.
+    end comment
+    function WritingThemDown()
+        integer function(integer) increment = (a) yield a + 1;
+
+        integer function(integer, integer) larger = function(a, b)
+            if a > b
+                yield a;
+            else
+                yield b;
+            end if
+        end function;
+
+        comment One that takes nothing, and one that yields nothing.
+        string function() greet = () yield "hello";
+        function(string) announce = (what) yield Console.WriteLine("* " + what);
+
+        announce(greet() + ", " + increment(41) + ", " + larger(3, 9));
+    end function
+
+    comment ---- Where the types go -------------------------------------------------------
+
+    comment begin
+        A parameter is a bare name wherever the surrounding code already says what it holds.
+        Above, 'integer function(integer)' on the left says 'a' is an integer, so writing it
+        again on the right would say the same thing twice — and the compiler says so.
+
+        Four things say it, and between them they cover every place a lambda can be written:
+        a declared type, the element type of a set being built, the parameter of the function
+        being called, and the result of the function doing the yielding.
+
+        That leaves exactly one place a lambda writes its own types, and it is the place
+        nothing else says anything: a 'let'. The two rules meet with no gap between them, so
+        a lambda always has one spelling that says nothing twice and leaves nothing unsaid.
+    end comment
+    function WhereTheTypesGo()
+        comment Nothing on the left, so the lambda says it.
+        let halve = (integer n) yield n / 2;
+
+        comment The declared type says it, so the lambda does not.
+        integer function(integer) double = (n) yield n * 2;
+
+        comment The element type says it.
+        integer function(integer)[] steps = { (n) yield n + 1, (n) yield n - 1 };
+
+        Console.WriteLine("halved:  " + halve(10));
+        Console.WriteLine("doubled: " + double(10));
+        Console.WriteLine("stepped: " + steps[0](10) + " " + steps[1](10));
+    end function
+
+    comment ---- Taking one as a parameter -------------------------------------------------
+
+    comment begin
+        A function that takes a function is the whole point of them being values. Apply does
+        not know what it is applying, which is what lets one function serve every caller.
+    end comment
+    integer[] function Apply(integer[] values, integer function(integer) transform)
+        integer[] results = {};
+
+        for each value in values
+            results.Insert(transform(value));
+        end for
+
+        yield results;
+    end function
+
+    function PassingThemAlong()
+        integer[] numbers = {1, 2, 3, 4};
+
+        comment Apply's own parameter says what 'n' holds.
+        Console.WriteLine("doubled: " + Program.Apply(numbers, (n) yield n * 2));
+        Console.WriteLine("squared: " + Program.Apply(numbers, (n) yield n * n));
+
+        comment A block-bodied one is written the same way wherever it goes.
+        Console.WriteLine("clamped: " + Program.Apply(numbers, function(n)
+            if n > 3
+                yield 3;
+            end if
+
+            yield n;
+        end function));
+
+        comment A set of them, since a function is a value and a set holds values.
+        integer function(integer)[] steps =
+        {
+            (n) yield n + 10,
+            (n) yield n * 10
+        };
+
+        for each operation in steps
+            Console.WriteLine("step of 7: " + operation(7));
+        end for
+    end function
+
+    comment ---- Handing one back ---------------------------------------------------------
+
+    comment begin
+        A function may yield a function. The one handed back remembers 'by', which belonged to
+        the call that made it — that is what closing over a value means. The declared result
+        says what 'n' holds, so the lambda being yielded leaves it out.
+    end comment
+    integer function(integer) function AdderOf(integer by)
+        yield (n) yield n + by;
+    end function
+
+    function HandingThemBack()
+        integer function(integer) addFive = Program.AdderOf(5);
+        integer function(integer) addHundred = Program.AdderOf(100);
+
+        Console.WriteLine("add five to 1:    " + addFive(1));
+        Console.WriteLine("add hundred to 1: " + addHundred(1));
+
+        comment One made and called on the spot, which needs no name at all.
+        Console.WriteLine("twice of 6:       " + Program.AdderOf(6)(6));
+    end function
+
+    comment ---- What a function remembers -------------------------------------------------
+
+    comment begin
+        A loop variable is fresh on every turn, so each function made inside the loop closes
+        over its own. This is the trap that catches people in languages where the variable is
+        shared: there, every function would report the last value.
+    end comment
+    function Remembering()
+        integer function()[] reporters = {};
+
+        for i = 1 to 3
+            reporters.Insert(() yield i);
+        end for
+
+        for each reporter in reporters
+            Console.Write(reporter() + " ");
+        end for
+
+        Console.WriteLine("");
+    end function
+
+    comment ---- Naming one that already exists --------------------------------------------
+
+    integer function Triple(integer n)
+        yield n * 3;
+    end function
+
+    comment begin
+        A function that has a name is already a value, so it needs no lambda around it. A
+        member reached through an instance is that member bound to the instance, and calling it
+        later still knows which one it belongs to.
+    end comment
+    function NamingOneThatAlreadyExists()
+        integer function(integer) tripled = Program.Triple;
+
+        Console.WriteLine("tripled: " + Program.Apply({1, 2, 3}, tripled));
+
+        Counter counter = new Counter(10);
+        integer function() advance = counter.Next;
+
+        Console.WriteLine("counting: " + advance() + " " + advance() + " " + counter.Next());
+    end function
+
+end model
+
+model Counter
+
+    integer count;
+
+    public function Counter(integer start)
+        this.count = start;
+    end function
+
+    public integer function Next()
+        this.count = this.count + 1;
+        yield this.count;
+    end function
+
+end model

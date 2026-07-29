@@ -299,7 +299,7 @@ public sealed class MemberExpr(SourceSpan span, Expression receiver, string memb
 
 /// <summary>
 /// <para>A function value, in either of its two forms: a block bodied
-/// <c>function(…) … end function</c>, or an arrow <c>(…) =&gt; expression</c>.</para>
+/// <c>function(…) … end function</c>, or an inline <c>(…) yield expression</c>.</para>
 /// <para>Exactly one of <see cref="Body"/> and <see cref="ExpressionBody"/> is set.</para>
 /// </summary>
 public sealed class LambdaExpr : Expression
@@ -317,13 +317,13 @@ public sealed class LambdaExpr : Expression
 
     public IReadOnlyList<ParameterDecl> Parameters { get; }
 
-    /// <summary>The statements of a block-bodied lambda, or null for the arrow form.</summary>
+    /// <summary>The statements of a block-bodied lambda, or null for the inline form.</summary>
     public IReadOnlyList<Statement>? Body { get; }
 
-    /// <summary>The expression of an arrow lambda, or null for the block form.</summary>
+    /// <summary>The expression of an inline lambda, or null for the block form.</summary>
     public Expression? ExpressionBody { get; }
 
-    /// <summary>True for the <c>(a, b) =&gt; a - b</c> form.</summary>
+    /// <summary>True for the <c>(a, b) yield a - b</c> form.</summary>
     public bool IsExpressionBodied => ExpressionBody is not null;
 
     /// <summary>Creates the <c>function(…) … end function</c> form.</summary>
@@ -332,8 +332,8 @@ public sealed class LambdaExpr : Expression
         IReadOnlyList<ParameterDecl> parameters,
         IReadOnlyList<Statement> body) => new(span, parameters, body, null);
 
-    /// <summary>Creates the <c>(…) =&gt; expression</c> form.</summary>
-    public static LambdaExpr Arrow(
+    /// <summary>Creates the <c>(…) yield expression</c> form.</summary>
+    public static LambdaExpr Inline(
         SourceSpan span,
         IReadOnlyList<ParameterDecl> parameters,
         Expression body) => new(span, parameters, null, body);

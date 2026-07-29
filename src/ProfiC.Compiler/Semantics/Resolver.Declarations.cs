@@ -162,7 +162,7 @@ public sealed partial class Resolver
                         function.Name,
                         function.ReturnType is null ? null : ResolveTypePlaceholder(function.ReturnType),
                         [.. function.Parameters.Select(p =>
-                            new ParameterSymbol(p.Name, ResolveTypePlaceholder(p.Type))
+                            new ParameterSymbol(p.Name, ResolveWrittenTypePlaceholder(p))
                             {
                                 Declaration = p,
                             })],
@@ -323,7 +323,7 @@ public sealed partial class Resolver
                         {
                             if (parameter.Declaration is ParameterDecl written)
                             {
-                                parameter.Type = ResolveType(written.Type);
+                                parameter.Type = ResolveWrittenType(written);
                             }
                         }
 
@@ -338,6 +338,9 @@ public sealed partial class Resolver
     /// names become the error type here and are settled by
     /// <see cref="SettleMemberSignatures"/> once every type is known.
     /// </summary>
+    private TypeSymbol ResolveWrittenTypePlaceholder(ParameterDecl parameter) =>
+        parameter.Type is null ? ErrorType.Instance : ResolveTypePlaceholder(parameter.Type);
+
     private TypeSymbol ResolveTypePlaceholder(TypeSyntax syntax) => syntax switch
     {
         MissingType => ErrorType.Instance,

@@ -128,11 +128,9 @@ CompilationUnit
           NamedTypeSyntax 'integer'
           NamedTypeSyntax 'integer'
           NamedTypeSyntax 'integer'
-        LambdaExpr arrow
+        LambdaExpr inline
           ParameterDecl 'a'
-            NamedTypeSyntax 'integer'
           ParameterDecl 'b'
-            NamedTypeSyntax 'integer'
           BinaryExpr '+'
             IdentifierExpr 'a'
             IdentifierExpr 'b'

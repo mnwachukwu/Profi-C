@@ -1029,6 +1029,185 @@ public sealed class TypeCheckerTests
                 """)),
             Is.Empty);
 
+    // ---- Function types --------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A function type that yields nothing can be given a value.</para>
+    /// <para>A function type spells "yields nothing" as a null result. A lambda whose
+    /// expression happens to produce no value must spell it the same way, or the two describe
+    /// one idea in two forms and never match — which left every void function type declarable
+    /// and unusable.</para>
+    /// </summary>
+    [TestCase("        function() f = () yield Console.WriteLine(\"x\");")]
+    [TestCase("        function(string) f = (s) yield Console.WriteLine(s);")]
+    [TestCase("        function() f = () yield Console.Write(\"x\");")]
+    public void ALambdaThatProducesNoValueFitsAFunctionTypeThatYieldsNothing(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    [Test]
+    public void AVoidFunctionTypeWorksAsAParameter() =>
+        Assert.That(
+            IdsOf(Check("""
+                global model Program
+                    function Run(function() action)
+                        action();
+                    end function
+
+                    function Main()
+                        Program.Run(() yield Console.WriteLine("ran"));
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
+    /// <summary>A result is still a result: one that yields a value does not fit one that does not.</summary>
+    [Test]
+    public void AFunctionThatYieldsAValueDoesNotFitOneThatYieldsNothing() =>
+        Assert.That(
+            IdsOf(CheckBody("        function() f = () yield 1;")),
+            Is.EqualTo(new[] { "PC0300" }));
+
+    // ---- A lambda parameter written without a type -------------------------------------------
+
+    /// <summary>
+    /// Every place the surrounding code says what a bare parameter name holds: a declared
+    /// type, the element type of a set being built, a parameter of the function being called,
+    /// and the result of the function doing the yielding.
+    /// </summary>
+    [TestCase("        integer function(integer) f = (a) yield a + 1;")]
+    [TestCase("        integer function(integer, integer) f = (a, b) yield a + b;")]
+    [TestCase("        integer function(integer) f = function(a) yield a + 1; end function;")]
+    [TestCase("        integer function(integer)[] fs = { (a) yield a + 1 };")]
+    [TestCase("        integer function(integer) f = (a) yield a; f = (a) yield a * 2;")]
+    public void ABareParameterNameTakesItsTypeFromTheSurroundingCode(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    [Test]
+    public void AParameterOfTheFunctionBeingCalledSaysWhatABareNameHolds() =>
+        Assert.That(
+            IdsOf(Check("""
+                global model Program
+                    integer function Apply(integer function(integer) f, integer n)
+                        yield f(n);
+                    end function
+
+                    function Main()
+                        Console.WriteLine(Program.Apply((n) yield n * 2, 5));
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
+    /// <summary>
+    /// A bare name takes the type its own position was given, not the first one in the list,
+    /// which is what makes a lambda over two unrelated types work.
+    /// </summary>
+    [Test]
+    public void EachBareNameTakesTheTypeOfItsOwnPosition() =>
+        Assert.That(
+            IdsOf(CheckBody("""
+                    string function(string, integer) f = (text, times) yield text + times;
+                    Console.WriteLine(f("x", 3));
+            """)),
+            Is.Empty);
+
+    /// <summary>
+    /// Nothing says what the name holds, so it is reported rather than guessed. A 'let' is the
+    /// plainest case: the lambda is the only thing on the right, so there is nothing to ask.
+    /// </summary>
+    [TestCase("        let f = (n) yield n + 1;")]
+    [TestCase("        Console.WriteLine((n) yield n + 1);")]
+    public void ABareParameterNameWithNothingToTakeATypeFromIsReported(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Does.Contain("PC0336"));
+
+    /// <summary>
+    /// A count that disagrees settles no parameter, so each name is named. The types are not
+    /// then compared on top of it: the lambda has no type worth measuring, and saying so twice
+    /// would bury the one thing that has to be fixed.
+    /// </summary>
+    [Test]
+    public void AMismatchedParameterCountNamesEachParameterAndStopsThere() =>
+        Assert.That(
+            IdsOf(CheckBody("        integer function(integer) f = (a, b) yield a;")),
+            Is.EqualTo(new[] { "PC0336", "PC0336" }));
+
+    /// <summary>
+    /// <para>A type the surrounding code already fixed is reported wherever it is written:
+    /// under a declared type, an element type, a parameter being passed to, or a result being
+    /// yielded.</para>
+    /// <para>One per parameter, since each is a type that could come out on its own.</para>
+    /// </summary>
+    [TestCase("        integer function(integer) f = (integer a) yield a;", 1)]
+    [TestCase("        integer function(integer, integer) f = (integer a, integer b) yield a;", 2)]
+    [TestCase("        integer function(integer) f = function(integer a) yield a; end function;", 1)]
+    [TestCase("        integer function(integer)[] fs = { (integer a) yield a };", 1)]
+    public void AWrittenTypeTheSurroundingCodeAlreadyGaveIsReported(string body, int count) =>
+        Assert.That(
+            IdsOf(CheckBody(body)),
+            Is.EqualTo(Enumerable.Repeat("PC0115", count)));
+
+    /// <summary>
+    /// Mixing the two forms needs no rule of its own: the written one is reported for the
+    /// same reason it would be on its own, and taking the advice leaves a list written one
+    /// way. Nothing here ever suggests writing the other types out.
+    /// </summary>
+    [Test]
+    public void AMixedListIsReportedOnlyForTheTypeThatWasWritten()
+    {
+        DiagnosticBag diagnostics =
+            CheckBody("        integer function(integer, integer) f = (integer a, b) yield a + b;");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0115" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain("'a'"));
+            Assert.That(diagnostics.Single().Message, Does.Not.Contain("every parameter"));
+        });
+    }
+
+    /// <summary>
+    /// An optional function type says what the parameters hold just as plainly as the bare
+    /// form: the lambda is wrapped on the way in, so what it has to be is the type underneath.
+    /// </summary>
+    [TestCase("        integer function(integer)? f = (n) yield n + 1;", new string[0])]
+    [TestCase("        integer function(integer)? f = (integer n) yield n + 1;", new[] { "PC0115" })]
+    public void AnOptionalFunctionTypeIsStillATarget(string body, string[] expected) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(expected));
+
+    /// <summary>
+    /// <para>A <c>let</c> is the one place a lambda writes its own types, because it is the
+    /// one place nothing else does.</para>
+    /// <para>The two rules meet exactly here: written is silent and bare reports
+    /// <c>PC0336</c>, while everywhere else it is the other way round. There is no third
+    /// case, so a lambda always has exactly one spelling that says nothing twice and leaves
+    /// nothing unsaid.</para>
+    /// </summary>
+    [Test]
+    public void ALetIsWhereALambdaWritesItsOwnTypes() =>
+        Assert.That(
+            IdsOf(CheckBody("        let f = (integer n) yield n + 1;")),
+            Is.Empty);
+
+    /// <summary>
+    /// A declared function has nothing to take a type from, so leaving one out there is a
+    /// parse error rather than something the checker could settle.
+    /// </summary>
+    [Test]
+    public void ADeclaredFunctionStillRequiresEveryParameterType() =>
+        Assert.That(
+            IdsOf(Check("""
+                global model Program
+                    integer function Twice(n)
+                        yield n * 2;
+                    end function
+
+                    function Main()
+                        Console.WriteLine(Program.Twice(2));
+                    end function
+                end model
+                """)),
+            Is.Not.Empty);
+
     // ---- How a message reads ---------------------------------------------------------------
 
     /// <summary>

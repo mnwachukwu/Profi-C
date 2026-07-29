@@ -85,7 +85,7 @@ public sealed class AstPrinter(bool includePositions = false)
         BinaryExpr n => Quote(n.Operator.Spelling()),
         MemberExpr n => Quote(n.MemberName),
         NewExpr n => Quote(n.TypeName),
-        LambdaExpr n => n.IsExpressionBodied ? "arrow" : "block",
+        LambdaExpr n => n.IsExpressionBodied ? "inline" : "block",
 
         _ => string.Empty,
     };

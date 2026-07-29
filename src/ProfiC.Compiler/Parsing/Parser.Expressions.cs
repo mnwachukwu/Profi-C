@@ -152,7 +152,7 @@ public sealed partial class Parser
         {
             case TokenType.Identifier:
                 Advance();
-                return new IdentifierExpr(token.Span, token.Lexeme);
+                return new IdentifierExpr(token.Span, token.Name);
 
             case TokenType.This:
                 Advance();
@@ -175,7 +175,7 @@ public sealed partial class Parser
                 return ParseIfExpression();
 
             case TokenType.LeftParen:
-                return LooksLikeArrowLambda() ? ParseArrowLambda() : ParseParenthesized();
+                return LooksLikeInlineLambda() ? ParseInlineLambda() : ParseParenthesized();
         }
 
         if (TryReportDecrement())
@@ -297,7 +297,7 @@ public sealed partial class Parser
         Token start = Advance();
 
         Expect(TokenType.LeftParen);
-        List<ParameterDecl> parameters = ParseParameterList();
+        List<ParameterDecl> parameters = ParseParameterList(allowInferredTypes: true);
         Expect(TokenType.RightParen);
 
         List<Statement> body = ParseBody(TokenType.Function);
@@ -306,18 +306,18 @@ public sealed partial class Parser
         return LambdaExpr.Block(SpanFrom(start), parameters, body);
     }
 
-    /// <summary>The <c>(…) =&gt; expression</c> lambda.</summary>
-    private Expression ParseArrowLambda()
+    /// <summary>The <c>(…) yield expression</c> lambda.</summary>
+    private Expression ParseInlineLambda()
     {
         Token start = Advance();
-        List<ParameterDecl> parameters = ParseParameterList();
+        List<ParameterDecl> parameters = ParseParameterList(allowInferredTypes: true);
 
         Expect(TokenType.RightParen);
-        Expect(TokenType.Arrow);
+        Expect(TokenType.Yield);
 
         Expression body = ParseExpression();
 
-        return LambdaExpr.Arrow(SpanFrom(start), parameters, body);
+        return LambdaExpr.Inline(SpanFrom(start), parameters, body);
     }
 
     /// <summary>
@@ -325,10 +325,10 @@ public sealed partial class Parser
     /// expression.</para>
     /// <para>The two readings are disjoint — nothing parses as both — but the decision cannot
     /// be made from one token, since the parentheses may nest arbitrarily. Skipping to the
-    /// matching <c>)</c> and looking for <c>=&gt;</c> settles it with a token scan rather than
+    /// matching <c>)</c> and looking for <c>yield</c> settles it with a token scan rather than
     /// a speculative parse, so nothing has to be parsed twice or thrown away.</para>
     /// </summary>
-    private bool LooksLikeArrowLambda()
+    private bool LooksLikeInlineLambda()
     {
         int depth = 0;
 
@@ -345,7 +345,7 @@ public sealed partial class Parser
 
                     if (depth == 0)
                     {
-                        return _tokens[_position + offset + 1].Type == TokenType.Arrow;
+                        return _tokens[_position + offset + 1].Type == TokenType.Yield;
                     }
 
                     break;
@@ -358,7 +358,13 @@ public sealed partial class Parser
         return false;
     }
 
-    private List<ParameterDecl> ParseParameterList()
+    /// <summary>
+    /// <para>The parameters between a pair of parentheses.</para>
+    /// <para><paramref name="allowInferredTypes"/> is set only for a lambda, where a parameter
+    /// may be a bare name and take its type from whatever the lambda is being written into. A
+    /// declared function has nothing to take a type from, so it always requires one.</para>
+    /// </summary>
+    private List<ParameterDecl> ParseParameterList(bool allowInferredTypes = false)
     {
         List<ParameterDecl> parameters = [];
 
@@ -370,6 +376,15 @@ public sealed partial class Parser
         do
         {
             Token start = Current;
+
+            // A bare name is a parameter with no type only when nothing follows it, since
+            // "integer n" and "n" differ solely in what comes after the first identifier.
+            if (allowInferredTypes && Check(TokenType.Identifier) && NextEndsAParameter())
+            {
+                parameters.Add(new ParameterDecl(SpanFrom(start), null, Advance().Name));
+                continue;
+            }
+
             TypeSyntax type = ParseType();
             string name = ExpectIdentifier();
             parameters.Add(new ParameterDecl(SpanFrom(start), type, name));
@@ -378,6 +393,9 @@ public sealed partial class Parser
 
         return parameters;
     }
+
+    private bool NextEndsAParameter() =>
+        _tokens[_position + 1].Type is TokenType.Comma or TokenType.RightParen;
 
     // ---- Span helpers -------------------------------------------------------------------
 

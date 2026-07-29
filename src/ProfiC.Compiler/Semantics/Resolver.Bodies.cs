@@ -147,7 +147,7 @@ public sealed partial class Resolver
                     ParameterSymbol parameterSymbol =
                         symbol is not null && index < symbol.Parameters.Count
                             ? symbol.Parameters[index]
-                            : new ParameterSymbol(parameter.Name, ResolveType(parameter.Type))
+                            : new ParameterSymbol(parameter.Name, ResolveWrittenType(parameter))
                             {
                                 Declaration = parameter,
                             };
@@ -289,7 +289,7 @@ public sealed partial class Resolver
         List<ParameterSymbol> parameters =
         [
             .. function.Parameters.Select(p =>
-                new ParameterSymbol(p.Name, ResolveType(p.Type)) { Declaration = p }),
+                new ParameterSymbol(p.Name, ResolveWrittenType(p)) { Declaration = p }),
         ];
 
         FunctionSymbol symbol = new(function.Name, returnType, parameters, function.Modifiers)

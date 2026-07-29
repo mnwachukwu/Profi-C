@@ -17,6 +17,8 @@ public sealed class SemanticModel
 
     private readonly Dictionary<SyntaxNode, BuiltInId> _builtIns = [];
 
+    private readonly Dictionary<SyntaxNode, bool> _settledTests = [];
+
     /// <summary>The global namespace, holding everything declared at the top level.</summary>
     public NamespaceSymbol GlobalNamespace { get; } = new(string.Empty, parent: null);
 
@@ -53,6 +55,22 @@ public sealed class SemanticModel
     /// </summary>
     public BuiltInId? GetBuiltIn(SyntaxNode node) =>
         _builtIns.TryGetValue(node, out BuiltInId id) ? id : null;
+
+    /// <summary>
+    /// <para>Records that a type test's answer follows from the types alone.</para>
+    /// <para>Some tests cannot be answered by looking at the value: a set does not carry its
+    /// element type and a function does not carry its signature. They do not need to be, since
+    /// the declared types settle them — but only this pass knows that, so it writes the answer
+    /// down rather than leaving the back end to work out something it cannot see.</para>
+    /// </summary>
+    internal void SettleTest(SyntaxNode node, bool answer) => _settledTests[node] = answer;
+
+    /// <summary>
+    /// The answer a type test was settled with, or null when it is a real question about the
+    /// value and has to be asked at run time.
+    /// </summary>
+    public bool? GetSettledTest(SyntaxNode node) =>
+        _settledTests.TryGetValue(node, out bool answer) ? answer : null;
 
     /// <summary>
     /// <para>Records that a value needs converting where it sits.</para>

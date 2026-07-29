@@ -53,9 +53,9 @@ global model Operators
     end function
 
     function OptionalAndLambda()
-        comment The question mark is a type suffix; the arrow introduces a lambda.
+        comment The question mark is a type suffix; a lambda's body follows "yield".
         integer? maybe;
-        integer function(integer, integer) add = (integer a, integer b) => a + b;
+        integer function(integer, integer) add = (a, b) yield a + b;
         let recovered = maybe.Or(0);
     end function
 

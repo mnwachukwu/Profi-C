@@ -324,7 +324,7 @@ public sealed class StatementParsingTests : ParserTestBase
                 function(string)[] handlers = {};
 
                 function Main()
-                    integer function(integer, integer) add = (integer a, integer b) => a + b;
+                    integer function(integer, integer) add = (integer a, integer b) yield a + b;
                 end function
             end model
             """);

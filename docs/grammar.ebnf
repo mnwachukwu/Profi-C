@@ -146,8 +146,14 @@ Primary        = IntegerLiteral | RealLiteral | CharLiteral | StringLiteral
                | Lambda
                | IfExpr ;
 
-Lambda         = "function" "(" [ ParamList ] ")" Body "end" "function"
-               | "(" [ ParamList ] ")" "=>" Expr ;
+Lambda         = "function" "(" [ LambdaParams ] ")" Body "end" "function"
+               | "(" [ LambdaParams ] ")" "yield" Expr ;
+
+(* A lambda's parameter may be a bare name, taking its type from whatever the lambda is
+   being written into. A declared function has nothing to take one from, so ParamList
+   above always writes them. *)
+LambdaParams   = LambdaParam { "," LambdaParam } ;
+LambdaParam    = Param | Identifier ;
 
 IfExpr         = "if" Expr "then" Expr "else" Expr ;
 TypeTest       = Expr "is" Type ;      (* yields boolean *)

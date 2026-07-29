@@ -286,23 +286,25 @@ CompilationUnit
           IdentifierExpr 'comparator'
           LambdaExpr block
             ParameterDecl 'a'
-              NamedTypeSyntax 'integer'
             ParameterDecl 'b'
-              NamedTypeSyntax 'integer'
             YieldStmt
               BinaryExpr '-'
                 IdentifierExpr 'a'
                 IdentifierExpr 'b'
         AssignmentStmt
           IdentifierExpr 'maybeComparator'
-          LambdaExpr arrow
+          LambdaExpr inline
             ParameterDecl 'a'
-              NamedTypeSyntax 'integer'
             ParameterDecl 'b'
-              NamedTypeSyntax 'integer'
             BinaryExpr '-'
               IdentifierExpr 'a'
               IdentifierExpr 'b'
+        VarDeclStmt 'flipped' [inferred]
+          LambdaExpr inline
+            ParameterDecl 'n'
+              NamedTypeSyntax 'integer'
+            UnaryExpr '-'
+              IdentifierExpr 'n'
         LocalDeclStmt
           FunctionDecl 'Doubled'
             NamedTypeSyntax 'integer'
