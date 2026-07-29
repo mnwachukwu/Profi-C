@@ -22,6 +22,19 @@ public static class SourceDiscovery
     private const string EntryPointName = "Program";
 
     /// <summary>
+    /// <para>How two paths are compared for sameness, and how an extension is recognized.</para>
+    /// <para>Windows and macOS treat the case of a name as decoration; Linux treats it as part
+    /// of the name. Comparing the wrong way makes two different files look like one, which
+    /// would drop a source from a compilation without saying so.</para>
+    /// <para>This follows the platform rather than the volume, which is what the framework
+    /// gives us to go on. A case-sensitive volume mounted on Windows would be read the
+    /// forgiving way, and the cost of that is a file quietly left out rather than a wrong
+    /// answer from one.</para>
+    /// </summary>
+    public static StringComparer PathComparer { get; } =
+        OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+    /// <summary>
     /// <para>The files a command compiles, and the name to label the compilation with.</para>
     /// <para><see cref="Units"/> is in the order the files are compiled. The first is always
     /// the one the reader named, when they named a source file.</para>
@@ -48,8 +61,10 @@ public static class SourceDiscovery
 
         if (extension.Length > 0)
         {
-            bool project = extension.Equals(ProjectExtension, StringComparison.OrdinalIgnoreCase);
-            bool source = extension.Equals(SourceExtension, StringComparison.OrdinalIgnoreCase);
+            // Recognized the same way the file system matches "*.pc" when a folder is read, so
+            // that a spelling accepted here is one the folder rule will also find.
+            bool project = PathComparer.Equals(extension, ProjectExtension);
+            bool source = PathComparer.Equals(extension, SourceExtension);
 
             if (!project && !source)
             {
@@ -112,7 +127,7 @@ public static class SourceDiscovery
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        return Path.GetExtension(path).Equals(ProjectExtension, StringComparison.OrdinalIgnoreCase)
+        return PathComparer.Equals(Path.GetExtension(path), ProjectExtension)
             ? GatherFromProject(path, diagnostics)
             : GatherFromFolder(path, diagnostics);
     }
@@ -143,8 +158,7 @@ public static class SourceDiscovery
 
         IEnumerable<string> neighbours =
             Directory.EnumerateFiles(folder, "*" + SourceExtension)
-                     .Where(other => !string.Equals(
-                         Path.GetFullPath(other), namedFullPath, StringComparison.OrdinalIgnoreCase))
+                     .Where(other => !PathComparer.Equals(Path.GetFullPath(other), namedFullPath))
                      .Select(other => bare ? Path.GetFileName(other) : other)
                      .OrderBy(other => other, StringComparer.Ordinal);
 

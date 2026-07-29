@@ -74,7 +74,7 @@ public sealed class ProjectFile
         bool closed = false;
         bool sawSource = false;
         List<string> files = [];
-        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> seen = new(SourceDiscovery.PathComparer);
 
         string[] lines = source.Text.ReplaceLineEndings("\n").Split('\n');
 
@@ -217,7 +217,7 @@ public sealed class ProjectFile
             return;
         }
 
-        if (!Path.GetExtension(combined).Equals(SourceExtension, StringComparison.OrdinalIgnoreCase))
+        if (!SourceDiscovery.PathComparer.Equals(Path.GetExtension(combined), SourceExtension))
         {
             diagnostics.Report(DiagnosticDescriptors.ProjectSourceWrongExtension, span, written);
             return;

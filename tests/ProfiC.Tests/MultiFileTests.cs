@@ -211,6 +211,64 @@ public sealed class MultiFileTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// <para>Where the file system says two names differing only in case are two files, they
+    /// are two sources, and both belong in the compilation.</para>
+    /// <para>Written to ask the file system rather than to assume the platform: on a volume
+    /// that folds case the second write lands on the first, and there is nothing here to test.
+    /// Comparing paths the forgiving way on a system that does not fold would silently leave
+    /// one of them out.</para>
+    /// </summary>
+    [Test]
+    public void TwoNamesDifferingOnlyInCaseAreTwoSourcesWhereTheSystemSaysSo()
+    {
+        Write("Helper.pc", SharedModel);
+        Write("HELPER.pc", SharedModel.Replace("Helper", "Shouter", StringComparison.Ordinal));
+
+        if (Directory.GetFiles(_folder, "*.pc").Length < 2)
+        {
+            Assert.Ignore("this file system folds case, so there is only one file here");
+        }
+
+        string program = Write("Program.pc", ProgramCalling("Helper.Twice(21)"));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.That(
+            NamesOf(compilation),
+            Is.EqualTo(new[] { "HELPER.pc", "Helper.pc", "Program.pc" }),
+            "both files beside the program are shared code");
+    }
+
+    /// <summary>
+    /// A project listing two such files lists two sources, not one twice. Deciding sameness the
+    /// forgiving way would reject the second as already present.
+    /// </summary>
+    [Test]
+    public void AProjectMayListTwoNamesDifferingOnlyInCaseWhereTheSystemSaysSo()
+    {
+        Write("Helper.pc", SharedModel);
+        Write("HELPER.pc", SharedModel.Replace("Helper", "Shouter", StringComparison.Ordinal));
+
+        if (Directory.GetFiles(_folder, "*.pc").Length < 2)
+        {
+            Assert.Ignore("this file system folds case, so there is only one file here");
+        }
+
+        string project = Write("both.pcp",
+            "project Both\n    source Helper.pc\n    source HELPER.pc\nend project\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation? compilation = SourceDiscovery.Gather(project, diagnostics);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+            Assert.That(compilation!.Units, Has.Count.EqualTo(2));
+        });
+    }
+
     // ---- Finding the file that was named ----------------------------------------------------
 
     [Test]

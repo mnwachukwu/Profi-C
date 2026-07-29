@@ -1,5 +1,7 @@
 # Profi-C
 
+[![CI](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci.yml/badge.svg)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci.yml)
+
 A teaching language that compiles to CIL and runs on .NET.
 
 The name is a nod to Profisee, the company I work for, which is pronounced "prophecy" — so
