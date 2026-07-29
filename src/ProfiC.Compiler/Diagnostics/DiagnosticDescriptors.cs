@@ -290,10 +290,15 @@ public static class DiagnosticDescriptors
         "{0} does not become {1} on its own, because the result would surprise you. "
         + "Write '{2}' to ask for it.");
 
+    /// <summary>
+    /// The subject is supplied whole by the caller rather than assembled here. Prefixing an
+    /// article to a fragment produced "A an if condition must be a boolean", and the fragments
+    /// do not all take the same article or the same noun.
+    /// </summary>
     public static readonly DiagnosticDescriptor ConditionMustBeBoolean = Error(
         "PFC0302",
         "Condition must be a boolean",
-        "A {0} condition must be a boolean, and this is {1}.");
+        "{0} must be a boolean, and this is {1}.");
 
     public static readonly DiagnosticDescriptor OperatorNotDefined = Error(
         "PFC0303",
@@ -487,6 +492,17 @@ public static class DiagnosticDescriptors
     /// <para>Two to the minus one is one half, which is not an integer. The same expression
     /// written on fractions is exact and allowed, which is what the message points at.</para>
     /// </summary>
+    /// <summary>
+    /// <para>The result of a function that yields nothing, used where a value is wanted.</para>
+    /// <para>Its own message because naming the type explains nothing here: "cannot use a
+    /// nothing where an integer is expected" describes the types correctly and the situation
+    /// badly. What went wrong is that the call had no result to give.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ValueExpected = Error(
+        "PFC0334",
+        "This produces no value",
+        "This produces no value, so there is nothing to use here.");
+
     public static readonly DiagnosticDescriptor NegativeIntegerExponent = Error(
         "PFC0333",
         "Negative exponent on an integer",

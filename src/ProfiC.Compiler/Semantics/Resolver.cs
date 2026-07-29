@@ -17,33 +17,16 @@ namespace ProfiC.Compiler.Semantics;
 public sealed partial class Resolver
 {
     /// <summary>
-    /// <para>Type names the language owns outright, which no program may redeclare.</para>
-    /// <para>Deliberately just these four. The exception subtypes below are built in but may
-    /// be extended, and extending is not redeclaring.</para>
+    /// <para>Every type the language provides. A name here resolves without being declared,
+    /// and no program may declare one.</para>
+    /// <para>Read from <see cref="BuiltIns"/> rather than listed here, so that the set the
+    /// resolver protects and the set the type checker can find members on cannot drift apart.
+    /// An exception subtype may still be <em>extended</em>; extending is not redeclaring.</para>
     /// </summary>
-    private static readonly HashSet<string> ReservedTypeNames = new(StringComparer.Ordinal)
-    {
-        "Model", "Exception", "Console", "Reference",
-    };
-
-    /// <summary>
-    /// Every type the language provides. A name here resolves without being declared; the
-    /// four above additionally cannot be declared at all.
-    /// </summary>
-    private static readonly HashSet<string> BuiltInTypeNames = new(StringComparer.Ordinal)
-    {
-        "Model", "Exception", "Console", "Reference",
-        "DivideByZeroException", "IndexOutOfRangeException", "EmptyOptionalException",
-        "InvalidCastException", "FormatException", "ArgumentException",
-        "Math", "Random", "DateTime",
-    };
+    private static IReadOnlySet<string> BuiltInTypeNames => BuiltIns.AllTypeNames;
 
     /// <summary>The exceptions the language throws itself, all of which extend Exception.</summary>
-    private static readonly HashSet<string> BuiltInExceptionNames = new(StringComparer.Ordinal)
-    {
-        "DivideByZeroException", "IndexOutOfRangeException", "EmptyOptionalException",
-        "InvalidCastException", "FormatException", "ArgumentException",
-    };
+    private static IReadOnlySet<string> BuiltInExceptionNames => BuiltIns.ExceptionNames;
 
     private readonly DiagnosticBag _diagnostics;
     private readonly SemanticModel _model = new();

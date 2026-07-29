@@ -96,8 +96,22 @@ most to a C# reader:
 
 ### 0.5 Conformance and terminology
 
-The key words **must**, **must not**, **required**, **shall**, **should**, and **may** are to
-be interpreted as describing requirements on a conforming implementation.
+An **implementation** is anything that reads Profi-C source: the compiler in this repository,
+the interpreter beside it, an editor's language server, or something written by someone else
+entirely. A **conforming** implementation is one that obeys every rule stated here.
+
+This document both explains the language and states its rules, and the words below are how
+the two are told apart. They carry the meanings given in RFC 2119, and appear only where a
+rule is being stated:
+
+| Word | Meaning |
+|---|---|
+| **must**, **must not**, **required**, **shall** | Absolute. An implementation that does otherwise does not conform. |
+| **should** | A recommendation. An implementation may do otherwise, having weighed the consequences. |
+| **may** | Optional. Either choice conforms. |
+
+Every other sentence is explanation and requires nothing. Where explanation and rule appear
+to disagree, the rule governs and the explanation is at fault.
 
 A **diagnostic** is a message a conforming implementation produces about a source program.
 Diagnostics carry a stable identifier of the form `PFC` followed by four digits, a severity,
@@ -429,7 +443,17 @@ resolution.
 
 *Not yet written.* Will cover the built-in models and the curated .NET wrappers.
 
-Two rules are settled ahead of the rest. **`Console.Write` and `Console.WriteLine` accept a
+One member is settled: **`Fraction.Create(numerator, denominator)`** builds a `fraction` from
+two integers. A fraction literal is two numerals fixed when the program is written, so this
+is the only way to make one from values that exist only while it runs. The result is an
+ordinary fraction — reduced, with its sign carried on the numerator. A denominator of zero is
+rejected while compiling where it can be seen, exactly as `1 / 0` is, and throws
+`DivideByZeroException` where it cannot.
+
+Note the two spellings: `fraction` is the type and a reserved word; `Fraction` is the model
+beside it, holding what a fraction needs that is not a member of one.
+
+Two further rules are settled. **`Console.Write` and `Console.WriteLine` accept a
 value of any type**, and behave as in C#: only the second ends the line. Neither is an
 overload set; both are compiler-known, and the compiler chooses how to render the value from
 its static type. **`ToString()` is inherited from `Model` by every type, values included**,

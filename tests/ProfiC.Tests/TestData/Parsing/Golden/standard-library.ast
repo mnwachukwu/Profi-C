@@ -1,0 +1,554 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowConsole'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowMath'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowSets'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowStrings'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowOptionals'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowReference'
+            IdentifierExpr 'Program'
+    FunctionDecl 'ShowConsole'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== Console ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  built " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "one " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "piece " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "at a time." [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a fraction: " [String]
+            LiteralExpr 3|4 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a boolean:  " [String]
+            LiteralExpr true [Boolean]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowMath'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== Math ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Sqrt(16.0)     = " [String]
+            CallExpr
+              MemberExpr 'Sqrt'
+                IdentifierExpr 'Math'
+              LiteralExpr 16.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Abs(-3.5)      = " [String]
+            CallExpr
+              MemberExpr 'Abs'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 3.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Floor(3.7)     = " [String]
+            CallExpr
+              MemberExpr 'Floor'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.7 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Ceiling(3.2)   = " [String]
+            CallExpr
+              MemberExpr 'Ceiling'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.2 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Pow(2.0, 8.0)  = " [String]
+            CallExpr
+              MemberExpr 'Pow'
+                IdentifierExpr 'Math'
+              LiteralExpr 2.0 [Real]
+              LiteralExpr 8.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Min(3, 7)      = " [String]
+            CallExpr
+              MemberExpr 'Min'
+                IdentifierExpr 'Math'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Max(3, 7)      = " [String]
+            CallExpr
+              MemberExpr 'Max'
+                IdentifierExpr 'Math'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  2.0 ^ 8.0      = " [String]
+            BinaryExpr '^'
+              LiteralExpr 2.0 [Real]
+              LiteralExpr 8.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowSets'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== members of a set ==" [String]
+      VarDeclStmt 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 40 [Integer]
+          LiteralExpr 10 [Integer]
+          LiteralExpr 30 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Count()        = " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'values'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  IndexOf(30)    = " [String]
+            CallExpr
+              MemberExpr 'IndexOf'
+                IdentifierExpr 'values'
+              LiteralExpr 30 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Contains(99)   = " [String]
+            CallExpr
+              MemberExpr 'Contains'
+                IdentifierExpr 'values'
+              LiteralExpr 99 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'values'
+          LiteralExpr 20 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'InsertAt'
+            IdentifierExpr 'values'
+          LiteralExpr 0 [Integer]
+          LiteralExpr 50 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  after inserts  = " [String]
+            CallExpr
+              MemberExpr 'Render'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'values'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'RemoveAt'
+            IdentifierExpr 'values'
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'removed' [inferred]
+        CallExpr
+          MemberExpr 'Remove'
+            IdentifierExpr 'values'
+          LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Remove(10)     = " [String]
+            IdentifierExpr 'removed'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  after removals = " [String]
+            CallExpr
+              MemberExpr 'Render'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'values'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Clear'
+            IdentifierExpr 'values'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  after Clear()  = " [String]
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'values'
+            LiteralExpr " left" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowStrings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== members of a string ==" [String]
+      VarDeclStmt 'word' [inferred]
+        LiteralExpr "programming" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Count()            = " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'word'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Contains(\"gram\")   = " [String]
+            CallExpr
+              MemberExpr 'Contains'
+                IdentifierExpr 'word'
+              LiteralExpr "gram" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  IndexOf(\"gram\")    = " [String]
+            CallExpr
+              MemberExpr 'IndexOf'
+                IdentifierExpr 'word'
+              LiteralExpr "gram" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Substring(3, 4)    = " [String]
+            CallExpr
+              MemberExpr 'Substring'
+                IdentifierExpr 'word'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Insert(\"!\")        = " [String]
+            CallExpr
+              MemberExpr 'Insert'
+                IdentifierExpr 'word'
+              LiteralExpr "!" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Remove(\"m\")        = " [String]
+            CallExpr
+              MemberExpr 'Remove'
+                IdentifierExpr 'word'
+              LiteralExpr "m" [String]
+      VarDeclStmt 'letters'
+        SetTypeSyntax
+          NamedTypeSyntax 'character'
+        IdentifierExpr 'word'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  one letter at a time: " [String]
+      ForEachStmt 'letter'
+        IdentifierExpr 'letters'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'letter'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowOptionals'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== members of an optional ==" [String]
+      VarDeclStmt 'missing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'present'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        LiteralExpr 42 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  missing.HasValue() = " [String]
+            CallExpr
+              MemberExpr 'HasValue'
+                IdentifierExpr 'missing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  present.HasValue() = " [String]
+            CallExpr
+              MemberExpr 'HasValue'
+                IdentifierExpr 'present'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  missing.Or(0)      = " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'missing'
+              LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  present.Value()    = " [String]
+            CallExpr
+              MemberExpr 'Value'
+                IdentifierExpr 'present'
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'Value'
+                IdentifierExpr 'missing'
+        CatchClause 'problem'
+          NamedTypeSyntax 'EmptyOptionalException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  missing.Value()    -> refused, as it should be" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowReference'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== Reference ==" [String]
+      VarDeclStmt 'a'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'b'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'c'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        IdentifierExpr 'a'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a == b                  = " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'a'
+                IdentifierExpr 'b'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Reference.Equals(a, b)  = " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'a'
+              IdentifierExpr 'b'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Reference.Equals(a, c)  = " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'a'
+              IdentifierExpr 'c'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'c'
+          LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  after c.Insert(4), a is " [String]
+            CallExpr
+              MemberExpr 'Render'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'a'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'Render'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'text'
+        NamedTypeSyntax 'string'
+        LiteralExpr "{" [String]
+      ForStmt 'i' until
+        LiteralExpr 0 [Integer]
+        CallExpr
+          MemberExpr 'Count'
+            IdentifierExpr 'values'
+        IfStmt
+          BinaryExpr '>'
+            IdentifierExpr 'i'
+            LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'text'
+            BinaryExpr '+'
+              IdentifierExpr 'text'
+              LiteralExpr ", " [String]
+        AssignmentStmt
+          IdentifierExpr 'text'
+          BinaryExpr '+'
+            IdentifierExpr 'text'
+            IndexExpr
+              IdentifierExpr 'values'
+              IdentifierExpr 'i'
+      YieldStmt
+        BinaryExpr '+'
+          IdentifierExpr 'text'
+          LiteralExpr "}" [String]

@@ -372,6 +372,8 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [sorting.pfc](samples/sorting.pfc) | Insertion sort, and why `and` short-circuiting matters |
 | [binary-search.pfc](samples/binary-search.pfc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
 | [fractions.pfc](samples/fractions.pfc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
+| [runtime-fractions.pfc](samples/runtime-fractions.pfc) | Building fractions from values with `Fraction.Create`, when literals will not do |
+| [standard-library.pfc](samples/standard-library.pfc) | Everything the language provides without declaring anything |
 | [shapes.pfc](samples/shapes.pfc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pfc](samples/bank.pfc) | Exceptions, including one the program declares — and when to yield an optional instead |
 | [tour.pfc](samples/tour.pfc) | Every construct in the grammar, once. Not a program; it checks but does not run |

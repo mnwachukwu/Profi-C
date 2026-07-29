@@ -710,6 +710,137 @@ public sealed class TypeCheckerTests
             """)), Is.EqualTo(new[] { "PFC0200" }));
     }
 
+    // ---- Condition messages --------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Each caller supplies its whole subject phrase.</para>
+    /// <para>The message once began with an article and the caller supplied another, so an
+    /// 'if' reported "A an if condition must be a boolean". Worth a test because it is the
+    /// kind of wording nothing else checks and everybody reads.</para>
+    /// </summary>
+    [TestCase("        if 1\n            yield;\n        end if", "An if condition")]
+    [TestCase("        if true\n            yield;\n        else if 1\n            yield;\n        end if",
+              "An else-if condition")]
+    [TestCase("        while 1\n            yield;\n        end while", "A while condition")]
+    [TestCase("        let f = if 1 then 2 else 3;", "The condition of an 'if ... then ... else'")]
+    [TestCase("        let g = 1 and true;", "An operand of 'and' or 'or'")]
+    public void AConditionMessageNamesItsSubjectCorrectly(string body, string expected)
+    {
+        DiagnosticBag diagnostics = CheckBody(body);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Does.Contain("PFC0302"));
+            Assert.That(diagnostics.First(d => d.Id == "PFC0302").Message,
+                        Does.StartWith(expected));
+        });
+    }
+
+    /// <summary>No message may begin with a doubled article.</summary>
+    [Test]
+    public void NoConditionMessageDoublesItsArticle()
+    {
+        string[] bodies =
+        [
+            "        if 1\n            yield;\n        end if",
+            "        while 1\n            yield;\n        end while",
+            "        let f = if 1 then 2 else 3;",
+            "        let g = 1 and true;",
+        ];
+
+        foreach (string body in bodies)
+        {
+            foreach (Diagnostic diagnostic in CheckBody(body))
+            {
+                Assert.That(diagnostic.Message, Does.Not.StartWith("A a"));
+                Assert.That(diagnostic.Message, Does.Not.StartWith("A an"));
+            }
+        }
+    }
+
+    // ---- A call that yields nothing ------------------------------------------------------------
+
+    /// <summary>
+    /// Naming the type would describe the types correctly and the mistake badly, so this gets
+    /// its own message rather than "cannot use a nothing where an integer is expected".
+    /// </summary>
+    [TestCase("        let x = Console.WriteLine(\"hi\");")]
+    [TestCase("        integer y = Console.WriteLine(\"hi\");")]
+    [TestCase("        let z = 1 + Console.WriteLine(\"hi\");")]
+
+    // A call with no result has no members at all. Without this, ToString and Equals were
+    // found on it — every type inherits them from Model — so the absence rendered as "empty".
+    [TestCase("        let a = Console.WriteLine(\"hi\").ToString();")]
+    [TestCase("        let b = Console.WriteLine(\"hi\").Equals(1);")]
+    [TestCase("        let c = Console.WriteLine(\"hi\").Count();")]
+    public void UsingTheResultOfAFunctionThatYieldsNothingIsRejected(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0334" }));
+
+    /// <summary>
+    /// <para>Nothing else has this type, so it describes itself rather than naming a type no
+    /// program can declare.</para>
+    /// <para>These are the paths that report the type by name rather than intercepting it, and
+    /// each has a different sentence shape, which is why the wording is checked in all of them.
+    /// </para>
+    /// </summary>
+    [TestCase("        let a = Console.WriteLine(\"x\") == 1;")]
+    [TestCase("        let b = Console.WriteLine(\"x\") < 1;")]
+    [TestCase("        if Console.WriteLine(\"x\")\n            yield;\n        end if")]
+    [TestCase("        let d = Console.WriteLine(\"x\")[0];")]
+    [TestCase("        let e = not Console.WriteLine(\"x\");")]
+    public void AVoidCallDescribesItselfInEveryMessage(string body)
+    {
+        DiagnosticBag diagnostics = CheckBody(body);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics, Is.Not.Empty);
+
+            foreach (Diagnostic diagnostic in diagnostics)
+            {
+                Assert.That(diagnostic.Message, Does.Contain("call that yields nothing"));
+
+                // "nothing" alone named a type nobody can write, and read badly besides.
+                Assert.That(diagnostic.Message, Does.Not.Contain("a nothing"));
+            }
+        });
+    }
+
+    /// <summary>A genuine type mismatch still reports as one.</summary>
+    [TestCase("        integer x = \"text\";", "PFC0300")]
+    [TestCase("        let y = true * 2;", "PFC0303")]
+    public void ARealMismatchIsUnaffected(string body, string expected) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { expected }));
+
+    // ---- Fraction.Create ---------------------------------------------------------------------
+
+    [Test]
+    public void CreatingAFractionYieldsAFraction() =>
+        Assert.That(IdsOf(CheckBody("        fraction f = Fraction.Create(1, 3);")), Is.Empty);
+
+    [TestCase("        let f = Fraction.Create(1.0, 3);")]
+    [TestCase("        let f = Fraction.Create(1, \"three\");")]
+    public void CreatingAFractionNeedsTwoIntegers(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0300" }));
+
+    /// <summary>
+    /// A denominator of zero is the same mistake as dividing by zero, so it is reported the
+    /// same way and in the same place when the compiler can see it.
+    /// </summary>
+    [Test]
+    public void ALiteralZeroDenominatorIsCaughtWhileCompiling() =>
+        Assert.That(IdsOf(CheckBody("        let f = Fraction.Create(1, 0);")),
+                    Is.EqualTo(new[] { "PFC0324" }));
+
+    [Test]
+    public void AVariableDenominatorIsLeftToRunTime() =>
+        Assert.That(
+            IdsOf(CheckBody("""
+                    integer d = 0;
+                    let f = Fraction.Create(1, d);
+            """)),
+            Is.Empty);
+
     // ---- Raising to a power ------------------------------------------------------------------
 
     /// <summary>

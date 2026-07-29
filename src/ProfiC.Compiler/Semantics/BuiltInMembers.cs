@@ -7,10 +7,17 @@ namespace ProfiC.Compiler.Semantics;
 /// The types it takes. A null entry accepts any type, which is how <c>Console.Write</c> takes
 /// a value of any kind and how an optional's fallback matches its own underlying type.
 /// </param>
+/// <param name="Id">
+/// Set for a member reached through a built-in model's name, which is what the back end
+/// switches on. Null for a member of a value — a set's <c>Count</c>, an optional's
+/// <c>HasValue</c> — which are found by the receiver's type rather than by a name and are not
+/// yet part of the catalogue.
+/// </param>
 public sealed record BuiltInMember(
     string Name,
     TypeSymbol? ReturnType,
-    IReadOnlyList<TypeSymbol?> ParameterTypes);
+    IReadOnlyList<TypeSymbol?> ParameterTypes,
+    BuiltInId? Id = null);
 
 /// <summary>
 /// <para>The members the language provides on types it owns.</para>
@@ -164,47 +171,25 @@ public static class BuiltInMembers
         _ => FindOnEveryType(name),
     };
 
-    /// <summary>Members of the built-in models a program can name.</summary>
+    /// <summary>
+    /// Members of the built-in models a program can name, read from the catalogue rather than
+    /// listed again here. See <see cref="BuiltIns"/>.
+    /// </summary>
     private static BuiltInMember? FindOnBuiltInModel(ModelSymbol model, string name)
     {
-        switch (model.Name)
+        if (BuiltIns.Find(model.Name, name) is { } fromCatalogue)
         {
-            case "Console":
-                return name switch
-                {
-                    // Both take a value of any type; the compiler renders it from its static
-                    // type, so no overload per primitive is needed.
-                    "Write" => new BuiltInMember(name, null, [null]),
-                    "WriteLine" => new BuiltInMember(name, null, [null]),
-                    "Read" => new BuiltInMember(
-                        name, new OptionalType(PrimitiveType.String), []),
-                    _ => null,
-                };
-
-            case "Reference":
-                return name == "Equals"
-                    ? new BuiltInMember(name, PrimitiveType.Boolean, [null, null])
-                    : null;
-
-            case "Math":
-                return name switch
-                {
-                    "Sqrt" or "Abs" or "Floor" or "Ceiling" =>
-                        new BuiltInMember(name, PrimitiveType.Real, [PrimitiveType.Real]),
-                    "Pow" => new BuiltInMember(
-                        name, PrimitiveType.Real, [PrimitiveType.Real, PrimitiveType.Real]),
-                    "Min" or "Max" => new BuiltInMember(
-                        name, PrimitiveType.Integer, [PrimitiveType.Integer, PrimitiveType.Integer]),
-                    _ => FindOnEveryType(name),
-                };
-
-            default:
-                // Every exception carries the message it was constructed with, and a model a
-                // program declares by extending Exception inherits it like any other member.
-                return IsException(model) && name == "Message"
-                    ? new BuiltInMember(name, PrimitiveType.String, [])
-                    : FindOnEveryType(name);
+            return fromCatalogue;
         }
+
+        // Every exception carries the message it was constructed with, including one a
+        // program declares by extending Exception.
+        if (IsException(model) && name == "Message")
+        {
+            return new BuiltInMember(name, PrimitiveType.String, []);
+        }
+
+        return FindOnEveryType(name);
     }
 
     /// <summary>Whether a type is, or descends from, the built-in <c>Exception</c>.</summary>

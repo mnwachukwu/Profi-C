@@ -1,0 +1,19 @@
+== a table of unit fractions ==
+  1 over 2 is 1|2, and 2 of them make 1|1
+  1 over 3 is 1|3, and 3 of them make 1|1
+  1 over 4 is 1|4, and 4 of them make 1|1
+  1 over 5 is 1|5, and 5 of them make 1|1
+  1 over 6 is 1|6, and 6 of them make 1|1
+
+== it reduces and normalizes, exactly as a literal does ==
+  Fraction.Create(6, 8)   is 3|4
+  Fraction.Create(-3, -9) is 1|3
+  Fraction.Create(5, -10) is -1|2
+  and equals -1|2?           true
+
+== summing a series that literals could not express ==
+  1 + 1|2 + ... + 1|10 = 7381|2520
+  as a real:             2.9289682539682538
+
+== a denominator of zero ==
+  refused: A fraction cannot have a denominator of zero.

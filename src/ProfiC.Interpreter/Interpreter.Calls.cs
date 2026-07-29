@@ -181,55 +181,65 @@ public sealed partial class Interpreter
     /// </summary>
     private StrongBox<object?>? BuiltInCall(string typeName, string member, List<object?> arguments)
     {
-        switch (typeName)
-        {
-            case "Console":
-                switch (member)
-                {
-                    case "Write":
-                        _output.Write(ModelOperations.ToDisplayString(arguments.FirstOrDefault()));
-                        return new StrongBox<object?>(null);
-
-                    case "WriteLine":
-                        _output.WriteLine(arguments.Count == 0
-                            ? string.Empty
-                            : ModelOperations.ToDisplayString(arguments[0]));
-                        return new StrongBox<object?>(null);
-
-                    case "Read":
-                        return new StrongBox<object?>(Console.ReadLine());
-                }
-
-                return null;
-
-            case "Reference":
-                return member == "Equals"
-                    ? new StrongBox<object?>(
-                        ReferenceEquals(arguments.ElementAtOrDefault(0), arguments.ElementAtOrDefault(1)))
-                    : null;
-
-            case "Math":
-                return MathCall(member, arguments);
-
-            default:
-                return null;
-        }
+        // The catalogue decides whether this is a built-in at all, and which one. Nothing here
+        // repeats a name, so there is no second list to keep in step with the first.
+        return BuiltIns.Find(typeName, member)?.Id is { } id
+            ? Perform(id, arguments)
+            : null;
     }
 
-    private static StrongBox<object?>? MathCall(string member, List<object?> arguments)
+    /// <summary>
+    /// <para>Carries out a built-in call.</para>
+    /// <para>Deliberately a switch expression over the whole enumeration with no fallback arm.
+    /// Adding a member to the catalogue and forgetting it here is then a build error rather
+    /// than a call that quietly produces nothing — which is exactly what happened to
+    /// <c>Math.Min</c> and <c>Math.Max</c> while the two lists were kept by hand.</para>
+    /// </summary>
+    // CS8524 asks for a fallback arm covering values cast into the enumeration from outside
+    // it. Adding one would also satisfy CS8509, and CS8509 is the whole reason this is a
+    // switch expression: it is what reports a catalogue member nobody implemented. The
+    // narrower warning is suppressed so the useful one keeps working.
+#pragma warning disable CS8524
+    private StrongBox<object?> Perform(BuiltInId id, List<object?> arguments)
     {
-        double First() => arguments.ElementAtOrDefault(0) is double d ? d : 0;
-        double Second() => arguments.ElementAtOrDefault(1) is double d ? d : 0;
+        object? Argument(int index) => arguments.ElementAtOrDefault(index);
+        double Real(int index) => Argument(index) is double d ? d : 0;
+        long Integer(int index) => AsInteger(Argument(index));
 
-        return member switch
+        return id switch
         {
-            "Sqrt" => new StrongBox<object?>(Math.Sqrt(First())),
-            "Abs" => new StrongBox<object?>(Math.Abs(First())),
-            "Floor" => new StrongBox<object?>(Math.Floor(First())),
-            "Ceiling" => new StrongBox<object?>(Math.Ceiling(First())),
-            "Pow" => new StrongBox<object?>(Math.Pow(First(), Second())),
-            _ => null,
+            BuiltInId.ConsoleWrite =>
+                Then(() => _output.Write(ModelOperations.ToDisplayString(Argument(0)))),
+
+            BuiltInId.ConsoleWriteLine =>
+                Then(() => _output.WriteLine(arguments.Count == 0
+                    ? string.Empty
+                    : ModelOperations.ToDisplayString(arguments[0]))),
+
+            BuiltInId.ConsoleRead => new StrongBox<object?>(Console.ReadLine()),
+
+            BuiltInId.ReferenceEquals =>
+                new StrongBox<object?>(ReferenceEquals(Argument(0), Argument(1))),
+
+            BuiltInId.MathSqrt => new StrongBox<object?>(Math.Sqrt(Real(0))),
+            BuiltInId.MathAbs => new StrongBox<object?>(Math.Abs(Real(0))),
+            BuiltInId.MathFloor => new StrongBox<object?>(Math.Floor(Real(0))),
+            BuiltInId.MathCeiling => new StrongBox<object?>(Math.Ceiling(Real(0))),
+            BuiltInId.MathPow => new StrongBox<object?>(Math.Pow(Real(0), Real(1))),
+            BuiltInId.MathMin => new StrongBox<object?>(Math.Min(Integer(0), Integer(1))),
+            BuiltInId.MathMax => new StrongBox<object?>(Math.Max(Integer(0), Integer(1))),
+
+            BuiltInId.FractionCreate =>
+                new StrongBox<object?>(new Fraction(Integer(0), Integer(1))),
         };
+    }
+#pragma warning restore CS8524
+
+    /// <summary>Runs something that produces no value, and reports that it produced none.</summary>
+    private static StrongBox<object?> Then(Action action)
+    {
+        action();
+        return new StrongBox<object?>(null);
     }
 
     /// <summary>
@@ -328,6 +338,13 @@ public sealed partial class Interpreter
             : throw new EmptyOptionalException(),
         "ToString" => new StrongBox<object?>(ModelOperations.ToDisplayString(target)),
         "ToInteger" => new StrongBox<object?>(AsInteger(target)),
+
+        // Inherited from Model by every type. It asks the same question '==' asks — what the
+        // two values are, member by member — rather than whether they are one object, which
+        // is Reference.Equals.
+        "Equals" => new StrongBox<object?>(
+            ModelOperations.DeepEquals(target, arguments.Count > 0 ? arguments[0] : null)),
+
         _ => null,
     };
 

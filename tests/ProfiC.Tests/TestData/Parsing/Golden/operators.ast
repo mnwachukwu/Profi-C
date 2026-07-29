@@ -109,16 +109,16 @@ CompilationUnit
         IndexExpr
           IdentifierExpr 'items'
           LiteralExpr 0 [Integer]
-      VarDeclStmt 'called' [inferred]
+      VarDeclStmt 'member' [inferred]
+        CallExpr
+          MemberExpr 'Count'
+            IdentifierExpr 'text'
+      ExpressionStmt
         CallExpr
           MemberExpr 'Arithmetic'
             IdentifierExpr 'Operators'
           LiteralExpr 1 [Integer]
           LiteralExpr 2 [Integer]
-      VarDeclStmt 'member' [inferred]
-        CallExpr
-          MemberExpr 'Count'
-            IdentifierExpr 'text'
     FunctionDecl 'OptionalAndLambda'
       VarDeclStmt 'maybe'
         OptionalTypeSyntax

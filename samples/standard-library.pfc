@@ -1,0 +1,167 @@
+comment begin
+    What the language gives you without declaring anything.
+
+    Four models are always in scope — Console, Math, Reference, and Fraction — and every
+    value carries members of its own. Nothing here is imported or installed; these are part
+    of the language rather than a library you add.
+
+    This is v1's whole standard library. Random, DateTime, and file access are named in the
+    specification but are not built yet.
+end comment
+
+global model Program
+
+    function Main()
+        Program.ShowConsole();
+        Program.ShowMath();
+        Program.ShowSets();
+        Program.ShowStrings();
+        Program.ShowOptionals();
+        Program.ShowReference();
+    end function
+
+    comment Console is how a program says anything at all.
+    function ShowConsole()
+        Console.WriteLine("== Console ==");
+
+        comment Write does not end the line; WriteLine does. That is the only difference,
+        comment and it matches C# exactly.
+        Console.Write("  built ");
+        Console.Write("one ");
+        Console.Write("piece ");
+        Console.WriteLine("at a time.");
+
+        comment Both take a value of any type and render it themselves.
+        Console.WriteLine("  a fraction: " + 3|4);
+        Console.WriteLine("  a boolean:  " + true);
+        Console.WriteLine("");
+    end function
+
+    function ShowMath()
+        Console.WriteLine("== Math ==");
+        Console.WriteLine("  Sqrt(16.0)     = " + Math.Sqrt(16.0));
+        Console.WriteLine("  Abs(-3.5)      = " + Math.Abs(-3.5));
+        Console.WriteLine("  Floor(3.7)     = " + Math.Floor(3.7));
+        Console.WriteLine("  Ceiling(3.2)   = " + Math.Ceiling(3.2));
+        Console.WriteLine("  Pow(2.0, 8.0)  = " + Math.Pow(2.0, 8.0));
+
+        comment Min and Max work on integers; the rest of Math works on reals.
+        Console.WriteLine("  Min(3, 7)      = " + Math.Min(3, 7));
+        Console.WriteLine("  Max(3, 7)      = " + Math.Max(3, 7));
+
+        comment Pow is rarely needed now that '^' exists, but it is still the way to raise
+        comment reals when you want the call to read as a call.
+        Console.WriteLine("  2.0 ^ 8.0      = " + 2.0 ^ 8.0);
+        Console.WriteLine("");
+    end function
+
+    comment A set's members are on the set itself rather than on some helper model.
+    function ShowSets()
+        Console.WriteLine("== members of a set ==");
+        integer[] values = {40, 10, 30};
+
+        Console.WriteLine("  Count()        = " + values.Count());
+        Console.WriteLine("  IndexOf(30)    = " + values.IndexOf(30));
+        Console.WriteLine("  Contains(99)   = " + values.Contains(99));
+
+        values.Insert(20);
+        values.InsertAt(0, 50);
+        Console.WriteLine("  after inserts  = " + Program.Render(values));
+
+        values.RemoveAt(0);
+        let removed = values.Remove(10);
+        Console.WriteLine("  Remove(10)     = " + removed);
+        Console.WriteLine("  after removals = " + Program.Render(values));
+
+        values.Clear();
+        Console.WriteLine("  after Clear()  = " + values.Count() + " left");
+        Console.WriteLine("");
+    end function
+
+    comment begin
+        A string answers the same questions a set does, on purpose: Count() rather than
+        Length, so there is one name for the idea rather than two.
+    end comment
+    function ShowStrings()
+        Console.WriteLine("== members of a string ==");
+        let word = "programming";
+
+        Console.WriteLine("  Count()            = " + word.Count());
+        Console.WriteLine("  Contains(\"gram\")   = " + word.Contains("gram"));
+        Console.WriteLine("  IndexOf(\"gram\")    = " + word.IndexOf("gram"));
+        Console.WriteLine("  Substring(3, 4)    = " + word.Substring(3, 4));
+        Console.WriteLine("  Insert(\"!\")        = " + word.Insert("!"));
+        Console.WriteLine("  Remove(\"m\")        = " + word.Remove("m"));
+
+        comment A string can be read as its characters, and back again.
+        character[] letters = word;
+        Console.Write("  one letter at a time: ");
+
+        for each letter in letters
+            Console.Write(letter);
+            Console.Write(" ");
+        end for
+
+        Console.WriteLine("");
+        Console.WriteLine("");
+    end function
+
+    comment The three members that make an optional safe to read.
+    function ShowOptionals()
+        Console.WriteLine("== members of an optional ==");
+
+        integer? missing;
+        integer? present = 42;
+
+        Console.WriteLine("  missing.HasValue() = " + missing.HasValue());
+        Console.WriteLine("  present.HasValue() = " + present.HasValue());
+        Console.WriteLine("  missing.Or(0)      = " + missing.Or(0));
+        Console.WriteLine("  present.Value()    = " + present.Value());
+
+        comment Reading an empty one is an error rather than a wrong answer.
+        try
+            Console.WriteLine(missing.Value());
+        catch EmptyOptionalException problem
+            Console.WriteLine("  missing.Value()    -> refused, as it should be");
+        end try
+
+        Console.WriteLine("");
+    end function
+
+    comment begin
+        '==' compares what two values are, member by member. Reference.Equals asks the
+        different question of whether they are the same object. Most languages give the
+        second meaning to '==' and make you remember it; here you have to ask for it.
+    end comment
+    function ShowReference()
+        Console.WriteLine("== Reference ==");
+
+        integer[] a = {1, 2, 3};
+        integer[] b = {1, 2, 3};
+        integer[] c = a;
+
+        Console.WriteLine("  a == b                  = " + (a == b));
+        Console.WriteLine("  Reference.Equals(a, b)  = " + Reference.Equals(a, b));
+        Console.WriteLine("  Reference.Equals(a, c)  = " + Reference.Equals(a, c));
+
+        comment Which matters, because c and a are one set under two names.
+        c.Insert(4);
+        Console.WriteLine("  after c.Insert(4), a is " + Program.Render(a));
+        Console.WriteLine("");
+    end function
+
+    string function Render(integer[] values)
+        string text = "{";
+
+        for i = 0 until values.Count()
+            if i > 0
+                text = text + ", ";
+            end if
+
+            text = text + values[i];
+        end for
+
+        yield text + "}";
+    end function
+
+end model

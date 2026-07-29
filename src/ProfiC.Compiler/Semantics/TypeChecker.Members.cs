@@ -27,6 +27,15 @@ public sealed partial class TypeChecker
             return ErrorType.Instance;
         }
 
+        // A call with no result has no members at all — not even ToString and Equals, which
+        // every other type inherits from Model. Without this they are found on it, and
+        // "Program.Total(scores).ToString()" compiles and renders the absence as "empty".
+        if (ReferenceEquals(receiver, PrimitiveType.Void))
+        {
+            Report(DiagnosticDescriptors.ValueExpected, member.Receiver);
+            return ErrorType.Instance;
+        }
+
         // Members the language provides come first, so that a set answers Count() and an
         // optional answers HasValue() without either being declared anywhere.
         if (FindBuiltIn(member.Receiver, receiver, member.MemberName) is { } builtIn)
@@ -120,7 +129,7 @@ public sealed partial class TypeChecker
     }
 
     private static TypeSymbol TypeOfBuiltIn(BuiltInMember member) =>
-        member.ReturnType ?? PrimitiveType.Nothing;
+        member.ReturnType ?? PrimitiveType.Void;
 
     /// <summary>
     /// Finds a built-in member on a receiver, falling back to the type it was declared with.
@@ -209,7 +218,7 @@ public sealed partial class TypeChecker
         if (callee is FunctionType functionType)
         {
             CheckArgumentsAgainst(call, "this function", functionType.ParameterTypes, arguments);
-            return functionType.ReturnType ?? PrimitiveType.Nothing;
+            return functionType.ReturnType ?? PrimitiveType.Void;
         }
 
         // Calling a type name constructs nothing; "new" does that.
@@ -226,7 +235,7 @@ public sealed partial class TypeChecker
         if (_currentType is not ModelSymbol { BaseType: { } parent })
         {
             // Already reported by the resolver, which knows whether a parent exists.
-            return PrimitiveType.Nothing;
+            return PrimitiveType.Void;
         }
 
         List<FunctionSymbol> constructors =
@@ -240,7 +249,7 @@ public sealed partial class TypeChecker
                 && arguments is [{ } only]
                 && Conversions.IsAssignable(only, PrimitiveType.String))
             {
-                return PrimitiveType.Nothing;
+                return PrimitiveType.Void;
             }
 
             // A parent with no constructor takes no arguments, so only an empty call fits.
@@ -249,7 +258,7 @@ public sealed partial class TypeChecker
                 Report(DiagnosticDescriptors.WrongArgumentCount, call, parent.Name, 0, arguments.Count);
             }
 
-            return PrimitiveType.Nothing;
+            return PrimitiveType.Void;
         }
 
         if (ResolveOverload(call, parent.Name, constructors, arguments) is { } chosen)
@@ -257,7 +266,7 @@ public sealed partial class TypeChecker
             _model.Bind(call, chosen);
         }
 
-        return PrimitiveType.Nothing;
+        return PrimitiveType.Void;
     }
 
     private TypeSymbol CheckMemberCall(
@@ -278,6 +287,13 @@ public sealed partial class TypeChecker
             return ErrorType.Instance;
         }
 
+        // As above: nothing can be called on the result of a call that produced none.
+        if (!onType && ReferenceEquals(receiver, PrimitiveType.Void))
+        {
+            Report(DiagnosticDescriptors.ValueExpected, member.Receiver);
+            return ErrorType.Instance;
+        }
+
         IReadOnlyList<BuiltInMember> builtIns =
             FindAllBuiltIn(member.Receiver, receiver, member.MemberName);
 
@@ -292,6 +308,18 @@ public sealed partial class TypeChecker
                 ?? builtIns[0];
 
             CheckArgumentsAgainst(call, member.MemberName, chosenBuiltIn.ParameterTypes, arguments);
+
+            // A fraction with a denominator of zero is the same mistake as dividing by zero,
+            // so it is caught in the same place when it can be seen while compiling.
+            if (onType
+                && receiver is ModelSymbol { Name: "Fraction" }
+                && member.MemberName == "Create"
+                && call.Arguments.Count == 2
+                && ConstantFolder.IsZero(ConstantFolder.TryFold(call.Arguments[1], _model)))
+            {
+                Report(DiagnosticDescriptors.DivisionByZero, call.Arguments[1]);
+            }
+
             TypeSymbol result = TypeOfBuiltIn(chosenBuiltIn);
             _model.BindType(member, result);
             return result;
@@ -330,7 +358,7 @@ public sealed partial class TypeChecker
         _model.Bind(member, chosen);
         _model.Bind(call, chosen);
 
-        return chosen.ReturnType ?? PrimitiveType.Nothing;
+        return chosen.ReturnType ?? PrimitiveType.Void;
     }
 
     private FunctionSymbol? ResolveOverload(

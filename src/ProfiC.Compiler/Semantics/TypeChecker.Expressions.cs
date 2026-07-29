@@ -134,8 +134,8 @@ public sealed partial class TypeChecker
         switch (binary.Operator)
         {
             case BinaryOperator.And or BinaryOperator.Or:
-                RequireBoolean(left, binary.Left, "logical");
-                RequireBoolean(right, binary.Right, "logical");
+                RequireBoolean(left, binary.Left, "An operand of 'and' or 'or'");
+                RequireBoolean(right, binary.Right, "An operand of 'and' or 'or'");
                 return PrimitiveType.Boolean;
 
             case BinaryOperator.Equal or BinaryOperator.NotEqual:
@@ -162,6 +162,17 @@ public sealed partial class TypeChecker
                 || ReferenceEquals(right, PrimitiveType.String)))
         {
             return PrimitiveType.String;
+        }
+
+        // An operand with no value is a different mistake from an operand of the wrong type,
+        // and is reported against the side that produced nothing.
+        if (ReferenceEquals(left, PrimitiveType.Void) || ReferenceEquals(right, PrimitiveType.Void))
+        {
+            Report(
+                DiagnosticDescriptors.ValueExpected,
+                ReferenceEquals(left, PrimitiveType.Void) ? binary.Left : binary.Right);
+
+            return ErrorType.Instance;
         }
 
         if (!IsNumeric(left) || !IsNumeric(right))
@@ -389,7 +400,7 @@ public sealed partial class TypeChecker
     private TypeSymbol CheckConditional(IfExpr conditional)
     {
         TypeSymbol condition = CheckExpression(conditional.Condition);
-        RequireBoolean(condition, conditional.Condition, "conditional");
+        RequireBoolean(condition, conditional.Condition, "The condition of an 'if ... then ... else'");
 
         // A conditional expression narrows its branches the same way the statement does.
         NarrowingFacts facts = AnalyzeCondition(conditional.Condition);

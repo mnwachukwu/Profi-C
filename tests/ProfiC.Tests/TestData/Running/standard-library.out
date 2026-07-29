@@ -1,0 +1,46 @@
+== Console ==
+  built one piece at a time.
+  a fraction: 3|4
+  a boolean:  true
+
+== Math ==
+  Sqrt(16.0)     = 4
+  Abs(-3.5)      = 3.5
+  Floor(3.7)     = 3
+  Ceiling(3.2)   = 4
+  Pow(2.0, 8.0)  = 256
+  Min(3, 7)      = 3
+  Max(3, 7)      = 7
+  2.0 ^ 8.0      = 256
+
+== members of a set ==
+  Count()        = 3
+  IndexOf(30)    = 2
+  Contains(99)   = false
+  after inserts  = {50, 40, 10, 30, 20}
+  Remove(10)     = true
+  after removals = {40, 30, 20}
+  after Clear()  = 0 left
+
+== members of a string ==
+  Count()            = 11
+  Contains("gram")   = true
+  IndexOf("gram")    = 3
+  Substring(3, 4)    = gram
+  Insert("!")        = programming!
+  Remove("m")        = prograing
+  one letter at a time: p r o g r a m m i n g 
+
+== members of an optional ==
+  missing.HasValue() = false
+  present.HasValue() = true
+  missing.Or(0)      = 0
+  present.Value()    = 42
+  missing.Value()    -> refused, as it should be
+
+== Reference ==
+  a == b                  = true
+  Reference.Equals(a, b)  = false
+  Reference.Equals(a, c)  = true
+  after c.Insert(4), a is {1, 2, 3, 4}
+

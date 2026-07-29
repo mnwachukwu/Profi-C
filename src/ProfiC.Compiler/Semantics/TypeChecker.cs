@@ -195,6 +195,14 @@ public sealed partial class TypeChecker
             return;
         }
 
+        // A call that yields nothing has no result to convert, so naming its type would
+        // describe the types correctly and the mistake badly.
+        if (ReferenceEquals(from, PrimitiveType.Void))
+        {
+            Report(DiagnosticDescriptors.ValueExpected, node);
+            return;
+        }
+
         switch (Conversions.Classify(from, to))
         {
             case ConversionKind.Identity:

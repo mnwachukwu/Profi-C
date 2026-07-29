@@ -76,7 +76,7 @@ public sealed partial class Resolver
         NamespaceSymbol enclosing,
         IReadOnlyList<Declaration> members)
     {
-        if (ReservedTypeNames.Contains(name))
+        if (BuiltInTypeNames.Contains(name))
         {
             Report(DiagnosticDescriptors.ReservedTypeName, declaration, name);
             return;
@@ -190,7 +190,7 @@ public sealed partial class Resolver
         IReadOnlyList<Declaration> members,
         NamespaceSymbol enclosing)
     {
-        if (ReservedTypeNames.Contains(symbol.Name))
+        if (BuiltInTypeNames.Contains(symbol.Name))
         {
             Report(DiagnosticDescriptors.ReservedTypeName, declaration, symbol.Name);
             return;
@@ -215,7 +215,7 @@ public sealed partial class Resolver
             Declaration = declaration,
         };
 
-        if (ReservedTypeNames.Contains(symbol.Name))
+        if (BuiltInTypeNames.Contains(symbol.Name))
         {
             Report(DiagnosticDescriptors.ReservedTypeName, declaration, symbol.Name);
             return;

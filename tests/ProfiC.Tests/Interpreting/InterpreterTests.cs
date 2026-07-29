@@ -130,6 +130,56 @@ public sealed class InterpreterTests
         """),
         Is.EqualTo("caught\n"));
 
+    /// <summary>
+    /// A fraction literal is two numerals fixed when the program is written. This is how one
+    /// is built from values that only exist while it runs, and what comes back is an ordinary
+    /// fraction — reduced, with the sign on the numerator.
+    /// </summary>
+    [TestCase("Fraction.Create(1, 2)", "1|2")]
+    [TestCase("Fraction.Create(6, 8)", "3|4")]
+    [TestCase("Fraction.Create(-3, -9)", "1|3")]
+    [TestCase("Fraction.Create(5, -10)", "-1|2")]
+    [TestCase("Fraction.Create(4, 1)", "4|1")]
+    [TestCase("Fraction.Create(0, 5)", "0|1")]
+    public void AFractionCanBeBuiltFromValues(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
+    [Test]
+    public void ABuiltFractionIsTheSameValueAsTheLiteral() => Assert.That(
+        Print("Fraction.Create(5, -10) == -1|2"), Is.EqualTo("true"));
+
+    [Test]
+    public void ABuiltFractionTakesPartInArithmetic() => Assert.That(
+        RunBody("""
+                let half = Fraction.Create(1, 2);
+                Console.WriteLine(half + 1|3);
+                Console.WriteLine(half ^ 3);
+        """),
+        Is.EqualTo("5|6\n1|8\n"));
+
+    /// <summary>
+    /// A literal zero denominator is refused while compiling. Only one the compiler cannot
+    /// see reaches here, and then it throws what dividing by zero throws.
+    /// </summary>
+    [Test]
+    public void AZeroDenominatorFromAVariableThrows() => Assert.That(
+        () => RunBody("""
+                integer d = 0;
+                Console.WriteLine(Fraction.Create(1, d));
+        """),
+        Throws.InstanceOf<DivideByZeroException>());
+
+    [TestCase("Math.Min(3, 7)", "3")]
+    [TestCase("Math.Max(3, 7)", "7")]
+    [TestCase("Math.Min(-2, -9)", "-9")]
+    [TestCase("Math.Sqrt(16.0)", "4")]
+    [TestCase("Math.Abs(-3.5)", "3.5")]
+    [TestCase("Math.Floor(3.7)", "3")]
+    [TestCase("Math.Ceiling(3.2)", "4")]
+    [TestCase("Math.Pow(2.0, 8.0)", "256")]
+    public void MathAnswersRatherThanProducingNothing(string expression, string expected) =>
+        Assert.That(Print(expression), Is.EqualTo(expected));
+
     [TestCase("1|3 + 1|6", "1|2")]
     [TestCase("1|2 * 2|3", "1|3")]
     [TestCase("1|2 - 1|2", "0|1")]

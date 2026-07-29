@@ -45,8 +45,11 @@ global model Operators
         comment Parentheses, brackets, braces, comma, semicolon, and dot.
         integer[] literal = {1, 2, 3};
         let indexed = items[0];
-        let called = Operators.Arithmetic(1, 2);
         let member = text.Count();
+
+        comment A call is punctuation too, but this one yields nothing, so there is no
+        comment result to give a name to.
+        Operators.Arithmetic(1, 2);
     end function
 
     function OptionalAndLambda()

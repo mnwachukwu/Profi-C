@@ -34,7 +34,7 @@ public sealed partial class TypeChecker
                 break;
 
             case WhileStmt loop:
-                RequireBoolean(CheckExpression(loop.Condition), loop.Condition, "a while");
+                RequireBoolean(CheckExpression(loop.Condition), loop.Condition, "A while condition");
 
                 // What the condition proves holds inside the body, since the body only runs
                 // while it does.
@@ -95,7 +95,7 @@ public sealed partial class TypeChecker
     /// </summary>
     private void CheckIf(IfStmt branch)
     {
-        RequireBoolean(CheckExpression(branch.Condition), branch.Condition, "an if");
+        RequireBoolean(CheckExpression(branch.Condition), branch.Condition, "An if condition");
 
         NarrowingFacts facts = AnalyzeCondition(branch.Condition);
         WithNarrowing(facts.WhenTrue, () => CheckStatements(branch.ThenBody));
@@ -107,7 +107,7 @@ public sealed partial class TypeChecker
         {
             WithNarrowing(failedSoFar, () =>
             {
-                RequireBoolean(CheckExpression(clause.Condition), clause.Condition, "an if");
+                RequireBoolean(CheckExpression(clause.Condition), clause.Condition, "An else-if condition");
 
                 NarrowingFacts clauseFacts = AnalyzeCondition(clause.Condition);
                 WithNarrowing(clauseFacts.WhenTrue, () => CheckStatements(clause.Body));
@@ -139,6 +139,13 @@ public sealed partial class TypeChecker
             if (inferred is SetType { ElementType.IsError: true })
             {
                 Report(DiagnosticDescriptors.CannotInferEmptyCollection, declaration.Initializer);
+            }
+
+            // A call that yields nothing has no result to give the name, and inferring from it
+            // would quietly declare a variable holding nothing at all.
+            if (ReferenceEquals(inferred, PrimitiveType.Void))
+            {
+                Report(DiagnosticDescriptors.ValueExpected, declaration.Initializer);
             }
 
             if (local is not null)

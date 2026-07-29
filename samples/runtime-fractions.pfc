@@ -1,0 +1,69 @@
+comment begin
+    Fractions built while the program runs.
+
+    A fraction literal like 3|4 is fixed when the program is written — both numerals are
+    there in the source. Fraction.Create(n, d) builds one from values worked out at run
+    time, which is what you need the moment the numbers come from a loop, a calculation,
+    or the person using the program.
+
+    What comes back is an ordinary fraction. It reduces, it carries its sign in the
+    numerator, and every operator works on it.
+end comment
+
+global model Program
+
+    function Main()
+        Console.WriteLine("== a table of unit fractions ==");
+
+        for d = 2 to 6
+            let piece = Fraction.Create(1, d);
+            Console.WriteLine("  1 over " + d + " is " + piece
+                              + ", and " + d + " of them make " + piece * Fraction.Create(d, 1));
+        end for
+
+        Console.WriteLine("");
+        Console.WriteLine("== it reduces and normalizes, exactly as a literal does ==");
+        Console.WriteLine("  Fraction.Create(6, 8)   is " + Fraction.Create(6, 8));
+        Console.WriteLine("  Fraction.Create(-3, -9) is " + Fraction.Create(-3, -9));
+
+        comment The sign always ends up on the numerator, so two spellings of the same
+        comment number really are the same number.
+        Console.WriteLine("  Fraction.Create(5, -10) is " + Fraction.Create(5, -10));
+        Console.WriteLine("  and equals -1|2?           " + (Fraction.Create(5, -10) == -1|2));
+
+        Console.WriteLine("");
+        Console.WriteLine("== summing a series that literals could not express ==");
+        Console.WriteLine("  1 + 1|2 + ... + 1|10 = " + Program.Harmonic(10));
+        Console.WriteLine("  as a real:             " + Program.Harmonic(10).ToReal());
+
+        Console.WriteLine("");
+        Console.WriteLine("== a denominator of zero ==");
+
+        comment begin
+            Written as a literal, this is refused before the program ever runs — the same
+            way 1 / 0 is. Only a value the compiler cannot see reaches this point.
+        end comment
+        integer denominator = 0;
+
+        try
+            Console.WriteLine(Fraction.Create(1, denominator));
+        catch DivideByZeroException problem
+            Console.WriteLine("  refused: " + problem.Message());
+        end try
+    end function
+
+    comment begin
+        The sum of 1|1 through 1|n, exactly. Each term needs a denominator that only exists
+        once the loop is running, so this cannot be written with literals at all.
+    end comment
+    fraction function Harmonic(integer n)
+        fraction total = 0;
+
+        for d = 1 to n
+            total = total + Fraction.Create(1, d);
+        end for
+
+        yield total;
+    end function
+
+end model

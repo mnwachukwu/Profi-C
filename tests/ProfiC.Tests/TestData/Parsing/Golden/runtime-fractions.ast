@@ -1,0 +1,191 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a table of unit fractions ==" [String]
+      ForStmt 'd' to
+        LiteralExpr 2 [Integer]
+        LiteralExpr 6 [Integer]
+        VarDeclStmt 'piece' [inferred]
+          CallExpr
+            MemberExpr 'Create'
+              IdentifierExpr 'Fraction'
+            LiteralExpr 1 [Integer]
+            IdentifierExpr 'd'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  BinaryExpr '+'
+                    BinaryExpr '+'
+                      BinaryExpr '+'
+                        BinaryExpr '+'
+                          LiteralExpr "  1 over " [String]
+                          IdentifierExpr 'd'
+                        LiteralExpr " is " [String]
+                      IdentifierExpr 'piece'
+                    LiteralExpr ", and " [String]
+                  IdentifierExpr 'd'
+                LiteralExpr " of them make " [String]
+              BinaryExpr '*'
+                IdentifierExpr 'piece'
+                CallExpr
+                  MemberExpr 'Create'
+                    IdentifierExpr 'Fraction'
+                  IdentifierExpr 'd'
+                  LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== it reduces and normalizes, exactly as a literal does ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Fraction.Create(6, 8)   is " [String]
+            CallExpr
+              MemberExpr 'Create'
+                IdentifierExpr 'Fraction'
+              LiteralExpr 6 [Integer]
+              LiteralExpr 8 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Fraction.Create(-3, -9) is " [String]
+            CallExpr
+              MemberExpr 'Create'
+                IdentifierExpr 'Fraction'
+              UnaryExpr '-'
+                LiteralExpr 3 [Integer]
+              UnaryExpr '-'
+                LiteralExpr 9 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Fraction.Create(5, -10) is " [String]
+            CallExpr
+              MemberExpr 'Create'
+                IdentifierExpr 'Fraction'
+              LiteralExpr 5 [Integer]
+              UnaryExpr '-'
+                LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and equals -1|2?           " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                CallExpr
+                  MemberExpr 'Create'
+                    IdentifierExpr 'Fraction'
+                  LiteralExpr 5 [Integer]
+                  UnaryExpr '-'
+                    LiteralExpr 10 [Integer]
+                UnaryExpr '-'
+                  LiteralExpr 1|2 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== summing a series that literals could not express ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1 + 1|2 + ... + 1|10 = " [String]
+            CallExpr
+              MemberExpr 'Harmonic'
+                IdentifierExpr 'Program'
+              LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  as a real:             " [String]
+            CallExpr
+              MemberExpr 'ToReal'
+                CallExpr
+                  MemberExpr 'Harmonic'
+                    IdentifierExpr 'Program'
+                  LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a denominator of zero ==" [String]
+      VarDeclStmt 'denominator'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'Create'
+                IdentifierExpr 'Fraction'
+              LiteralExpr 1 [Integer]
+              IdentifierExpr 'denominator'
+        CatchClause 'problem'
+          NamedTypeSyntax 'DivideByZeroException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "  refused: " [String]
+                CallExpr
+                  MemberExpr 'Message'
+                    IdentifierExpr 'problem'
+    FunctionDecl 'Harmonic'
+      NamedTypeSyntax 'fraction'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 0 [Integer]
+      ForStmt 'd' to
+        LiteralExpr 1 [Integer]
+        IdentifierExpr 'n'
+        AssignmentStmt
+          IdentifierExpr 'total'
+          BinaryExpr '+'
+            IdentifierExpr 'total'
+            CallExpr
+              MemberExpr 'Create'
+                IdentifierExpr 'Fraction'
+              LiteralExpr 1 [Integer]
+              IdentifierExpr 'd'
+      YieldStmt
+        IdentifierExpr 'total'
