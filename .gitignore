@@ -45,5 +45,13 @@ desktop.ini
 *.log
 *.tmp
 
+# Editor and tool leftovers. Some in-place editors write the original beside the file they
+# changed, and a stray copy of a source file is worse than useless: it compiles nowhere, and
+# it reads as though someone meant to keep it.
+*.bak
+*.orig
+*.rej
+*~
+
 # Local publish output, for putting profi-c and pc on PATH
 dist/

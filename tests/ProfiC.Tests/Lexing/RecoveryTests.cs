@@ -359,15 +359,23 @@ public sealed class RecoveryTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// The cap holds, and the bag says so in its own voice: the last entry is the diagnostic
+    /// reporting that reporting stopped, so a truncated list never looks like a complete one.
+    /// </summary>
     [Test]
-    public void DiagnosticBag_StopsCollectingAtItsCap()
+    public void DiagnosticBag_StopsCollectingAtItsCapAndSaysSo()
     {
         (_, DiagnosticBag diagnostics) = ScanRaw(new string('#', DiagnosticBag.MaximumDiagnostics + 50));
 
         Assert.Multiple(() =>
         {
-            Assert.That(diagnostics.Count, Is.EqualTo(DiagnosticBag.MaximumDiagnostics));
             Assert.That(diagnostics.IsFull, Is.True);
+            Assert.That(diagnostics.Count, Is.EqualTo(DiagnosticBag.MaximumDiagnostics + 1),
+                        "the cap, plus the one saying the cap was reached");
+
+            Assert.That(diagnostics.Count(d => d.Id == "PC0113"), Is.EqualTo(1));
+            Assert.That(diagnostics.Last().Id, Is.EqualTo("PC0113"));
         });
     }
 

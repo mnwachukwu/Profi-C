@@ -293,13 +293,22 @@ public sealed class ParserRecoveryTests : ParserTestBase
             Is.Empty);
 
     /// <summary>
-    /// A statement whose expression could not be read is not then asked for its semicolon.
-    /// One unusable token is one mistake, however many things were expected of it.
+    /// <para>A token that can begin no statement is told so, rather than being read as the
+    /// start of an expression and failing there.</para>
+    /// <para>One unusable token is one mistake, however many things were expected of it.</para>
     /// </summary>
+    [TestCase("        else 30;")]
+    [TestCase("        catch 1;")]
+    [TestCase("        then 1;")]
+    [TestCase("        step 1;")]
+    public void ATokenThatBeginsNoStatementIsOneDiagnostic(string body) =>
+        Assert.That(IdsOf(ParseBody(body).Diagnostics), Is.EqualTo(new[] { "PC0107" }));
+
+    /// <summary>A statement may not begin with '(' or '-', which has its own explanation.</summary>
     [Test]
-    public void AStatementThatCouldNotStartIsOneDiagnostic() =>
-        Assert.That(IdsOf(ParseBody("        else 30;").Diagnostics),
-                    Is.EqualTo(new[] { "PC0101" }));
+    public void AStatementBeginningWithAParenthesisKeepsItsOwnMessage() =>
+        Assert.That(IdsOf(ParseBody("        (x as Dog).Bark();").Diagnostics),
+                    Is.EqualTo(new[] { "PC0106" }));
 
     // ---- Progress -------------------------------------------------------------------------
 

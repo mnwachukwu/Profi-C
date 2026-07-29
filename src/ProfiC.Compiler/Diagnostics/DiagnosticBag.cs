@@ -48,28 +48,42 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
     public bool HasErrors { get; private set; }
 
     /// <summary>True once the cap has been reached and reporting has stopped.</summary>
-    public bool IsFull => _diagnostics.Count >= MaximumDiagnostics;
+    public bool IsFull { get; private set; }
 
     /// <summary>Reports a diagnostic. Ignored once the cap is reached.</summary>
     public void Report(DiagnosticDescriptor descriptor, SourceSpan span, params object?[] args)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
 
-        if (IsFull)
-        {
-            return;
-        }
-
         Add(Diagnostic.Create(descriptor, span, _source, args));
     }
 
-    /// <summary>Adds an already-constructed diagnostic. Ignored once the cap is reached.</summary>
+    /// <summary>
+    /// <para>Adds an already-constructed diagnostic. Ignored once the cap is reached.</para>
+    /// <para>Reaching the cap is itself reported, in the place reporting stopped, so that a
+    /// truncated list says it is truncated and says it with an identifier like everything
+    /// else. It is the last thing the bag accepts.</para>
+    /// </summary>
     public void Add(Diagnostic diagnostic)
     {
         ArgumentNullException.ThrowIfNull(diagnostic);
 
         if (IsFull)
         {
+            return;
+        }
+
+        if (_diagnostics.Count >= MaximumDiagnostics)
+        {
+            IsFull = true;
+
+            _diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.TooManyErrors,
+                diagnostic.Span,
+                diagnostic.Source,
+                MaximumDiagnostics));
+
+            HasErrors = true;
             return;
         }
 

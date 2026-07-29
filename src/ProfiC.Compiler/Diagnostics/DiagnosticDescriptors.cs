@@ -13,7 +13,7 @@ namespace ProfiC.Compiler.Diagnostics;
 ///   <item><term>PC0300-0399</term><description>Type checking</description></item>
 ///   <item><term>PC0400-0499</term><description>Definite assignment and flow</description></item>
 ///   <item><term>PC0500-0599</term><description>Lowering and emit</description></item>
-///   <item><term>PC0600-0699</term><description>Project files</description></item>
+///   <item><term>PC0600-0699</term><description>Project files and imports</description></item>
 ///   <item><term>PC0900+</term><description>Internal compiler errors</description></item>
 /// </list>
 /// </remarks>
@@ -72,7 +72,7 @@ public static class DiagnosticDescriptors
         "Malformed Unicode escape sequence",
         "A Unicode escape must be '\\u' followed by four hexadecimal digits.");
 
-    // ---- Syntax, PC0100 to PC0199 -----------------------------------------------------
+    // ---- Syntax, PC0100 to PC0113 -----------------------------------------------------
 
     public static readonly DiagnosticDescriptor UnexpectedToken = Error(
         "PC0100",
@@ -178,9 +178,9 @@ public static class DiagnosticDescriptors
         + "is when the condition is false.");
 
     public static readonly DiagnosticDescriptor TooManyErrors = Error(
-        "PC0199",
-        "Too many errors",
-        "Too many errors; parsing stopped.");
+        "PC0113",
+        "Too many problems",
+        "Too many problems; stopped after {0}. Fixing the ones above may account for the rest.");
 
     // ---- Name resolution, PC0200 to PC0299 --------------------------------------------
 
@@ -265,12 +265,12 @@ public static class DiagnosticDescriptors
         + "instance of a running program.");
 
     public static readonly DiagnosticDescriptor ThisOutsideModel = Error(
-        "PC0215",
+        "PC0214",
         "'{0}' used outside a model",
         "'{0}' can only be used inside a model's instance member.");
 
     public static readonly DiagnosticDescriptor BaseWithoutParent = Error(
-        "PC0216",
+        "PC0215",
         "No parent to reach",
         "'base' needs a parent model, and '{0}' extends nothing.");
 
@@ -281,7 +281,7 @@ public static class DiagnosticDescriptors
     /// a model can be extended", which explains nothing.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor CannotExtendBuiltInType = Error(
-        "PC0217",
+        "PC0216",
         "Cannot extend a built-in type",
         "'{0}' is provided by the language and has nothing to inherit. Of the built-in types "
         + "only 'Model' and the exceptions may follow 'extends'.");
@@ -306,12 +306,12 @@ public static class DiagnosticDescriptors
     /// like it reported something.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor EntryPointResultNotInteger = Error(
-        "PC0219",
+        "PC0218",
         "Main declares no result or an integer",
         "'Main' must declare no result, or an integer, which becomes the program's exit code.");
 
     public static readonly DiagnosticDescriptor DuplicateTypeDeclaration = Error(
-        "PC0218",
+        "PC0217",
         "Type already declared",
         "'{0}' is already declared {1}. Two types cannot share a name, whether they are "
         + "written in one file or across several. Rename one of them.");
@@ -650,15 +650,15 @@ public static class DiagnosticDescriptors
         "Project builds nothing",
         "This project lists no source, so there is nothing to build.");
 
-    // ---- Imports, PC0620 to PC0629 -------------------------------------------------------
+    // ---- Imports, PC0611 to PC0619 -------------------------------------------------------
 
     public static readonly DiagnosticDescriptor ImportNotFound = Error(
-        "PC0620",
+        "PC0611",
         "Imported file not found",
         "There is no file at '{0}', which is looked for beside {1}.");
 
     public static readonly DiagnosticDescriptor ImportNotSource = Error(
-        "PC0621",
+        "PC0612",
         "Import is not Profi-C",
         "'{0}' is not a .pc file, so it cannot be compiled with this one.");
 
@@ -669,7 +669,7 @@ public static class DiagnosticDescriptors
     /// shared, cloned, or built anywhere but here, and that is worth saying before then.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor ImportPathIsAbsolute = Warning(
-        "PC0622",
+        "PC0613",
         "Import names an absolute path",
         "'{0}' names a path from the root of a disk, so it resolves only on the machine it "
         + "was written on. A path relative to this file travels with it.");

@@ -201,7 +201,7 @@ public sealed class MultiFileTests : LexerTestBase
 
         Resolver.Resolve(compilation.Units, diagnostics);
 
-        Diagnostic duplicate = diagnostics.Sorted().First(d => d.Id == "PC0218");
+        Diagnostic duplicate = diagnostics.Sorted().First(d => d.Id == "PC0217");
 
         Assert.Multiple(() =>
         {
@@ -381,8 +381,8 @@ public sealed class MultiFileTests : LexerTestBase
 
     private static readonly (string Case, string Import, string Expected)[] BadImports =
     [
-        ("missing", "import \"nowhere.pc\";", "PC0620"),
-        ("not Profi-C", "import \"notes.txt\";", "PC0621"),
+        ("missing", "import \"nowhere.pc\";", "PC0611"),
+        ("not Profi-C", "import \"notes.txt\";", "PC0612"),
     ];
 
     [TestCaseSource(nameof(BadImports))]
@@ -411,7 +411,7 @@ public sealed class MultiFileTests : LexerTestBase
         DiagnosticBag diagnostics = new();
         SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
 
-        Diagnostic warned = diagnostics.Sorted().Single(d => d.Id == "PC0622");
+        Diagnostic warned = diagnostics.Sorted().Single(d => d.Id == "PC0613");
 
         Assert.Multiple(() =>
         {

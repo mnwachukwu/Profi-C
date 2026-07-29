@@ -461,7 +461,7 @@ public sealed class ResolverTests
         // invitation to inherit from them.
         (_, DiagnosticBag diagnostics) = Resolve($"model Mine extends {name}\nend model");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0217" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0216" }));
     }
 
     /// <summary>
@@ -476,7 +476,7 @@ public sealed class ResolverTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0218" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0217" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("on line 1"));
         });
     }
@@ -490,9 +490,9 @@ public sealed class ResolverTests
     /// </summary>
     [TestCase("", null)]
     [TestCase("integer ", null)]
-    [TestCase("string ", "PC0219")]
-    [TestCase("real ", "PC0219")]
-    [TestCase("boolean ", "PC0219")]
+    [TestCase("string ", "PC0218")]
+    [TestCase("real ", "PC0218")]
+    [TestCase("boolean ", "PC0218")]
     public void MainYieldsNothingOrAnInteger(string result, string? expected)
     {
         (_, DiagnosticBag diagnostics) = Resolve($$"""
@@ -583,7 +583,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0215" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0214" }));
     }
 
     [Test]
@@ -598,7 +598,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0216" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0215" }));
     }
 
     [Test]

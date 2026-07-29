@@ -68,8 +68,34 @@ public sealed partial class Parser
             return ParseTypedLocalDeclaration();
         }
 
+        // A token that begins neither a statement nor an expression. A body stops at its own
+        // terminators before reaching here, so this is one written where nothing can follow it
+        // — a stray 'else', or an 'end' closing something never opened. Naming what was wanted
+        // beats reading it as the start of an expression and failing there instead.
+        if (!CanBeginExpression(Kind))
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.ExpectedStatement, Current.Span, Describe(Current));
+
+            Advance();
+            return null;
+        }
+
         return ParseExpressionStatement();
     }
+
+    /// <summary>
+    /// Whether a token could open an expression. <c>(</c> and <c>-</c> are included although a
+    /// statement may not begin with either: they are turned away with their own explanation.
+    /// </summary>
+    private static bool CanBeginExpression(TokenType kind) =>
+        kind.IsLiteral()
+        || kind is TokenType.Identifier
+                or TokenType.True or TokenType.False
+                or TokenType.LeftParen or TokenType.LeftBrace
+                or TokenType.Minus or TokenType.Not
+                or TokenType.New or TokenType.This or TokenType.Base
+                or TokenType.If or TokenType.Function;
 
     /// <summary>
     /// Distinguishes a declaration from an expression at the start of a statement, by

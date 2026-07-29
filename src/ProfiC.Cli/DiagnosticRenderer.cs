@@ -68,11 +68,5 @@ public static class DiagnosticRenderer
         {
             Console.Error.WriteLine(Format(diagnostic));
         }
-
-        if (diagnostics.IsFull)
-        {
-            Console.Error.WriteLine(
-                $"error: too many errors; stopped after {DiagnosticBag.MaximumDiagnostics}.");
-        }
     }
 }

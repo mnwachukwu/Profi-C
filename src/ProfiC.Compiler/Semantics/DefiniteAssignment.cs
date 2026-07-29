@@ -9,36 +9,52 @@ namespace ProfiC.Compiler.Semantics;
 /// </summary>
 public sealed class FlowState
 {
-    private FlowState(HashSet<Symbol> assigned, bool reachable)
+    private FlowState(HashSet<Symbol> assigned, HashSet<Symbol> assignedSomewhere, bool reachable)
     {
         Assigned = assigned;
+        AssignedSomewhere = assignedSomewhere;
         Reachable = reachable;
     }
 
     /// <summary>Variables that certainly hold a value here.</summary>
     public HashSet<Symbol> Assigned { get; }
 
+    /// <summary>
+    /// <para>Variables that hold a value on at least one path here.</para>
+    /// <para>Kept beside the certain ones only so a mistake can be described accurately. A
+    /// variable in this set and not in <see cref="Assigned"/> was given a value somewhere and
+    /// missed somewhere else — almost always a branch without its other half — and telling
+    /// someone it was never assigned would send them looking in the wrong place.</para>
+    /// </summary>
+    public HashSet<Symbol> AssignedSomewhere { get; }
+
     /// <summary>False after something that never returns, such as a yield or a throw.</summary>
     public bool Reachable { get; }
 
-    public static FlowState Empty() => new([], reachable: true);
+    public static FlowState Empty() => new([], [], reachable: true);
 
     /// <summary>The state after something that does not return.</summary>
-    public FlowState Unreachable() => new([.. Assigned], reachable: false);
+    public FlowState Unreachable() => new([.. Assigned], [.. AssignedSomewhere], reachable: false);
 
-    public FlowState Clone() => new([.. Assigned], Reachable);
+    public FlowState Clone() => new([.. Assigned], [.. AssignedSomewhere], Reachable);
 
-    public FlowState With(Symbol symbol)
-    {
-        HashSet<Symbol> next = [.. Assigned, symbol];
-        return new FlowState(next, Reachable);
-    }
+    public FlowState With(Symbol symbol) =>
+        new([.. Assigned, symbol], [.. AssignedSomewhere, symbol], Reachable);
+
+    /// <summary>
+    /// Records that some path assigned these without promising this one did. A loop body may
+    /// not run, so what it assigns is possible here rather than certain.
+    /// </summary>
+    public FlowState WithPossible(IEnumerable<Symbol> symbols) =>
+        new([.. Assigned], [.. AssignedSomewhere, .. symbols], Reachable);
 
     /// <summary>
     /// <para>Joins two paths that meet.</para>
     /// <para>Only what both paths guarantee survives, which is the whole idea: a variable
     /// assigned on one branch and not the other is not assigned afterwards. An unreachable
     /// path contributes nothing, so it does not weaken the other.</para>
+    /// <para>What either path managed survives in the other set, which is what lets the
+    /// difference between the two be reported as the different mistake it is.</para>
     /// </summary>
     public static FlowState Merge(FlowState left, FlowState right)
     {
@@ -55,7 +71,9 @@ public sealed class FlowState
         HashSet<Symbol> both = [.. left.Assigned];
         both.IntersectWith(right.Assigned);
 
-        return new FlowState(both, reachable: true);
+        HashSet<Symbol> either = [.. left.AssignedSomewhere, .. right.AssignedSomewhere];
+
+        return new FlowState(both, either, reachable: true);
     }
 }
 
@@ -234,8 +252,19 @@ public sealed class DefiniteAssignment
 
     private FlowState AnalyzeStatements(IReadOnlyList<Statement> statements, FlowState state)
     {
+        bool reported = false;
+
         foreach (Statement statement in statements)
         {
+            // The first statement past where control can arrive is the one worth naming. The
+            // rest are unreachable for the same reason, and saying so once per statement would
+            // bury the yield or throw that caused it.
+            if (!state.Reachable && !reported)
+            {
+                _diagnostics.Report(DiagnosticDescriptors.UnreachableCode, statement.Span);
+                reported = true;
+            }
+
             state = AnalyzeStatement(statement, state);
         }
 
@@ -319,8 +348,13 @@ public sealed class DefiniteAssignment
     private FlowState AnalyzeWhile(WhileStmt loop, FlowState state)
     {
         state = AnalyzeExpression(loop.Condition, state);
-        AnalyzeStatements(loop.Body, state.Clone());
-        return state;
+
+        // The body may not run, so nothing it assigns is certain afterwards. What it manages
+        // is still worth carrying: a variable assigned only inside a loop was missed on a
+        // path rather than never given a value at all.
+        FlowState body = AnalyzeStatements(loop.Body, state.Clone());
+
+        return state.WithPossible(body.AssignedSomewhere);
     }
 
     private FlowState AnalyzeRangeLoop(ForStmt loop, FlowState state)
@@ -340,8 +374,8 @@ public sealed class DefiniteAssignment
             inside = inside.With(variable);
         }
 
-        AnalyzeStatements(loop.Body, inside);
-        return state;
+        FlowState body = AnalyzeStatements(loop.Body, inside);
+        return state.WithPossible(body.AssignedSomewhere);
     }
 
     private FlowState AnalyzeForEach(ForEachStmt loop, FlowState state)
@@ -355,8 +389,8 @@ public sealed class DefiniteAssignment
             inside = inside.With(variable);
         }
 
-        AnalyzeStatements(loop.Body, inside);
-        return state;
+        FlowState body = AnalyzeStatements(loop.Body, inside);
+        return state.WithPossible(body.AssignedSomewhere);
     }
 
     /// <summary>
@@ -535,11 +569,13 @@ public sealed class DefiniteAssignment
             return;
         }
 
-        // A local declared without a value that has been assigned on no path at all gets the
-        // plainer message; one assigned on some paths gets the message about paths.
-        _diagnostics.Report(
-            DiagnosticDescriptors.UseBeforeAssignment,
-            identifier.Span,
-            local.Name);
+        // Assigned somewhere but not everywhere is a different mistake from never assigned at
+        // all, and is nearly always a branch missing its other half. Saying it was never given
+        // a value would send the reader looking in the wrong place.
+        DiagnosticDescriptor descriptor = state.AssignedSomewhere.Contains(local)
+            ? DiagnosticDescriptors.UseBeforeAssignmentOnSomePath
+            : DiagnosticDescriptors.UseBeforeAssignment;
+
+        _diagnostics.Report(descriptor, identifier.Span, local.Name);
     }
 }

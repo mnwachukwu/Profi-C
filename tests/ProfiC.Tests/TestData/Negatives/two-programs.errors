@@ -1,1 +1,1 @@
-index-out-of-range.pc(8,1): error PC0218: 'Program' is already declared in divide-by-zero.pc, on line 9. Two types cannot share a name, whether they are written in one file or across several. Rename one of them.
+index-out-of-range.pc(8,1): error PC0217: 'Program' is already declared in divide-by-zero.pc, on line 9. Two types cannot share a name, whether they are written in one file or across several. Rename one of them.

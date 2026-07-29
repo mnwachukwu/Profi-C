@@ -91,7 +91,7 @@ public sealed class FlowAnalysisTests
                         x = 1;
                     end if
                     let y = x;
-            """)), Is.EqualTo(new[] { "PC0400" }));
+            """)), Is.EqualTo(new[] { "PC0401" }));
     }
 
     [Test]
@@ -137,7 +137,7 @@ public sealed class FlowAnalysisTests
                             x = 2;
                         end if
                         let y = x;
-                """)), Is.EqualTo(new[] { "PC0400" }));
+                """)), Is.EqualTo(new[] { "PC0401" }));
         });
     }
 
@@ -152,7 +152,7 @@ public sealed class FlowAnalysisTests
                         x = 1;
                     end while
                     let y = x;
-            """)), Is.EqualTo(new[] { "PC0400" }));
+            """)), Is.EqualTo(new[] { "PC0401" }));
     }
 
     [Test]
@@ -182,7 +182,7 @@ public sealed class FlowAnalysisTests
                                 x = 2;
                         end switch
                         let y = x;
-                """)), Is.EqualTo(new[] { "PC0400" }));
+                """)), Is.EqualTo(new[] { "PC0401" }));
 
             Assert.That(IdsOf(CheckBody(
                 """
@@ -273,11 +273,12 @@ public sealed class FlowAnalysisTests
     [Test]
     public void WhatAFinallyClauseAssignsIsCertainAfterwards()
     {
+        // The try body must be able to finish, or there is no afterwards to be certain about.
         Assert.That(IdsOf(CheckBody(
             """
                     integer x;
                     try
-                        yield;
+                        Console.WriteLine("trying");
                     finally
                         x = 1;
                     end try
