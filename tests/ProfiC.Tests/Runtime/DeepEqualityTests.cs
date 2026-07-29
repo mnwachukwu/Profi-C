@@ -18,6 +18,9 @@ public sealed class DeepEqualityTests
 
         public Node? Next { get; set; }
 
+        // Emitted code gives each Profi-C type a .NET type of its own, so it answers with that.
+        public object DeepTypeIdentity => typeof(Node);
+
         public int DeepMemberCount => 2;
 
         public object? GetDeepMember(int index) => index switch
@@ -32,6 +35,8 @@ public sealed class DeepEqualityTests
     private sealed class OtherNode(int value) : IProfiCModel
     {
         public int Value { get; } = value;
+
+        public object DeepTypeIdentity => typeof(OtherNode);
 
         public int DeepMemberCount => 2;
 

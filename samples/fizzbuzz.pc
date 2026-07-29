@@ -27,7 +27,7 @@ global model Program
             yield "Buzz";
         end if
 
-        yield "" + n;
+        yield n.ToString();
     end function
 
 end model

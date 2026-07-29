@@ -759,7 +759,7 @@ public sealed class InterpreterTests
     [Test]
     public void EnumerationMembersCompareAndPrintByName() => Assert.That(
         Run("""
-            enumeration Colour
+            enumeration Color
                 Red,
                 Green,
                 Blue
@@ -767,10 +767,10 @@ public sealed class InterpreterTests
 
             global model Program
                 function Main()
-                    Colour c = Colour.Green;
+                    Color c = Color.Green;
                     Console.WriteLine(c);
-                    Console.WriteLine(c == Colour.Green);
-                    Console.WriteLine(c == Colour.Red);
+                    Console.WriteLine(c == Color.Green);
+                    Console.WriteLine(c == Color.Red);
                 end function
             end model
             """),
@@ -1133,4 +1133,121 @@ public sealed class InterpreterTests
             "total 24",
         }));
     }
+
+    // ---- Testing and casting -----------------------------------------------------------------
+
+    private const string Suits = """
+        enumeration Suit
+            Clubs,
+            Diamonds,
+            Hearts
+        end enumeration
+        """;
+
+    /// <summary>
+    /// A value is of its own type. Obvious, and worth pinning: a value crossing into the
+    /// runtime keeps no symbol, so each kind has to be recognized on its own terms.
+    /// </summary>
+    [Test]
+    public void AValueIsOfItsOwnType() => Assert.That(
+        Lines(Run($$"""
+            {{Suits}}
+
+            structure Point
+                public integer X;
+
+                public function Point(integer x)
+                    this.X = x;
+                end function
+            end structure
+
+            global model Program
+                function Main()
+                    Suit s = Suit.Hearts;
+                    Point p = new Point(1);
+
+                    Console.WriteLine(s is Suit);
+                    Console.WriteLine((s as Suit).HasValue());
+                    Console.WriteLine(p is Point);
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "true", "true", "true" }));
+
+    /// <summary>
+    /// <para>An ordinal names a member, or names none.</para>
+    /// <para>This is the one cast that gives back a different value rather than the same one
+    /// seen as another type, and the only reason a cast to an enumeration is optional: a
+    /// number outside the range names nothing, and nothing is what it yields.</para>
+    /// </summary>
+    [Test]
+    public void AnIntegerCastsToTheMemberWithThatOrdinal() => Assert.That(
+        Lines(Run($$"""
+            {{Suits}}
+
+            global model Program
+                function Main()
+                    for n = 0 to 3
+                        Suit? found = n as Suit;
+
+                        Console.WriteLine(
+                            n + " " + if found.HasValue()
+                                      then found.Value().ToString()
+                                      else "nothing");
+                    end for
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "0 Clubs", "1 Diamonds", "2 Hearts", "3 nothing" }));
+
+    /// <summary>A member and its ordinal make the round trip.</summary>
+    [Test]
+    public void AMemberAndItsOrdinalRoundTrip() => Assert.That(
+        Lines(Run($$"""
+            {{Suits}}
+
+            global model Program
+                function Main()
+                    Suit start = Suit.Diamonds;
+                    Suit? back = start.ToInteger() as Suit;
+
+                    Console.WriteLine(back.HasValue() and back.Value() == start);
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "true" }));
+
+    /// <summary>
+    /// A cast down the family yields an optional, so a mismatch produces nothing rather than
+    /// failing. There is no null for it to give back instead.
+    /// </summary>
+    [Test]
+    public void ACastToADescendantYieldsAnOptional() => Assert.That(
+        Lines(Run("""
+            model Shape
+                public function Shape()
+                end function
+            end model
+
+            model Circle extends Shape
+                public function Circle()
+                end function
+            end model
+
+            model Square extends Shape
+                public function Square()
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Shape[] shapes = {new Circle(), new Square()};
+
+                    for each shape in shapes
+                        Console.WriteLine((shape as Circle).HasValue());
+                    end for
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "true", "false" }));
 }

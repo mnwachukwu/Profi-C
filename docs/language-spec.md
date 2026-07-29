@@ -496,6 +496,19 @@ its static type. **`ToString()` is inherited from `Model` by every type, values 
 and is `virtual`. Calling it on a value type does not box. Defaults: a structure prints field
 by field, an enumeration prints its member name, a model prints its type name.
 
+A set prints its elements between braces, separated by a comma and a space, and a structure
+prints its fields **in the order they were declared**.
+
+**Where values sit beside one another, a character and a string are quoted as each is written
+in source.** Without it a delimiter cannot be told from the same characters inside a value:
+`{a, b}` would be what a set of one string holding a comma printed, and what a set of two
+strings printed. So `{"a, b"}` and `{"a", "b"}` are distinct, and `"a, b".ToCharacters()`
+prints `{'a', ',', ' ', 'b'}`.
+
+A value printed on its own is not quoted, since nothing sits beside it to be confused with:
+`Console.WriteLine("plain")` prints `plain`. A quote inside quotes is left as it is, which
+reads a little oddly and is much the smaller of the two problems.
+
 ## 12. Execution and entry point
 
 *Not yet written.* Will cover program structure and `Program.Main`.
@@ -504,6 +517,24 @@ by field, an enumeration prints its member name, a model prints its type name.
 `global model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
 and `Reference`, which may not be declared at all — every program must declare `Program`, but
 may not declare a second one, and may not use the name for an ordinary model.
+
+**`Main` declares no result, or an integer.** The integer is the program's exit code, which is
+what whatever ran it reads to learn whether it succeeded.
+
+The restriction is not a choice about what is useful. Every other function's result has a
+purpose because a caller uses it; `Main`'s caller is the operating system, and that boundary
+carries exactly one small integer. A result of any other type would be computed and then
+dropped, so the program would appear to report something it never reported.
+
+Giving another type a meaning would mean inventing one. A `string` result that printed itself
+would be an implicit write that happens in one function and nowhere else. A `boolean` result
+would duplicate the integer, inverted, since a shell reads zero as success. A result carrying a
+failure is already served: an uncaught exception prints and exits non-zero, which is what a
+program that cannot finish should do.
+
+A `Main` that yields nothing exits zero. So does one that declares an integer and is left to
+run off its end — except that it cannot be, since a function declaring a result must reach one
+on every path.
 
 ### 12.1 What a compilation is made of
 

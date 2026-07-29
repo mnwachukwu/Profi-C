@@ -17,7 +17,7 @@ public abstract class SyntaxVisitor
     }
 
     /// <summary>
-    /// The default behaviour of every visit method: walk the children in source order.
+    /// The default behavior of every visit method: walk the children in source order.
     /// Override this to change traversal for every node at once.
     /// </summary>
     protected virtual void DefaultVisit(SyntaxNode node)

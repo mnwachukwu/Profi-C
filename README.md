@@ -435,6 +435,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
 | [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
 | [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
+| [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
 `samples/reference/` holds four files that are not programs and declare no entry point:
@@ -472,6 +473,7 @@ Programs the compiler rejects:
 | [types.pc](samples/negatives/compile/types.pc) | Types that do not mix, and a division by a literal zero |
 | [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
 | [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |
+| [results.pc](samples/negatives/compile/results.pc) | A function that never reaches the result it promises, and a call that yields nothing used as a value |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
 see:

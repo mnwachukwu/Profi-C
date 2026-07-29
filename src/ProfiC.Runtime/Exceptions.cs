@@ -40,7 +40,7 @@ public static class BuiltInExceptions
     /// program writes after <c>catch</c> and the type that travels at run time are the same
     /// entry, so a name the language can raise is a name the language can catch.
     /// </summary>
-    private static readonly (string Name, Type Type)[] Catalogue =
+    private static readonly (string Name, Type Type)[] Catalog =
     [
         ("Exception", typeof(Exception)),
         ("DivideByZeroException", typeof(DivideByZeroException)),
@@ -53,12 +53,12 @@ public static class BuiltInExceptions
     ];
 
     /// <summary>Every exception name the language defines.</summary>
-    public static IReadOnlyList<string> Names { get; } = [.. Catalogue.Select(entry => entry.Name)];
+    public static IReadOnlyList<string> Names { get; } = [.. Catalog.Select(entry => entry.Name)];
 
     /// <summary>Maps a Profi-C exception name to the type it denotes.</summary>
     public static Type? Resolve(string profiCName)
     {
-        foreach ((string name, Type type) in Catalogue)
+        foreach ((string name, Type type) in Catalog)
         {
             if (name == profiCName)
             {
@@ -77,7 +77,7 @@ public static class BuiltInExceptions
     {
         ArgumentNullException.ThrowIfNull(thrown);
 
-        foreach ((_, Type type) in Catalogue)
+        foreach ((_, Type type) in Catalog)
         {
             if (type != typeof(Exception) && type.IsInstanceOfType(thrown))
             {

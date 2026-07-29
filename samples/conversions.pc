@@ -1,0 +1,142 @@
+comment begin
+    Getting from one type to another.
+
+    Profi-C converts on its own only where nothing is lost and nothing would surprise you.
+    Everywhere else it asks, and the asking is a member call you can read.
+
+    The rule to carry away: if a conversion could lose information or change what a value
+    means, you write it down.
+end comment
+
+enumeration Suit
+    Clubs,
+    Diamonds,
+    Hearts,
+    Spades
+end enumeration
+
+model Shape
+    public function Shape()
+    end function
+
+    public virtual string function Name()
+        yield "shape";
+    end function
+end model
+
+model Circle extends Shape
+    real radius;
+
+    public function Circle(real r)
+        this.radius = r;
+    end function
+
+    public override string function Name()
+        yield "circle";
+    end function
+
+    public real function Radius()
+        yield this.radius;
+    end function
+end model
+
+model Square extends Shape
+    public function Square()
+    end function
+
+    public override string function Name()
+        yield "square";
+    end function
+end model
+
+global model Program
+
+    function Main()
+        Program.Widening();
+        Program.AskingForIt();
+        Program.StringsAndCharacters();
+        Program.UpAndDownTheFamily();
+        Program.Enumerations();
+    end function
+
+    comment begin
+        An integer becomes a real or a fraction on its own. Both hold every integer exactly,
+        so there is nothing to lose and nothing to decide.
+    end comment
+    function Widening()
+        real r = 7;
+        fraction f = 7;
+
+        Console.WriteLine("7 as a real is " + r + ", as a fraction " + f);
+    end function
+
+    comment begin
+        A fraction and a real never convert on their own, in either direction.
+
+        One third as a real is 0.33333333333333331, and one tenth as a fraction is
+        3602879701896397 over 36028797018963968. Both are surprising enough that the program
+        should say which it wants.
+    end comment
+    function AskingForIt()
+        fraction third = 1|3;
+        real tenth = 0.1;
+
+        Console.WriteLine("a third as a real is " + third.ToReal());
+        Console.WriteLine("a tenth as a fraction is " + tenth.ToFraction());
+
+        comment Every type answers ToString(), which is what '+' uses to join one to a string.
+        Console.WriteLine("and as text: " + third.ToString() + " " + tenth.ToString());
+    end function
+
+    comment A string and a set of characters are two views of the same thing.
+    function StringsAndCharacters()
+        character[] letters = "cast";
+        string word = letters;
+
+        letters.Insert('s');
+
+        Console.WriteLine("letters: " + letters);
+        Console.WriteLine("word:    " + word + ", now " + letters.Count() + " letters");
+    end function
+
+    comment begin
+        A model becomes any of its ancestors on its own, because every circle is a shape.
+
+        Going the other way is a question rather than a fact, so it is asked: 'is' tests, and
+        'as' tries. A cast yields an optional, so a shape that is not a circle gives nothing
+        back rather than failing.
+    end comment
+    function UpAndDownTheFamily()
+        Shape[] shapes = {new Circle(2.0), new Square(), new Circle(0.5)};
+
+        for each shape in shapes
+            if shape is Square
+                Console.WriteLine("a square, which has no radius to read");
+            end if
+
+            Circle? asCircle = shape as Circle;
+
+            if asCircle.HasValue()
+                Console.WriteLine("a circle of radius " + asCircle.Value().Radius());
+            end if
+        end for
+    end function
+
+    comment begin
+        An enumeration member tells you its ordinal, and an ordinal can be asked back for a
+        member. That direction is a cast because a number need not name one.
+    end comment
+    function Enumerations()
+        Suit s = Suit.Hearts;
+
+        Console.WriteLine(s + " is number " + s.ToInteger());
+
+        for n = 1 to 4
+            Suit? found = n as Suit;
+
+            Console.WriteLine(
+                n + " names " + if found.HasValue() then found.Value().ToString() else "no suit");
+        end for
+    end function
+
+end model

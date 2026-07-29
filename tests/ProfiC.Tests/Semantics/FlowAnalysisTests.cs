@@ -7,9 +7,11 @@ using ProfiC.Compiler.Text;
 namespace ProfiC.Tests.Semantics;
 
 /// <summary>
-/// <para>Definite assignment and optional narrowing.</para>
+/// <para>Definite assignment, optional narrowing, and reaching a result.</para>
 /// <para>Together these are what let the language do without null: a variable with no value
-/// cannot be read, and an optional cannot be read at all until presence is proven.</para>
+/// cannot be read, an optional cannot be read at all until presence is proven, and a function
+/// that declares a result cannot finish without producing one. All three are the same forward
+/// walk asked different questions.</para>
 /// </summary>
 [TestFixture]
 public sealed class FlowAnalysisTests
@@ -575,4 +577,121 @@ public sealed class FlowAnalysisTests
             Assert.DoesNotThrow(() => Check(source), $"analyzing \"{source}\" threw");
         }
     }
+
+    // ---- Reaching a result ---------------------------------------------------------------
+
+    /// <summary>Wraps a member in a program, for the cases about one function's shape.</summary>
+    private static DiagnosticBag CheckMember(string member) =>
+        Check($$"""
+            global model Program
+            {{member}}
+                function Main()
+                end function
+            end model
+            """);
+
+    [Test]
+    public void AFunctionThatDeclaresAResultMustReachOne() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    string function Describe()
+                    end function
+                """)),
+            Is.EqualTo(new[] { "PC0404" }));
+
+    [Test]
+    public void YieldingOnOnlyOneBranchIsNotEnough() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    string function Grade(integer score)
+                        if score >= 60
+                            yield "pass";
+                        end if
+                    end function
+                """)),
+            Is.EqualTo(new[] { "PC0404" }));
+
+    [Test]
+    public void YieldingOnEveryBranchIsEnough() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    string function Grade(integer score)
+                        if score >= 60
+                            yield "pass";
+                        else
+                            yield "fail";
+                        end if
+                    end function
+                """)),
+            Is.Empty);
+
+    /// <summary>A function that always throws never reaches its end, so it needs no yield.</summary>
+    [Test]
+    public void ThrowingInsteadOfYieldingIsEnough() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    string function Never()
+                        throw new ArgumentException("no");
+                    end function
+                """)),
+            Is.Empty);
+
+    [Test]
+    public void AFunctionThatDeclaresNoResultNeedsNoYield() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Shout()
+                        Console.WriteLine("hi");
+                    end function
+                """)),
+            Is.Empty);
+
+    /// <summary>A constructor produces its instance rather than a result, so it is exempt.</summary>
+    [Test]
+    public void AConstructorNeedsNoYield() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Account
+                    integer balance;
+
+                    public function Account(integer opening)
+                        this.balance = opening;
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
+    // ---- Nothing is not a value ------------------------------------------------------------
+
+    /// <summary>
+    /// <c>Console.WriteLine</c> takes a value of any kind, which still means a value. A call
+    /// that produced none is refused rather than shown as though it had one.
+    /// </summary>
+    [Test]
+    public void ACallThatProducedNothingCannotBeWritten() =>
+        Assert.That(
+            IdsOf(Check("""
+                global model Program
+                    function Main()
+                        integer[] xs = {1, 2};
+                        Console.WriteLine(xs.InsertAt(0, 9));
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0332" }));
+
+    [Test]
+    public void ACallThatProducedNothingCannotBeAnArgument() =>
+        Assert.That(
+            IdsOf(Check("""
+                global model Program
+                    function Shout()
+                    end function
+
+                    function Main()
+                        Console.Write(Program.Shout());
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0332" }));
 }

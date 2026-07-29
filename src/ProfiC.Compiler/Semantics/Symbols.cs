@@ -35,7 +35,7 @@ public sealed class NamespaceSymbol(string name, NamespaceSymbol? parent) : Symb
 }
 
 /// <summary>
-/// Shared behaviour of the three declared type kinds: models, structures, and enumerations.
+/// Shared behavior of the three declared type kinds: models, structures, and enumerations.
 /// </summary>
 public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modifiers)
     : TypeSymbol(name)

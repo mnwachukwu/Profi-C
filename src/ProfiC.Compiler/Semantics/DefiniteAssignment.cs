@@ -171,9 +171,28 @@ public sealed class DefiniteAssignment
 
         state = AnalyzeStatements(function.Body, state);
 
-        if (_model.GetSymbol(function) is FunctionSymbol { IsConstructor: true } && owner is not null)
+        if (_model.GetSymbol(function) is not FunctionSymbol declared)
+        {
+            return;
+        }
+
+        if (declared.IsConstructor && owner is not null)
         {
             CheckConstructorAssignedEveryField(function, owner, state);
+        }
+
+        // Control still reaching the end means a path through the body yields nothing. A
+        // function that declares no result has nothing to be missing, and one whose result did
+        // not resolve has already been reported for that.
+        if (state.Reachable
+            && !declared.IsConstructor
+            && declared.ReturnType is { IsError: false } result)
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.NotEveryPathYields,
+                function.Span,
+                function.Name,
+                result.WithArticle());
         }
     }
 

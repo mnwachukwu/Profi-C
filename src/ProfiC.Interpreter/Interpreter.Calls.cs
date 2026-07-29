@@ -170,7 +170,7 @@ public sealed partial class Interpreter
     /// </summary>
     private StrongBox<object?>? BuiltInCall(string typeName, string member, List<object?> arguments)
     {
-        // The catalogue decides whether this is a built-in at all, and which one. Nothing here
+        // The catalog decides whether this is a built-in at all, and which one. Nothing here
         // repeats a name, so there is no second list to keep in step with the first.
         return BuiltIns.Find(typeName, member)?.Id is { } id
             ? Perform(id, target: null, arguments)
@@ -180,13 +180,13 @@ public sealed partial class Interpreter
     /// <summary>
     /// <para>Carries out a built-in call.</para>
     /// <para>A switch expression over the whole enumeration with no fallback arm, so that a
-    /// member in the catalogue with no implementation here is a build error rather than a call
+    /// member in the catalog with no implementation here is a build error rather than a call
     /// that quietly produces nothing.</para>
     /// <para>The target is the value on the left, and is null for a member reached through a
     /// model's name rather than through a value.</para>
     /// </summary>
     // CS8524 asks for a fallback arm covering values cast into the enumeration from outside
-    // it. A fallback arm also satisfies CS8509, which is the warning that reports a catalogue
+    // it. A fallback arm also satisfies CS8509, which is the warning that reports a catalog
     // member with no implementation here, so the narrower one is suppressed instead.
 #pragma warning disable CS8524
     private StrongBox<object?> Perform(BuiltInId id, object? target, List<object?> arguments)

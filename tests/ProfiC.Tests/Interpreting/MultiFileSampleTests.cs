@@ -9,7 +9,7 @@ namespace ProfiC.Tests.Interpreting;
 /// <para>Runs the samples that are more than one file, and pins what they printed.</para>
 /// <para>Each lives in its own folder under <c>samples</c>, and is entered the way a reader
 /// would enter it: a project file if the folder has one, otherwise the <c>Program.pc</c> that
-/// the folder rule gathers its neighbours around.</para>
+/// the folder rule gathers its neighbors around.</para>
 /// <para>Set <c>PROFIC_UPDATE_GOLDEN=1</c> to rewrite the files after an intended change.</para>
 /// </summary>
 [TestFixture]

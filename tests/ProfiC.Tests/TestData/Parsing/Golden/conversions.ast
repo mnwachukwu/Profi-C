@@ -1,0 +1,237 @@
+CompilationUnit
+  EnumerationDecl 'Suit'
+    EnumMemberDecl 'Clubs'
+    EnumMemberDecl 'Diamonds'
+    EnumMemberDecl 'Hearts'
+    EnumMemberDecl 'Spades'
+  ModelDecl 'Shape'
+    FunctionDecl 'Shape' [public]
+    FunctionDecl 'Name' [public virtual]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "shape" [String]
+  ModelDecl 'Circle' extends Shape
+    FieldDecl 'radius'
+      NamedTypeSyntax 'real'
+    FunctionDecl 'Circle' [public]
+      ParameterDecl 'r'
+        NamedTypeSyntax 'real'
+      AssignmentStmt
+        MemberExpr 'radius'
+          ThisExpr
+        IdentifierExpr 'r'
+    FunctionDecl 'Name' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "circle" [String]
+    FunctionDecl 'Radius' [public]
+      NamedTypeSyntax 'real'
+      YieldStmt
+        MemberExpr 'radius'
+          ThisExpr
+  ModelDecl 'Square' extends Shape
+    FunctionDecl 'Square' [public]
+    FunctionDecl 'Name' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "square" [String]
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Widening'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AskingForIt'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'StringsAndCharacters'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'UpAndDownTheFamily'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Enumerations'
+            IdentifierExpr 'Program'
+    FunctionDecl 'Widening'
+      VarDeclStmt 'r'
+        NamedTypeSyntax 'real'
+        LiteralExpr 7 [Integer]
+      VarDeclStmt 'f'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "7 as a real is " [String]
+                IdentifierExpr 'r'
+              LiteralExpr ", as a fraction " [String]
+            IdentifierExpr 'f'
+    FunctionDecl 'AskingForIt'
+      VarDeclStmt 'third'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 1|3 [Fraction]
+      VarDeclStmt 'tenth'
+        NamedTypeSyntax 'real'
+        LiteralExpr 0.1 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "a third as a real is " [String]
+            CallExpr
+              MemberExpr 'ToReal'
+                IdentifierExpr 'third'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "a tenth as a fraction is " [String]
+            CallExpr
+              MemberExpr 'ToFraction'
+                IdentifierExpr 'tenth'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "and as text: " [String]
+                CallExpr
+                  MemberExpr 'ToString'
+                    IdentifierExpr 'third'
+              LiteralExpr " " [String]
+            CallExpr
+              MemberExpr 'ToString'
+                IdentifierExpr 'tenth'
+    FunctionDecl 'StringsAndCharacters'
+      VarDeclStmt 'letters'
+        SetTypeSyntax
+          NamedTypeSyntax 'character'
+        LiteralExpr "cast" [String]
+      VarDeclStmt 'word'
+        NamedTypeSyntax 'string'
+        IdentifierExpr 'letters'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'letters'
+          LiteralExpr 's' [Character]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "letters: " [String]
+            IdentifierExpr 'letters'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  LiteralExpr "word:    " [String]
+                  IdentifierExpr 'word'
+                LiteralExpr ", now " [String]
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'letters'
+            LiteralExpr " letters" [String]
+    FunctionDecl 'UpAndDownTheFamily'
+      VarDeclStmt 'shapes'
+        SetTypeSyntax
+          NamedTypeSyntax 'Shape'
+        CollectionExpr
+          NewExpr 'Circle'
+            LiteralExpr 2.0 [Real]
+          NewExpr 'Square'
+          NewExpr 'Circle'
+            LiteralExpr 0.5 [Real]
+      ForEachStmt 'shape'
+        IdentifierExpr 'shapes'
+        IfStmt
+          TypeTestExpr
+            IdentifierExpr 'shape'
+            NamedTypeSyntax 'Square'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "a square, which has no radius to read" [String]
+        VarDeclStmt 'asCircle'
+          OptionalTypeSyntax
+            NamedTypeSyntax 'Circle'
+          TypeCastExpr
+            IdentifierExpr 'shape'
+            NamedTypeSyntax 'Circle'
+        IfStmt
+          CallExpr
+            MemberExpr 'HasValue'
+              IdentifierExpr 'asCircle'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "a circle of radius " [String]
+                CallExpr
+                  MemberExpr 'Radius'
+                    CallExpr
+                      MemberExpr 'Value'
+                        IdentifierExpr 'asCircle'
+    FunctionDecl 'Enumerations'
+      VarDeclStmt 's'
+        NamedTypeSyntax 'Suit'
+        MemberExpr 'Hearts'
+          IdentifierExpr 'Suit'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              IdentifierExpr 's'
+              LiteralExpr " is number " [String]
+            CallExpr
+              MemberExpr 'ToInteger'
+                IdentifierExpr 's'
+      ForStmt 'n' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 4 [Integer]
+        VarDeclStmt 'found'
+          OptionalTypeSyntax
+            NamedTypeSyntax 'Suit'
+          TypeCastExpr
+            IdentifierExpr 'n'
+            NamedTypeSyntax 'Suit'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                IdentifierExpr 'n'
+                LiteralExpr " names " [String]
+              IfExpr
+                CallExpr
+                  MemberExpr 'HasValue'
+                    IdentifierExpr 'found'
+                CallExpr
+                  MemberExpr 'ToString'
+                    CallExpr
+                      MemberExpr 'Value'
+                        IdentifierExpr 'found'
+                LiteralExpr "no suit" [String]

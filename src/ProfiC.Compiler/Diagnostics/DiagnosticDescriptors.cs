@@ -295,6 +295,18 @@ public static class DiagnosticDescriptors
     /// interoperating with .NET may force; it is left open here rather than settled by
     /// accident.</para>
     /// </summary>
+    /// <summary>
+    /// <para><c>Main</c> declares a result that is not an integer.</para>
+    /// <para>An integer is what a program hands back to whatever ran it, and is the only kind
+    /// of result an entry point has anywhere to put. A result of any other type would be
+    /// computed and then dropped, which is worse than being refused: the program would look
+    /// like it reported something.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor EntryPointResultNotInteger = Error(
+        "PC0219",
+        "Main declares no result or an integer",
+        "'Main' must declare no result, or an integer, which becomes the program's exit code.");
+
     public static readonly DiagnosticDescriptor DuplicateTypeDeclaration = Error(
         "PC0218",
         "Type already declared",
@@ -358,10 +370,14 @@ public static class DiagnosticDescriptors
         "Not something that can be called",
         "{0} cannot be called.");
 
+    /// <summary>
+    /// Phrased so the verb agrees with the function rather than with either number, which is
+    /// what lets one wording serve every count. See <see cref="Wording.Count"/>.
+    /// </summary>
     public static readonly DiagnosticDescriptor WrongArgumentCount = Error(
         "PC0308",
         "Wrong number of arguments",
-        "'{0}' takes {1} argument(s), but {2} were given.");
+        "'{0}' takes {1}, but was given {2}.");
 
     public static readonly DiagnosticDescriptor NoMatchingOverload = Error(
         "PC0309",
@@ -561,6 +577,18 @@ public static class DiagnosticDescriptors
         "PC0403",
         "Unreachable code",
         "This can never be reached.");
+
+    /// <summary>
+    /// <para>A function that declares a result can reach its end without producing one.</para>
+    /// <para>The same forward walk that proves a variable holds a value proves this: if the end
+    /// of the body is still reachable, some path through it yields nothing. What such a call
+    /// would give back is the question with no good answer — every language that has allowed it
+    /// has had to invent a value nobody asked for.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NotEveryPathYields = Error(
+        "PC0404",
+        "Not every path yields a value",
+        "'{0}' yields {1}, but it can reach its end without yielding one.");
 
     // ---- Project files, PC0600 to PC0699 -----------------------------------------------
 

@@ -158,5 +158,5 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public override string ToString() =>
-        "{" + string.Join(", ", _items.Select(item => ModelOperations.ToDisplayString(item))) + "}";
+        "{" + string.Join(", ", _items.Select(item => ModelOperations.ToElementString(item))) + "}";
 }

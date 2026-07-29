@@ -7,17 +7,17 @@ using ProfiC.Compiler.Text;
 namespace ProfiC.Tests.Semantics;
 
 /// <summary>
-/// <para>The catalogue of built-in models, and the promise that everything in it works.</para>
+/// <para>The catalog of built-in models, and the promise that everything in it works.</para>
 /// <para>The C# compiler already refuses a member with no implementation, because the back
 /// end switches on the identifier without a fallback arm. These tests cover what it cannot:
 /// that each member gives the right answer, rather than merely being reachable.</para>
 /// </summary>
 [TestFixture]
-public sealed class BuiltInCatalogueTests
+public sealed class BuiltInCatalogTests
 {
     /// <summary>
     /// Every member of every built-in model, with a call that exercises it and the answer it
-    /// must give. A member added to the catalogue with no row here fails the coverage test
+    /// must give. A member added to the catalog with no row here fails the coverage test
     /// below, so this table cannot fall behind.
     /// </summary>
     private static readonly (BuiltInId Id, string Call, string Expected)[] Expectations =
@@ -76,7 +76,7 @@ public sealed class BuiltInCatalogueTests
     /// suite. Only running it and comparing the answer catches that.
     /// </summary>
     [TestCaseSource(nameof(Expectations))]
-    public void EveryCatalogueMemberProducesItsAnswer((BuiltInId Id, string Call, string Expected) row)
+    public void EveryCatalogMemberProducesItsAnswer((BuiltInId Id, string Call, string Expected) row)
     {
         if (row.Call.Length == 0)
         {
@@ -86,7 +86,7 @@ public sealed class BuiltInCatalogueTests
         Assert.That(Run(row.Call), Is.EqualTo(row.Expected), $"{row.Id} gave the wrong answer");
     }
 
-    /// <summary>Every member the catalogue declares, on either surface.</summary>
+    /// <summary>Every member the catalog declares, on either surface.</summary>
     private static IReadOnlyList<BuiltInMember> Everything()
     {
         SetType set = new(PrimitiveType.Integer);
@@ -118,15 +118,15 @@ public sealed class BuiltInCatalogueTests
         Assert.That(
             tested.OrderBy(i => i),
             Is.EqualTo(Enum.GetValues<BuiltInId>().OrderBy(i => i)),
-            "a built-in was added to the catalogue without a test that runs it");
+            "a built-in was added to the catalog without a test that runs it");
     }
 
-    /// <summary>Every identifier must appear in the catalogue, and the catalogue only.</summary>
+    /// <summary>Every identifier must appear in the catalog, and the catalog only.</summary>
     [Test]
-    public void EveryIdentifierAppearsInTheCatalogue() => Assert.That(
+    public void EveryIdentifierAppearsInTheCatalog() => Assert.That(
         Everything().Select(m => m.Id!.Value).Distinct().OrderBy(i => i),
         Is.EqualTo(Enum.GetValues<BuiltInId>().OrderBy(i => i)),
-        "an identifier exists with no catalogue entry, or the reverse");
+        "an identifier exists with no catalog entry, or the reverse");
 
     /// <summary>
     /// A model's members must be unique within it; the value surfaces deliberately repeat
@@ -137,7 +137,7 @@ public sealed class BuiltInCatalogueTests
         BuiltIns.Models.SelectMany(m => m.Members).Select(m => m.Id!.Value), Is.Unique);
 
     /// <summary>
-    /// The resolver protects exactly the names the catalogue lists. A program that could
+    /// The resolver protects exactly the names the catalog lists. A program that could
     /// declare one of them would make the built-in of that name unreachable.
     /// </summary>
     [TestCase("Console")]
@@ -162,13 +162,13 @@ public sealed class BuiltInCatalogueTests
     }
 
     [Test]
-    public void TheCatalogueCoversEveryProtectedName() => Assert.That(
+    public void TheCatalogCoversEveryProtectedName() => Assert.That(
         BuiltIns.AllTypeNames.OrderBy(n => n, StringComparer.Ordinal),
         Is.EqualTo(BuiltIns.ModelNames.Concat(BuiltIns.ExceptionNames)
                                       .OrderBy(n => n, StringComparer.Ordinal)));
 
     /// <summary>
-    /// Recorded now so the catalogue is already shaped for namespaces. Nothing reads it yet —
+    /// Recorded now so the catalog is already shaped for namespaces. Nothing reads it yet —
     /// every name still resolves unqualified — but when scoping lands the data is in place.
     /// </summary>
     [Test]
@@ -177,7 +177,7 @@ public sealed class BuiltInCatalogueTests
 
     /// <summary>
     /// <para>Members found on a value rather than through a model's name.</para>
-    /// <para>These are not in the catalogue — they are keyed by the receiver's type, which
+    /// <para>These are not in the catalog — they are keyed by the receiver's type, which
     /// needs a different shape — so nothing makes the declaration and the implementation agree.
     /// Running each and comparing the answer is the whole of the protection they have.</para>
     /// </summary>
@@ -197,7 +197,9 @@ public sealed class BuiltInCatalogueTests
     [TestCase("Console.WriteLine(\"hello\".InsertAt(0, \"X\"))", "Xhello\n")]
     [TestCase("Console.WriteLine(\"hello\".Remove(\"l\"))", "heo\n")]
     [TestCase("Console.WriteLine(\"hello\".RemoveAt(0))", "ello\n")]
-    [TestCase("Console.WriteLine(\"hi\".ToCharacters())", "{h, i}\n")]
+    // Characters are quoted inside a set, so that one which is a comma or a space is still
+    // readable beside the commas and spaces that separate the elements.
+    [TestCase("Console.WriteLine(\"hi\".ToCharacters())", "{'h', 'i'}\n")]
     [TestCase("integer? m = 4;\n        Console.WriteLine(m.HasValue())", "true\n")]
     [TestCase("integer? m;\n        Console.WriteLine(m.Or(7))", "7\n")]
     [TestCase("integer? m = 4;\n        Console.WriteLine(m.Value())", "4\n")]
@@ -216,7 +218,7 @@ public sealed class BuiltInCatalogueTests
     [Test]
     public void AnEnumerationMemberProducesItsAnswer() => Assert.That(
         RunProgram("""
-            enumeration Colour
+            enumeration Color
                 Red,
                 Green,
                 Blue
@@ -224,7 +226,7 @@ public sealed class BuiltInCatalogueTests
 
             global model Program
                 function Main()
-                    Colour c = Colour.Green;
+                    Color c = Color.Green;
                     Console.WriteLine(c.ToInteger());
                 end function
             end model
@@ -270,8 +272,8 @@ public sealed class BuiltInCatalogueTests
 
     /// <summary>
     /// Every exception the language raises is one a program can name after 'catch'. The
-    /// compiler reads its list of exception names from the runtime's catalogue, so this holds
-    /// the other direction: that each name in the catalogue really is a type a program can
+    /// compiler reads its list of exception names from the runtime's catalog, so this holds
+    /// the other direction: that each name in the catalog really is a type a program can
     /// mention, and that the two halves have not been allowed to disagree.
     /// </summary>
     [TestCaseSource(nameof(ExceptionNames))]
@@ -280,7 +282,7 @@ public sealed class BuiltInCatalogueTests
         Assert.That(
             ProfiC.Runtime.BuiltInExceptions.Resolve(name),
             Is.Not.Null,
-            $"{name} is catalogued but denotes no type");
+            $"{name} is cataloged but denotes no type");
 
         Assert.That(
             BuiltIns.IsBuiltInType(name),
@@ -304,6 +306,78 @@ public sealed class BuiltInCatalogueTests
     }
 
     public static IEnumerable<string> ExceptionNames => ProfiC.Runtime.BuiltInExceptions.Names;
+
+    /// <summary>
+    /// <para>A structure prints its fields in the order they were declared.</para>
+    /// <para>The order is the author's, not the alphabet's: a reader compares what is printed
+    /// against what they wrote. Deep equality walks the same order, which needs only that both
+    /// sides agree.</para>
+    /// </summary>
+    [Test]
+    public void AStructurePrintsItsFieldsAsTheyWereDeclared() => Assert.That(
+        RunProgram("""
+            structure Contact
+                public string Name;
+                public character Initial;
+                public integer Age;
+
+                public function Contact(string name, character initial, integer age)
+                    this.Name = name;
+                    this.Initial = initial;
+                    this.Age = age;
+                end function
+            end structure
+
+            global model Program
+                function Main()
+                    Console.WriteLine(new Contact("Ada, Countess", 'A', 36));
+                end function
+            end model
+            """),
+        Is.EqualTo("Contact { \"Ada, Countess\", 'A', 36 }\n"));
+
+    /// <summary>
+    /// <para>Two types are never equal, however alike their fields are.</para>
+    /// <para>The interpreter runs every model and structure as one host class, so asking the
+    /// host what type a value is cannot tell a Contact from a Product. Equality asks the value
+    /// instead. Emitted code will answer with a .NET type; the interpreter answers with the
+    /// Profi-C type it is running.</para>
+    /// </summary>
+    [Test]
+    public void TwoTypesAreNeverEqualEvenWithMatchingFields() => Assert.That(
+        RunProgram("""
+            structure Contact
+                public string Name;
+                public integer Age;
+
+                public function Contact(string name, integer age)
+                    this.Name = name;
+                    this.Age = age;
+                end function
+            end structure
+
+            structure Product
+                public string Label;
+                public integer Cost;
+
+                public function Product(string label, integer cost)
+                    this.Label = label;
+                    this.Cost = cost;
+                end function
+            end structure
+
+            global model Program
+                function Main()
+                    Contact one = new Contact("Ada", 36);
+                    Contact same = new Contact("Ada", 36);
+                    Product other = new Product("Ada", 36);
+
+                    Console.WriteLine(one.Equals(same));
+                    Console.WriteLine(one.Equals(other));
+                end function
+            end model
+            """),
+        Is.EqualTo("true\nfalse\n"));
 
     /// <summary>Only Model and Exception may follow 'extends'.</summary>
     [TestCase("Model", true)]

@@ -244,7 +244,7 @@ public sealed partial class Interpreter
 
                 if (_model.GetSymbol(handler) is { } bound)
                 {
-                    // The clause binds what the program threw, not the wrapper it travelled in.
+                    // The clause binds what the program threw, not the wrapper it traveled in.
                     caught.Declare(bound, thrown is ProfiCThrow custom ? custom.Thrown : thrown);
                 }
 

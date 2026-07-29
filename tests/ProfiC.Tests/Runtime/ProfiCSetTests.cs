@@ -160,4 +160,45 @@ public sealed class ProfiCSetTests
         Assert.That(Set(1, 2, 3).ToString(), Is.EqualTo("{1, 2, 3}"));
         Assert.That(new ProfiCSet<int>().ToString(), Is.EqualTo("{}"));
     }
+
+    /// <summary>
+    /// <para>A character and a string are quoted inside a set, as each is written in source.
+    /// </para>
+    /// <para>Without it the delimiter cannot be told from the same characters inside a value:
+    /// one string holding a comma would print exactly as two strings do, and a set of spaces
+    /// would print as a row of nothing.</para>
+    /// </summary>
+    [Test]
+    public void PrintingQuotesWhateverCouldBeConfusedWithTheDelimiter()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                new ProfiCSet<object?>(["a, b"]).ToString(),
+                Is.EqualTo("{\"a, b\"}"));
+
+            Assert.That(
+                new ProfiCSet<object?>(["a", "b"]).ToString(),
+                Is.EqualTo("{\"a\", \"b\"}"),
+                "one string holding a comma must not read as two strings");
+
+            Assert.That(
+                new ProfiCSet<object?>([',', ' ']).ToString(),
+                Is.EqualTo("{',', ' '}"));
+
+            Assert.That(
+                new ProfiCSet<object?>([true, 1L, null]).ToString(),
+                Is.EqualTo("{true, 1, empty}"),
+                "nothing else gains quotes it did not have");
+        });
+    }
+
+    /// <summary>A value printed on its own has nothing beside it to be confused with.</summary>
+    [Test]
+    public void PrintingAValueOnItsOwnDoesNotQuoteIt() =>
+        Assert.Multiple(() =>
+        {
+            Assert.That(ModelOperations.ToDisplayString("plain"), Is.EqualTo("plain"));
+            Assert.That(ModelOperations.ToDisplayString(','), Is.EqualTo(","));
+        });
 }

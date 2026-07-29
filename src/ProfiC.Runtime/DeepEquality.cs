@@ -120,6 +120,14 @@ public static class DeepEquality
             {
                 IProfiCModel modelB = (IProfiCModel)b;
 
+                // Asked of the value rather than of its host type: the interpreter runs every
+                // model and structure as one class, so the check above cannot tell two Profi-C
+                // types apart.
+                if (!modelA.DeepTypeIdentity.Equals(modelB.DeepTypeIdentity))
+                {
+                    return false;
+                }
+
                 if (modelA.DeepMemberCount != modelB.DeepMemberCount)
                 {
                     return false;

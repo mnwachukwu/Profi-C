@@ -38,6 +38,24 @@ public static class ModelOperations
     };
 
     /// <summary>
+    /// <para>How a value shows when it sits beside others, separated by a delimiter.</para>
+    /// <para>A character and a string are quoted the way each is written in source. Without it
+    /// the delimiter cannot be told from the same characters inside a value: a set of two
+    /// strings shows as <c>{a, b}</c>, which is what one string holding a comma would show as
+    /// too. Quoting also spares the reader guessing whether a gap is a space or nothing.</para>
+    /// <para>A quote inside quotes is left as it is. It reads a little oddly and is much the
+    /// smaller of the two problems.</para>
+    /// <para>A value printed on its own is not quoted, since nothing sits beside it to be
+    /// confused with.</para>
+    /// </summary>
+    public static string ToElementString(object? value) => value switch
+    {
+        char character => $"'{character}'",
+        string text => $"\"{text}\"",
+        _ => ToDisplayString(value),
+    };
+
+    /// <summary>
     /// <para>The default rendering of a structure: its type name, then each field.</para>
     /// <para>Emitted structures call this unless the author overrode <c>ToString</c>.</para>
     /// </summary>
@@ -55,7 +73,7 @@ public static class ModelOperations
                 builder.Append(", ");
             }
 
-            builder.Append(ToDisplayString(value.GetDeepMember(i)));
+            builder.Append(ToElementString(value.GetDeepMember(i)));
         }
 
         return builder.Append(" }").ToString();

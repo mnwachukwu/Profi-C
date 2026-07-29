@@ -3,7 +3,7 @@ namespace ProfiC.Runtime;
 /// <summary>
 /// <para>A member of an enumeration, as it exists while a program runs.</para>
 /// <para>Carrying the name alongside the ordinal is what lets
-/// <c>Console.WriteLine(Colour.Green)</c> print <c>Green</c> rather than <c>1</c>. A bare
+/// <c>Console.WriteLine(Color.Green)</c> print <c>Green</c> rather than <c>1</c>. A bare
 /// integer would be cheaper, but a student reading a number where they wrote a name learns
 /// nothing from it.</para>
 /// <para>The type name is part of the value so that two enumerations sharing an ordinal are

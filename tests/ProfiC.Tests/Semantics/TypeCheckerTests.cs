@@ -1029,6 +1029,39 @@ public sealed class TypeCheckerTests
                 """)),
             Is.Empty);
 
+    // ---- How a message reads ---------------------------------------------------------------
+
+    /// <summary>
+    /// A diagnostic is a sentence someone reads, so it agrees with itself however many things
+    /// it is counting. The verb agrees with the function rather than with either number, which
+    /// is what lets one wording serve every count.
+    /// </summary>
+    [TestCase("Program.None(1);", "'None' takes no arguments, but was given 1.")]
+    [TestCase("Program.One();", "'One' takes 1 argument, but was given 0.")]
+    [TestCase("Program.One(1, 2, 3);", "'One' takes 1 argument, but was given 3.")]
+    [TestCase("Program.Two(1);", "'Two' takes 2 arguments, but was given 1.")]
+    public void AWrongArgumentCountReadsAsASentence(string call, string expected)
+    {
+        DiagnosticBag diagnostics = Check($$"""
+            global model Program
+                function None()
+                end function
+
+                function One(integer a)
+                end function
+
+                function Two(integer a, integer b)
+                end function
+
+                function Main()
+                    {{call}}
+                end function
+            end model
+            """);
+
+        Assert.That(diagnostics.Sorted().Single().Message, Is.EqualTo(expected));
+    }
+
     // ---- Signatures naming declared types -----------------------------------------------
 
     /// <summary>

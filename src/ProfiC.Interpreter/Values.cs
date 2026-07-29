@@ -37,11 +37,28 @@ public sealed class Instance(DeclaredTypeSymbol type) : IProfiCModel
     /// </summary>
     public string? Message { get; set; }
 
-    /// <summary>The fields in a stable order, which deep equality walks.</summary>
+    /// <summary>
+    /// <para>The fields in the order they were declared, which deep equality walks and a
+    /// default rendering prints.</para>
+    /// <para>Declaration order is available because a type is declared in exactly one place,
+    /// so position in the source totally orders its fields. Equality needs only that both
+    /// sides agree; printing needs the order the author wrote, which is this one.</para>
+    /// </summary>
     private FieldSymbol[]? _ordered;
 
     private FieldSymbol[] Ordered =>
-        _ordered ??= [.. Fields.Keys.OrderBy(f => f.Name, StringComparer.Ordinal)];
+        _ordered ??=
+        [
+            .. Fields.Keys
+                     .OrderBy(f => f.Declaration?.Span.Start.Offset ?? 0)
+                     .ThenBy(f => f.Name, StringComparer.Ordinal),
+        ];
+
+    /// <summary>
+    /// The Profi-C type, since every instance the interpreter makes is this one host class and
+    /// so the host type says nothing about which type a value is.
+    /// </summary>
+    public object DeepTypeIdentity => Type;
 
     public int DeepMemberCount => Fields.Count;
 

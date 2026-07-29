@@ -156,18 +156,18 @@ public static class SourceDiscovery
         string folder = bare ? "." : written!;
         string namedFullPath = Path.GetFullPath(path);
 
-        IEnumerable<string> neighbours =
+        IEnumerable<string> neighbors =
             Directory.EnumerateFiles(folder, "*" + SourceExtension)
                      .Where(other => !PathComparer.Equals(Path.GetFullPath(other), namedFullPath))
                      .Select(other => bare ? Path.GetFileName(other) : other)
                      .OrderBy(other => other, StringComparer.Ordinal);
 
-        foreach (string neighbour in neighbours)
+        foreach (string neighbor in neighbors)
         {
-            // Parsed apart so that a neighbouring program's mistakes are its own. Only what is
+            // Parsed apart so that a neighboring program's mistakes are its own. Only what is
             // shared code joins the compilation, and only then do its diagnostics.
             DiagnosticBag aside = new();
-            CompilationUnit unit = Parser.Parse(SourceText.FromFile(neighbour), aside);
+            CompilationUnit unit = Parser.Parse(SourceText.FromFile(neighbor), aside);
 
             if (DeclaresEntryPointModel(unit.Declarations))
             {

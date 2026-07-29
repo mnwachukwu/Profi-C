@@ -108,7 +108,7 @@ public sealed class MultiFileTests : LexerTestBase
         Assert.That(
             diagnostics.Sorted().Select(d => $"{d.FileName}: {d.Id}"),
             Is.Empty,
-            "a neighbouring program's mistakes belong to it");
+            "a neighboring program's mistakes belong to it");
     }
 
     /// <summary>Shared code is shared, so a mistake in it is everyone's.</summary>
@@ -138,7 +138,7 @@ public sealed class MultiFileTests : LexerTestBase
     }
 
     [Test]
-    public void AFileWithNoNeighboursCompilesAlone()
+    public void AFileWithNoNeighborsCompilesAlone()
     {
         string program = Write("Program.pc", ProgramCalling("\"alone\""));
 

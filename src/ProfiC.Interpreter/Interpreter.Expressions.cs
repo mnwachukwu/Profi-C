@@ -270,16 +270,44 @@ public sealed partial class Interpreter
     }
 
     /// <summary>
-    /// A cast yields an optional rather than failing, so a mismatch simply produces nothing.
-    /// There is no null for it to give back instead.
+    /// <para>A cast yields an optional rather than failing, so a mismatch simply produces
+    /// nothing. There is no null for it to give back instead.</para>
+    /// <para>An integer against an enumeration is the one cast that produces a different value
+    /// rather than the same one seen as another type: the ordinal names a member, and the
+    /// member is what comes back.</para>
     /// </summary>
     private object? EvaluateTypeCast(TypeCastExpr cast, Environment scope, Instance? receiver)
     {
         object? value = Evaluate(cast.Operand, scope, receiver);
 
-        return _model.GetType(cast.TargetType) is { } target && IsOfType(value, target)
-            ? value
-            : null;
+        if (_model.GetType(cast.TargetType) is not { } target)
+        {
+            return null;
+        }
+
+        if (target is EnumerationSymbol enumeration && value is long ordinal)
+        {
+            return MemberWithOrdinal(enumeration, ordinal);
+        }
+
+        return IsOfType(value, target) ? value : null;
+    }
+
+    /// <summary>
+    /// The member of an enumeration holding an ordinal, or nothing when none does. An ordinal
+    /// with no member behind it is the whole reason a cast to an enumeration is optional.
+    /// </summary>
+    private static EnumValue? MemberWithOrdinal(EnumerationSymbol enumeration, long ordinal)
+    {
+        foreach (Symbol member in enumeration.Members.Values.SelectMany(group => group))
+        {
+            if (member is EnumMemberSymbol { } declared && declared.Value == ordinal)
+            {
+                return new EnumValue(enumeration.Name, declared.Name, declared.Value);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Whether a value's runtime type is, or descends from, the named one.</summary>
@@ -289,6 +317,12 @@ public sealed partial class Interpreter
         Instance instance => instance.Type is ModelSymbol model && target is ModelSymbol targetModel
             ? model.SelfAndAncestors().Contains(targetModel)
             : ReferenceEquals(instance.Type, target),
+
+        // An enumeration member carries the name of the enumeration it came from, since a
+        // value crossing into the runtime keeps no symbol.
+        EnumValue member => target is EnumerationSymbol enumeration
+                            && string.Equals(enumeration.Name, member.TypeName, StringComparison.Ordinal),
+
         long => ReferenceEquals(target, PrimitiveType.Integer),
         double => ReferenceEquals(target, PrimitiveType.Real),
         bool => ReferenceEquals(target, PrimitiveType.Boolean),

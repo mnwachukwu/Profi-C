@@ -209,12 +209,11 @@ public static class Program
             return 1;
         }
 
-        int types = model.AllTypes().Count();
         string entry = model.EntryPoint is null ? "none" : "Program.Main";
-        string files = compilation.Units.Count == 1 ? "1 file" : $"{compilation.Units.Count} files";
+        string files = Wording.Count(compilation.Units.Count, "file");
+        string types = Wording.Count(model.AllTypes().Count(), "type");
 
-        Console.WriteLine(
-            $"{compilation.Label}: ok, {files}, {types} types, entry point {entry}.");
+        Console.WriteLine($"{compilation.Label}: ok, {files}, {types}, entry point {entry}.");
 
         return 0;
     }

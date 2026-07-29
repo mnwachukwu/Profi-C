@@ -11,7 +11,7 @@ namespace ProfiC.Compiler.Semantics;
 /// Set for a member reached through a built-in model's name, which is what the back end
 /// switches on. Null for a member of a value — a set's <c>Count</c>, an optional's
 /// <c>HasValue</c> — which are found by the receiver's type rather than by a name and are not
-/// yet part of the catalogue.
+/// yet part of the catalog.
 /// </param>
 public sealed record BuiltInMember(
     string Name,
@@ -59,7 +59,7 @@ public static class BuiltInMembers
     }
 
     /// <summary>
-    /// Everything the language provides on a receiver of this type, read from the catalogue.
+    /// Everything the language provides on a receiver of this type, read from the catalog.
     /// See <see cref="BuiltIns"/>.
     /// </summary>
     private static IReadOnlyList<BuiltInMember> MembersOf(TypeSymbol receiver) => receiver switch
@@ -211,14 +211,14 @@ public static class BuiltInMembers
     };
 
     /// <summary>
-    /// Members of the built-in models a program can name, read from the catalogue rather than
+    /// Members of the built-in models a program can name, read from the catalog rather than
     /// listed again here. See <see cref="BuiltIns"/>.
     /// </summary>
     private static BuiltInMember? FindOnBuiltInModel(ModelSymbol model, string name)
     {
-        if (BuiltIns.Find(model.Name, name) is { } fromCatalogue)
+        if (BuiltIns.Find(model.Name, name) is { } fromCatalog)
         {
-            return fromCatalogue;
+            return fromCatalog;
         }
 
         // Every exception carries the message it was constructed with, including one a

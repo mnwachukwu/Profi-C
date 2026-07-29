@@ -278,7 +278,7 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
 
    Alternatives considered and rejected: requiring parentheses around
    conditions does not fix ForStmt or ForEachStmt unless the loop bounds
-   are parenthesised too; making line breaks significant contradicts the
+   are parenthesized too; making line breaks significant contradicts the
    language being layout-insensitive; and reinstating a body opener
    reverses the block structure the language is built around.
    ========================================================================== *)

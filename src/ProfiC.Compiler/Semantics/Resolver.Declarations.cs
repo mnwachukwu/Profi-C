@@ -479,6 +479,14 @@ public sealed partial class Resolver
 
         if (model.Lookup("Main").OfType<FunctionSymbol>().FirstOrDefault() is { } main)
         {
+            // Signatures were settled before this ran, so the declared result is the real one.
+            if (main.ReturnType is { IsError: false } result
+                && !ReferenceEquals(result, PrimitiveType.Integer)
+                && main.Declaration is not null)
+            {
+                Report(DiagnosticDescriptors.EntryPointResultNotInteger, main.Declaration);
+            }
+
             _model.EntryPoint = main;
             return;
         }

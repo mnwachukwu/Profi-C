@@ -11,6 +11,17 @@ namespace ProfiC.Runtime;
 /// </summary>
 public interface IProfiCModel
 {
+    /// <summary>
+    /// <para>What this is an instance of, for telling two types apart.</para>
+    /// <para>The host type cannot answer this on its own. Emitted code gives each Profi-C type
+    /// a .NET type of its own, but the interpreter runs every model and structure as one class,
+    /// so comparing host types there would find a structure equal to an unrelated one that
+    /// happened to hold the same values. Whatever is returned is compared with
+    /// <see cref="object.Equals(object)"/>, so a type symbol or a <see cref="Type"/> both
+    /// serve.</para>
+    /// </summary>
+    object DeepTypeIdentity { get; }
+
     /// <summary>How many members take part in equality.</summary>
     int DeepMemberCount { get; }
 

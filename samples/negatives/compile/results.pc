@@ -1,0 +1,37 @@
+comment begin
+    Results that never arrive, and nothing used as though it were something.
+
+    This program does not compile. A function that says it yields a value must reach one on
+    every path, and a call that yields nothing has no result to pass anywhere — not even to
+    Console.WriteLine, which takes a value of any kind but still takes a value.
+end comment
+
+global model Program
+
+    comment This says it yields a string and never yields at all.
+    string function Describe()
+        Console.WriteLine("describing");
+    end function
+
+    comment This yields one only when the score is high enough.
+    string function Grade(integer score)
+        if score >= 60
+            yield "pass";
+        end if
+    end function
+
+    comment Insert changes the set in place and yields nothing, so there is nothing to write.
+    function Main()
+        integer[] scores = {90, 72};
+
+        Console.WriteLine(scores.InsertAt(1, 80));
+
+        comment Nor to pass on, however willing the parameter.
+        Console.Write(Program.Shout());
+    end function
+
+    function Shout()
+        Console.WriteLine("oi");
+    end function
+
+end model

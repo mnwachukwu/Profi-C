@@ -285,7 +285,12 @@ public sealed partial class TypeChecker
             // A parent with no constructor takes no arguments, so only an empty call fits.
             if (arguments.Count > 0)
             {
-                Report(DiagnosticDescriptors.WrongArgumentCount, call, parent.Name, 0, arguments.Count);
+                Report(
+                    DiagnosticDescriptors.WrongArgumentCount,
+                    call,
+                    parent.Name,
+                    Wording.Count(0, "argument"),
+                    arguments.Count);
             }
 
             return PrimitiveType.Void;
@@ -407,7 +412,7 @@ public sealed partial class TypeChecker
                 DiagnosticDescriptors.WrongArgumentCount,
                 call,
                 name,
-                candidates[0].Parameters.Count,
+                Wording.Count(candidates[0].Parameters.Count, "argument"),
                 arguments.Count);
 
             return null;
@@ -470,7 +475,7 @@ public sealed partial class TypeChecker
                 DiagnosticDescriptors.WrongArgumentCount,
                 call,
                 name,
-                parameters.Count,
+                Wording.Count(parameters.Count, "argument"),
                 arguments.Count);
 
             return;
@@ -478,6 +483,15 @@ public sealed partial class TypeChecker
 
         for (int i = 0; i < parameters.Count; i++)
         {
+            // A parameter that takes a value of any kind still takes a value. Nothing is not a
+            // kind of value, so a call that produced none is refused here rather than passed on
+            // as though it had.
+            if (ReferenceEquals(arguments[i], PrimitiveType.Void))
+            {
+                Report(DiagnosticDescriptors.ValueExpected, call.Arguments[i]);
+                continue;
+            }
+
             if (parameters[i] is { } expected)
             {
                 RequireAssignable(arguments[i], expected, call.Arguments[i]);

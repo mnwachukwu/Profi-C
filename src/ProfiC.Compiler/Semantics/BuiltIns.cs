@@ -72,7 +72,7 @@ public sealed record BuiltInModelInfo(
     IReadOnlyList<BuiltInMember> Members);
 
 /// <summary>
-/// <para>The catalogue of models the language provides.</para>
+/// <para>The catalog of models the language provides.</para>
 /// <para>One place to read to learn what exists, and one place to edit to add something. The
 /// resolver takes the names it protects from here, and the type checker takes the signatures,
 /// so neither can disagree with this or with the other.</para>
@@ -146,9 +146,9 @@ public static class BuiltIns
     /// <para>The built-in exceptions, which descend from <c>Exception</c> and may be extended.
     /// Kept beside the models because they share the rule that a program cannot declare
     /// them.</para>
-    /// <para>Read from the runtime's catalogue rather than listed again, so that a name the
+    /// <para>Read from the runtime's catalog rather than listed again, so that a name the
     /// language can raise is a name a program can catch. <c>Exception</c> itself is the root
-    /// and is catalogued above as a model.</para>
+    /// and is cataloged above as a model.</para>
     /// </summary>
     public static readonly IReadOnlySet<string> ExceptionNames =
         Runtime.BuiltInExceptions.Names

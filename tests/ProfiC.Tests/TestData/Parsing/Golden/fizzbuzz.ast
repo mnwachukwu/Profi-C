@@ -41,6 +41,6 @@ CompilationUnit
           YieldStmt
             LiteralExpr "Buzz" [String]
       YieldStmt
-        BinaryExpr '+'
-          LiteralExpr "" [String]
-          IdentifierExpr 'n'
+        CallExpr
+          MemberExpr 'ToString'
+            IdentifierExpr 'n'

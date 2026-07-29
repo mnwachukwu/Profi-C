@@ -483,6 +483,30 @@ public sealed class ResolverTests
 
     // ---- The entry point ------------------------------------------------------------------------
 
+    /// <summary>
+    /// <para>An entry point yields nothing, or the integer a caller reads as the exit code.</para>
+    /// <para>Nothing else has anywhere to go: a result of another type would be computed and
+    /// then dropped, so the program would appear to report something it never reported.</para>
+    /// </summary>
+    [TestCase("", null)]
+    [TestCase("integer ", null)]
+    [TestCase("string ", "PC0219")]
+    [TestCase("real ", "PC0219")]
+    [TestCase("boolean ", "PC0219")]
+    public void MainYieldsNothingOrAnInteger(string result, string? expected)
+    {
+        (_, DiagnosticBag diagnostics) = Resolve($$"""
+            global model Program
+                {{result}}function Main()
+                end function
+            end model
+            """);
+
+        Assert.That(
+            IdsOf(diagnostics),
+            Is.EqualTo(expected is null ? Array.Empty<string>() : [expected]));
+    }
+
     [Test]
     public void AFileWithNoProgramIsFineUnlessAnEntryPointWasAskedFor()
     {
