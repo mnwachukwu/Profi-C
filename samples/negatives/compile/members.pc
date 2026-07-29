@@ -8,6 +8,10 @@ end comment
 model Counter
     integer count;
 
+    public function Counter(integer start)
+        this.count = start;
+    end function
+
     public integer function Value()
         yield this.count;
     end function
@@ -21,6 +25,10 @@ global model Program
 
     function Main()
         integer[] xs = {1, 2, 3};
+
+        comment A 'new' is checked against the constructor it runs, as any other call is.
+        Counter wrongType = new Counter("ten");
+        Counter tooMany = new Counter(1, 2);
 
         comment There are no properties, so this is a function that was not called.
         Console.WriteLine(xs.Count);

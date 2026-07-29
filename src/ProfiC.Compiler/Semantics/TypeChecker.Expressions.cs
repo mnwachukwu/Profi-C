@@ -573,10 +573,7 @@ public sealed partial class TypeChecker
 
     private TypeSymbol CheckNew(NewExpr construction)
     {
-        foreach (Expression argument in construction.Arguments)
-        {
-            CheckExpression(argument);
-        }
+        List<TypeSymbol> arguments = [.. construction.Arguments.Select(CheckArgument)];
 
         if (_model.GetSymbol(construction) is not TypeSymbol type)
         {
@@ -595,7 +592,58 @@ public sealed partial class TypeChecker
             return type;
         }
 
+        if (type is DeclaredTypeSymbol declared)
+        {
+            CheckConstructorArguments(construction, declared, arguments);
+        }
+
         return type;
+    }
+
+    /// <summary>
+    /// <para>Chooses the constructor a <c>new</c> runs, and checks what it was given against
+    /// what that constructor takes.</para>
+    /// <para>A type declaring none takes nothing, so only an empty <c>new</c> fits it. Leaving
+    /// this unchecked let any arguments at all be written and dropped, which reached as far as
+    /// a string sitting in a field declared to hold an integer.</para>
+    /// </summary>
+    private void CheckConstructorArguments(
+        NewExpr construction,
+        DeclaredTypeSymbol type,
+        List<TypeSymbol> arguments)
+    {
+        List<FunctionSymbol> constructors =
+            [.. type.Lookup(type.Name).OfType<FunctionSymbol>().Where(f => f.IsConstructor)];
+
+        if (constructors.Count == 0)
+        {
+            // An exception declares nothing a program can see, but it does take the message
+            // every exception carries. That one form is allowed through, as it is for base(…).
+            if (BuiltInMembers.IsException(type)
+                && arguments is [{ } only]
+                && Conversions.IsAssignable(only, PrimitiveType.String))
+            {
+                return;
+            }
+
+            if (arguments.Count > 0)
+            {
+                Report(
+                    DiagnosticDescriptors.WrongArgumentCount,
+                    construction,
+                    type.Name,
+                    Wording.Count(0, "argument"),
+                    arguments.Count);
+            }
+
+            return;
+        }
+
+        if (ResolveOverload(
+                construction, construction.Arguments, type.Name, constructors, arguments) is { } chosen)
+        {
+            _model.Bind(construction, chosen);
+        }
     }
 
     private TypeSymbol CheckIndex(IndexExpr index)

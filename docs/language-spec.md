@@ -1,28 +1,47 @@
 # The Profi-C Language Specification
 
-**Version 0.1.0 (draft). This document is incomplete by design.**
+**Version 0.1.0 (draft).**
 
 Sections are written as each part of the language is implemented and covered by tests, so
 that the specification never describes more than the compiler does.
 
-Until a section is written, [language-summary.md](language-summary.md) is the best available
-description of that area.
+### How this document relates to the compiler
 
-| Section | State |
+Everything described here is implemented and runs, with two exceptions, each marked where it
+appears:
+
+- **Namespaces** parse but do not scope. A type declared inside one is reached without
+  qualification, exactly as though the namespace were not written. See §12.3.
+- **`using`** parses and is otherwise ignored, because there is nothing yet for it to make
+  reachable. `import`, which does a different job, works. See §12.1.
+
+Profi-C currently runs on a tree-walking interpreter (`pc run`). A CIL back end is planned
+and does not exist; nothing in this document depends on which of the two executes a program,
+and where a rule is enforced — while checking or while running — is stated wherever it
+matters.
+
+Three files sit beside this one and answer different questions. [grammar.ebnf](grammar.ebnf)
+gives the surface syntax as a set of productions; it is written for people and is not read by
+the compiler, which parses by hand-written recursive descent.
+[language-summary.md](language-summary.md) is the short tour for someone arriving from C#.
+This document is the normative one: where they disagree, this is right.
+
+| Section | Covers |
 |---|---|
-| 0. Overview | Written |
-| 1. Lexical structure | Written |
-| 2. Tokens and reserved words | Written |
-| 3. Types | Not yet written |
-| 4. Declarations | Not yet written |
-| 5. Expressions | Not yet written |
-| 6. Statements | Not yet written |
-| 7. Models, structures, enumerations | Not yet written |
-| 8. Optionals | Not yet written |
-| 9. Functions and closures | Not yet written |
-| 10. Exceptions | Not yet written |
-| 11. The standard library | Not yet written |
-| 12. Execution and entry point | Partly written: what a compilation is made of |
+| 0. Overview | Identity, purpose, design principles, conformance |
+| 1. Lexical structure | Source files, comments, identifiers, literals, escapes |
+| 2. Tokens and reserved words | The 55 words, the operators, end of file |
+| 3. Types | Base types, suffixes, function types, values and references |
+| 4. Declarations | Variables, constants, fields, functions, visibility |
+| 5. Expressions | Precedence, `is` and `as`, the `if` expression, literals |
+| 6. Statements | Blocks, the qualified `end`, both loops, `switch` |
+| 7. Models, structures, enumerations | Inheritance, dispatch, value semantics, equality |
+| 8. Optionals | `HasValue`, `Or`, `Value`, and narrowing |
+| 9. Functions and closures | Function types, lambdas, capture |
+| 10. Exceptions | `try`, `catch`, `finally`, `throw`, the built-in hierarchy |
+| 11. The standard library | The built-in models and what they provide |
+| 12. Execution and entry point | Compilations, `Program.Main`, namespaces |
+| A. Diagnostics | Every identifier the compiler reports |
 
 ---
 
@@ -333,29 +352,155 @@ decrement requires knowing whether an operand follows, which is a grammatical qu
 Every token stream ends with a single end-of-file token. It carries no text and occupies a
 zero-width position just past the final character.
 
-### 2.4 Diagnostics from this stage
+### 2.4 Recovery
 
-| Identifier | Reported when |
-|---|---|
-| `PC0001` | A character appears that begins no token |
-| `PC0002` | A string literal is not closed before a line terminator or the end of the file |
-| `PC0003` | A character literal is not closed |
-| `PC0004` | A character literal does not hold exactly one character |
-| `PC0005` | A block comment is not closed before the end of the file |
-| `PC0006` | A character sequence is used that is an operator in C# and has no reading in Profi-C |
-| `PC0007` | An escape sequence is not recognized |
-| `PC0008` | A Unicode escape is not followed by four hexadecimal digits |
-| `PC0009` | `@` is written in front of a word that is not reserved, so it takes nothing back |
-| `PC0010` | `@` is written with no name after it |
+Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0010`,
+listed in [Appendix A](#appendix-a-diagnostics) — has a defined recovery, so a file containing
+several mistakes reports all of them in one pass and still yields a usable token stream.
 
-Scanning never stops at the first error. Each of these has a defined recovery, so a file
-containing several mistakes reports all of them in one pass and still yields a usable token
-stream.
+Two recoveries are worth naming, because they change what the parser then sees.
+
+**An unterminated string ends at the newline, not at the end of the file.** A missing close
+quote almost always means a missing quote on that line, and scanning to the end of the file
+would turn one real error into a hundred spurious ones. A partial token is emitted so the
+parser keeps its footing.
+
+**A C# operator with no reading here stands in for the Profi-C one.** `x += 1` scans as
+`x = 1` and reports `PC0006`; `=>` before a lambda's body scans as `yield`. The statement
+keeps its shape, so the parser reports nothing further and the one message carries the
+rewrite.
 
 ## 3. Types
 
-*Not yet written.* Will cover the base types, the `[]` set and `?` optional suffixes, the
-value and reference split, conversions, and definite assignment.
+### 3.1 The base types
+
+Six types are built in and spelled as reserved words.
+
+| Type | Holds | Literals |
+|---|---|---|
+| `integer` | A whole number, 64 bits, signed | `0`, `42`, `-7` |
+| `real` | A floating-point number, 64 bits | `3.14`, `0.5` |
+| `fraction` | An exact rational | `1\|3`, `22\|7` |
+| `character` | One Unicode character | `'A'`, `'\n'` |
+| `string` | Text, immutable | `"hello"` |
+| `boolean` | `true` or `false` | `true`, `false` |
+
+`fraction` is the one with no counterpart in C#. It is a numerator and a denominator held
+separately and kept reduced, so `1|3 + 1|3 + 1|3` is exactly `1|1` where the same sum in
+`real` is not 1. Arithmetic on fractions is exact; arithmetic on reals is not, and the
+language does not pretend otherwise by converting between them quietly.
+
+### 3.2 The two suffixes
+
+Any type takes two suffixes, and they nest:
+
+```
+integer[]     a set of integers
+integer?      an integer that may be absent
+Node?[]       a set of optionals
+Node[]?       an optional set
+```
+
+`Node?[]` and `Node[]?` are different types and both are legal. Suffixes read left to right,
+so the one written last is the outermost.
+
+A **set** is Profi-C's one collection. It is ordered, indexed from zero, grows as you insert,
+and holds one type. There is no array/list distinction to learn: `integer[] scores = {};`
+then `scores.Insert(60);`. §11 lists its members.
+
+An **optional** is how a value may be absent. There is no `null`; a `Node` always holds a
+node, and `Node?` is the type that may not. §8 gives the rules.
+
+### 3.3 Function types
+
+A function type is written the way a declaration is — the result, then `function`, then what
+it takes:
+
+```
+integer function(integer)             takes an integer, yields an integer
+integer function(integer, integer)    takes two, yields one
+function(string)                      takes a string, yields nothing
+string function()                     takes nothing, yields a string
+integer function(integer)?            an optional one
+function(string)[]                    a set of them
+```
+
+Omitting the result means the function yields nothing. A type that yields nothing and a type
+whose result is some "void type" are not two ideas here — there is only the first, and
+nothing names the second.
+
+### 3.4 Values and references
+
+`integer`, `real`, `fraction`, `character`, `boolean`, every structure, and every enumeration
+are **value types**: assigning one copies it. Every model, every set, and `string` are
+**reference types**: assigning one copies the reference.
+
+`string` is a reference type whose value never changes, so the distinction is not observable
+for it — every operation that appears to modify a string returns a new one.
+
+A structure holding a model copies the reference, not the model, so two copies of the
+structure see the same model. This is the one place the split is worth stopping over, and it
+is why §4.2's `constant` does not yet accept a structure that can reach a model.
+
+### 3.5 Conversions
+
+A conversion is **automatic** where no information is lost and no surprise is possible,
+**written out** where a reader should see it happen, and **absent** otherwise.
+
+| From | To | | |
+|---|---|---|---|
+| `integer` | `fraction` | automatic | |
+| `integer` | `real` | automatic | |
+| `fraction` | `real` | written out | `f.ToReal()` |
+| `real` | `fraction` | written out | `r.ToFraction()` |
+| `character` | `integer` | none | |
+| an enumeration | `integer` | written out | `member.ToInteger()` |
+| `integer` | an enumeration | written out | `n as Suit` |
+| any `T` | `T?` | automatic | |
+| `T?` | `T` | none — see §8 | |
+| a model | any ancestor of it | automatic | |
+| a model | any descendant of it | written out | `shape as Square`, yielding `Square?` |
+| a value type | `Model` | none | |
+| `string` | `character[]` | automatic, copying | |
+| `character[]` | `string` | automatic, copying | |
+| `T[]` | `U[]` | only where `T` and `U` are the same type | |
+
+Note that the two spellings do different jobs. **`as` follows inheritance**, so it takes a
+model to a descendant and yields an optional, because the value may not be one. Naming a
+value type after `as` is rejected by `PC0335`: value types have no inheritance for a cast to
+follow, so the question is not one about identity at all. **A conversion between two value
+types is a member instead** — `ToReal`, `ToFraction`, `ToInteger` — which cannot fail and so
+yields a plain value rather than an optional. An enumeration is the exception in the other
+direction: an integer names one of its members, so `n as Suit` is a genuine question with a
+"no" answer, and it yields `Suit?`.
+
+Three of these are worth the reasoning.
+
+**Between `fraction` and `real`, neither direction is automatic.** One third as a real is
+0.33333333333333331, and one tenth as a fraction is 3602879701896397 over 36028797018963968.
+Both are surprising, so the program says which it wants.
+
+**A character is not a small integer.** Treating `'A'` as 65 is a C habit that teaches the
+wrong thing about what a character is.
+
+**A value type never converts to `Model`.** That conversion is boxing, which the language does
+not have — so `Model m = 1;` is rejected rather than quietly allocating. Every type still
+*inherits* `Model`'s members, including `ToString` and `Equals`; inheriting them and
+converting to it are different things.
+
+**A set of squares is not a set of shapes.** If it were, a circle could be inserted into it
+through the wider name, and the squares would no longer all be squares.
+
+### 3.6 Type identity
+
+Two written types are the same type when they are built the same way from the same parts.
+This matters because set, optional, and function types are constructed on demand rather than
+declared, so two mentions of `integer[]` are two objects that must compare equal.
+
+Two **declared** types are never the same type, however alike they look. Two structures with
+identical fields in identical order are two types, and a value of one does not fit the other:
+a `Point` and a `Size` both holding two integers mean different things, and the compiler
+keeps them apart.
 
 **`Model` is the root of every type**, values included, so every type
 inherits `ToString()` and `Equals()` from one place. Inheriting those members does not make a
@@ -374,12 +519,166 @@ call rather than a conversion the language admits.
 
 ## 4. Declarations
 
-*Not yet written.* Will cover variables, `constant`, fields, functions, and visibility.
+### 4.1 Variables
+
+A local is declared with its type, or with `let` and a value to take the type from:
+
+```
+integer count = 0;
+integer count;              declared now, assigned before it is read
+let name = "Ada";           the value on the right says what it holds
+```
+
+`let` requires an initializer, because there is nothing else for it to learn from. A written
+type does not: a variable may be declared and assigned later, and §4.5 says what the compiler
+demands in return.
+
+A `let` is not a different kind of variable. It is the same variable with its type worked out
+rather than written, and it may be assigned again afterwards.
+
+### 4.2 Constants
+
+`constant` marks a binding that never changes:
+
+```
+constant integer maxScore = 100;
+global constant real Pi = 3.14159;
+```
+
+A constant requires an explicit type — `let` and `constant` do not combine — and an
+initializer the compiler can fold (`PC0320`, `PC0321`). Assigning to one afterwards is
+`PC0205`.
+
+The permitted types are `integer`, `real`, `character`, `boolean`, `fraction`, `string`,
+enumerations, and structures whose fields cannot reach a model or a set. Every one of those
+is a type where an unchanging binding already means an unchanging value, so `constant` is
+deep on everything it accepts rather than shallow. Models and sets are rejected by `PC0322`
+for exactly that reason: `config.node.value = 5` would otherwise change something through a
+constant.
+
+### 4.3 Fields
+
+A field is declared inside a model or structure, and is **private unless it says otherwise**:
+
+```
+model Account
+    integer balance;                    private
+    public string owner;                readable and writable from anywhere
+    protected integer limit;            and by anything extending Account
+    global integer opened;              one per program, not one per account
+end model
+```
+
+There is no `private` keyword, because private is what you get by writing nothing. `public`
+and `protected` opt out of it. `global` is what other languages call `static`: the member
+belongs to the type rather than to an instance.
+
+### 4.4 Functions
+
+A function writes its result type before the word `function`, or omits it to yield nothing:
+
+```
+integer function Twice(integer n)
+    yield n * 2;
+end function
+
+function Announce(string what)
+    Console.WriteLine(what);
+end function
+```
+
+Every parameter carries a type. A constructor is a function named for its type and takes no
+result:
+
+```
+model Account
+    public function Account(integer opening)
+        this.balance = opening;
+    end function
+end model
+```
+
+Modifiers are `public`, `protected`, `global`, and `virtual` or `override`. §7.2 covers the
+last two. **A function that declares a result must reach a `yield` on every path** — `PC0404`
+— so a function cannot promise an integer and fall off the end without one. A constructor
+must leave every field assigned (`PC0402`).
+
+Functions may be declared among statements, capturing the locals around them. Types may not:
+a type introduced by a statement would tie name resolution to statement order, and forward
+references contradict that.
+
+### 4.5 Definite assignment
+
+**A variable must be assigned before it is read**, and the compiler proves it rather than
+zeroing anything. Two diagnostics say it, because the two cases read differently: `PC0400`
+where no path assigns it, and `PC0401` where only some do.
+
+```
+integer n;
+Console.WriteLine(n);       PC0400: n was never assigned
+
+integer m;
+if ready
+    m = 1;
+end if
+Console.WriteLine(m);       PC0401: only one path assigns m
+```
+
+The proof runs forward through the program and joins at every merge point, so a variable is
+assigned after an `if` only when *both* branches assign it. This is the same analysis C# and
+Java run, and it is here for the same reason: an uninitialized read is a bug that a default
+value hides rather than prevents.
+
+The same pass reports code nothing can reach, as a warning (`PC0403`).
 
 ## 5. Expressions
 
-*Not yet written.* Will cover the nine precedence levels, `is` and `as`, the
-`if ... then ... else` expression, lambdas, and collection literals.
+### 5.1 Precedence
+
+Expressions are parsed by precedence climbing against one table, so adding an operator is
+adding a row rather than adding a production. Ten levels, loosest first:
+
+| | Operator | Position | Associativity |
+|---|---|---|---|
+| 1 | `or` | infix | left |
+| 2 | `and` | infix | left |
+| 3 | `not` | prefix | right |
+| 4 | `==` `!=` | infix | left |
+| 5 | `<` `>` `<=` `>=` `is` `as` | infix | left |
+| 6 | `+` `-` | infix | left |
+| 7 | `*` `/` `%` | infix | left |
+| 8 | `-` | prefix | right |
+| 9 | `^` | infix | **right** |
+| 10 | `(` call, `[` index, `.` member | postfix | left |
+
+Two placements differ from C and are deliberate.
+
+**`not` is looser than comparison**, as in Python, so `not a == b` groups as `not (a == b)`.
+The C reading, `(not a) == b`, is almost always a mistake.
+
+**`^` binds tighter than the leading minus**, so `-2 ^ 2` is `-(2 ^ 2)` and `2 ^ 3 ^ 2` is
+`2 ^ (3 ^ 2)` — both as written by hand. It is the language's only right-associative infix
+operator.
+
+### 5.2 Operators
+
+`+` `-` `*` `/` `%` are arithmetic. `/` on two integers truncates toward zero, so `7 / 2` is
+`3` and `-7 / 2` is `-3`. Dividing by a literal zero is rejected while compiling (`PC0324`);
+dividing by a variable that turns out to be zero throws `DivideByZeroException`.
+
+`+` also joins strings, and converts the other side when one side is a string.
+
+`and` and `or` are the words; `&&` and `||` report `PC0006` and name the spelling to use.
+Both short-circuit. `not` is the word for `!`.
+
+**There is no compound assignment, no increment, and no decrement.** `x += 1`, `x++`, and
+`x--` are each reported by name with the rewrite. There is no ternary either — `if ... then
+... else` is an expression and does that job.
+
+`^` raises to a power, and is **not** exclusive-or; Profi-C has no bitwise operators. In C#
+the same symbol is bitwise, where `10 ^ 2` is 8, so the meaning does not carry across.
+
+### 5.3 Raising to a power
 
 **`^` is the only arithmetic operator whose two sides are not the same
 kind of thing.** Everywhere else the operands unify — adding an integer to a real makes both
@@ -405,6 +704,10 @@ An `integer` raised to a negative power has no whole answer. Where the exponent 
 while compiling this is an error; where it cannot, as with a variable, it throws at run time,
 exactly as dividing by a variable that turns out to be zero does.
 
+### 5.4 Collection literals
+
+A set is written between braces: `{1, 2, 3}`, and `{}` for an empty one.
+
 **A collection literal takes its element type from what is expected of it, where anything
 expects one.** In a variable or field initializer, an assignment, or a
 `yield`, each element is checked against the wanted element type and converts on its own — so
@@ -415,16 +718,147 @@ a set of shapes may be written as the several kinds of shape it holds, and
 This is the same principle as C# array initializers. The element type is never inferred from
 a common ancestor: two unrelated models share only `Model`, which no value type converts to.
 
+`let xs = {};` is rejected (`PC0313`): an empty literal with nothing to take a type from
+names no type at all.
+
+### 5.5 `is` and `as`
+
+`x is T` asks whether a value is a `T`, and yields `boolean`. `x as T` converts if it can and
+yields `T?` — an optional, because the answer may be no.
+
+```
+if shape is Square
+    Console.WriteLine("square");
+end if
+
+Square? maybe = shape as Square;
+```
+
+Both take a type name on the right rather than an expression, and both sit at relational
+precedence, matching C#.
+
+Where the answer is fixed while compiling, the compiler says so rather than letting the test
+run: `PC0334` for a test that is always true, `PC0327` for one that never can be, and
+`PC0335` for a cast naming a value type, which has no inheritance for a cast to follow.
+
+### 5.6 The `if` expression
+
+`if ... then ... else` is an expression and produces a value:
+
+```
+let label = if score > 50 then "pass" else "fail";
+```
+
+The `else` is required — an expression must produce something on every path — and both
+branches must agree on a type. This is what Profi-C has instead of a ternary operator, and it
+is spelled with the same three words the statement uses.
+
+### 5.7 Other primary expressions
+
+`this` is the current instance; `base` reaches the parent's members. `new T(...)` constructs.
+A lambda is written as §9 describes. Parentheses group.
+
+**Assignment is a statement, not an expression.** `if x = 5` cannot be written at all, which
+removes the whole family of bugs where `=` was typed for `==`.
+
 ## 6. Statements
 
-*Not yet written.* Will cover block structure and the qualified `end`, the two `for` forms,
-`switch`, and `try`.
+### 6.1 Blocks and the qualified `end`
+
+**Every construct closes with `end` and the word that opened it** — `end if`, `end while`,
+`end for`, `end function`, `end model`. The parser records what opened and rejects a
+mismatched closer by naming both (`PC0104`), so a misplaced `end` is caught where it is
+written rather than at the end of the file.
+
+**A construct's body has no opening token.** `begin` opens a block, and a block is always an
+anonymous scope rather than any construct's body:
+
+```
+begin
+    integer scratch = 1;
+end
+```
+
+**Conditions take no parentheses.** `if ready` and `while count < 10`, not `if (ready)`.
+
+### 6.2 Choosing
+
+```
+if ready
+    Console.WriteLine("go");
+else if waiting
+    Console.WriteLine("soon");
+else
+    Console.WriteLine("no");
+end if
+```
+
+There is no dangling-`else` problem: `else if` belongs to the `if` rather than nesting, and
+the whole chain closes with one `end if`.
+
+`switch` compares a value against constant labels. Labels may be grouped, and a group falls
+through to its statements only — there is no fall-through from one group to the next, so no
+`break` is needed to prevent it:
+
+```
+switch suit
+    case Suit.Hearts:
+    case Suit.Diamonds:
+        Console.WriteLine("red");
+    case Suit.Spades:
+    case Suit.Clubs:
+        Console.WriteLine("black");
+    default:
+        Console.WriteLine("none");
+end switch
+```
+
+A label must be a constant (`PC0325`) and no two may be the same (`PC0326`). The value being
+switched on must be one a case can name (`PC0315`).
+
+**A `switch` that omits some of an enumeration's members is not currently reported.** The
+intent is that it should warn, so that adding a member tells you every place that has to
+change; nothing enforces it today.
+
+### 6.3 Looping
+
+Two `for` forms and a `while`:
+
+```
+for i = 1 to 10          counts 1 through 10
+for i = 1 until 10       counts 1 through 9
+for i = 10 to 1 step -1  counts down
+for each item in items   takes each element in turn
+while count < 10         while the condition holds
+```
+
+`to` includes its bound and `until` excludes it, which is the distinction other languages
+leave to remembering whether `<` or `<=` was written.
 
 **Neither `for` form writes a type for the variable it binds.** A range loop counts, and counting is done with integers, so
 `for i = 1 to 10` has no type to write and writing one is an error; a `for each` takes its
 element's type from the sequence. Both are fixed by the construct rather than inferred from a
 value, which is why neither needs `let`. A range loop's bounds and step must themselves be
-integers.
+integers (`PC0317`), and its counter cannot be assigned to inside the loop (`PC0206`).
+
+**A loop variable is fresh on every turn.** A function made inside a loop closes over that
+turn's variable, so three functions made in three turns report three values. This is the trap
+that catches people in languages where the variable is shared and every function reports the
+last value.
+
+`break` leaves the innermost loop and `continue` goes to its next turn. Neither may appear
+outside one.
+
+### 6.4 Other statements
+
+`yield` produces a function's result and ends it. Written bare, it just ends the function,
+which is what a function yielding nothing does. There is no `return`: producing a value and
+ending are the same act, and one word says it.
+
+`throw` raises an exception, and `try` handles one — §10 covers both.
+
+An **expression statement** is a call or an assignment followed by `;`. Assignment is a
+statement rather than an expression, so `if x = 5` cannot be written.
 
 **An expression statement may not begin with `(` or `-`.** A construct's body has no opening token, so a
 condition ends at the first token that cannot continue an expression — and those two can,
@@ -435,13 +869,178 @@ as an assignment's right side, as an argument, after `yield`, and within a condi
 
 ## 7. Models, structures, and enumerations
 
-*Not yet written.* Will cover inheritance, constructors, virtual dispatch, deep equality,
-value-typed structures, and enumerations.
+Three ways to declare a type, and the choice between them is what the type *is* rather than
+how it is used.
+
+### 7.1 Models
+
+A **model** is a reference type with single inheritance. It is what other languages call a
+class.
+
+```
+model Shape
+    protected string name;
+
+    public function Shape(string name)
+        this.name = name;
+    end function
+
+    public virtual real function Area()
+        yield 0.0;
+    end function
+end model
+
+sealed model Square extends Shape
+    integer side;
+
+    public function Square(integer side)
+        base("square");
+        this.side = side;
+    end function
+
+    public override real function Area()
+        yield this.side * this.side;
+    end function
+end model
+```
+
+`extends` names the parent, and there is one. `base(...)` runs the parent's constructor and
+`base.Member()` reaches its members. `sealed` forbids extending; `abstract` forbids
+constructing and permits a member with no body.
+
+**`this.` is required to reach an instance member.** `name` and `this.name` are not two ways
+to write one thing — the first is a local and the second is a field, and the difference is
+visible in every line that touches either. This costs five characters and removes the
+question of which one a bare name means.
+
+### 7.2 Virtual dispatch
+
+A member is dispatched on the runtime type only where it says so. `virtual` permits
+overriding, `override` does it, and both words are required — an override that omits
+`override` is rejected rather than silently hiding the parent's member.
+
+```
+Shape shape = new Square(3);
+Console.WriteLine(shape.Area());     9, from Square
+```
+
+### 7.3 Structures
+
+A **structure** is a value type. Assigning one copies it:
+
+```
+structure Point
+    public integer x;
+    public integer y;
+end structure
+
+Point a = new Point(1, 2);
+Point b = a;
+b.x = 99;                    a.x is still 1
+```
+
+A structure may not extend anything and nothing may extend it; value types have no
+inheritance. It may hold fields, functions, and a constructor. It may not contain itself,
+directly or through another structure, since a value that contained itself would have no
+size.
+
+A structure holding a model copies the *reference*. Two copies of the structure then see one
+model, which is the case §3.4 flags and the reason `constant` does not accept such a
+structure.
+
+### 7.4 Equality
+
+`==` on two models compares them **field by field, all the way down** — not by reference.
+Two separately built accounts with the same owner and balance are equal.
+
+```
+Reference.Equals(a, b)       true only if a and b are the same object
+a == b                       true if they hold the same values
+```
+
+The comparison handles cycles: a model reachable from itself does not send it into a loop.
+Two values are equal when nothing distinguishes them, which is what a reader means by the
+word.
+
+Two structures are equal when their fields are, in the same way. **Two different declared
+types are never equal**, however alike their fields — a `Point` and a `Size` both holding two
+integers are two types, and asking whether one equals the other is a question about values of
+different types.
+
+### 7.5 Enumerations
+
+An **enumeration** is a value type naming a fixed set of members:
+
+```
+enumeration Suit
+    Hearts, Diamonds, Clubs, Spades
+end enumeration
+
+enumeration Status
+    Active = 1,
+    Closed = 2
+end enumeration
+```
+
+Members take consecutive ordinals from zero unless written. A member is reached through the
+type — `Suit.Hearts` — never bare.
+
+An enumeration converts to `integer` with `ToInteger()`, and an integer converts back with
+`n as Suit`, which yields `Suit?` because the integer may name no member.
+
+### 7.6 Nesting
+
+A model, structure, or enumeration may be declared inside a model or structure. A nested type
+holds no reference to the type it sits inside; it is a type declared in that scope, not an
+inner instance. Types may not be declared inside a function body — see §4.4.
 
 ## 8. Optionals
 
-*Not yet written.* Will cover `HasValue`, `Or`, and `Value`, and the narrowing rules that
-make optional access strict.
+**There is no `null`.** A `Node` always holds a node. `Node?` is the type that may not, and
+it is a different type, so absence appears in the signature rather than lurking behind every
+reference.
+
+### 8.1 The three members
+
+```
+integer? found = Program.Search(items, 7);
+
+found.HasValue()      boolean: is there a value?
+found.Or(0)           the value, or the given fallback if there is none
+found.Value()         the value, throwing EmptyOptionalException if there is none
+```
+
+Any value converts to an optional of its own type automatically, so `integer? n = 5;` is
+written directly. **The reverse is never automatic** — that strictness is the whole point.
+Reading a `T?` where a `T` is wanted is rejected by `PC0329`, whose message names all three
+ways out rather than only reporting the mismatch.
+
+`Or` is the one to reach for. `Value` is for when absence is genuinely impossible and you are
+willing to say so.
+
+### 8.2 Narrowing
+
+Inside a guard that has proved presence, the optional reads as its underlying type:
+
+```
+if found.HasValue()
+    Console.WriteLine(found + 1);      found is an integer here
+end if
+```
+
+The compiler tracks this the same way it tracks definite assignment — forward, joining at
+merge points. It also follows the negative case, so an early exit narrows the rest of the
+function:
+
+```
+if not found.HasValue()
+    yield 0;
+end if
+
+Console.WriteLine(found + 1);          narrowed for everything after
+```
+
+### 8.3 Narrowing settles which member is meant
 
 **Once an optional has been narrowed, a member its underlying type declares wins over the
 optional's own member of the same name.**
@@ -489,8 +1088,38 @@ applies.
 
 ## 9. Functions and closures
 
-*Not yet written.* Will cover function types, overload resolution, capture, and name
-resolution.
+**A function is a value.** It has a type (§3.3), and it can be stored in a variable, held in
+a set, passed to another function, and handed back from one.
+
+A function that already has a name is already a value and needs no lambda around it:
+
+```
+integer function(integer) tripled = Program.Triple;
+
+Counter counter = new Counter(10);
+integer function() advance = counter.Next;
+```
+
+A member reached through an instance is that member *bound to that instance*, so calling it
+later still knows which one it belongs to.
+
+**A lambda closes over the variables around it.** The function handed back below remembers
+`by`, which belonged to the call that made it:
+
+```
+integer function(integer) function AdderOf(integer by)
+    yield (n) yield n + by;
+end function
+```
+
+**A loop variable is fresh on every turn**, so a function made inside a loop closes over that
+turn's variable rather than a shared one. Three functions made in three turns report three
+values, which is the opposite of what the same code does in languages where the variable is
+shared.
+
+Overloads are chosen by argument count first, then by exact match, then by what the arguments
+can convert to. Two versions reachable only by conversion is a tie, and a tie is reported
+(`PC0310`) rather than broken by a rule nobody remembers.
 
 ### 9.1 Writing a function as a value
 
@@ -559,11 +1188,142 @@ take one from.
 
 ## 10. Exceptions
 
-*Not yet written.* Will cover `try`, `catch`, `finally`, `throw`, and the built-in hierarchy.
+### 10.1 The built-in hierarchy
+
+Eight exception types, and every one descends from `Exception`:
+
+| | Raised when |
+|---|---|
+| `Exception` | The root. A `catch` naming it takes them all |
+| `DivideByZeroException` | Dividing by a value that turned out to be zero |
+| `IndexOutOfRangeException` | Indexing a set or string outside it |
+| `EmptyOptionalException` | `Value()` on an optional holding nothing |
+| `InvalidCastException` | A conversion that could not be made |
+| `FormatException` | Text that could not be read as what was wanted |
+| `ArgumentException` | An argument a function will not accept |
+| `OverflowException` | A result too large for the type to hold |
+
+Every one carries a `Message()`. A name the language can raise is a name a program can catch:
+the two come from one list, so nothing can be thrown that cannot be named.
+
+### 10.2 Throwing and catching
+
+```
+try
+    Console.WriteLine(numbers[10]);
+catch IndexOutOfRangeException problem
+    Console.WriteLine("out of range: " + problem.Message());
+catch Exception problem
+    Console.WriteLine("something else");
+finally
+    Console.WriteLine("always runs");
+end try
+```
+
+A `catch` names a type and binds a name to the exception. Clauses are tried in order, so the
+narrower ones come first. `finally` runs whether or not anything was thrown, and whether or
+not it was caught.
+
+`throw` raises one:
+
+```
+throw new ArgumentException("balance cannot be negative");
+```
+
+**A throw ends a path**, so a function whose every path either yields or throws satisfies
+§4.5's rule without a yield after the throw.
+
+### 10.3 Declaring an exception
+
+A program may extend any of them:
+
+```
+model InsufficientFunds extends Exception
+    public function InsufficientFunds(string message)
+        base(message);
+    end function
+end model
+```
+
+Extending is not redeclaring: the eight names above cannot be declared, but they can be
+extended, and a declared exception is caught by a `catch` naming any of its ancestors.
+
+**There are no checked exceptions.** A function does not declare what it may throw, and
+nothing forces a caller to handle it. That choice follows the same reasoning as the rest of
+the language: the alternative teaches people to write `catch` clauses that swallow.
 
 ## 11. The standard library
 
-*Not yet written.* Will cover the built-in models and the curated .NET wrappers.
+The library is small and is reached without importing anything. Nine names belong to the
+language and no program may declare one: `Model`, `Exception`, `Console`, `Reference`,
+`Math`, `Fraction`, `Random`, `DateTime`, and `Program`. Of these only `Exception` may be
+extended; `Program` must be declared, exactly once (§12).
+
+`Random` and `DateTime` are named but carry no members yet. They are reserved so that adding
+them later cannot collide with a program that used the name.
+
+### 11.1 On every type
+
+Inherited from `Model` by every type, values included. Calling one on a value does not box.
+
+| | |
+|---|---|
+| `ToString()` | `string`. Virtual; a structure prints field by field, an enumeration prints its member name, a model prints its type name |
+| `Equals(other)` | `boolean`. The deep comparison `==` uses |
+
+### 11.2 On a set
+
+| | |
+|---|---|
+| `Count()` | `integer` |
+| `Insert(value)` | adds at the end |
+| `InsertAt(index, value)` | adds at a position |
+| `Remove(value)` | `boolean`; removes the first match |
+| `RemoveAt(index)` | removes by position |
+| `Contains(value)` | `boolean` |
+| `IndexOf(value)` | `integer`; -1 if absent |
+| `Clear()` | empties it |
+
+### 11.3 On a string
+
+| | |
+|---|---|
+| `Count()` | `integer` |
+| `Contains(text)` | `boolean` |
+| `IndexOf(text)` | `integer` |
+| `Substring(start, length)` | `string` |
+| `Insert(text)`, `InsertAt(index, text)` | `string` |
+| `Remove(text)`, `RemoveAt(index)` | `string` |
+| `ToCharacters()` | `character[]` |
+
+A string never changes, so each of these returns a new one.
+
+### 11.4 On a value of a particular type
+
+| | |
+|---|---|
+| `optional.HasValue()`, `Or(fallback)`, `Value()` | §8 |
+| `fraction.ToReal()` | `real` |
+| `real.ToFraction()` | `fraction` |
+| `enumeration.ToInteger()` | `integer` |
+| `exception.Message()` | `string` |
+
+### 11.5 The standard models
+
+| | |
+|---|---|
+| `Console.Write(value)` | writes, no newline |
+| `Console.WriteLine(value)` | writes and ends the line |
+| `Console.Read()` | `string?`; absent at end of input |
+| `Reference.Equals(a, b)` | `boolean`; identity, which is what `==` deliberately is not |
+| `Math.Sqrt`, `Abs`, `Floor`, `Ceiling` | `real` from a `real` |
+| `Math.Pow(base, exponent)` | `real`; `^` is the operator form |
+| `Math.Min(a, b)`, `Math.Max(a, b)` | `integer`; these count rather than measure |
+| `Fraction.Create(numerator, denominator)` | `fraction` |
+
+`Console.Write` and `Console.WriteLine` take a value of **any** type, and behave as in C#:
+only the second ends the line. Neither is an overload set; both are known to the compiler,
+which chooses how to render the value from its static type.
 
 **`Fraction.Create(numerator, denominator)`** builds a `fraction` from
 two integers. A fraction literal is two numerals fixed when the program is written, so this
@@ -575,12 +1335,7 @@ rejected while compiling where it can be seen, exactly as `1 / 0` is, and throws
 Note the two spellings: `fraction` is the type and a reserved word; `Fraction` is the model
 beside it, holding what a fraction needs that is not a member of one.
 
-**`Console.Write` and `Console.WriteLine` accept a
-value of any type**, and behave as in C#: only the second ends the line. Neither is an
-overload set; both are compiler-known, and the compiler chooses how to render the value from
-its static type. **`ToString()` is inherited from `Model` by every type, values included**,
-and is `virtual`. Calling it on a value type does not box. Defaults: a structure prints field
-by field, an enumeration prints its member name, a model prints its type name.
+### 11.6 How a value prints
 
 A set prints its elements between braces, separated by a comma and a space, and a structure
 prints its fields **in the order they were declared**.
@@ -597,7 +1352,20 @@ reads a little oddly and is much the smaller of the two problems.
 
 ## 12. Execution and entry point
 
-*Not yet written.* Will cover program structure and `Program.Main`.
+A program is run with `pc run`, which checks it and executes it:
+
+```
+pc run hello.pc                 one file, with the shared code beside it
+pc run bookshelf/Program.pc     the same rule across a folder — see §12.1
+pc run app.pcp                  a project file listing what to build
+pc check app.pcp                check without running
+pc tokens hello.pc              the token stream
+pc ast hello.pc                 the tree
+```
+
+Every command takes a **file**, never a folder — a folder is reached by naming a file in it,
+which §12.1 explains. The extension may be omitted: `pc run hello` finds `hello.pc`, and asks
+for the extension only where both a `.pc` and a `.pcp` of that name exist.
 
 **`Program` may be declared exactly once in a compilation, and must be
 `global model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
@@ -695,3 +1463,168 @@ deliberately split, and a language that joined them silently would hide the firs
 completely. Whether an explicit `partial` should exist is left open for a later version — it is
 a question interoperating with .NET may eventually force, and one that should be answered
 deliberately rather than fallen into.
+
+### 12.3 Namespaces, as they stand
+
+A namespace is written in either of two forms:
+
+```
+namespace Shapes;              file-scoped: everything after it belongs to Shapes
+
+namespace Shapes               block: closes with "end namespace"
+    model Circle
+    end model
+end namespace
+```
+
+**Neither form scopes anything today.** Both parse, and a `using` parses, but a type declared
+inside a namespace is reached by its bare name exactly as though the namespace were not
+written, and a `using` is read and ignored. Nothing is rejected that should be, and nothing is
+accepted that will later be rejected on the strength of the namespace alone.
+
+What is settled about the design and not yet built: namespaces nest; a file may hold one
+file-scoped namespace or several block ones, but not both forms at once; `using` and `import`
+directives come above any namespace; and a nested namespace whose name repeats an enclosing
+one is legal but warned about, since `Shapes.Shapes.Circle` is more often a mistake than an
+intent.
+
+---
+
+## Appendix A. Diagnostics
+
+Every identifier the compiler reports. Identifiers are stable: once assigned, one is never
+reused for a different rule, so a link or a note written today keeps its meaning.
+
+Warnings do not block compilation; everything else does.
+
+### PC0000 to PC0099
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0001` | error | Unrecognized character |
+| `PC0002` | error | Unterminated string literal |
+| `PC0003` | error | Unterminated character literal |
+| `PC0004` | error | Malformed character literal |
+| `PC0005` | error | Unterminated block comment |
+| `PC0006` | error | Not an operator in Profi-C |
+| `PC0007` | error | Unrecognized escape sequence |
+| `PC0008` | error | Malformed Unicode escape sequence |
+| `PC0009` | warning | This name needs no '@' |
+| `PC0010` | error | Nothing to escape |
+
+### PC0100 to PC0199
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0100` | error | Unexpected token |
+| `PC0101` | error | Expected an expression |
+| `PC0102` | error | Expected a type |
+| `PC0103` | error | Expected a name |
+| `PC0104` | error | Mismatched block closer |
+| `PC0105` | error | Unterminated construct |
+| `PC0106` | error | Statement cannot start here |
+| `PC0107` | error | Expected a statement |
+| `PC0108` | error | Expected a declaration |
+| `PC0109` | error | Cannot assign to this expression |
+| `PC0110` | error | Type declared inside a function |
+| `PC0111` | warning | A range loop's counter has no written type |
+| `PC0112` | error | An if expression has no 'else' |
+| `PC0113` | error | Too many problems |
+| `PC0114` | error | This word is reserved |
+| `PC0115` | warning | This parameter's type is already known |
+
+### PC0200 to PC0299
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0200` | error | Name not found |
+| `PC0201` | error | Type not found |
+| `PC0202` | error | Name already declared |
+| `PC0203` | error | Reserved type name |
+| `PC0204` | error | Member access needs a receiver |
+| `PC0205` | error | Cannot assign to a constant |
+| `PC0206` | error | Cannot assign to a loop variable |
+| `PC0207` | error | Circular inheritance |
+| `PC0208` | error | Cannot extend a sealed model |
+| `PC0209` | error | Cannot extend this type |
+| `PC0210` | error | Sealed and abstract together |
+| `PC0211` | error | Instance member on a global model |
+| `PC0212` | error | No entry point |
+| `PC0213` | error | Program must be a global model |
+| `PC0214` | error | '{0}' used outside a model |
+| `PC0215` | error | No parent to reach |
+| `PC0216` | error | Cannot extend a built-in type |
+| `PC0217` | error | Type already declared |
+| `PC0218` | error | Main declares no result or an integer |
+
+### PC0300 to PC0399
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0300` | error | Cannot convert |
+| `PC0301` | error | Conversion must be written out |
+| `PC0302` | error | Condition must be a boolean |
+| `PC0303` | error | Operator not defined for these types |
+| `PC0304` | error | Operator not defined for this type |
+| `PC0305` | error | Branches of an if expression have different types |
+| `PC0306` | error | Member not found |
+| `PC0307` | error | Not something that can be called |
+| `PC0308` | error | Wrong number of arguments |
+| `PC0309` | error | No overload matches |
+| `PC0310` | error | Ambiguous call |
+| `PC0311` | error | Not something that can be indexed |
+| `PC0312` | error | Index must be an integer |
+| `PC0313` | error | Cannot infer the type of an empty set |
+| `PC0314` | error | Set elements have different types |
+| `PC0315` | error | Cannot switch on this type |
+| `PC0316` | error | Cannot iterate this type |
+| `PC0317` | error | Range loop needs integers |
+| `PC0318` | error | This function yields nothing |
+| `PC0319` | error | Missing value to yield |
+| `PC0320` | error | Constant needs a value |
+| `PC0321` | error | Constant value must be known while compiling |
+| `PC0322` | error | This type cannot be constant |
+| `PC0323` | error | Nothing to infer from |
+| `PC0324` | error | Division by zero |
+| `PC0325` | error | Case label must be a constant |
+| `PC0326` | error | Duplicate case label |
+| `PC0327` | warning | This test is always false |
+| `PC0328` | error | Cannot be instantiated |
+| `PC0329` | error | Optional must be unwrapped first |
+| `PC0330` | error | This member is a function |
+| `PC0331` | error | Member needs an instance |
+| `PC0332` | error | This produces no value |
+| `PC0333` | error | Negative exponent on an integer |
+| `PC0334` | warning | This test is always true |
+| `PC0335` | error | Cannot cast to a value type |
+| `PC0336` | error | Parameter needs a type |
+
+### PC0400 to PC0499
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0400` | error | Used before it is given a value |
+| `PC0401` | error | Not given a value on every path |
+| `PC0402` | error | Field not given a value |
+| `PC0403` | warning | Unreachable code |
+| `PC0404` | error | Not every path yields a value |
+
+### PC0600 to PC0699
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0600` | error | Project file not found |
+| `PC0601` | error | Project has no header |
+| `PC0602` | error | Project has no name |
+| `PC0603` | error | Project is not closed |
+| `PC0604` | error | Unrecognized project entry |
+| `PC0605` | error | Source with no path |
+| `PC0606` | error | Source not found |
+| `PC0607` | error | Source is not Profi-C |
+| `PC0608` | error | Source listed more than once |
+| `PC0609` | error | Folder holds no source |
+| `PC0610` | error | Project builds nothing |
+| `PC0611` | error | Imported file not found |
+| `PC0612` | error | Import is not Profi-C |
+| `PC0613` | warning | Import names an absolute path |
+

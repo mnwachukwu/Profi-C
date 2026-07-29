@@ -1,6 +1,28 @@
 (* ==========================================================================
    The Profi-C grammar.
 
+   WHAT THIS FILE IS. A description of the language's surface syntax, written
+   for people and kept in step with the parser by hand.
+
+   WHAT IT IS NOT. It is not read by anything. No part of the compiler, the
+   build, or the test suite opens this file, and no parser is generated from
+   it. Profi-C is parsed by hand-written recursive descent -- one method per
+   production, in src/ProfiC.Compiler/Parsing -- with expressions handled by
+   precedence climbing against the table in src/ProfiC.Compiler/Ast/
+   Operators.cs. That table, not the one printed below, is what the compiler
+   consults; the one below restates it for a reader.
+
+   So this file can drift from the compiler without anything failing. What
+   actually pins the syntax is samples/reference/tour.pc, which contains
+   every construct here exactly once and is checked against a recorded token
+   stream and a recorded tree on every build. Change a production here and
+   nothing breaks; change one there and the goldens do.
+
+   AHEAD OF THE COMPILER. Namespaces are described in full below and parse
+   today, but nothing scopes them yet: a type declared inside one is reached
+   without qualification, exactly as though the namespace were not written.
+   Everything else below is implemented.
+
    Metasyntax: braces mean zero or more, square brackets mean optional,
    parentheses group, a vertical bar separates alternatives, and quoted
    items are terminals.
@@ -20,11 +42,15 @@
 
 (* ---- Compilation unit -------------------------------------------------- *)
 
-CompilationUnit = { UsingDirective }
+CompilationUnit = { UsingDirective | ImportDirective }
                   ( FileScopedNamespace
                   | { NamespaceDecl | ModelDecl | StructureDecl } ) EOF ;
 
+(* A using decides which names are reachable unqualified and brings in no
+   file. An import decides which files are compiled and affects no name.
+   Neither does the other's job; see the language specification. *)
 UsingDirective      = "using" QualifiedName ";" ;
+ImportDirective     = "import" StringLiteral ";" ;
 
 FileScopedNamespace = "namespace" QualifiedName ";"
                       { NamespaceDecl | ModelDecl | StructureDecl } ;
@@ -167,8 +193,12 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    Operator precedence
 
    Expressions are parsed by precedence climbing rather than by a ladder of
-   nonterminals, so the table below is normative and the Expr production is
-   not expanded above. Adding an operator is adding a row.
+   nonterminals, so the table below stands in for the Expr production, which
+   is not expanded above. Adding an operator is adding a row.
+
+   This restates Operators.cs for a reader. The numbers there are raw binding
+   powers and run higher, because a left-associative operator needs a pair;
+   only the order of the rows matters, and it is the same order.
 
      Level  Operator                       Position   Associativity
      -----  -----------------------------  ---------  -------------
@@ -225,13 +255,13 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    production rather than being a nested IfStmt, and a whole chain closes
    with one "end" "if".
 
-   DEFERRED TO THE PARSER, the decrement diagnostic. "--" is scanned as two
+   THE DECREMENT DIAGNOSTIC BELONGS TO THE PARSER. "--" is scanned as two
    minus signs, because unary minus exists and "x--1" is a valid subtraction
    of negative one that must keep working however it is spaced. The parser
-   should recognize the shape "operand -- <token that cannot begin an
-   operand>", as in "i--;", and report that Profi-C has no decrement
-   operator. "++" needs no such handling and is rejected while scanning,
-   since there is no unary plus for the second sign to belong to.
+   recognizes the shape "operand -- <token that cannot begin an operand>",
+   as in "i--;", and reports that Profi-C has no decrement operator. "++"
+   needs no such handling and is rejected while scanning, since there is no
+   unary plus for the second sign to belong to.
 
    STATEMENT BOUNDARIES. Because a body has no opener, a condition ends at
    the first token that cannot continue an expression. Read literally that
@@ -246,7 +276,7 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    "base", every literal, "{", "new", "not", and every keyword
    have no infix binding power.
 
-   Two tokens do not. "(" is the call operator at level 9 and "-" is infix
+   Two tokens do not. "(" is the call operator at level 10 and "-" is infix
    at level 6, so both continue an expression rather than starting a new
    statement. Without a rule, this
 
@@ -279,12 +309,12 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    beginning with "-" computes a value and discards it, so nothing useful
    is lost there either.
 
-   The parser should reject both with a diagnostic in the syntax range that
-   names the rewrite rather than merely reporting an unexpected token.
+   Both are rejected with PC0106, which names the rewrite rather than
+   merely reporting an unexpected token.
 
-   Alternatives considered and rejected: requiring parentheses around
-   conditions does not fix ForStmt or ForEachStmt unless the loop bounds
-   are parenthesized too; making line breaks significant contradicts the
-   language being layout-insensitive; and reinstating a body opener
-   reverses the block structure the language is built around.
+   Requiring parentheses around conditions would not fix ForStmt or
+   ForEachStmt unless the loop bounds were parenthesized too; making line
+   breaks significant contradicts the language being layout-insensitive;
+   and reinstating a body opener reverses the block structure the language
+   is built around.
    ========================================================================== *)

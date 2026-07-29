@@ -9,19 +9,23 @@ A condensed reference and a full comparison to C#. For the normative definition 
 
 ## 1. Reserved words
 
-### 1.1 The 54 reserved words
+### 1.1 The 55 reserved words
 
 ```
 abstract     and          as           base         begin        boolean
 break        case         catch        character    constant     continue
 default      each         else         end          enumeration  extends
 false        finally      for          fraction     function     global
-if           in           integer      is           let          model
-namespace    new          not          or           override     protected
-public       real         sealed       step         string       structure
-switch       then         this         throw        to           true
-try          until        using        virtual      while        yield
+if           import       in           integer      is           let
+model        namespace    new          not          or           override
+protected    public       real         sealed       step         string
+structure    switch       then         this         throw        to
+true         try          until        using        virtual      while
+yield
 ```
+
+A name may take one back by writing `@` in front of it — `@end`, `@step` — which is the only
+place a name may begin with something other than a letter.
 
 ### 1.2 Reserved outside the keyword table (1)
 
@@ -268,12 +272,15 @@ Every stage is independently valuable as a language improvement. None is justifi
 
 Note this is not a foreign function interface problem. Profi-C compiles to CIL and runs on the CLR, so calling `System.Math.Sqrt` is CIL calling CIL with the same collector and calling convention. The obstacle is that Profi-C cannot *name* a generic type, an interface, or a property, so any .NET member using one is unreachable regardless of conversion. Generics, interfaces, and properties are therefore the prerequisites for opening it up, which is why they head the v2 list.
 
-Namespaces and `using` directives **are** present, in both the file-scoped and block forms.
+Namespaces and `using` directives **are** present in the grammar, in both the file-scoped and
+block forms, and they parse. Neither scopes anything yet: a type declared inside a namespace
+is reached without qualification, and a `using` is read and ignored. See §12.3 of the
+specification.
 
 ---
 
 ## 7. Two details worth knowing
 
-**Exactly one warning exists in the language.** A `switch` over an enumeration that omits members is the only warning-level diagnostic; everything else is an error or is silent. Warnings do not block compilation.
+**Warnings are few and each one names its fix.** Seven exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, and an import naming an absolute path. Every other diagnostic is an error. Warnings do not block compilation.
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.

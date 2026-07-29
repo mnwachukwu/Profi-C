@@ -401,6 +401,19 @@ public sealed partial class TypeChecker
         CallExpr call,
         string name,
         List<FunctionSymbol> candidates,
+        List<TypeSymbol> arguments) =>
+        ResolveOverload(call, call.Arguments, name, candidates, arguments);
+
+    /// <summary>
+    /// Chooses among overloads at any site that passes arguments, which is a call or a
+    /// <c>new</c>. Both need the same rules, and a constructor left unresolved would let a
+    /// value of any type reach a field of any other.
+    /// </summary>
+    private FunctionSymbol? ResolveOverload(
+        SyntaxNode site,
+        IReadOnlyList<Expression> written,
+        string name,
+        List<FunctionSymbol> candidates,
         List<TypeSymbol> arguments)
     {
         List<FunctionSymbol> byArity =
@@ -410,7 +423,7 @@ public sealed partial class TypeChecker
         {
             Report(
                 DiagnosticDescriptors.WrongArgumentCount,
-                call,
+                site,
                 name,
                 Wording.Count(candidates[0].Parameters.Count, "argument"),
                 arguments.Count);
@@ -421,7 +434,11 @@ public sealed partial class TypeChecker
         if (byArity.Count == 1)
         {
             CheckArgumentsAgainst(
-                call, name, [.. byArity[0].Parameters.Select(p => (TypeSymbol?)p.Type)], arguments);
+                site,
+                written,
+                name,
+                [.. byArity[0].Parameters.Select(p => (TypeSymbol?)p.Type)],
+                arguments);
 
             return byArity[0];
         }
@@ -445,7 +462,7 @@ public sealed partial class TypeChecker
         switch (applicable.Count)
         {
             case 0:
-                Report(DiagnosticDescriptors.NoMatchingOverload, call, name);
+                Report(DiagnosticDescriptors.NoMatchingOverload, site, name);
                 return null;
 
             case 1:
@@ -454,7 +471,7 @@ public sealed partial class TypeChecker
             default:
                 // Two versions reachable only by conversion is a tie, and a tie is reported
                 // rather than broken.
-                Report(DiagnosticDescriptors.AmbiguousOverload, call, name);
+                Report(DiagnosticDescriptors.AmbiguousOverload, site, name);
                 return null;
         }
     }
@@ -464,8 +481,8 @@ public sealed partial class TypeChecker
     /// <para>A lambda written with bare parameter names is the only argument that cannot be
     /// checked where it stands, since what it means depends on the parameter it is being
     /// passed to — and which parameter that is depends on which version of an overloaded name
-    /// was chosen. It stands as the error type until <see cref="CheckArgumentsAgainst"/> knows,
-    /// which also keeps it from steering the choice it is waiting on.</para>
+    /// was chosen. It stands as the error type until the arguments are checked against a
+    /// chosen signature, which also keeps it from steering the choice it is waiting on.</para>
     /// </summary>
     private TypeSymbol CheckArgument(Expression argument) =>
         NeedsATarget(argument) ? ErrorType.Instance : CheckExpression(argument);
@@ -478,13 +495,21 @@ public sealed partial class TypeChecker
         CallExpr call,
         string name,
         IReadOnlyList<TypeSymbol?> parameters,
+        List<TypeSymbol> arguments) =>
+        CheckArgumentsAgainst(call, call.Arguments, name, parameters, arguments);
+
+    private void CheckArgumentsAgainst(
+        SyntaxNode site,
+        IReadOnlyList<Expression> written,
+        string name,
+        IReadOnlyList<TypeSymbol?> parameters,
         List<TypeSymbol> arguments)
     {
         if (parameters.Count != arguments.Count)
         {
             Report(
                 DiagnosticDescriptors.WrongArgumentCount,
-                call,
+                site,
                 name,
                 Wording.Count(parameters.Count, "argument"),
                 arguments.Count);
@@ -498,20 +523,20 @@ public sealed partial class TypeChecker
             // are being passed to says what their bare names stand for. A parameter that takes
             // a value of any kind says nothing, so the lambda is checked without a target and
             // reports the names it could not settle rather than passing silently.
-            if (NeedsATarget(call.Arguments[i]))
+            if (NeedsATarget(written[i]))
             {
                 arguments[i] = parameters[i] is { } target
-                    ? CheckExpressionAgainst(call.Arguments[i], target)
-                    : CheckExpression(call.Arguments[i]);
+                    ? CheckExpressionAgainst(written[i], target)
+                    : CheckExpression(written[i]);
             }
-            else if (call.Arguments[i] is LambdaExpr written
+            else if (written[i] is LambdaExpr lambda
                      && parameters[i] is { } declared
                      && TargetFor(declared) is { } wanted)
             {
                 // One whose types were all written needed no target and was checked on its own
                 // terms above. The target is still worth reading against it, since it is what
                 // makes those types unnecessary.
-                MatchParametersToTarget(written, wanted);
+                MatchParametersToTarget(lambda, wanted);
             }
 
             // A parameter that takes a value of any kind still takes a value. Nothing is not a
@@ -519,13 +544,13 @@ public sealed partial class TypeChecker
             // as though it had.
             if (ReferenceEquals(arguments[i], PrimitiveType.Void))
             {
-                Report(DiagnosticDescriptors.ValueExpected, call.Arguments[i]);
+                Report(DiagnosticDescriptors.ValueExpected, written[i]);
                 continue;
             }
 
             if (parameters[i] is { } expected)
             {
-                RequireAssignable(arguments[i], expected, call.Arguments[i]);
+                RequireAssignable(arguments[i], expected, written[i]);
             }
         }
     }

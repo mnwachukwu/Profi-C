@@ -1,5 +1,7 @@
-members.pc(26,27): error PC0330: 'Count' is a function, so it has to be called: write 'Count()'.
-members.pc(29,27): error PC0331: 'count' belongs to each Counter rather than to the Counter type, so it cannot be reached through the name 'Counter'. Mark it 'global', or read it from a value.
-members.pc(32,26): error PC0332: This produces no value, so there is nothing to use here.
-members.pc(35,27): error PC0332: This produces no value, so there is nothing to use here.
-members.pc(38,27): error PC0306: An integer[] has no member named 'Length'.
+members.pc(30,41): error PC0300: Cannot use a string where an integer is expected.
+members.pc(31,27): error PC0308: 'Counter' takes 1 argument, but was given 2.
+members.pc(34,27): error PC0330: 'Count' is a function, so it has to be called: write 'Count()'.
+members.pc(37,27): error PC0331: 'count' belongs to each Counter rather than to the Counter type, so it cannot be reached through the name 'Counter'. Mark it 'global', or read it from a value.
+members.pc(40,26): error PC0332: This produces no value, so there is nothing to use here.
+members.pc(43,27): error PC0332: This produces no value, so there is nothing to use here.
+members.pc(46,27): error PC0306: An integer[] has no member named 'Length'.

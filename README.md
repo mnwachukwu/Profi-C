@@ -184,7 +184,7 @@ read-only inside the body, which removes the classic closure-capture trap.
 
 ## Status
 
-**Profi-C runs.** Programs execute on a tree-walking interpreter; the CIL emitter is next.
+**Profi-C runs.** Programs execute on a tree-walking interpreter.
 
 | Stage | State |
 |---|---|
@@ -195,12 +195,21 @@ read-only inside the body, which removes the classic closure-capture trap.
 | Definite assignment, optional narrowing | Complete |
 | Lowering | Complete |
 | Interpreter | Complete |
+| Multi-file compilation, projects, imports | Complete |
+| Namespaces | Parse, but do not scope yet |
+| Closure conversion | Not started |
+| Standard library beyond the built-ins | Not started |
 | CIL emitter | Not started |
 
-**The front end is finished.** Source becomes a syntax tree, every name resolves, every
-expression has a type, nothing can be read before it holds a value, and an optional cannot be
-read at all until presence is proven. All of it reports errors with positions and recovers
-rather than stopping at the first mistake.
+Source becomes a syntax tree, every name resolves, every expression has a type, nothing can be
+read before it holds a value, and an optional cannot be read at all until presence is proven.
+All of it reports errors with positions and recovers rather than stopping at the first
+mistake.
+
+**The one gap in the front end is namespaces.** Both forms parse and a `using` parses, but
+nothing scopes them: a type declared inside a namespace is reached by its bare name, exactly
+as though the namespace were not written. That is the next piece of work, and after it come
+closure conversion, the standard library, and then the emitter.
 
 ```bash
 dotnet run --project src/ProfiC.Cli -- run samples/hello.pc
@@ -398,14 +407,21 @@ compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go s
 
 | Document | What it is |
 |---|---|
-| [docs/language-spec.md](docs/language-spec.md) | The normative specification. Grows section by section as each is implemented and tested |
+| [docs/language-spec.md](docs/language-spec.md) | The normative specification, plus an appendix listing every diagnostic |
 | [docs/language-summary.md](docs/language-summary.md) | A condensed reference and a full **comparison to C#** |
-| [docs/grammar.ebnf](docs/grammar.ebnf) | The formal grammar and the operator precedence table |
+| [docs/grammar.ebnf](docs/grammar.ebnf) | The surface syntax as productions, and the precedence table |
 
-The specification is written section by section as each part of the language is implemented
-and covered by tests, so it never describes more than the compiler actually does. Sections 1
-and 2, the lexical rules and the token table, are complete. Until a later section lands, the
-summary is the best description of that area.
+The specification is written as each part of the language is implemented and covered by
+tests, so it never describes more than the compiler actually does. Where it and the other two
+disagree, it is right.
+
+**The grammar file is a description, not an input.** Nothing reads it — no parser is generated
+from it, and no build step checks it. Profi-C is parsed by hand-written recursive descent, one
+method per production, with expressions handled by precedence climbing against the table in
+`src/ProfiC.Compiler/Ast/Operators.cs`. So the grammar can drift from the compiler without
+anything failing; what actually pins the syntax is
+[samples/reference/tour.pc](samples/reference/tour.pc), which holds every construct exactly
+once and is checked against a recorded token stream and a recorded tree on every build.
 
 ## Building
 
@@ -522,7 +538,7 @@ else and belongs under `compile/` instead.
 
 ```
 src/
-  ProfiC.Compiler/     lexer, parser, semantic analysis, lowering, CIL emitter
+  ProfiC.Compiler/     lexer, parser, semantic analysis, lowering
   ProfiC.Runtime/      the value types a program uses: fraction, set, deep equality
   ProfiC.Interpreter/  runs the lowered tree
   ProfiC.Cli/          the profi-c command
@@ -533,6 +549,7 @@ docs/
 samples/               .pc programs, one per file
   bookshelf/           one program across three files in a folder
   storefront/          one program across three folders, listed by a .pcp
+  toolkit/             one program reaching other files by import
   reference/           tour.pc and the scanner corpus; not programs
   negatives/           programs that are wrong on purpose
 ```

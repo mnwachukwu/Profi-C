@@ -1208,6 +1208,59 @@ public sealed class TypeCheckerTests
                 """)),
             Is.Not.Empty);
 
+    // ---- Constructing ------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A <c>new</c> is checked against the constructor it runs, the same way a call is
+    /// checked against the function it calls.</para>
+    /// <para>Left unresolved, a constructor accepted any arguments at all and dropped them,
+    /// which reached as far as a string sitting in a field declared to hold an integer.</para>
+    /// </summary>
+    [TestCase("        Thing t = new Thing(\"text\");", "PC0300")]
+    [TestCase("        Thing t = new Thing(1, 2);", "PC0308")]
+    [TestCase("        Thing t = new Thing();", "PC0308")]
+    public void ANewIsCheckedAgainstTheConstructorItRuns(string body, string expected) =>
+        Assert.That(IdsOf(CheckWithThing(body)), Is.EqualTo(new[] { expected }));
+
+    [Test]
+    public void AConstructorThatFitsIsAccepted() =>
+        Assert.That(IdsOf(CheckWithThing("        Thing t = new Thing(1);")), Is.Empty);
+
+    /// <summary>A type declaring no constructor takes nothing, so only an empty new fits it.</summary>
+    [TestCase("        Bare b = new Bare();", new string[0])]
+    [TestCase("        Bare b = new Bare(1);", new[] { "PC0308" })]
+    public void ATypeWithNoConstructorTakesNoArguments(string body, string[] expected) =>
+        Assert.That(IdsOf(CheckWithThing(body)), Is.EqualTo(expected));
+
+    /// <summary>
+    /// An exception declares no constructor a program can see, but every one carries a
+    /// message, so that one form is allowed through — as it is after <c>base</c>.
+    /// </summary>
+    [TestCase("        let e = new Exception(\"went wrong\");", new string[0])]
+    [TestCase("        let e = new Exception(1, 2);", new[] { "PC0308" })]
+    public void AnExceptionStillTakesItsMessage(string body, string[] expected) =>
+        Assert.That(IdsOf(CheckWithThing(body)), Is.EqualTo(expected));
+
+    private static DiagnosticBag CheckWithThing(string body) => Check($$"""
+        model Thing
+            public integer v;
+
+            public function Thing(integer v)
+                this.v = v;
+            end function
+        end model
+
+        model Bare
+            public integer v;
+        end model
+
+        global model Program
+            function Main()
+        {{body}}
+            end function
+        end model
+        """);
+
     // ---- How a message reads ---------------------------------------------------------------
 
     /// <summary>
