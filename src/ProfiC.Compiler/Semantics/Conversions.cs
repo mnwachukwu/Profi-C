@@ -18,10 +18,9 @@ public enum ConversionKind
 
 /// <summary>
 /// <para>Which types become which, and how.</para>
-/// <para>The interesting entries are the ones that are deliberately <em>not</em> implicit.
-/// A fraction and a real are both numbers, but neither converts to the other on its own:
-/// one direction loses information, and the other produces exact results so startling that
-/// hiding it would be worse than requiring the call.</para>
+/// <para>Several pairs are <em>not</em> implicit. A fraction and a real are both numbers, but
+/// neither converts to the other on its own: one direction loses information, and the other
+/// produces exact results startling enough that the program states which it wants.</para>
 /// </summary>
 public static class Conversions
 {

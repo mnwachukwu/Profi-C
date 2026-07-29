@@ -720,7 +720,7 @@ public sealed class TypeCheckerTests
     [TestCase("        if true\n            yield;\n        else if 1\n            yield;\n        end if",
               "An else-if condition")]
     [TestCase("        while 1\n            yield;\n        end while", "A while condition")]
-    [TestCase("        let f = if 1 then 2 else 3;", "The condition of an 'if ... then ... else'")]
+    [TestCase("        let f = if 1 then 2 else 3;", "An if expression's condition")]
     [TestCase("        let g = 1 and true;", "An operand of 'and' or 'or'")]
     public void AConditionMessageNamesItsSubjectCorrectly(string body, string expected)
     {

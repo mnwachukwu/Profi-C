@@ -40,7 +40,7 @@ The scanner consumes `comment`, then looks ahead on the same line for `begin`. F
 
 Note the asymmetry: the opener is `comment begin` and the closer is `end comment`, reversed rather than repeated.
 
-### 1.3 Deliberately not reserved
+### 1.3 Not reserved
 
 `private`, `static`, `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`, `select`, `when`, `const`.
 
@@ -63,6 +63,7 @@ Members are private by default, so `public` and `protected` opt out and `private
 | `InvalidCastException` | thrown when a forced cast fails |
 | `FormatException` | thrown when a parse or format operation fails |
 | `ArgumentException` | thrown when an argument is invalid |
+| `OverflowException` | thrown when an arithmetic result does not fit its type |
 
 Users may extend `Exception` and its subtypes. `Model` **is** extendable and is extended implicitly by everything, exactly as `object` is in C#; what cannot be done is redeclaring the name. `Console` and `Reference` are `global model`s, so neither can be extended or instantiated.
 
@@ -151,9 +152,9 @@ printing — so models print their type name and an author who wants more overri
 
 **Library surface is exempt and keeps .NET spellings.** `Math.Sqrt` stays as-is rather than becoming `Mathematics.SquareRoot`, because Profi-C is expected to gain real .NET imports eventually; renaming now would leave two spellings for one function once that lands. The line: anything Profi-C defines is spelled out, anything it borrows keeps its source spelling.
 
-**Keywords are lowercase. Built-ins are PascalCase.** This is deliberate and gives the reader an instant signal about what is language and what is library.
+**Keywords are lowercase. Built-ins are PascalCase.** The casing tells a reader at a glance what is language and what is library.
 
-Two consequences of that convention worth knowing:
+Two consequences of that convention:
 
 - `model` declares a type; `Model` is the root type.
 - `or` is the boolean operator; `Or` is the optional fallback method.
@@ -236,7 +237,7 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **Fractions are a primitive** with exact rational arithmetic. `fraction` and `real` never implicitly convert in either direction; both are explicit.
 
-**`^` raises to a power** and is the only right-associative operator, so `2 ^ 3 ^ 2` is 512. It binds tighter than a leading minus, making `-2 ^ 2` equal to `-4` as on paper. A **whole** exponent preserves the base's type: an integer base gives an integer, and a fraction base stays exact, so `(1|2) ^ -3` is `8|1`. Any other exponent takes a root and gives a real, so `9 ^ 1|2` is `3` and `16 ^ 3|4` is `8` — this is the one place a fraction widens to a real unasked, because a root has no exact rational form to preserve. **This is a deliberate divergence from C#**, where `^` is exclusive-or — Profi-C has no bitwise operators, so the symbol was free.
+**`^` raises to a power** and is the only right-associative operator, so `2 ^ 3 ^ 2` is 512. It binds tighter than a leading minus, making `-2 ^ 2` equal to `-4` as on paper. A **whole** exponent preserves the base's type: an integer base gives an integer, and a fraction base stays exact, so `(1|2) ^ -3` is `8|1`. Any other exponent takes a root and gives a real, so `9 ^ 1|2` is `3` and `16 ^ 3|4` is `8` — the one place a fraction widens to a real unasked, since a root has no exact rational form to preserve. **In C# `^` is exclusive-or**; Profi-C has no bitwise operators, so the meaning does not carry across.
 
 **Assignment is a statement.** `if (x = 5)` is a syntax error rather than a warning.
 

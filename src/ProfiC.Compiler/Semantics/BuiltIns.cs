@@ -3,9 +3,9 @@ namespace ProfiC.Compiler.Semantics;
 /// <summary>
 /// <para>Every member reached through the name of a built-in model, one identifier each.</para>
 /// <para>These join the two halves of a built-in — what the type checker knows about it, and
-/// what happens when it runs — with something the C# compiler checks rather than with a name
-/// written out twice. The back end switches on this enumeration without a fallback arm, so a
-/// member declared here and implemented nowhere does not compile.</para>
+/// what happens when it runs — with something the C# compiler checks. The back end switches on this 
+/// enumeration without a fallback arm, so a member declared here and implemented nowhere does not 
+/// compile.</para>
 /// </summary>
 public enum BuiltInId
 {
@@ -24,6 +24,40 @@ public enum BuiltInId
     MathMax,
 
     FractionCreate,
+
+    // ---- Members of a value, found by the receiver's type ----------------------------------
+
+    SetCount,
+    SetInsert,
+    SetInsertAt,
+    SetRemove,
+    SetRemoveAt,
+    SetContains,
+    SetIndexOf,
+    SetClear,
+
+    StringCount,
+    StringContains,
+    StringIndexOf,
+    StringSubstring,
+    StringInsert,
+    StringInsertAt,
+    StringRemove,
+    StringRemoveAt,
+    StringToCharacters,
+
+    OptionalHasValue,
+    OptionalOr,
+    OptionalValue,
+
+    FractionToReal,
+    RealToFraction,
+    EnumerationToInteger,
+    ExceptionMessage,
+
+    // Inherited by every type from Model.
+    ModelToString,
+    ModelEquals,
 }
 
 /// <summary>A built-in model, and everything the language knows about it.</summary>
@@ -109,19 +143,17 @@ public static class BuiltIns
         Models.Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
-    /// The built-in exceptions, which descend from <c>Exception</c> and may be extended.
-    /// Kept beside the models because they share the rule that a program cannot declare them.
+    /// <para>The built-in exceptions, which descend from <c>Exception</c> and may be extended.
+    /// Kept beside the models because they share the rule that a program cannot declare
+    /// them.</para>
+    /// <para>Read from the runtime's catalogue rather than listed again, so that a name the
+    /// language can raise is a name a program can catch. <c>Exception</c> itself is the root
+    /// and is catalogued above as a model.</para>
     /// </summary>
     public static readonly IReadOnlySet<string> ExceptionNames =
-        new HashSet<string>(StringComparer.Ordinal)
-        {
-            "DivideByZeroException",
-            "IndexOutOfRangeException",
-            "EmptyOptionalException",
-            "InvalidCastException",
-            "FormatException",
-            "ArgumentException",
-        };
+        Runtime.BuiltInExceptions.Names
+            .Where(name => !string.Equals(name, "Exception", StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Every name the language owns, whether a model or an exception.</summary>
     public static readonly IReadOnlySet<string> AllTypeNames =
@@ -143,4 +175,95 @@ public static class BuiltIns
     public static BuiltInMember? Find(string modelName, string memberName) =>
         FindModel(modelName)?.Members
             .FirstOrDefault(m => string.Equals(m.Name, memberName, StringComparison.Ordinal));
+
+    // ---- Members of a value --------------------------------------------------------------
+    // Found by the receiver's type rather than by a name. Several depend on the receiver: a
+    // set's Insert takes its element type, an optional's Value yields its underlying one, so
+    // each list is built for the receiver it is asked about.
+
+    /// <summary>Members every type inherits from <c>Model</c>.</summary>
+    public static IReadOnlyList<BuiltInMember> OnEveryType() =>
+    [
+        Member(BuiltInId.ModelToString, "ToString", PrimitiveType.String),
+
+        // Structural, the same question '==' asks. Takes a value of any type.
+        Member(BuiltInId.ModelEquals, "Equals", PrimitiveType.Boolean, [null]),
+    ];
+
+    public static IReadOnlyList<BuiltInMember> OnSet(SetType set) =>
+    [
+        Member(BuiltInId.SetCount, "Count", PrimitiveType.Integer),
+        Member(BuiltInId.SetInsert, "Insert", null, set.ElementType),
+        Member(BuiltInId.SetInsertAt, "InsertAt", null, PrimitiveType.Integer, set.ElementType),
+
+        // The only mutator that yields anything, matching the list it is built on.
+        Member(BuiltInId.SetRemove, "Remove", PrimitiveType.Boolean, set.ElementType),
+
+        Member(BuiltInId.SetRemoveAt, "RemoveAt", null, PrimitiveType.Integer),
+        Member(BuiltInId.SetContains, "Contains", PrimitiveType.Boolean, set.ElementType),
+        Member(BuiltInId.SetIndexOf, "IndexOf", PrimitiveType.Integer, set.ElementType),
+        Member(BuiltInId.SetClear, "Clear", null),
+        .. OnEveryType(),
+    ];
+
+    /// <summary>
+    /// A string's members mirror a set's, so that the two read alike. It reports its length
+    /// with <c>Count()</c> rather than a differently named member for the same idea, and every
+    /// one of these yields a new string rather than changing the original.
+    /// </summary>
+    public static IReadOnlyList<BuiltInMember> OnString() =>
+    [
+        Member(BuiltInId.StringCount, "Count", PrimitiveType.Integer),
+        Member(BuiltInId.StringContains, "Contains", PrimitiveType.Boolean, PrimitiveType.String),
+        Member(BuiltInId.StringIndexOf, "IndexOf", PrimitiveType.Integer, PrimitiveType.String),
+        Member(BuiltInId.StringSubstring, "Substring", PrimitiveType.String,
+               PrimitiveType.Integer, PrimitiveType.Integer),
+        Member(BuiltInId.StringInsert, "Insert", PrimitiveType.String, PrimitiveType.String),
+        Member(BuiltInId.StringInsertAt, "InsertAt", PrimitiveType.String,
+               PrimitiveType.Integer, PrimitiveType.String),
+        Member(BuiltInId.StringRemove, "Remove", PrimitiveType.String, PrimitiveType.String),
+        Member(BuiltInId.StringRemoveAt, "RemoveAt", PrimitiveType.String, PrimitiveType.Integer),
+        Member(BuiltInId.StringToCharacters, "ToCharacters", new SetType(PrimitiveType.Character)),
+        .. OnEveryType(),
+    ];
+
+    /// <summary>
+    /// <para>The three members of an optional, and there are only three.</para>
+    /// <para><c>Or</c> has two forms: given a plain value it ends the chain with a definite
+    /// one, and given another optional it keeps the chain going, which is what makes
+    /// <c>a.Or(b).Or(c)</c> work. The second form is added by the caller that knows the
+    /// argument.</para>
+    /// </summary>
+    public static IReadOnlyList<BuiltInMember> OnOptional(OptionalType optional) =>
+    [
+        Member(BuiltInId.OptionalHasValue, "HasValue", PrimitiveType.Boolean),
+        Member(BuiltInId.OptionalOr, "Or", optional.UnderlyingType, optional.UnderlyingType),
+        Member(BuiltInId.OptionalValue, "Value", optional.UnderlyingType),
+    ];
+
+    /// <summary>The two conversions the language deliberately refuses to make on its own.</summary>
+    public static IReadOnlyList<BuiltInMember> OnFraction() =>
+    [
+        Member(BuiltInId.FractionToReal, "ToReal", PrimitiveType.Real),
+        .. OnEveryType(),
+    ];
+
+    public static IReadOnlyList<BuiltInMember> OnReal() =>
+    [
+        Member(BuiltInId.RealToFraction, "ToFraction", PrimitiveType.Fraction),
+        .. OnEveryType(),
+    ];
+
+    public static IReadOnlyList<BuiltInMember> OnEnumeration() =>
+    [
+        Member(BuiltInId.EnumerationToInteger, "ToInteger", PrimitiveType.Integer),
+        .. OnEveryType(),
+    ];
+
+    /// <summary>Carried by every exception, including one a program declares.</summary>
+    public static IReadOnlyList<BuiltInMember> OnException() =>
+    [
+        Member(BuiltInId.ExceptionMessage, "Message", PrimitiveType.String),
+        .. OnEveryType(),
+    ];
 }

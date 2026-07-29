@@ -1,0 +1,28 @@
+comment begin
+    A number too large to hold.
+
+    This program compiles. Integer arithmetic is checked, so a result that will not fit stops
+    the program rather than wrapping round to a wrong answer that looks plausible.
+
+    20 factorial is the largest that fits in an integer. 21 factorial is not.
+end comment
+
+global model Program
+
+    function Main()
+        for n = 18 to 21
+            Console.WriteLine(n + "! = " + Program.Factorial(n));
+        end for
+    end function
+
+    integer function Factorial(integer n)
+        integer product = 1;
+
+        for factor = 2 to n
+            product = product * factor;
+        end for
+
+        yield product;
+    end function
+
+end model

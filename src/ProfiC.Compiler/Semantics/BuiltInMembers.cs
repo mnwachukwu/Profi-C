@@ -37,36 +37,75 @@ public static class BuiltInMembers
     /// </summary>
     public static IReadOnlyList<BuiltInMember> FindAll(TypeSymbol receiver, string name)
     {
-        BuiltInMember? single = receiver switch
-        {
-            SetType set => FindOnSet(set, name),
-            OptionalType optional => FindOnOptional(optional, name),
-            PrimitiveType primitive => FindOnPrimitive(primitive, name),
-            EnumerationSymbol => FindOnEnumeration(name),
-            ModelSymbol model => FindOnBuiltInModel(model, name),
-            _ => FindOnEveryType(name),
-        };
+        IReadOnlyList<BuiltInMember> candidates = MembersOf(receiver);
+        List<BuiltInMember> matches =
+            [.. candidates.Where(m => string.Equals(m.Name, name, StringComparison.Ordinal))];
 
-        // The handful of members with a second form.
-        if (receiver is ModelSymbol { Name: "Console" } && name is "WriteLine")
+        // The two members with a second form. Console.WriteLine also takes nothing at all, and
+        // an optional's Or takes either a plain value or another optional: given another the
+        // chain stays optional, given a value it ends with a definite one, which is what makes
+        // a.Or(b).Or(c) work.
+        if (receiver is ModelSymbol { Name: "Console" } && name == "WriteLine")
         {
-            return single is null
-                ? [new BuiltInMember(name, null, [])]
-                : [single, new BuiltInMember(name, null, [])];
+            matches.Add(new BuiltInMember(name, null, [], BuiltInId.ConsoleWriteLine));
         }
 
-        if (receiver is OptionalType optionalReceiver && name == "Or")
+        if (receiver is OptionalType optional && name == "Or")
         {
-            // Given another optional the chain stays optional; given a plain value it ends
-            // with a definite one. That is what makes a.Or(b).Or(c) work.
-            return
-            [
-                new BuiltInMember(name, optionalReceiver.UnderlyingType, [optionalReceiver.UnderlyingType]),
-                new BuiltInMember(name, optionalReceiver, [optionalReceiver]),
-            ];
+            matches.Add(new BuiltInMember(name, optional, [optional], BuiltInId.OptionalOr));
         }
 
-        return single is null ? [] : [single];
+        return matches;
+    }
+
+    /// <summary>
+    /// Everything the language provides on a receiver of this type, read from the catalogue.
+    /// See <see cref="BuiltIns"/>.
+    /// </summary>
+    private static IReadOnlyList<BuiltInMember> MembersOf(TypeSymbol receiver) => receiver switch
+    {
+        SetType set => BuiltIns.OnSet(set),
+        OptionalType optional => BuiltIns.OnOptional(optional),
+        EnumerationSymbol => BuiltIns.OnEnumeration(),
+        PrimitiveType primitive => OnPrimitive(primitive),
+        ModelSymbol model => OnModel(model),
+        _ => BuiltIns.OnEveryType(),
+    };
+
+    private static IReadOnlyList<BuiltInMember> OnPrimitive(PrimitiveType type)
+    {
+        if (ReferenceEquals(type, PrimitiveType.String))
+        {
+            return BuiltIns.OnString();
+        }
+
+        if (ReferenceEquals(type, PrimitiveType.Fraction))
+        {
+            return BuiltIns.OnFraction();
+        }
+
+        if (ReferenceEquals(type, PrimitiveType.Real))
+        {
+            return BuiltIns.OnReal();
+        }
+
+        return BuiltIns.OnEveryType();
+    }
+
+    private static IReadOnlyList<BuiltInMember> OnModel(ModelSymbol model)
+    {
+        List<BuiltInMember> members = [];
+
+        if (BuiltIns.FindModel(model.Name) is { } builtIn)
+        {
+            members.AddRange(builtIn.Members);
+        }
+
+        // Exception's own contribution is answered on the value rather than through its name,
+        // so it is added here for the built-in Exception, for the subtypes the language
+        // raises, and for a model a program declared by extending it.
+        members.AddRange(IsException(model) ? BuiltIns.OnException() : BuiltIns.OnEveryType());
+        return members;
     }
 
     /// <summary>The single version of a member, where a caller needs only its type.</summary>

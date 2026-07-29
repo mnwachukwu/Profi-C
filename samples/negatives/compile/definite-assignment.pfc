@@ -1,0 +1,36 @@
+comment begin
+    Reading a variable before it has been given a value.
+
+    This program does not compile. Every local must be proved to hold a value on every path
+    that reaches it, which is the other half of doing without null: there is no "unset" state
+    for a program to stumble into.
+end comment
+
+global model Program
+    function Main(boolean flag)
+        comment Never assigned at all.
+        integer total;
+        Console.WriteLine(total);
+
+        comment Assigned on one branch only, so the join does not carry it.
+        integer chosen;
+
+        if flag
+            chosen = 1;
+        end if
+
+        Console.WriteLine(chosen);
+
+        comment A try body may stop anywhere, so the catch cannot rely on what it assigned.
+        integer attempted;
+
+        try
+            attempted = 1;
+        catch Exception problem
+            Console.WriteLine(attempted);
+        end try
+
+        comment A constant must be given its value where it is declared.
+        constant integer Limit;
+    end function
+end model

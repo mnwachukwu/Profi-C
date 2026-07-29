@@ -1,0 +1,41 @@
+comment begin
+    Members reached the wrong way.
+
+    This program does not compile. Every member the language provides is a function, an
+    instance member needs an instance, and a call that yields nothing has no result to use.
+end comment
+
+model Counter
+    integer count;
+
+    public integer function Value()
+        yield this.count;
+    end function
+end model
+
+global model Program
+
+    function Report()
+        Console.WriteLine("reporting");
+    end function
+
+    function Main()
+        integer[] xs = {1, 2, 3};
+
+        comment There are no properties, so this is a function that was not called.
+        Console.WriteLine(xs.Count);
+
+        comment 'count' belongs to each Counter, not to the Counter type.
+        Console.WriteLine(Counter.count);
+
+        comment Report yields nothing, so there is no result to assign.
+        integer answer = Program.Report();
+
+        comment Nor to call a member on.
+        Console.WriteLine(Program.Report().ToString());
+
+        comment A set has no member of that name.
+        Console.WriteLine(xs.Length());
+    end function
+
+end model

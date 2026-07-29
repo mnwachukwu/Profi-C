@@ -1,0 +1,7 @@
+csharp-habits.pfc(15,18): error PFC0006: '&&' is not an operator in Profi-C. Use 'and'.
+csharp-habits.pfc(19,18): error PFC0006: '||' is not an operator in Profi-C. Use 'or'.
+csharp-habits.pfc(24,12): error PFC0006: '!' is not an operator in Profi-C. Use 'not'.
+csharp-habits.pfc(29,15): error PFC0006: '+=' is not an operator in Profi-C. Profi-C has no compound assignment. Write 'x = x + y'.
+csharp-habits.pfc(30,14): error PFC0006: '++' is not an operator in Profi-C. Profi-C has no increment operator. Write 'x = x + 1'.
+csharp-habits.pfc(33,29): error PFC0006: '**' is not an operator in Profi-C. Profi-C raises to a power with '^'. Write 'base ^ exponent', or 'Math.Pow(base, exponent)' for a real result.
+csharp-habits.pfc(36,13): error PFC0111: A range loop counts with integers, so its counter takes no type. Remove the 'integer'.

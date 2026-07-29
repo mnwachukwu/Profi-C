@@ -203,6 +203,12 @@ public sealed class Lowering
         MemberExpr countMember = new(span, sourceRef, "Count");
         _model.BindType(countMember, PrimitiveType.Integer);
 
+        // Which Count this is depends on what is being iterated, and nothing later can work
+        // that out: the synthesized node was never seen by the type checker.
+        _model.BindBuiltIn(
+            countMember,
+            sequenceType is SetType ? BuiltInId.SetCount : BuiltInId.StringCount);
+
         CallExpr count = new(span, countMember, []);
         _model.BindType(count, PrimitiveType.Integer);
 
@@ -346,6 +352,14 @@ public sealed class Lowering
         if (_model.GetType(original) is { } type)
         {
             _model.BindType(replacement, type);
+        }
+
+        // Which member the language provides a name resolved to is a decision only the type
+        // checker can make, so it travels with the node rather than being worked out again
+        // from a tree that no longer carries the receiver's declared type.
+        if (_model.GetBuiltIn(original) is { } builtIn)
+        {
+            _model.BindBuiltIn(replacement, builtIn);
         }
 
         return replacement;

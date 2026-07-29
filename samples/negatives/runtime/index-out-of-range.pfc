@@ -1,0 +1,17 @@
+comment begin
+    An index past the end of a set.
+
+    This program compiles. How many values a set holds is not known until it runs, so an
+    index that is too large is caught at the moment it is used.
+end comment
+
+global model Program
+    function Main()
+        integer[] scores = {90, 72, 88};
+
+        comment One past the last, which is the classic off-by-one: the last index is 2.
+        for i = 0 to scores.Count()
+            Console.WriteLine(scores[i]);
+        end for
+    end function
+end model

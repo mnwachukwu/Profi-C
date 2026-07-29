@@ -1,0 +1,19 @@
+comment begin
+    Recursion with no base case.
+
+    This program compiles. Countdown never stops calling itself, because the test that would
+    end it is missing. The failure names the cause rather than exhausting the stack.
+end comment
+
+global model Program
+
+    function Main()
+        Console.WriteLine(Program.Countdown(10));
+    end function
+
+    comment This should stop at zero, and does not.
+    integer function Countdown(integer n)
+        yield Program.Countdown(n - 1);
+    end function
+
+end model

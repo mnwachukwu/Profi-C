@@ -1,0 +1,4 @@
+optionals.pfc(23,25): error PFC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+optionals.pfc(26,27): error PFC0306: An Account? has no member named 'Describe'.
+optionals.pfc(29,27): error PFC0303: '+' is not defined for an integer? and an integer.
+optionals.pfc(33,31): error PFC0306: An Account? has no member named 'balance'.

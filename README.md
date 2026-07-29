@@ -356,6 +356,14 @@ dotnet build
 dotnet test
 ```
 
+Much of the suite compares against recorded files — token streams, syntax trees, what a
+program printed, and how a failing program failed. After a change that is meant to alter one
+of those, re-record them and read the diff:
+
+```bash
+PROFIC_UPDATE_GOLDEN=1 dotnet test
+```
+
 To build and run Profi-C programs rather than the compiler itself, see
 [Writing and running a program](#writing-and-running-a-program) above.
 
@@ -384,6 +392,42 @@ no entry point.
 Each runnable sample's output is recorded under `tests/ProfiC.Tests/TestData/Running/` and
 asserted on every build, so a sample that starts printing the wrong answer fails the suite.
 
+### Samples that fail on purpose
+
+`samples/negatives/` is the other half. A language is defined as much by what it turns away as
+by what it accepts, so these are held to the same standard: each file gathers a group of
+related mistakes and explains the lesson in its comments, and a reader sees the mistake and
+the message side by side.
+
+Programs the compiler rejects:
+
+| Sample | Mistakes |
+|---|---|
+| [csharp-habits.pfc](samples/negatives/compile/csharp-habits.pfc) | `&&`, `\|\|`, `!`, `+=`, `++`, `**`, and a typed range counter |
+| [optionals.pfc](samples/negatives/compile/optionals.pfc) | Using an optional without proving it holds something |
+| [definite-assignment.pfc](samples/negatives/compile/definite-assignment.pfc) | Reading a variable before it has a value; a constant with none |
+| [types.pfc](samples/negatives/compile/types.pfc) | Types that do not mix, and a division by a literal zero |
+| [members.pfc](samples/negatives/compile/members.pfc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
+| [blocks.pfc](samples/negatives/compile/blocks.pfc) | An `end` that closes the wrong construct |
+
+Programs that compile and then fail, because the answer depends on a value the compiler cannot
+see:
+
+| Sample | Failure |
+|---|---|
+| [divide-by-zero.pfc](samples/negatives/runtime/divide-by-zero.pfc) | `DivideByZeroException` — a divisor that arrived in a variable |
+| [index-out-of-range.pfc](samples/negatives/runtime/index-out-of-range.pfc) | `IndexOutOfRangeException` — one index past the end |
+| [empty-optional.pfc](samples/negatives/runtime/empty-optional.pfc) | `EmptyOptionalException` — `Value()` on an optional that turned out empty |
+| [overflow.pfc](samples/negatives/runtime/overflow.pfc) | `OverflowException` — a factorial too large for an integer |
+| [runaway-recursion.pfc](samples/negatives/runtime/runaway-recursion.pfc) | Recursion with no base case |
+| [uncaught-exception.pfc](samples/negatives/runtime/uncaught-exception.pfc) | A declared exception no catch clause matches |
+
+How each one fails is recorded under `tests/ProfiC.Tests/TestData/Negatives/` and asserted on
+every build, holding the wording as well as the outcome. A compile sample must be rejected
+with the diagnostics recorded for it; a runtime sample must compile with no diagnostics at all
+and then fail with the message recorded for it — one that stops compiling is testing something
+else and belongs under `compile/` instead.
+
 ## Repository layout
 
 ```
@@ -397,6 +441,7 @@ tests/
   ProfiC.Tests/
 docs/
 samples/               .pfc programs
+  negatives/           programs that are wrong on purpose
 ```
 
 ## License

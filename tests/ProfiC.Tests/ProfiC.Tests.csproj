@@ -22,6 +22,10 @@
     <ProjectReference Include="..\..\src\ProfiC.Compiler\ProfiC.Compiler.csproj" />
     <ProjectReference Include="..\..\src\ProfiC.Interpreter\ProfiC.Interpreter.csproj" />
     <ProjectReference Include="..\..\src\ProfiC.Runtime\ProfiC.Runtime.csproj" />
+
+    <!-- For the one format in which failures are shown to a person, so the recorded
+         expectations of the negative samples are what a reader will actually see. -->
+    <ProjectReference Include="..\..\src\ProfiC.Cli\ProfiC.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

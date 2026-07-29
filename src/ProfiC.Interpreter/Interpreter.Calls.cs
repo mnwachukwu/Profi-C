@@ -76,9 +76,13 @@ public sealed partial class Interpreter
                 arguments);
         }
 
-        if (ValueMemberCall(target, member.MemberName, arguments) is { } result)
+        // The type checker already settled which member this name refers to, weighing the
+        // receiver's type, what narrowing proved about it, and whether that type declares a
+        // member of the same name. Deciding again from the value in hand would be answering a
+        // different question.
+        if (_model.GetBuiltIn(member) is { } id)
         {
-            return result.Value;
+            return Perform(id, target, arguments).Value;
         }
 
         if (target is Instance instance)
@@ -101,21 +105,6 @@ public sealed partial class Interpreter
             {
                 return Invoke(held, call.Arguments, arguments);
             }
-
-            // Inherited from the built-in Exception, and reached only when the model did not
-            // declare its own, so a program is free to say something better.
-            if (member.MemberName == "Message" && BuiltInMembers.IsException(instance.Type))
-            {
-                return instance.Message ?? string.Empty;
-            }
-        }
-
-        // Last, so that a model declaring its own Value or ToString wins over these. An
-        // optional holding a model is the value itself, so both names can land on one target
-        // and the declared one has to be the one that runs.
-        if (UniversalMemberCall(target, member.MemberName, arguments) is { } fallback)
-        {
-            return fallback.Value;
         }
 
         throw new ProfiCRuntimeException(
@@ -184,7 +173,7 @@ public sealed partial class Interpreter
         // The catalogue decides whether this is a built-in at all, and which one. Nothing here
         // repeats a name, so there is no second list to keep in step with the first.
         return BuiltIns.Find(typeName, member)?.Id is { } id
-            ? Perform(id, arguments)
+            ? Perform(id, target: null, arguments)
             : null;
     }
 
@@ -193,20 +182,27 @@ public sealed partial class Interpreter
     /// <para>A switch expression over the whole enumeration with no fallback arm, so that a
     /// member in the catalogue with no implementation here is a build error rather than a call
     /// that quietly produces nothing.</para>
+    /// <para>The target is the value on the left, and is null for a member reached through a
+    /// model's name rather than through a value.</para>
     /// </summary>
     // CS8524 asks for a fallback arm covering values cast into the enumeration from outside
-    // it. Adding one would also satisfy CS8509, and CS8509 is the whole reason this is a
-    // switch expression: it is what reports a catalogue member nobody implemented. The
-    // narrower warning is suppressed so the useful one keeps working.
+    // it. A fallback arm also satisfies CS8509, which is the warning that reports a catalogue
+    // member with no implementation here, so the narrower one is suppressed instead.
 #pragma warning disable CS8524
-    private StrongBox<object?> Perform(BuiltInId id, List<object?> arguments)
+    private StrongBox<object?> Perform(BuiltInId id, object? target, List<object?> arguments)
     {
         object? Argument(int index) => arguments.ElementAtOrDefault(index);
         double Real(int index) => Argument(index) is double d ? d : 0;
         long Integer(int index) => AsInteger(Argument(index));
+        string Text(int index) => AsText(Argument(index));
+
+        ProfiCSet<object?> Set() => (ProfiCSet<object?>)target!;
+        string Subject() => (string)target!;
 
         return id switch
         {
+            // ---- Reached through a model's name ------------------------------------------
+
             BuiltInId.ConsoleWrite =>
                 Then(() => _output.Write(ModelOperations.ToDisplayString(Argument(0)))),
 
@@ -230,6 +226,61 @@ public sealed partial class Interpreter
 
             BuiltInId.FractionCreate =>
                 new StrongBox<object?>(new Fraction(Integer(0), Integer(1))),
+
+            // ---- Reached through a value --------------------------------------------------
+
+            BuiltInId.SetCount => new StrongBox<object?>((long)Set().Count),
+            BuiltInId.SetInsert => Then(() => Set().Insert(Argument(0))),
+            BuiltInId.SetInsertAt => Then(() => Set().InsertAt((int)Integer(0), Argument(1))),
+            BuiltInId.SetRemove => new StrongBox<object?>(Set().Remove(Argument(0))),
+            BuiltInId.SetRemoveAt => Then(() => Set().RemoveAt((int)Integer(0))),
+            BuiltInId.SetContains => new StrongBox<object?>(Set().Contains(Argument(0))),
+            BuiltInId.SetIndexOf => new StrongBox<object?>((long)Set().IndexOf(Argument(0))),
+            BuiltInId.SetClear => Then(Set().Clear),
+
+            BuiltInId.StringCount => new StrongBox<object?>((long)Subject().Length),
+            BuiltInId.StringContains => new StrongBox<object?>(
+                Subject().Contains(Text(0), StringComparison.Ordinal)),
+            BuiltInId.StringIndexOf => new StrongBox<object?>(
+                (long)Subject().IndexOf(Text(0), StringComparison.Ordinal)),
+            BuiltInId.StringSubstring => new StrongBox<object?>(Substring(Subject(), arguments)),
+            BuiltInId.StringInsert => new StrongBox<object?>(Subject() + Text(0)),
+            BuiltInId.StringInsertAt => new StrongBox<object?>(
+                Subject().Insert((int)Integer(0), Text(1))),
+            BuiltInId.StringRemove => new StrongBox<object?>(
+                Subject().Replace(Text(0), string.Empty, StringComparison.Ordinal)),
+            BuiltInId.StringRemoveAt => new StrongBox<object?>(
+                Subject().Remove((int)Integer(0), 1)),
+            BuiltInId.StringToCharacters => new StrongBox<object?>(
+                new ProfiCSet<object?>(Subject().Select(c => (object?)c))),
+
+            // An optional is the value itself, or nothing at all, so absence is a null target
+            // rather than a wrapper to look inside.
+            BuiltInId.OptionalHasValue => new StrongBox<object?>(target is not null),
+            BuiltInId.OptionalOr => new StrongBox<object?>(target ?? Argument(0)),
+            BuiltInId.OptionalValue => target is not null
+                ? new StrongBox<object?>(target)
+                : throw new EmptyOptionalException(),
+
+            BuiltInId.FractionToReal => new StrongBox<object?>(((Fraction)target!).ToReal()),
+            BuiltInId.RealToFraction => new StrongBox<object?>(
+                Fraction.FromReal(target is double d ? d : 0)),
+            BuiltInId.EnumerationToInteger => new StrongBox<object?>(
+                target is EnumValue enumeration ? enumeration.Ordinal : AsInteger(target)),
+
+            // A declared exception carries its message on the instance; one the language
+            // raises is a .NET exception and carries its own.
+            BuiltInId.ExceptionMessage => new StrongBox<object?>(target switch
+            {
+                Instance instance => instance.Message ?? string.Empty,
+                Exception error => error.Message,
+                _ => string.Empty,
+            }),
+
+            BuiltInId.ModelToString =>
+                new StrongBox<object?>(ModelOperations.ToDisplayString(target)),
+            BuiltInId.ModelEquals =>
+                new StrongBox<object?>(ModelOperations.DeepEquals(target, Argument(0))),
         };
     }
 #pragma warning restore CS8524
@@ -240,112 +291,6 @@ public sealed partial class Interpreter
         action();
         return new StrongBox<object?>(null);
     }
-
-    /// <summary>
-    /// <para>Members the language provides on a value: a set's, a string's, an optional's.</para>
-    /// <para>An optional is represented as the value itself, or nothing at all, so its three
-    /// members are answered from that directly rather than from a wrapper.</para>
-    /// </summary>
-    private StrongBox<object?>? ValueMemberCall(
-        object? target,
-        string member,
-        List<object?> arguments)
-    {
-        object? First() => arguments.Count > 0 ? arguments[0] : null;
-
-        switch (target)
-        {
-            case ProfiCSet<object?> set:
-                switch (member)
-                {
-                    case "Count": return new StrongBox<object?>((long)set.Count);
-                    case "Insert": set.Insert(First()); return new StrongBox<object?>(null);
-                    case "InsertAt":
-                        set.InsertAt((int)AsInteger(First()), arguments.ElementAtOrDefault(1));
-                        return new StrongBox<object?>(null);
-                    case "Remove": return new StrongBox<object?>(set.Remove(First()));
-                    case "RemoveAt":
-                        set.RemoveAt((int)AsInteger(First()));
-                        return new StrongBox<object?>(null);
-                    case "Contains": return new StrongBox<object?>(set.Contains(First()));
-                    case "IndexOf": return new StrongBox<object?>((long)set.IndexOf(First()));
-                    case "Clear": set.Clear(); return new StrongBox<object?>(null);
-                }
-
-                break;
-
-            case string text:
-                switch (member)
-                {
-                    case "Count": return new StrongBox<object?>((long)text.Length);
-                    case "Contains":
-                        return new StrongBox<object?>(
-                            text.Contains(AsText(First()), StringComparison.Ordinal));
-                    case "IndexOf":
-                        return new StrongBox<object?>(
-                            (long)text.IndexOf(AsText(First()), StringComparison.Ordinal));
-                    case "Substring":
-                        return new StrongBox<object?>(Substring(text, arguments));
-                    case "Insert":
-                        return new StrongBox<object?>(text + AsText(First()));
-                    case "InsertAt":
-                        return new StrongBox<object?>(
-                            text.Insert((int)AsInteger(First()), AsText(arguments.ElementAtOrDefault(1))));
-                    case "Remove":
-                        return new StrongBox<object?>(
-                            text.Replace(AsText(First()), string.Empty, StringComparison.Ordinal));
-                    case "RemoveAt":
-                        return new StrongBox<object?>(text.Remove((int)AsInteger(First()), 1));
-                }
-
-                break;
-
-            case Fraction fraction when member == "ToReal":
-                return new StrongBox<object?>(fraction.ToReal());
-
-            case double real when member == "ToFraction":
-                return new StrongBox<object?>(Fraction.FromReal(real));
-
-            case EnumValue enumeration when member == "ToInteger":
-                return new StrongBox<object?>(enumeration.Ordinal);
-
-            case Exception error when member == "Message":
-                return new StrongBox<object?>(error.Message);
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// <para>The members that answer on any value at all: an optional's three, and the two
-    /// every type inherits from <c>Model</c>.</para>
-    /// <para>Tried last, after a declared member has had its chance, because a model may
-    /// perfectly well declare its own <c>Value</c> or <c>ToString</c> and an optional holding
-    /// that model is the model itself — one target, two meanings, and the declared one wins.
-    /// Absence is represented by nothing at all, so a null target is the empty case rather than
-    /// a mistake.</para>
-    /// </summary>
-    private static StrongBox<object?>? UniversalMemberCall(
-        object? target,
-        string member,
-        List<object?> arguments) => member switch
-    {
-        "HasValue" => new StrongBox<object?>(target is not null),
-        "Or" => new StrongBox<object?>(target ?? (arguments.Count > 0 ? arguments[0] : null)),
-        "Value" => target is not null
-            ? new StrongBox<object?>(target)
-            : throw new EmptyOptionalException(),
-        "ToString" => new StrongBox<object?>(ModelOperations.ToDisplayString(target)),
-        "ToInteger" => new StrongBox<object?>(AsInteger(target)),
-
-        // Inherited from Model by every type. It asks the same question '==' asks — what the
-        // two values are, member by member — rather than whether they are one object, which
-        // is Reference.Equals.
-        "Equals" => new StrongBox<object?>(
-            ModelOperations.DeepEquals(target, arguments.Count > 0 ? arguments[0] : null)),
-
-        _ => null,
-    };
 
     private static string Substring(string text, List<object?> arguments)
     {

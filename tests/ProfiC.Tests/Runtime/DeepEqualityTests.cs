@@ -4,10 +4,9 @@ namespace ProfiC.Tests.Runtime;
 
 /// <summary>
 /// <para>Structural equality, including the cases the design exists to survive.</para>
-/// <para>A depth limit was rejected as a way to handle cycles, on the grounds that no limit
-/// can tell a cyclic graph from a legitimately deep one. The tests here hold that line from
-/// both sides: a two-node cycle must terminate, and a hundred-thousand-node chain must not be
-/// mistaken for one.</para>
+/// <para>No depth limit is used, since none can tell a cyclic graph from a legitimately deep
+/// one. These hold that line from both sides: a two-node cycle must terminate, and a
+/// hundred-thousand-node chain must not be mistaken for one.</para>
 /// </summary>
 [TestFixture]
 public sealed class DeepEqualityTests

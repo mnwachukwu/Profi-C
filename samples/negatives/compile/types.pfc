@@ -1,0 +1,38 @@
+comment begin
+    Values used where they do not fit.
+
+    This program does not compile. The type checker reports each mismatch where it happens,
+    naming both what arrived and what was wanted.
+end comment
+
+model Shape
+end model
+
+model Circle extends Shape
+end model
+
+global model Program
+    function Main()
+        comment A string is not a number.
+        integer count = "twelve";
+
+        comment Neither fraction nor real converts to the other on its own.
+        real r = 1|2;
+        fraction f = 0.5;
+
+        comment An operator has to be defined for both sides.
+        let bad = true * 2;
+
+        comment A parent does not convert to a child.
+        Circle c = new Shape();
+
+        comment Boxing does not exist, so a value type never becomes a Model.
+        Model m = 1;
+
+        comment The branches of an if expression must agree.
+        let branches = if true then 1 else "one";
+
+        comment Division by a literal zero is refused before the program runs.
+        Console.WriteLine(1 / 0);
+    end function
+end model

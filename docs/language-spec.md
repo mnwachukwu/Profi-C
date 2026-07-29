@@ -3,13 +3,10 @@
 **Version 0.1.0 (draft). This document is incomplete by design.**
 
 Sections are written as each part of the language is implemented and covered by tests, so
-that the specification never runs ahead of the compiler. A previous draft did exactly that
-and drifted into describing a different language than the one being built; the discipline
-here is meant to prevent a repeat.
+that the specification never describes more than the compiler does.
 
-The language design itself is settled. What is unfinished is this document and the compiler,
-not the decisions. Until a section is written, [language-summary.md](language-summary.md)
-is the best available description of the area.
+Until a section is written, [language-summary.md](language-summary.md) is the best available
+description of that area.
 
 | Section | State |
 |---|---|
@@ -77,12 +74,11 @@ nesting is told exactly where.
 ### 0.4 Relationship to C#
 
 Profi-C compiles to CIL and runs on the CLR, so it shares C#'s runtime, garbage collector,
-and calling convention. It deliberately matches C# on single inheritance, explicit
-`virtual`/`override`, exceptions, overloading, reference semantics for classes, private-by-
-default members, and truncating integer division.
+and calling convention. It matches C# on single inheritance, explicit `virtual`/`override`,
+exceptions, overloading, reference semantics for classes, private-by-default members, and
+truncating integer division.
 
-It deliberately differs where C# would teach the wrong lesson. The differences that matter
-most to a C# reader:
+The differences that matter most to a C# reader:
 
 - **`yield` means return.** This is the single most dangerous difference, since C# uses
   `yield return` for iterators. In Profi-C it is an ordinary return statement.
@@ -295,11 +291,9 @@ one token rather than `=` followed by `>`. No operator is longer than two charac
 `?` is the optional type suffix. `:` ends a `case` label. `=>` introduces an expression
 lambda. `|` separates the parts of a fraction literal. `^` raises to a power.
 
-**`^` is exponentiation here, not exclusive-or.** That is a deliberate divergence from C#,
-where `^` is a bitwise operation and `10 ^ 2` evaluates to 8. Profi-C has no bitwise
-operators at all, so the symbol was free, and raising to a power is common enough in the
-arithmetic a beginner writes to deserve reaching for. It is worth knowing that the meaning
-does not carry across.
+**`^` is exponentiation, not exclusive-or.** Profi-C has no bitwise operators. In C# the same
+symbol is a bitwise operation, where `10 ^ 2` evaluates to 8, so the meaning does not carry
+across.
 
 The boolean operators are the reserved words `and`, `or`, and `not`, not symbols.
 
@@ -307,7 +301,7 @@ There is **no** ternary conditional, no compound assignment (`+=` and its family
 increment or decrement (`++`, `--`). The role of the ternary is filled by the
 `if ... then ... else` expression; the others are written out in full.
 
-Two of these absences are diagnosed at different stages, and the reason is worth stating.
+Two of these absences are diagnosed at different stages.
 `++` and the compound assignments have no possible reading in Profi-C — there is no unary
 `+`, and `=` can never follow an arithmetic operator — so they are rejected while scanning.
 `--` is different: unary `-` *does* exist, so `x--1` is a well-formed subtraction of negative
@@ -342,7 +336,7 @@ stream.
 *Not yet written.* Will cover the base types, the `[]` set and `?` optional suffixes, the
 value and reference split, conversions, and definite assignment.
 
-One rule is settled: **`Model` is the root of every type**, values included, so every type
+**`Model` is the root of every type**, values included, so every type
 inherits `ToString()` and `Equals()` from one place. Inheriting those members does not make a
 value type *convertible* to `Model`. Assigning a structure or an enumeration to a
 `Model`-typed variable is a compile error, and **this is permanent** — that conversion is
@@ -366,7 +360,7 @@ call rather than a conversion the language admits.
 *Not yet written.* Will cover the nine precedence levels, `is` and `as`, the
 `if ... then ... else` expression, lambdas, and collection literals.
 
-One rule is settled: **`^` is the only arithmetic operator whose two sides are not the same
+**`^` is the only arithmetic operator whose two sides are not the same
 kind of thing.** Everywhere else the operands unify — adding an integer to a real makes both
 real. An exponent instead counts how many times the base is multiplied, so it stands on its
 own, and the result follows the base:
@@ -382,42 +376,36 @@ exponent means a root — raising to `m/n` is the nth root of the mth power — 
 rational is usually irrational, so the answer is a real. `9 ^ 1|2` is `3`, and `16 ^ 3|4`
 is `8`.
 
-This is the **only** place a `fraction` widens to a `real` without being asked, and the
-exception is deliberate. That rule exists to stop exactness being lost silently where it
-could have been kept: in `1|2 + 0.5` an exact answer exists, so the language makes you say
-which you meant. A root has no exact rational form at all, so there is nothing to protect —
-and `2 ^ (1|3)` states one third more faithfully than `2 ^ (1.0/3.0)` does.
+This is the only place a `fraction` widens to a `real` without being asked. Elsewhere the two
+never convert implicitly, because an exact answer is available and the program states which
+form it wants; a root has no exact rational form to preserve.
 
 An `integer` raised to a negative power has no whole answer. Where the exponent can be seen
 while compiling this is an error; where it cannot, as with a variable, it throws at run time,
 exactly as dividing by a variable that turns out to be zero does.
 
-A second rule is settled: **a collection literal takes its element type from what is expected
-of it, where anything expects one.** In a variable or field initializer, an assignment, or a
+**A collection literal takes its element type from what is expected of it, where anything
+expects one.** In a variable or field initializer, an assignment, or a
 `yield`, each element is checked against the wanted element type and converts on its own — so
 a set of shapes may be written as the several kinds of shape it holds, and
 `integer?[] xs = {1, 2}` wraps each element. Where nothing says what is wanted, as in
 `let xs = {a, b};`, the elements must already agree on one type.
 
-This is the same principle as C# array initializers, and it is deliberately not inference from
-a common ancestor: two unrelated models share only `Model`, which no value type can be
-assigned to, so inferring one would produce a set nothing could be put into and report the
-mistake somewhere other than where it was made.
+This is the same principle as C# array initializers. The element type is never inferred from
+a common ancestor: two unrelated models share only `Model`, which no value type converts to.
 
 ## 6. Statements
 
 *Not yet written.* Will cover block structure and the qualified `end`, the two `for` forms,
 `switch`, and `try`.
 
-One rule is settled because the grammar depends on it: **neither `for` form writes a type for
-the variable it binds.** A range loop counts, and counting is done with integers, so
+**Neither `for` form writes a type for the variable it binds.** A range loop counts, and counting is done with integers, so
 `for i = 1 to 10` has no type to write and writing one is an error; a `for each` takes its
 element's type from the sequence. Both are fixed by the construct rather than inferred from a
 value, which is why neither needs `let`. A range loop's bounds and step must themselves be
 integers.
 
-A second rule is settled, also because the grammar depends on it: **an expression
-statement may not begin with `(` or `-`.** A construct's body has no opening token, so a
+**An expression statement may not begin with `(` or `-`.** A construct's body has no opening token, so a
 condition ends at the first token that cannot continue an expression — and those two can,
 which would otherwise let a condition swallow the first statement of its own body. The
 restriction applies only to a bare expression statement; `(x as Dog).Value()` remains legal
@@ -434,6 +422,50 @@ value-typed structures, and enumerations.
 *Not yet written.* Will cover `HasValue`, `Or`, and `Value`, and the narrowing rules that
 make optional access strict.
 
+**Once an optional has been narrowed, a member its underlying type declares wins over the
+optional's own member of the same name.**
+
+An optional has exactly three members — `HasValue`, `Or`, and `Value` — and a model may
+declare a method of the same name. `Temperature.Value()` returning the degrees is one such.
+`reading.Value()` on a `Temperature?` then has two possible readings: unwrap the optional, or
+call the model's method.
+
+Narrowing settles it. Inside the guard the receiver is a `Temperature`, so every member call
+on it is the `Temperature`'s:
+
+```
+Temperature? reading = new Temperature(21.5);
+
+comment No guard, so this is still an optional: Value() unwraps it.
+let t = reading.Value();            comment t is a Temperature
+Console.WriteLine(t.Describe());
+
+if reading.HasValue()
+    comment Narrowed, so this is a Temperature: Value() is the model's.
+    let degrees = reading.Value();  comment degrees is a real
+    Console.WriteLine(reading.Describe());
+end if
+```
+
+Anything the narrowed type does not declare still falls back to the optional's members, so
+writing `HasValue()` on a narrowed optional keeps working. Only a name the underlying type
+claims for itself is taken from the optional.
+
+The question does not arise before narrowing. An optional exposes its own three members and
+nothing else, so the underlying type's members are unreachable until presence is proven:
+
+```
+Temperature? t = new Temperature(21.5);
+
+let unwrapped = t.Value();          comment the optional's Value; unwrapped is a Temperature
+Console.WriteLine(unwrapped.Value());   comment now the model's; 21.5
+
+let d = t.Describe();               comment PFC0306: a Temperature? has no member 'Describe'
+```
+
+The two names are in scope together only after narrowing, which is where the rule above
+applies.
+
 ## 9. Functions and closures
 
 *Not yet written.* Will cover function types, overload resolution, capture, and name
@@ -447,7 +479,7 @@ resolution.
 
 *Not yet written.* Will cover the built-in models and the curated .NET wrappers.
 
-One member is settled: **`Fraction.Create(numerator, denominator)`** builds a `fraction` from
+**`Fraction.Create(numerator, denominator)`** builds a `fraction` from
 two integers. A fraction literal is two numerals fixed when the program is written, so this
 is the only way to make one from values that exist only while it runs. The result is an
 ordinary fraction — reduced, with its sign carried on the numerator. A denominator of zero is
@@ -457,7 +489,7 @@ rejected while compiling where it can be seen, exactly as `1 / 0` is, and throws
 Note the two spellings: `fraction` is the type and a reserved word; `Fraction` is the model
 beside it, holding what a fraction needs that is not a member of one.
 
-Two further rules are settled. **`Console.Write` and `Console.WriteLine` accept a
+**`Console.Write` and `Console.WriteLine` accept a
 value of any type**, and behave as in C#: only the second ends the line. Neither is an
 overload set; both are compiler-known, and the compiler chooses how to render the value from
 its static type. **`ToString()` is inherited from `Model` by every type, values included**,
@@ -468,7 +500,7 @@ by field, an enumeration prints its member name, a model prints its type name.
 
 *Not yet written.* Will cover program structure and `Program.Main`.
 
-One rule is settled: **`Program` may be declared exactly once in a compilation, and must be
+**`Program` may be declared exactly once in a compilation, and must be
 `global model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
 and `Reference`, which may not be declared at all — every program must declare `Program`, but
 may not declare a second one, and may not use the name for an ordinary model.

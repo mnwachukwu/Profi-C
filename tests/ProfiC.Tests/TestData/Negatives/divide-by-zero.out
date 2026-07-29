@@ -1,0 +1,3 @@
+100 / 4 = 25
+100 / 2 = 50
+divide-by-zero.pfc: unhandled DivideByZeroException: Attempted to divide by zero.

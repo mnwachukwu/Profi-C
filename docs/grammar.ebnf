@@ -162,7 +162,7 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
 
    Expressions are parsed by precedence climbing rather than by a ladder of
    nonterminals, so the table below is normative and the Expr production is
-   deliberately not expanded above. Adding an operator is adding a row.
+   not expanded above. Adding an operator is adding a row.
 
      Level  Operator                       Position   Associativity
      -----  -----------------------------  ---------  -------------

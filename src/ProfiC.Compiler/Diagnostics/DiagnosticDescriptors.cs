@@ -316,8 +316,8 @@ public static class DiagnosticDescriptors
     /// </summary>
     public static readonly DiagnosticDescriptor ConditionalBranchesDiffer = Error(
         "PFC0305",
-        "Conditional branches have different types",
-        "The branches of an 'if ... then ... else' must have the same type, and these are "
+        "Branches of an if expression have different types",
+        "The branches of an if expression must have the same type, and these are "
         + "{0} and {1}.");
 
     public static readonly DiagnosticDescriptor MemberNotFound = Error(
@@ -460,9 +460,8 @@ public static class DiagnosticDescriptors
     /// <summary>
     /// <para>The language provides no properties, so every member it provides is a function
     /// and every use of one is a call.</para>
-    /// <para>Worth its own diagnostic because the mistake is quiet otherwise — a reader coming
-    /// from a language with properties writes <c>xs.Count</c>, means the number, and gets
-    /// something that is not one.</para>
+    /// <para>A reader coming from a language with properties writes <c>xs.Count</c>, means
+    /// the number, and would otherwise get something that is not one.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor BuiltInMemberNeedsCall = Error(
         "PFC0330",

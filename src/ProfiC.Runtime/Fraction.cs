@@ -8,9 +8,8 @@ namespace ProfiC.Runtime;
 /// rather than an approximation. Normalizing on construction is what makes equality and
 /// printing behave: two fractions denoting the same number are the same value.</para>
 /// <para>Both parts are 64-bit and arithmetic is checked. Denominators multiply on every
-/// unlike addition, so a loop that accumulates fractions overflows within a few iterations;
-/// arbitrary precision was rejected on cost, which makes a loud failure the only honest
-/// alternative to a silently wrong answer.</para>
+/// unlike addition, so a loop that accumulates fractions overflows within a few iterations.
+/// Overflow throws rather than wrapping to a wrong answer.</para>
 /// </summary>
 public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
 {

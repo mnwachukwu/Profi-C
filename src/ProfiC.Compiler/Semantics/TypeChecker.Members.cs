@@ -131,9 +131,35 @@ public sealed partial class TypeChecker
         member.ReturnType ?? PrimitiveType.Void;
 
     /// <summary>
-    /// Finds a built-in member on a receiver, falling back to the type it was declared with.
-    /// Narrowing makes a guarded optional read as its underlying type, but the optional's own
-    /// members must stay reachable so that writing <c>n.Value()</c> anyway still works.
+    /// Writes down which member the language provides was chosen, so the back end carries out
+    /// that decision rather than making its own from the value in hand.
+    /// </summary>
+    private void RecordBuiltIn(MemberExpr member, BuiltInMember chosen)
+    {
+        if (chosen.Id is { } id)
+        {
+            _model.BindBuiltIn(member, id);
+        }
+    }
+
+    /// <summary>Whether a type declares a member of this name itself, inheritance included.</summary>
+    private static bool DeclaresMember(TypeSymbol type, string name) => type switch
+    {
+        ModelSymbol model => model.LookupIncludingBase(name).Count > 0,
+        DeclaredTypeSymbol declared => declared.Lookup(name).Count > 0,
+        _ => false,
+    };
+
+    /// <summary>
+    /// <para>Finds a built-in member on a receiver, falling back to the type it was declared
+    /// with.</para>
+    /// <para>Narrowing makes a guarded optional read as its underlying type, and the optional's
+    /// own members stay reachable through that fallback, so writing <c>n.Value()</c> on one
+    /// still unwraps it.</para>
+    /// <para>The fallback stops at a member the narrowed type declares for itself. Inside the
+    /// guard the receiver <em>is</em> that type, so a model declaring <c>Value</c> means its
+    /// own — otherwise a name resolves to the optional's member while every other name on the
+    /// same receiver resolves to the model's.</para>
     /// </summary>
     private BuiltInMember? FindBuiltIn(Expression receiverExpression, TypeSymbol receiver, string name)
         => FindAllBuiltIn(receiverExpression, receiver, name).FirstOrDefault();
@@ -148,6 +174,11 @@ public sealed partial class TypeChecker
         if (found.Count > 0)
         {
             return found;
+        }
+
+        if (DeclaresMember(receiver, name))
+        {
+            return [];
         }
 
         if (UnnarrowedTypeOf(receiverExpression) is { } declared
@@ -306,6 +337,7 @@ public sealed partial class TypeChecker
                 ?? builtIns.FirstOrDefault(m => m.ParameterTypes.Count == arguments.Count)
                 ?? builtIns[0];
 
+            RecordBuiltIn(member, chosenBuiltIn);
             CheckArgumentsAgainst(call, member.MemberName, chosenBuiltIn.ParameterTypes, arguments);
 
             // A fraction with a denominator of zero is the same mistake as dividing by zero,

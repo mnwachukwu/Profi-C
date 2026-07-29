@@ -400,7 +400,7 @@ public sealed partial class TypeChecker
     private TypeSymbol CheckConditional(IfExpr conditional)
     {
         TypeSymbol condition = CheckExpression(conditional.Condition);
-        RequireBoolean(condition, conditional.Condition, "The condition of an 'if ... then ... else'");
+        RequireBoolean(condition, conditional.Condition, "An if expression's condition");
 
         // A conditional expression narrows its branches the same way the statement does.
         NarrowingFacts facts = AnalyzeCondition(conditional.Condition);

@@ -1,0 +1,32 @@
+comment begin
+    An exception nobody catches.
+
+    This program compiles. The catch clause names a type the thrown value is not, so the
+    exception travels past it and out of the program.
+end comment
+
+model InsufficientFundsException extends Exception
+    public function InsufficientFundsException(integer short)
+        base("short by " + short);
+    end function
+end model
+
+global model Program
+
+    function Main()
+        Program.Withdraw(100, 250);
+    end function
+
+    function Withdraw(integer balance, integer amount)
+        try
+            if amount > balance
+                throw new InsufficientFundsException(amount - balance);
+            end if
+
+            Console.WriteLine("withdrew " + amount);
+        catch DivideByZeroException problem
+            Console.WriteLine("this clause never matches");
+        end try
+    end function
+
+end model

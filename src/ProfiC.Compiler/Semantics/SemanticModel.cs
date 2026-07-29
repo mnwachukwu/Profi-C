@@ -15,6 +15,8 @@ public sealed class SemanticModel
     private readonly Dictionary<SyntaxNode, (ConversionOperation Operation, TypeSymbol Target)>
         _conversions = [];
 
+    private readonly Dictionary<SyntaxNode, BuiltInId> _builtIns = [];
+
     /// <summary>The global namespace, holding everything declared at the top level.</summary>
     public NamespaceSymbol GlobalNamespace { get; } = new(string.Empty, parent: null);
 
@@ -34,6 +36,23 @@ public sealed class SemanticModel
     /// <summary>The type a node denotes, or null if none was recorded.</summary>
     public TypeSymbol? GetType(SyntaxNode node) =>
         _types.TryGetValue(node, out TypeSymbol? type) ? type : null;
+
+    /// <summary>
+    /// <para>Records which member the language provides a name resolved to.</para>
+    /// <para>The type checker is the only pass that can decide this: it knows the receiver's
+    /// type, what narrowing has proved about it, and whether the receiver's own type declares
+    /// a member of the same name. Writing the answer down means the back end carries it out
+    /// rather than deciding a second time from the value in hand, which is a different
+    /// question with a different answer.</para>
+    /// </summary>
+    internal void BindBuiltIn(SyntaxNode node, BuiltInId id) => _builtIns[node] = id;
+
+    /// <summary>
+    /// The member the language provides that a name resolved to, or null when the name
+    /// resolved to something a program declared.
+    /// </summary>
+    public BuiltInId? GetBuiltIn(SyntaxNode node) =>
+        _builtIns.TryGetValue(node, out BuiltInId id) ? id : null;
 
     /// <summary>
     /// <para>Records that a value needs converting where it sits.</para>

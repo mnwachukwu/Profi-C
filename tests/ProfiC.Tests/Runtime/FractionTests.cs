@@ -103,8 +103,7 @@ public sealed class FractionTests
 
     /// <summary>
     /// Denominators multiply on every unlike addition, so a loop overflows within a few
-    /// iterations. Arbitrary precision was rejected on cost, which leaves a loud failure as
-    /// the only honest alternative to a silently wrong answer.
+    /// iterations. Overflow throws rather than wrapping to a wrong answer.
     /// </summary>
     [Test]
     public void OverflowThrowsRatherThanWrapping()

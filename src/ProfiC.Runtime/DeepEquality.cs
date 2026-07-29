@@ -21,9 +21,8 @@ public static class DeepEquality
 
     /// <summary>
     /// <para>Compares two values structurally.</para>
-    /// <para>The traversal is iterative. A recursive one would be shorter, but a chain of a
-    /// hundred thousand nodes is perfectly ordinary data and would exhaust the stack — the
-    /// same reason a depth limit was rejected as a way to handle cycles.</para>
+    /// <para>The traversal is iterative, so that a chain of a hundred thousand nodes —
+    /// perfectly ordinary data — does not exhaust the stack.</para>
     /// </summary>
     public static new bool Equals(object? left, object? right)
     {

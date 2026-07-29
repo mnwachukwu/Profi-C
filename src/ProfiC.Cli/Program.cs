@@ -287,24 +287,11 @@ public static class Program
             // Qualified because the class shares its name with its namespace.
             return ProfiC.Interpreter.Interpreter.Run(lowered, model);
         }
-        catch (ProfiCRuntimeException failure)
+        catch (Exception failure)
+            when (DiagnosticRenderer.DescribeFailure(source, failure) is { } description)
         {
-            Console.Error.WriteLine($"{source.FileName}: {failure.Message}");
-            return 1;
-        }
-        catch (Exception thrown) when (thrown
-            is DivideByZeroException
-            or IndexOutOfRangeException
-            or EmptyOptionalException
-            or InvalidCastException
-            or FormatException
-            or ArgumentException
-            or OverflowException)
-        {
-            // An exception the program could have caught but did not.
-            Console.Error.WriteLine(
-                $"{source.FileName}: unhandled {thrown.GetType().Name}: {thrown.Message}");
-
+            // Something the program did. A fault in the compiler is not described, and travels.
+            Console.Error.WriteLine(description);
             return 1;
         }
     }

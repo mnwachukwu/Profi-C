@@ -1,5 +1,7 @@
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Text;
+using ProfiC.Interpreter;
+using ProfiC.Runtime;
 
 namespace ProfiC.Cli;
 
@@ -26,6 +28,32 @@ public static class DiagnosticRenderer
         string severity = diagnostic.Severity == DiagnosticSeverity.Error ? "error" : "warning";
 
         return $"{source.FileName}({start.Line},{start.Column}): {severity} {diagnostic.Id}: {diagnostic.Message}";
+    }
+
+    /// <summary>
+    /// <para>Describes a failure that stopped a running program, or returns null if the failure
+    /// is not one a program can cause.</para>
+    /// <para>The three kinds a program can cause are the language refusing to run further, an
+    /// exception the language raised, and an exception the program declared and threw. Anything
+    /// else is a fault in the compiler, and null tells the caller to let it travel.</para>
+    /// </summary>
+    public static string? DescribeFailure(SourceText source, Exception failure)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(failure);
+
+        return failure switch
+        {
+            ProfiCRuntimeException => $"{source.FileName}: {failure.Message}",
+
+            UncaughtProfiCException uncaught =>
+                $"{source.FileName}: unhandled {uncaught.TypeName}: {uncaught.Text}",
+
+            _ when BuiltInExceptions.IsBuiltIn(failure) =>
+                $"{source.FileName}: unhandled {failure.GetType().Name}: {failure.Message}",
+
+            _ => null,
+        };
     }
 
     /// <summary>Writes every diagnostic in the bag, in source order, to standard error.</summary>

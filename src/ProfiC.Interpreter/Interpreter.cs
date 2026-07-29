@@ -59,7 +59,19 @@ public sealed partial class Interpreter
         ArgumentNullException.ThrowIfNull(model);
 
         Interpreter interpreter = new(model, output ?? Console.Out);
-        return interpreter.Execute(lowered);
+
+        try
+        {
+            return interpreter.Execute(lowered);
+        }
+        catch (ProfiCThrow uncaught)
+        {
+            // A declared exception travels inside ProfiCThrow, which is the interpreter's own
+            // business. Past the top of the program it is the program's exception again.
+            throw new UncaughtProfiCException(
+                uncaught.Thrown.Type.Name,
+                uncaught.Thrown.Message ?? string.Empty);
+        }
     }
 
     private int Execute(CompilationUnit unit)
@@ -274,6 +286,21 @@ internal sealed class ProfiCThrow(Instance thrown)
     : Exception($"An unhandled {thrown.Type.Name} reached the top of the program.")
 {
     public Instance Thrown { get; } = thrown;
+}
+
+/// <summary>
+/// <para>An exception a program declared and threw that no catch clause took.</para>
+/// <para>Carries the name the program gave its exception model and the message it was built
+/// with, so this reads the same way as an exception the language raises itself.</para>
+/// </summary>
+public sealed class UncaughtProfiCException(string typeName, string text)
+    : Exception($"unhandled {typeName}: {text}")
+{
+    /// <summary>The name of the exception model the program threw.</summary>
+    public string TypeName { get; } = typeName;
+
+    /// <summary>The message the thrown exception carries.</summary>
+    public string Text { get; } = text;
 }
 
 /// <summary>Something went wrong while running a program, rather than while compiling it.</summary>

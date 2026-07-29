@@ -1,0 +1,2 @@
+blocks.pfc(15,13): error PFC0104: Expected 'end if' to close the if beginning on line 13, but found 'end while'.
+blocks.pfc(19,13): error PFC0104: Expected 'end while' to close the while beginning on line 17, but found 'end if'.

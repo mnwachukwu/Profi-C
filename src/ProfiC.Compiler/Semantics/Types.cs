@@ -37,8 +37,8 @@ public abstract class TypeSymbol : Symbol
     /// <summary>
     /// <para>The type with an article in front, as a diagnostic would read it aloud: "an
     /// integer", "a real".</para>
-    /// <para>Worth the small effort because it appears in nearly every type diagnostic, and
-    /// "a integer" undermines the care taken over the rest of the message.</para>
+    /// <para>The article follows the first letter of the type's spelling, so a diagnostic
+    /// never reads "a integer".</para>
     /// </summary>
     public string WithArticle() => $"{ArticleFor(Display)} {Display}";
 
