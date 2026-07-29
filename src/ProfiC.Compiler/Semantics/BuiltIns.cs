@@ -2,14 +2,10 @@ namespace ProfiC.Compiler.Semantics;
 
 /// <summary>
 /// <para>Every member reached through the name of a built-in model, one identifier each.</para>
-/// <para>These exist so that the two halves of a built-in — what the type checker knows about
-/// it, and what actually happens when it runs — are joined by something the C# compiler
-/// checks rather than by a string typed twice. The back end switches on this enumeration
-/// without a fallback arm, so adding a member here and forgetting to implement it does not
-/// compile.</para>
-/// <para>That is not a hypothetical. <c>Math.Min</c>, <c>Math.Max</c>, and <c>Equals</c> were
-/// each declared and never implemented, and each type-checked cleanly and produced nothing at
-/// run time. Two string tables cannot be made to agree by care alone.</para>
+/// <para>These join the two halves of a built-in — what the type checker knows about it, and
+/// what happens when it runs — with something the C# compiler checks rather than with a name
+/// written out twice. The back end switches on this enumeration without a fallback arm, so a
+/// member declared here and implemented nowhere does not compile.</para>
 /// </summary>
 public enum BuiltInId
 {
@@ -32,11 +28,7 @@ public enum BuiltInId
 
 /// <summary>A built-in model, and everything the language knows about it.</summary>
 /// <param name="Name">The name a program writes.</param>
-/// <param name="Namespace">
-/// Where the model will live once namespaces scope names. Recorded now so that the catalogue
-/// is already shaped correctly when that lands; nothing reads it yet, because every name
-/// currently resolves unqualified.
-/// </param>
+/// <param name="Namespace">The namespace the model belongs to.</param>
 /// <param name="MayBeExtended">Whether a program may write <c>extends</c> against it.</param>
 /// <param name="Members">Members reached through the model's name.</param>
 public sealed record BuiltInModelInfo(
@@ -47,9 +39,9 @@ public sealed record BuiltInModelInfo(
 
 /// <summary>
 /// <para>The catalogue of models the language provides.</para>
-/// <para>One place to read to learn what exists, and one place to edit to add something. Both
-/// were previously spread over six files in three assemblies, keyed by names written out by
-/// hand at every site.</para>
+/// <para>One place to read to learn what exists, and one place to edit to add something. The
+/// resolver takes the names it protects from here, and the type checker takes the signatures,
+/// so neither can disagree with this or with the other.</para>
 /// </summary>
 public static class BuiltIns
 {
@@ -107,7 +99,7 @@ public static class BuiltIns
                    PrimitiveType.Integer, PrimitiveType.Integer),
         ]),
 
-        // Named so a program may refer to them, but empty until the standard library lands.
+        // Named, so a program may not declare them, and carrying no members.
         new("Random", "Standard", MayBeExtended: false, []),
         new("DateTime", "Standard", MayBeExtended: false, []),
     ];

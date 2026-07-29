@@ -190,10 +190,9 @@ public sealed partial class Interpreter
 
     /// <summary>
     /// <para>Carries out a built-in call.</para>
-    /// <para>Deliberately a switch expression over the whole enumeration with no fallback arm.
-    /// Adding a member to the catalogue and forgetting it here is then a build error rather
-    /// than a call that quietly produces nothing — which is exactly what happened to
-    /// <c>Math.Min</c> and <c>Math.Max</c> while the two lists were kept by hand.</para>
+    /// <para>A switch expression over the whole enumeration with no fallback arm, so that a
+    /// member in the catalogue with no implementation here is a build error rather than a call
+    /// that quietly produces nothing.</para>
     /// </summary>
     // CS8524 asks for a fallback arm covering values cast into the enumeration from outside
     // it. Adding one would also satisfy CS8509, and CS8509 is the whole reason this is a

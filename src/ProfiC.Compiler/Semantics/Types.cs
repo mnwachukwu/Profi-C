@@ -78,16 +78,15 @@ public sealed class PrimitiveType : TypeSymbol
     public static readonly PrimitiveType String = new("string", isValueType: false);
 
     /// <summary>
-    /// <para>The type of an expression that produces no value.</para>
-    /// <para>Named for C#'s <c>void</c>, which is the concept it models — the absence of a
-    /// value, not a reference to nothing.</para>
-    /// <para>No program can write it, and nothing else has this type: it arises only from
-    /// calling a function that yields nothing. So its display spells out what it is rather
-    /// than naming a type nobody can declare. "A nothing cannot be indexed" describes the type
-    /// system; "A call that yields nothing cannot be indexed" describes the mistake.</para>
-    /// <para>"Call" rather than "function" because a function value is a real thing here —
+    /// <para>The type of an expression that produces no value: the absence of a result, not a
+    /// reference to nothing.</para>
+    /// <para>No program can write it, and nothing else has this type — it arises only from
+    /// calling a function that yields nothing. Its display therefore spells out what it is
+    /// rather than naming a type nobody can declare, so that a diagnostic reads "A call that
+    /// yields nothing cannot be indexed".</para>
+    /// <para>"Call" rather than "function", because a function value is a real thing here —
     /// <c>integer function(integer) f</c> — and a set of them can be indexed. What sits in the
-    /// offending position is always the call, never the function.</para>
+    /// offending position is always the call.</para>
     /// </summary>
     public static readonly PrimitiveType Void = new("call that yields nothing", isValueType: true);
 

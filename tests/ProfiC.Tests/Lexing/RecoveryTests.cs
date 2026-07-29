@@ -206,10 +206,9 @@ public sealed class RecoveryTests : LexerTestBase
 
     /// <summary>
     /// <para>The point of standing a token in: one mistake produces one message.</para>
-    /// <para>Reporting and then emitting nothing leaves two operands adjacent, and the parser
-    /// reports on every shape that follows. <c>10 ** 2 - 2 / 2 + 5</c> used to yield seven
-    /// diagnostics for one stray character, which reads as though something is badly broken
-    /// rather than mistyped.</para>
+    /// <para>Emitting no token would leave two operands adjacent, and the parser would report
+    /// on every shape that follows — several diagnostics for one stray character, reading as
+    /// though something is badly broken rather than mistyped.</para>
     /// </summary>
     [TestCase("Console.WriteLine(10 ** 2 - 2 / 2 + 5);")]
     [TestCase("integer x = 1;\n        x += 2;")]

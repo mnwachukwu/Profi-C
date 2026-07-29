@@ -114,9 +114,13 @@ Every other sentence is explanation and requires nothing. Where explanation and 
 to disagree, the rule governs and the explanation is at fault.
 
 A **diagnostic** is a message a conforming implementation produces about a source program.
-Diagnostics carry a stable identifier of the form `PFC` followed by four digits, a severity,
-and a source span. Two severities exist: **error**, which prevents compilation, and
-**warning**, which does not.
+Diagnostics carry an identifier of the form `PFC` followed by four digits, a severity, and a
+source span. Two severities exist: **error**, which prevents compilation, and **warning**,
+which does not.
+
+Identifiers are stable from v1 onward: one that has been published keeps its meaning, and one
+that is withdrawn is not reissued. Before v1 they may be renumbered freely, since nothing
+depends on them yet.
 
 ### 0.6 Versioning
 

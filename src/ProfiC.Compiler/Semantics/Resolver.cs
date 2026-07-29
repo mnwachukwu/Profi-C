@@ -9,10 +9,9 @@ namespace ProfiC.Compiler.Semantics;
 /// <para>Two passes. The first collects declared types and their members; the second binds
 /// the names inside function bodies. Two are needed because types are not ordered — a model
 /// may name one declared below it — while the statements inside a body are.</para>
-/// <para>The split only works because a type can no longer be declared inside a function. If
-/// it could, the first pass would have to descend into bodies, the symbol table would become
-/// a tree, and type lookup would become order-dependent in a way forward references
-/// contradict.</para>
+/// <para>The split works because a type cannot be declared inside a function. If one could,
+/// the first pass would have to descend into bodies, the symbol table would become a tree, and
+/// type lookup would become order-dependent in a way forward references contradict.</para>
 /// </summary>
 public sealed partial class Resolver
 {

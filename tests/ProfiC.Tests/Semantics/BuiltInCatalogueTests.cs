@@ -8,12 +8,9 @@ namespace ProfiC.Tests.Semantics;
 
 /// <summary>
 /// <para>The catalogue of built-in models, and the promise that everything in it works.</para>
-/// <para>Three members were once declared and never implemented — <c>Math.Min</c>,
-/// <c>Math.Max</c>, and <c>Equals</c>. Each type-checked cleanly and produced nothing when
-/// run, because the signature and the implementation lived in separate string tables that
-/// nothing compared. The catalogue joins them with an enumeration the C# compiler checks, and
-/// these tests cover what a compiler cannot: that the answer is right, not merely present.
-/// </para>
+/// <para>The C# compiler already refuses a member with no implementation, because the back
+/// end switches on the identifier without a fallback arm. These tests cover what it cannot:
+/// that each member gives the right answer, rather than merely being reachable.</para>
 /// </summary>
 [TestFixture]
 public sealed class BuiltInCatalogueTests
@@ -76,9 +73,8 @@ public sealed class BuiltInCatalogueTests
     }
 
     /// <summary>
-    /// <para>The test that would have caught all three.</para>
-    /// <para>A member that type-checks but produces nothing passes every other test in the
-    /// suite; only running it and comparing the answer finds it.</para>
+    /// A member that type-checks but produces nothing satisfies every other test in the
+    /// suite. Only running it and comparing the answer catches that.
     /// </summary>
     [TestCaseSource(nameof(Expectations))]
     public void EveryCatalogueMemberProducesItsAnswer((BuiltInId Id, string Call, string Expected) row)
@@ -117,9 +113,8 @@ public sealed class BuiltInCatalogueTests
     }
 
     /// <summary>
-    /// The resolver protects exactly the names the catalogue lists. These were two separate
-    /// lists, and they had drifted: Math, Fraction, Random and DateTime could each be
-    /// redeclared by a program, which made the built-in of that name unreachable.
+    /// The resolver protects exactly the names the catalogue lists. A program that could
+    /// declare one of them would make the built-in of that name unreachable.
     /// </summary>
     [TestCase("Console")]
     [TestCase("Model")]

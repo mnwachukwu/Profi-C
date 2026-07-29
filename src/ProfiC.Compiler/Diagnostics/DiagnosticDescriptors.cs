@@ -291,9 +291,9 @@ public static class DiagnosticDescriptors
         + "Write '{2}' to ask for it.");
 
     /// <summary>
-    /// The subject is supplied whole by the caller rather than assembled here. Prefixing an
-    /// article to a fragment produced "A an if condition must be a boolean", and the fragments
-    /// do not all take the same article or the same noun.
+    /// The caller supplies the whole subject, article included, because the subjects do not
+    /// share an article or a noun: "An if condition", "A while condition", "An operand of
+    /// 'and' or 'or'".
     /// </summary>
     public static readonly DiagnosticDescriptor ConditionMustBeBoolean = Error(
         "PFC0302",
@@ -481,28 +481,21 @@ public static class DiagnosticDescriptors
         "'{0}' belongs to each {1} rather than to the {1} type, so it cannot be reached "
         + "through the name '{1}'. Mark it 'global', or read it from a value.");
 
-    // PFC0332 rejected a fraction-typed exponent. Withdrawn, and the identifier is not reused:
-    // raising to m/n is the nth root of the mth power, which is ordinary arithmetic, and
-    // "2 ^ (1|3)" says one third more faithfully than "2 ^ (1.0/3.0)" does. The answer is a
-    // real either way. The rule that a fraction never widens to a real protects exactness that
-    // could have been kept, and a root has none to keep.
+    /// <summary>
+    /// <para>The result of a function that yields nothing, used where a value is wanted.</para>
+    /// <para>Its own message because what went wrong is that the call had no result to give,
+    /// which is a plainer thing to say than naming the type of the absence.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ValueExpected = Error(
+        "PFC0332",
+        "This produces no value",
+        "This produces no value, so there is nothing to use here.");
 
     /// <summary>
     /// <para>A negative exponent on an integer base, caught while compiling.</para>
     /// <para>Two to the minus one is one half, which is not an integer. The same expression
     /// written on fractions is exact and allowed, which is what the message points at.</para>
     /// </summary>
-    /// <summary>
-    /// <para>The result of a function that yields nothing, used where a value is wanted.</para>
-    /// <para>Its own message because naming the type explains nothing here: "cannot use a
-    /// nothing where an integer is expected" describes the types correctly and the situation
-    /// badly. What went wrong is that the call had no result to give.</para>
-    /// </summary>
-    public static readonly DiagnosticDescriptor ValueExpected = Error(
-        "PFC0334",
-        "This produces no value",
-        "This produces no value, so there is nothing to use here.");
-
     public static readonly DiagnosticDescriptor NegativeIntegerExponent = Error(
         "PFC0333",
         "Negative exponent on an integer",

@@ -28,8 +28,7 @@ public sealed partial class TypeChecker
         }
 
         // A call with no result has no members at all — not even ToString and Equals, which
-        // every other type inherits from Model. Without this they are found on it, and
-        // "Program.Total(scores).ToString()" compiles and renders the absence as "empty".
+        // every other type inherits from Model. There is no value for them to describe.
         if (ReferenceEquals(receiver, PrimitiveType.Void))
         {
             Report(DiagnosticDescriptors.ValueExpected, member.Receiver);

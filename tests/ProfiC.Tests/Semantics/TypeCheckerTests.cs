@@ -713,10 +713,8 @@ public sealed class TypeCheckerTests
     // ---- Condition messages --------------------------------------------------------------------
 
     /// <summary>
-    /// <para>Each caller supplies its whole subject phrase.</para>
-    /// <para>The message once began with an article and the caller supplied another, so an
-    /// 'if' reported "A an if condition must be a boolean". Worth a test because it is the
-    /// kind of wording nothing else checks and everybody reads.</para>
+    /// Each caller supplies its whole subject phrase, article included. Worth testing because
+    /// message wording is what a reader sees and what nothing else checks.
     /// </summary>
     [TestCase("        if 1\n            yield;\n        end if", "An if condition")]
     [TestCase("        if true\n            yield;\n        else if 1\n            yield;\n        end if",
@@ -774,7 +772,7 @@ public sealed class TypeCheckerTests
     [TestCase("        let b = Console.WriteLine(\"hi\").Equals(1);")]
     [TestCase("        let c = Console.WriteLine(\"hi\").Count();")]
     public void UsingTheResultOfAFunctionThatYieldsNothingIsRejected(string body) =>
-        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0334" }));
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0332" }));
 
     /// <summary>
     /// <para>Nothing else has this type, so it describes itself rather than naming a type no
@@ -978,8 +976,8 @@ public sealed class TypeCheckerTests
     // ---- The members the language provides ------------------------------------------------------
 
     /// <summary>
-    /// The language has no properties, so every member it provides is a function. Leaving the
-    /// parentheses off used to produce a value of the return type that was never computed.
+    /// The language has no properties, so every member it provides is a function and every
+    /// use of one is a call.
     /// </summary>
     [TestCase("        integer[] xs = {1};\n        let n = xs.Count;")]
     [TestCase("        let n = \"abc\".Count;")]

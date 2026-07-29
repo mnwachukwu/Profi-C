@@ -8,11 +8,10 @@ namespace ProfiC.Tests;
 
 /// <summary>
 /// <para>Every sample must pass the whole front end, not merely scan and parse.</para>
-/// <para>This gap was real: the recorded token streams and syntax trees cover all fifteen
-/// samples, but nothing type-checked the ones that declare no entry point, because running
-/// them is what the other fixture does and they cannot be run. A mistake in
-/// <c>operators.pfc</c> therefore sat unreported until a new diagnostic happened to find it —
-/// it bound a name to the result of a function that yields nothing.</para>
+/// <para>The recorded token streams and syntax trees cover every sample, and
+/// <see cref="Interpreting.SampleProgramTests"/> runs the ones that declare an entry point.
+/// Neither resolves or type-checks a sample that cannot be run, which is what this covers.
+/// </para>
 /// </summary>
 [TestFixture]
 public sealed class SampleCheckTests : LexerTestBase

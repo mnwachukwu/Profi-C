@@ -6,11 +6,11 @@ namespace ProfiC.Interpreter;
 
 /// <summary>
 /// <para>Runs a Profi-C program by walking its lowered tree.</para>
-/// <para>Built before the emitter deliberately. It proves the resolver and the type checker
-/// without any code generation in the way, and once the emitter exists it stays on as the
-/// oracle: where the two disagree about what a program means, the compiler has the bug.</para>
+/// <para>It proves the resolver and the type checker with no code generation in the way, and
+/// serves as the oracle the emitter is measured against: where the two disagree about what a
+/// program means, the compiler has the bug.</para>
 /// <para>It runs the <em>lowered</em> tree, so it never meets a <c>for each</c> and never has
-/// to work out which conversion a value needs. Both were settled earlier, once.</para>
+/// to work out which conversion a value needs. Lowering settles both, in one place.</para>
 /// </summary>
 public sealed partial class Interpreter
 {

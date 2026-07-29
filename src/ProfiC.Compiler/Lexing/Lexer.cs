@@ -28,12 +28,10 @@ public sealed class Lexer
     /// <summary>
     /// <para>Sequences that are operators in C# but not here, each with the token it stands in
     /// for while recovering.</para>
-    /// <para>The substitution is what keeps one mistake to one message. Reporting and then
-    /// emitting nothing leaves two operands side by side, and the parser reports on every
-    /// shape that follows — seven diagnostics for one stray character, which reads to a
-    /// beginner as though something is badly broken rather than mistyped. Standing in the
-    /// intended operator instead lets the rest of the line parse, so the only thing reported
-    /// is the thing that was actually wrong.</para>
+    /// <para>The substitution is what keeps one mistake to one message. Emitting no token
+    /// would leave two operands side by side, and the parser would then report on every shape
+    /// that follows. Standing in the intended operator lets the rest of the line parse, so the
+    /// only thing reported is the thing that is wrong.</para>
     /// <para>Several of these have an exact stand-in, since Profi-C spells the same operation
     /// differently. The compound assignments do not: their meaning needs a statement rather
     /// than a token, so <c>=</c> stands in to keep the shape and the message carries the

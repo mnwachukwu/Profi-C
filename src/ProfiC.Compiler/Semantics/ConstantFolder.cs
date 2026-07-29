@@ -113,8 +113,7 @@ public static class ConstantFolder
         }
         catch (OverflowException)
         {
-            // Overflowing while folding means the program would overflow too, but saying so
-            // properly needs its own diagnostic; for now the value simply is not constant.
+            // An expression that overflows has no constant value to report.
             return null;
         }
         catch (DivideByZeroException)

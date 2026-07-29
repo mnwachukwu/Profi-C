@@ -49,8 +49,8 @@ global model Program
         Console.WriteLine("  Min(3, 7)      = " + Math.Min(3, 7));
         Console.WriteLine("  Max(3, 7)      = " + Math.Max(3, 7));
 
-        comment Pow is rarely needed now that '^' exists, but it is still the way to raise
-        comment reals when you want the call to read as a call.
+        comment '^' raises to a power too, and reads more like arithmetic. Pow is there for
+        comment when a call reads better than an operator.
         Console.WriteLine("  2.0 ^ 8.0      = " + 2.0 ^ 8.0);
         Console.WriteLine("");
     end function

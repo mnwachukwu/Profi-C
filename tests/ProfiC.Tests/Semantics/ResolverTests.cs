@@ -457,8 +457,8 @@ public sealed class ResolverTests
     [TestCase("DateTime")]
     public void ExtendingABuiltInThatIsNotModelOrAnExceptionIsRejected(string name)
     {
-        // These resolve as models so their members can be found, which is not an invitation
-        // to inherit from them; without this the line was accepted and linked nothing.
+        // These resolve as models so that their members can be found, which is not an
+        // invitation to inherit from them.
         (_, DiagnosticBag diagnostics) = Resolve($"model Mine extends {name}\nend model");
 
         Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0217" }));

@@ -220,7 +220,7 @@ The second pair is more confusable than the first, since both live near the idea
 
 Null and .NET coexist because **null is translated at the boundary and never enters Profi-C's type system.** Every .NET reference-typed return maps to `T?` unless documented non-null; an empty optional is what a Profi-C program sees. This makes the v1 curated wrappers do exactly what an automatic binder would do later, so no signature churn when one arrives.
 
-**Models are references, structures are values.** Both are user-definable in v1. Structures cannot inherit from another type, cannot contain themselves, and compare field by field.
+**Models are reference types, structures are value types.** Both are user-definable in v1. Structures cannot inherit from another type, cannot contain themselves, and compare field by field.
 
 They do inherit `Model`'s members, which is where `ToString()` and `Equals()` come from, but they can never be **assigned** to a `Model` variable — that conversion is boxing, which Profi-C does not have and does not plan to add. So `Reference.Equals` on a structure stays a compile error rather than a runtime puzzle, and no assignment allocates behind your back. C# is looser here: assigning a struct to `object` compiles and quietly allocates.
 
