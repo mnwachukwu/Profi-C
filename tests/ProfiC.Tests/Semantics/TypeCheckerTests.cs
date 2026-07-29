@@ -56,10 +56,10 @@ public sealed class TypeCheckerTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(toReal), Is.EqualTo(new[] { "PFC0301" }));
+            Assert.That(IdsOf(toReal), Is.EqualTo(new[] { "PC0301" }));
             Assert.That(toReal.Single().Message, Does.Contain("ToReal()"));
 
-            Assert.That(IdsOf(toFraction), Is.EqualTo(new[] { "PFC0301" }));
+            Assert.That(IdsOf(toFraction), Is.EqualTo(new[] { "PC0301" }));
             Assert.That(toFraction.Single().Message, Does.Contain("ToFraction()"));
         });
     }
@@ -78,7 +78,7 @@ public sealed class TypeCheckerTests
     public void UnrelatedTypesDoNotConvert()
     {
         Assert.That(IdsOf(CheckBody("        integer x = \"text\";")),
-                    Is.EqualTo(new[] { "PFC0300" }));
+                    Is.EqualTo(new[] { "PC0300" }));
     }
 
     [Test]
@@ -102,7 +102,7 @@ public sealed class TypeCheckerTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0329" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0329" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("HasValue()"));
             Assert.That(diagnostics.Single().Message, Does.Contain("Or("));
             Assert.That(diagnostics.Single().Message, Does.Contain("Value()"));
@@ -154,7 +154,7 @@ public sealed class TypeCheckerTests
                     Square q = new Shape();
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0300" }));
+            """)), Is.EqualTo(new[] { "PC0300" }));
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ public sealed class TypeCheckerTests
     [Test]
     public void AValueTypeNeverConvertsToModel()
     {
-        Assert.That(IdsOf(CheckBody("        Model m = 1;")), Is.EqualTo(new[] { "PFC0300" }));
+        Assert.That(IdsOf(CheckBody("        Model m = 1;")), Is.EqualTo(new[] { "PC0300" }));
     }
 
     // ---- Operators -----------------------------------------------------------------------------
@@ -172,7 +172,7 @@ public sealed class TypeCheckerTests
     public void ArithmeticNeedsNumbers()
     {
         Assert.That(IdsOf(CheckBody("        let x = true * 2;")),
-                    Is.EqualTo(new[] { "PFC0303" }));
+                    Is.EqualTo(new[] { "PC0303" }));
     }
 
     [Test]
@@ -181,7 +181,7 @@ public sealed class TypeCheckerTests
         // They have no common type on purpose, so there is nothing for the operator to
         // produce without a conversion nobody asked for.
         Assert.That(IdsOf(CheckBody("        let x = 1|2 + 0.5;")),
-                    Is.EqualTo(new[] { "PFC0303" }));
+                    Is.EqualTo(new[] { "PC0303" }));
     }
 
     [Test]
@@ -198,7 +198,7 @@ public sealed class TypeCheckerTests
     public void LogicalOperatorsNeedBooleans()
     {
         Assert.That(IdsOf(CheckBody("        let x = 1 and 2;")),
-                    Is.EqualTo(new[] { "PFC0302", "PFC0302" }));
+                    Is.EqualTo(new[] { "PC0302", "PC0302" }));
     }
 
     [Test]
@@ -209,7 +209,7 @@ public sealed class TypeCheckerTests
                     if 1
                         yield;
                     end if
-            """)), Is.EqualTo(new[] { "PFC0302" }));
+            """)), Is.EqualTo(new[] { "PC0302" }));
     }
 
     [Test]
@@ -218,9 +218,9 @@ public sealed class TypeCheckerTests
         Assert.Multiple(() =>
         {
             Assert.That(IdsOf(CheckBody("        let x = 1 / 0;")),
-                        Is.EqualTo(new[] { "PFC0324" }));
+                        Is.EqualTo(new[] { "PC0324" }));
             Assert.That(IdsOf(CheckBody("        let x = 1 % 0;")),
-                        Is.EqualTo(new[] { "PFC0324" }));
+                        Is.EqualTo(new[] { "PC0324" }));
         });
     }
 
@@ -232,7 +232,7 @@ public sealed class TypeCheckerTests
         // Finding a common type would make this a real, which is what neither branch says.
         DiagnosticBag diagnostics = CheckBody("        let x = if true then 1 else 2.5;");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0305" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0305" }));
     }
 
     [Test]
@@ -248,7 +248,7 @@ public sealed class TypeCheckerTests
     public void SetElementsMustAgree()
     {
         Assert.That(IdsOf(CheckBody("        let mixed = {1, \"two\"};")),
-                    Is.EqualTo(new[] { "PFC0314" }));
+                    Is.EqualTo(new[] { "PC0314" }));
     }
 
     [Test]
@@ -257,7 +257,7 @@ public sealed class TypeCheckerTests
         Assert.Multiple(() =>
         {
             Assert.That(IdsOf(CheckBody("        let nothing = {};")),
-                        Is.EqualTo(new[] { "PFC0313" }));
+                        Is.EqualTo(new[] { "PC0313" }));
             Assert.That(IdsOf(CheckBody("        integer[] empty = {};")), Is.Empty);
         });
     }
@@ -275,13 +275,13 @@ public sealed class TypeCheckerTests
                 """)), Is.Empty);
 
             Assert.That(IdsOf(CheckBody("        let bad = 5[0];")),
-                        Is.EqualTo(new[] { "PFC0311" }));
+                        Is.EqualTo(new[] { "PC0311" }));
 
             Assert.That(IdsOf(CheckBody(
                 """
                         integer[] numbers = {1};
                         let bad = numbers["x"];
-                """)), Is.EqualTo(new[] { "PFC0312" }));
+                """)), Is.EqualTo(new[] { "PC0312" }));
         });
     }
 
@@ -345,7 +345,7 @@ public sealed class TypeCheckerTests
                     end switch
             """);
 
-        Assert.That(IdsOf(diagnostics), Does.Contain("PFC0315"));
+        Assert.That(IdsOf(diagnostics), Does.Contain("PC0315"));
     }
 
     [Test]
@@ -377,7 +377,7 @@ public sealed class TypeCheckerTests
                         case 1:
                             yield;
                     end switch
-            """)), Is.EqualTo(new[] { "PFC0326" }));
+            """)), Is.EqualTo(new[] { "PC0326" }));
     }
 
     // ---- Loops --------------------------------------------------------------------------------------
@@ -390,7 +390,7 @@ public sealed class TypeCheckerTests
                     for i = 1 to 2.5
                         yield;
                     end for
-            """)), Is.EqualTo(new[] { "PFC0317" }));
+            """)), Is.EqualTo(new[] { "PC0317" }));
     }
 
     [Test]
@@ -416,7 +416,7 @@ public sealed class TypeCheckerTests
                     for each x in 5
                         yield;
                     end for
-            """)), Is.EqualTo(new[] { "PFC0316" }));
+            """)), Is.EqualTo(new[] { "PC0316" }));
     }
 
     // ---- Yield ----------------------------------------------------------------------------------------
@@ -433,7 +433,7 @@ public sealed class TypeCheckerTests
                         yield "text";
                     end function
                 end model
-                """)), Is.EqualTo(new[] { "PFC0300" }));
+                """)), Is.EqualTo(new[] { "PC0300" }));
 
             Assert.That(IdsOf(Check(
                 """
@@ -442,7 +442,7 @@ public sealed class TypeCheckerTests
                         yield 1;
                     end function
                 end model
-                """)), Is.EqualTo(new[] { "PFC0318" }));
+                """)), Is.EqualTo(new[] { "PC0318" }));
 
             Assert.That(IdsOf(Check(
                 """
@@ -451,7 +451,7 @@ public sealed class TypeCheckerTests
                         yield;
                     end function
                 end model
-                """)), Is.EqualTo(new[] { "PFC0319" }));
+                """)), Is.EqualTo(new[] { "PC0319" }));
         });
     }
 
@@ -468,7 +468,7 @@ public sealed class TypeCheckerTests
                 """
                         integer runtime = 1;
                         constant integer B = runtime;
-                """)), Is.EqualTo(new[] { "PFC0321" }));
+                """)), Is.EqualTo(new[] { "PC0321" }));
         });
     }
 
@@ -480,7 +480,7 @@ public sealed class TypeCheckerTests
     public void AConstantSetIsRejectedBecauseTheBindingCouldNotHoldItStill()
     {
         Assert.That(IdsOf(CheckBody("        constant integer[] Numbers = {1, 2};")),
-                    Does.Contain("PFC0322"));
+                    Does.Contain("PC0322"));
     }
 
     [Test]
@@ -496,14 +496,14 @@ public sealed class TypeCheckerTests
                     constant Dog Pet = new Dog();
                 end function
             end model
-            """)), Does.Contain("PFC0322"));
+            """)), Does.Contain("PC0322"));
     }
 
     [Test]
     public void AConstantMustBeGivenAValue()
     {
         Assert.That(IdsOf(CheckBody("        constant integer A;")),
-                    Is.EqualTo(new[] { "PFC0320" }));
+                    Is.EqualTo(new[] { "PC0320" }));
     }
 
     // ---- Calls -------------------------------------------------------------------------------------------
@@ -521,7 +521,7 @@ public sealed class TypeCheckerTests
                     Program.Take("text");
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0300" }));
+            """)), Is.EqualTo(new[] { "PC0300" }));
     }
 
     [Test]
@@ -537,7 +537,7 @@ public sealed class TypeCheckerTests
                     Program.Take(1, 2);
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0308" }));
+            """)), Is.EqualTo(new[] { "PC0308" }));
     }
 
     [Test]
@@ -580,7 +580,7 @@ public sealed class TypeCheckerTests
                     Program.Take(1);
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0310" }));
+            """)), Is.EqualTo(new[] { "PC0310" }));
     }
 
     [Test]
@@ -590,7 +590,7 @@ public sealed class TypeCheckerTests
             """
                     integer x = 1;
                     x();
-            """)), Is.EqualTo(new[] { "PFC0307" }));
+            """)), Is.EqualTo(new[] { "PC0307" }));
     }
 
     [Test]
@@ -600,7 +600,7 @@ public sealed class TypeCheckerTests
             """
                     integer[] numbers = {1};
                     numbers.Nonexistent();
-            """)), Is.EqualTo(new[] { "PFC0306" }));
+            """)), Is.EqualTo(new[] { "PC0306" }));
     }
 
     [Test]
@@ -636,7 +636,7 @@ public sealed class TypeCheckerTests
                     let s = new Shape();
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0328" }));
+            """)), Is.EqualTo(new[] { "PC0328" }));
     }
 
     [Test]
@@ -652,7 +652,7 @@ public sealed class TypeCheckerTests
                     let u = new Utility();
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0328" }));
+            """)), Is.EqualTo(new[] { "PC0328" }));
     }
 
     // ---- Casts -------------------------------------------------------------------------------------------------
@@ -693,7 +693,7 @@ public sealed class TypeCheckerTests
                     let x = d is Fish;
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0327" }));
+            """)), Is.EqualTo(new[] { "PC0327" }));
     }
 
     // ---- Recovery ------------------------------------------------------------------------------------------------
@@ -707,7 +707,7 @@ public sealed class TypeCheckerTests
                     let x = nowhere;
                     let y = x + 1;
                     let z = y * 2;
-            """)), Is.EqualTo(new[] { "PFC0200" }));
+            """)), Is.EqualTo(new[] { "PC0200" }));
     }
 
     // ---- Condition messages --------------------------------------------------------------------
@@ -728,8 +728,8 @@ public sealed class TypeCheckerTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Does.Contain("PFC0302"));
-            Assert.That(diagnostics.First(d => d.Id == "PFC0302").Message,
+            Assert.That(IdsOf(diagnostics), Does.Contain("PC0302"));
+            Assert.That(diagnostics.First(d => d.Id == "PC0302").Message,
                         Does.StartWith(expected));
         });
     }
@@ -772,7 +772,7 @@ public sealed class TypeCheckerTests
     [TestCase("        let b = Console.WriteLine(\"hi\").Equals(1);")]
     [TestCase("        let c = Console.WriteLine(\"hi\").Count();")]
     public void UsingTheResultOfAFunctionThatYieldsNothingIsRejected(string body) =>
-        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0332" }));
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0332" }));
 
     /// <summary>
     /// <para>Nothing else has this type, so it describes itself rather than naming a type no
@@ -805,8 +805,8 @@ public sealed class TypeCheckerTests
     }
 
     /// <summary>A genuine type mismatch still reports as one.</summary>
-    [TestCase("        integer x = \"text\";", "PFC0300")]
-    [TestCase("        let y = true * 2;", "PFC0303")]
+    [TestCase("        integer x = \"text\";", "PC0300")]
+    [TestCase("        let y = true * 2;", "PC0303")]
     public void ARealMismatchIsUnaffected(string body, string expected) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { expected }));
 
@@ -819,7 +819,7 @@ public sealed class TypeCheckerTests
     [TestCase("        let f = Fraction.Create(1.0, 3);")]
     [TestCase("        let f = Fraction.Create(1, \"three\");")]
     public void CreatingAFractionNeedsTwoIntegers(string body) =>
-        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0300" }));
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0300" }));
 
     /// <summary>
     /// A denominator of zero is the same mistake as dividing by zero, so it is reported the
@@ -828,7 +828,7 @@ public sealed class TypeCheckerTests
     [Test]
     public void ALiteralZeroDenominatorIsCaughtWhileCompiling() =>
         Assert.That(IdsOf(CheckBody("        let f = Fraction.Create(1, 0);")),
-                    Is.EqualTo(new[] { "PFC0324" }));
+                    Is.EqualTo(new[] { "PC0324" }));
 
     [Test]
     public void AVariableDenominatorIsLeftToRunTime() =>
@@ -874,7 +874,7 @@ public sealed class TypeCheckerTests
     [Test]
     public void ANegativeExponentOnAnIntegerIsRejected() =>
         Assert.That(IdsOf(CheckBody("        let x = 2 ^ -1;")),
-                    Is.EqualTo(new[] { "PFC0333" }));
+                    Is.EqualTo(new[] { "PC0333" }));
 
     [Test]
     public void ANegativeExponentOnAFractionIsFine() =>
@@ -898,7 +898,7 @@ public sealed class TypeCheckerTests
     [TestCase("        for i = 1|2 to 10\n            yield;\n        end for")]
     [TestCase("        for i = 1 to 10 step 0.5\n            yield;\n        end for")]
     public void ARangeLoopStillCountsWithIntegers(string body) =>
-        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0317" }));
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0317" }));
 
     // ---- Collection literals take their type from what is wanted ---------------------------------
 
@@ -948,7 +948,7 @@ public sealed class TypeCheckerTests
     public void AnElementThatDoesNotFitIsStillRejected() =>
         Assert.That(
             IdsOf(CheckBody("        integer[] wrong = {1, \"two\"};")),
-            Is.EqualTo(new[] { "PFC0300" }),
+            Is.EqualTo(new[] { "PC0300" }),
             "measured against integer, not against the first element");
 
     /// <summary>With nothing to measure against, inference still needs one type.</summary>
@@ -971,7 +971,7 @@ public sealed class TypeCheckerTests
                     end function
                 end model
                 """)),
-            Is.EqualTo(new[] { "PFC0314" }));
+            Is.EqualTo(new[] { "PC0314" }));
 
     // ---- The members the language provides ------------------------------------------------------
 
@@ -983,7 +983,7 @@ public sealed class TypeCheckerTests
     [TestCase("        let n = \"abc\".Count;")]
     [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue;")]
     public void ABuiltInMemberHasToBeCalled(string body) =>
-        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PFC0330" }));
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0330" }));
 
     [TestCase("        integer[] xs = {1};\n        let n = xs.Count();")]
     [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue();")]
@@ -1028,6 +1028,141 @@ public sealed class TypeCheckerTests
                 end model
                 """)),
             Is.Empty);
+
+    // ---- Signatures naming declared types -----------------------------------------------
+
+    /// <summary>
+    /// <para>A member's signature is read before the whole program has been seen, so a name it
+    /// cannot yet place stands as the error type until every type is known. These hold the
+    /// settling: a signature naming a declared type must be checked like any other.</para>
+    /// <para>An unsettled signature is silent rather than loud — the error type suppresses
+    /// cascades, so every one of these once compiled cleanly and was wrong.</para>
+    /// </summary>
+    [Test]
+    public void AParameterOfADeclaredTypeIsChecked() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Item
+                    public function Item()
+                    end function
+                end model
+
+                global model Program
+                    function Take(Item held)
+                    end function
+
+                    function Main()
+                        Program.Take(42);
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0300" }));
+
+    [Test]
+    public void AReturnTypeOfADeclaredTypeIsChecked() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Item
+                    public function Item()
+                    end function
+                end model
+
+                global model Program
+                    Item function Make()
+                        yield new Item();
+                    end function
+
+                    function Main()
+                        integer wrong = Program.Make();
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0300" }));
+
+    [Test]
+    public void AFieldOfADeclaredTypeIsChecked() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Item
+                    public function Item()
+                    end function
+                end model
+
+                model Box
+                    Item held;
+
+                    public function Box()
+                        this.held = 42;
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0300" }));
+
+    /// <summary>
+    /// The members the language provides are found on a set of a declared type, which they are
+    /// not when the element type never settled.
+    /// </summary>
+    [Test]
+    public void ASetFieldOfADeclaredTypeHasTheMembersOfASet() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Item
+                    public function Item()
+                    end function
+                end model
+
+                model Box
+                    Item[] held;
+
+                    public function Box()
+                        this.held = {};
+                        this.held.Insert(new Item());
+                    end function
+
+                    public integer function Size()
+                        yield this.held.Count();
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
+    /// <summary>A signature may name a type declared after it, which is why settling waits.</summary>
+    [Test]
+    public void ASignatureMayNameATypeDeclaredLater() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Box
+                    Item[] held;
+
+                    public function Box()
+                        this.held = {};
+                    end function
+
+                    public function Add(Item one)
+                        this.held.Insert(one);
+                    end function
+                end model
+
+                model Item
+                    public function Item()
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
+    /// <summary>A name nothing declares is reported once, not once per pass over it.</summary>
+    [Test]
+    public void AnUnknownTypeInASignatureIsReportedOnce() =>
+        Assert.That(
+            IdsOf(Check("""
+                model Box
+                    Missing held;
+
+                    public function Take(Missing one)
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0201", "PC0201" }));
 
     [Test]
     public void CheckingNeverThrows()

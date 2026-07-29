@@ -67,7 +67,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0104" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0104" }));
 
             string message = diagnostics.Single().Message;
             Assert.That(message, Does.Contain("end if"), "should name what was expected");
@@ -88,7 +88,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
                     end if
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0104" }),
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0104" }),
                     "one wrong qualifier should produce exactly one diagnostic");
     }
 
@@ -105,7 +105,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Does.Contain("PFC0105"));
+        Assert.That(IdsOf(diagnostics), Does.Contain("PC0105"));
     }
 
     // ---- The statement boundary rule ------------------------------------------------------
@@ -118,7 +118,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0106" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0106" }));
             Assert.That(diagnostics.Single().Message, Does.Contain($"'{offender}'"));
             Assert.That(diagnostics.Single().Message, Does.Contain("let"),
                         "the message should name the rewrite");
@@ -158,7 +158,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("no decrement operator"));
             Assert.That(diagnostics.Single().Message, Does.Contain("x = x - 1"));
         });
@@ -183,8 +183,8 @@ public sealed class ParserRecoveryTests : ParserTestBase
         // would be a worse message than the truthful one.
         (_, DiagnosticBag diagnostics) = ParseBody("        let a = x - - ;");
 
-        Assert.That(IdsOf(diagnostics), Does.Contain("PFC0101"));
-        Assert.That(IdsOf(diagnostics), Does.Not.Contain("PFC0006"));
+        Assert.That(IdsOf(diagnostics), Does.Contain("PC0101"));
+        Assert.That(IdsOf(diagnostics), Does.Not.Contain("PC0006"));
     }
 
     // ---- Missing nodes --------------------------------------------------------------------
@@ -198,7 +198,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0101" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0101" }));
             Assert.That(missing.Span.Length, Is.Zero, "a missing node occupies no source");
             Assert.That(unit.ContainsMissing(), Is.True);
         });
@@ -227,8 +227,79 @@ public sealed class ParserRecoveryTests : ParserTestBase
     public void AssigningToSomethingThatIsNotATargetIsReported()
     {
         (_, DiagnosticBag diagnostics) = ParseBody("        f() = 1;");
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0109" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0109" }));
     }
+
+    // ---- The if expression ------------------------------------------------------------------
+
+    /// <summary>
+    /// One missing 'else' is one diagnostic, against the 'if' that is short. Reaching for the
+    /// branch that is not there would report the same token twice, once for the word and once
+    /// for the value after it.
+    /// </summary>
+    [Test]
+    public void AnIfExpressionWithNoElseIsOneDiagnostic()
+    {
+        (CompilationUnit unit, DiagnosticBag diagnostics) = ParseBody("        let a = if true then 1;");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0112" }));
+            Assert.That(diagnostics.Single().Span.Start.Column, Is.EqualTo(17), "points at the 'if'");
+            Assert.That(unit.Declarations, Is.Not.Empty, "a tree still came back");
+        });
+    }
+
+    /// <summary>
+    /// The shape that finds this in practice: a semicolon written after a nested if expression
+    /// ends the whole statement, so the outer one never reaches its 'else'. What is reported
+    /// has to be the outer 'if', because the inner conditional is complete and correct.
+    /// </summary>
+    [Test]
+    public void ASemicolonInsideANestedIfExpressionReportsTheOuterOne()
+    {
+        (_, DiagnosticBag diagnostics) = ParseBody("""
+                    let z = if true then
+                                if false then
+                                    10
+                                else
+                                    20;
+                            else
+                                30;
+            """);
+
+        Diagnostic missingElse = diagnostics.Sorted().First(d => d.Id == "PC0112");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(missingElse.Span.Start.Line, Is.EqualTo(3), "the outer if, not the inner");
+            Assert.That(IdsOf(diagnostics).Count(id => id == "PC0112"), Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>Nesting one if expression inside another, across lines, is ordinary and legal.</summary>
+    [Test]
+    public void ANestedIfExpressionAcrossLinesParsesCleanly() =>
+        Assert.That(
+            IdsOf(ParseBody("""
+                        let z = if true then
+                                    if false then
+                                        10
+                                    else
+                                        20
+                                else
+                                    30;
+                """).Diagnostics),
+            Is.Empty);
+
+    /// <summary>
+    /// A statement whose expression could not be read is not then asked for its semicolon.
+    /// One unusable token is one mistake, however many things were expected of it.
+    /// </summary>
+    [Test]
+    public void AStatementThatCouldNotStartIsOneDiagnostic() =>
+        Assert.That(IdsOf(ParseBody("        else 30;").Diagnostics),
+                    Is.EqualTo(new[] { "PC0101" }));
 
     // ---- Progress -------------------------------------------------------------------------
 

@@ -68,6 +68,25 @@ public sealed partial class Resolver
         return current;
     }
 
+    /// <summary>
+    /// Reports a second type of a name already taken, saying where the first one is. A reader
+    /// looking at the second declaration cannot see the first, and in a compilation of several
+    /// files it may not even be open.
+    /// </summary>
+    private void ReportDuplicateType(string name, Declaration declaration, TypeSymbol first)
+    {
+        // Named by file rather than by path: the diagnostic's own location already carries the
+        // path of the file being read, and a second full path in the sentence buries the line
+        // number that is the useful part.
+        string where = first is DeclaredTypeSymbol { Declaration: { } written } declared
+            ? declared.DeclaredIn is { } file && !ReferenceEquals(file, _currentSource)
+                ? $"in {Path.GetFileName(file.FileName)}, on line {written.Span.Start.Line}"
+                : $"on line {written.Span.Start.Line}"
+            : "elsewhere in this compilation";
+
+        Report(DiagnosticDescriptors.DuplicateTypeDeclaration, declaration, name, where);
+    }
+
     /// <summary>Records a model or structure, then its members.</summary>
     private void DeclareType(
         DeclaredTypeSymbol symbol,
@@ -84,11 +103,12 @@ public sealed partial class Resolver
 
         if (!enclosing.Types.TryAdd(name, symbol))
         {
-            Report(DiagnosticDescriptors.DuplicateDeclaration, declaration, name);
+            ReportDuplicateType(name, declaration, enclosing.Types[name]);
             return;
         }
 
         symbol.Container = enclosing;
+        symbol.DeclaredIn = _currentSource;
         _typesByName[name] = symbol;
         _model.Bind(declaration, symbol);
 
@@ -225,11 +245,12 @@ public sealed partial class Resolver
         {
             if (!enclosing.Types.TryAdd(symbol.Name, symbol))
             {
-                Report(DiagnosticDescriptors.DuplicateDeclaration, declaration, symbol.Name);
+                ReportDuplicateType(symbol.Name, declaration, enclosing.Types[symbol.Name]);
                 return;
             }
 
             symbol.Container = enclosing;
+            symbol.DeclaredIn = _currentSource;
         }
         else
         {
@@ -273,8 +294,49 @@ public sealed partial class Resolver
         ownerIsGlobal ? written | DeclarationModifiers.Global : written;
 
     /// <summary>
+    /// <para>Settles every member's declared types, once all of them are known.</para>
+    /// <para>Collection reads a signature before the whole program has been seen, so a name it
+    /// cannot yet place stands as the error type. This replaces those placeholders with what
+    /// the names actually denote, which is what lets a field hold a type declared further down
+    /// the file, or in another file entirely.</para>
+    /// <para>This is where a signature's type names are reported unknown, so that a name
+    /// written once is reported once rather than again when the body is bound.</para>
+    /// </summary>
+    private void SettleMemberSignatures()
+    {
+        foreach (DeclaredTypeSymbol type in _typesByName.Values)
+        {
+            foreach (Symbol member in type.Members.Values.SelectMany(overloads => overloads))
+            {
+                switch (member)
+                {
+                    case FieldSymbol { Declaration: FieldDecl declaration } field:
+                        field.Type = ResolveType(declaration.Type);
+                        break;
+
+                    case FunctionSymbol { Declaration: FunctionDecl declaration } function:
+                        function.ReturnType = declaration.ReturnType is null
+                            ? null
+                            : ResolveType(declaration.ReturnType);
+
+                        foreach (ParameterSymbol parameter in function.Parameters)
+                        {
+                            if (parameter.Declaration is ParameterDecl written)
+                            {
+                                parameter.Type = ResolveType(written.Type);
+                            }
+                        }
+
+                        break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Reads a type during the first pass, when not every type has been recorded yet. Unknown
-    /// names become the error type here and are resolved properly in the second pass.
+    /// names become the error type here and are settled by
+    /// <see cref="SettleMemberSignatures"/> once every type is known.
     /// </summary>
     private TypeSymbol ResolveTypePlaceholder(TypeSyntax syntax) => syntax switch
     {
@@ -401,17 +463,8 @@ public sealed partial class Resolver
             return;
         }
 
-        if (programs.Count > 1)
-        {
-            foreach (DeclaredTypeSymbol extra in programs.Skip(1))
-            {
-                if (extra.Declaration is not null)
-                {
-                    Report(DiagnosticDescriptors.ProgramDeclaredMoreThanOnce, extra.Declaration);
-                }
-            }
-        }
-
+        // A second Program is a second type of a name already taken, and is reported as one
+        // when it is collected, which also says which file the first is in.
         DeclaredTypeSymbol program = programs[0];
 
         if (program is not ModelSymbol { IsGlobal: true } model)

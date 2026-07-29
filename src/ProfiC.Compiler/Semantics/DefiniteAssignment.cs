@@ -77,22 +77,38 @@ public sealed class DefiniteAssignment
         _diagnostics = diagnostics;
     }
 
-    /// <summary>Analyzes every function in a compilation unit.</summary>
+    /// <summary>Analyzes every function in every file of a compilation.</summary>
+    public static void Analyze(
+        IReadOnlyList<CompilationUnit> units,
+        SemanticModel model,
+        DiagnosticBag diagnostics)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(diagnostics);
+
+        DefiniteAssignment analysis = new(model, diagnostics);
+
+        foreach (CompilationUnit unit in units)
+        {
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(unit.Source);
+
+            foreach (Declaration declaration in unit.Declarations)
+            {
+                analysis.AnalyzeDeclaration(declaration);
+            }
+        }
+    }
+
+    /// <summary>Analyzes one file, which is a compilation of one.</summary>
     public static void Analyze(
         CompilationUnit unit,
         SemanticModel model,
         DiagnosticBag diagnostics)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(diagnostics);
 
-        DefiniteAssignment analysis = new(model, diagnostics);
-
-        foreach (Declaration declaration in unit.Declarations)
-        {
-            analysis.AnalyzeDeclaration(declaration);
-        }
+        Analyze([unit], model, diagnostics);
     }
 
     private void AnalyzeDeclaration(Declaration declaration)

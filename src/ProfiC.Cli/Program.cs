@@ -10,7 +10,7 @@ using ProfiC.Runtime;
 namespace ProfiC.Cli;
 
 /// <summary>
-/// <para>Entry point for the <c>profi-c</c> command, and for the <c>pfc</c> alias that shares
+/// <para>Entry point for the <c>profi-c</c> command, and for the <c>pc</c> alias that shares
 /// it.</para>
 /// <para>Diagnostic formatting belongs here rather than in the compiler, so that the front
 /// end stays free of console output and can later back a language server.</para>
@@ -40,7 +40,7 @@ public static class Program
 
     private static int Main(string[] args) => Run(args);
 
-    /// <summary>Runs the command. Public so that the <c>pfc</c> alias can forward to it.</summary>
+    /// <summary>Runs the command. Public so that the <c>pc</c> alias can forward to it.</summary>
     public static int Run(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -68,13 +68,38 @@ public static class Program
         Console.WriteLine($"{ToolName} - the Profi-C compiler");
         Console.WriteLine();
         Console.WriteLine("Usage:");
-        Console.WriteLine($"  {ToolName} run <file>       Run a .pfc program");
-        Console.WriteLine($"  {ToolName} tokens <file>    Scan a .pfc file and print its token stream");
-        Console.WriteLine($"  {ToolName} ast <file>       Parse a .pfc file and print its syntax tree");
-        Console.WriteLine($"  {ToolName} check <file>     Check a .pfc file and report any problems");
+        Console.WriteLine($"  {ToolName} run <file>       Run a .pc program or a .pcp project");
+        Console.WriteLine($"  {ToolName} check <file>     Check a .pc program or a .pcp project");
         Console.WriteLine($"  {ToolName} lower <file>     Print the simplified tree the back end sees");
+        Console.WriteLine($"  {ToolName} tokens <file>    Scan one .pc file and print its token stream");
+        Console.WriteLine($"  {ToolName} ast <file>       Parse one .pc file and print its syntax tree");
         Console.WriteLine($"  {ToolName} --version        Print the compiler version");
         Console.WriteLine($"  {ToolName} --help           Print this message");
+        Console.WriteLine();
+        Console.WriteLine("Naming a .pc file compiles it together with the shared code beside");
+        Console.WriteLine("it: every other .pc in the same folder that declares no Program.");
+        Console.WriteLine("A .pcp project compiles exactly what it lists, across any folders.");
+    }
+
+    /// <summary>
+    /// Checks the argument list and reports what is missing. Returns the path, or null when the
+    /// command cannot proceed.
+    /// </summary>
+    private static string? PathArgument(string[] args, string command)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine($"{ToolName}: '{command}' requires a file path.");
+            return null;
+        }
+
+        if (!File.Exists(args[1]))
+        {
+            Console.Error.WriteLine($"{ToolName}: file not found: {args[1]}");
+            return null;
+        }
+
+        return args[1];
     }
 
     private static int WriteVersion()
@@ -97,17 +122,8 @@ public static class Program
     /// </summary>
     private static int RunTokens(string[] args)
     {
-        if (args.Length < 2)
+        if (PathArgument(args, "tokens") is not { } path)
         {
-            Console.Error.WriteLine($"{ToolName}: 'tokens' requires a file path.");
-            return 1;
-        }
-
-        string path = args[1];
-
-        if (!File.Exists(path))
-        {
-            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
             return 1;
         }
 
@@ -116,11 +132,7 @@ public static class Program
         List<Token> tokens = new Lexer(source, diagnostics).Scan();
 
         Console.Out.Write(TokenPrinter.Print(tokens));
-
-        if (diagnostics.Count > 0)
-        {
-            DiagnosticRenderer.WriteAll(source, diagnostics);
-        }
+        DiagnosticRenderer.WriteAll(diagnostics);
 
         return diagnostics.HasErrors ? 1 : 0;
     }
@@ -131,32 +143,16 @@ public static class Program
     /// </summary>
     private static int RunAst(string[] args)
     {
-        if (args.Length < 2)
+        if (PathArgument(args, "ast") is not { } path)
         {
-            Console.Error.WriteLine($"{ToolName}: 'ast' requires a file path.");
             return 1;
         }
 
-        string path = args[1];
-
-        if (!File.Exists(path))
-        {
-            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
-            return 1;
-        }
-
-        bool withPositions = args.Contains("--positions");
-
-        SourceText source = SourceText.FromFile(path);
         DiagnosticBag diagnostics = new();
-        CompilationUnit unit = Parser.Parse(source, diagnostics);
+        CompilationUnit unit = SourceDiscovery.ParseOne(path, diagnostics);
 
-        Console.Out.Write(AstPrinter.Print(unit, withPositions));
-
-        if (diagnostics.Count > 0)
-        {
-            DiagnosticRenderer.WriteAll(source, diagnostics);
-        }
+        Console.Out.Write(AstPrinter.Print(unit, args.Contains("--positions")));
+        DiagnosticRenderer.WriteAll(diagnostics);
 
         return diagnostics.HasErrors ? 1 : 0;
     }
@@ -167,38 +163,57 @@ public static class Program
     /// </summary>
     private static int RunCheck(string[] args)
     {
-        if (args.Length < 2)
+        if (PathArgument(args, "check") is not { } path)
         {
-            Console.Error.WriteLine($"{ToolName}: 'check' requires a file path.");
             return 1;
         }
 
-        string path = args[1];
-
-        if (!File.Exists(path))
-        {
-            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
-            return 1;
-        }
-
-        SourceText source = SourceText.FromFile(path);
         DiagnosticBag diagnostics = new();
 
-        CompilationUnit unit = Parser.Parse(source, diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics);
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
-
-        DiagnosticRenderer.WriteAll(source, diagnostics);
-
-        if (!diagnostics.HasErrors)
+        if (Compile(path, diagnostics, requireEntryPoint: false) is not var (compilation, model))
         {
-            int types = model.AllTypes().Count();
-            string entry = model.EntryPoint is null ? "none" : "Program.Main";
-            Console.WriteLine($"{source.FileName}: ok, {types} types, entry point {entry}.");
+            DiagnosticRenderer.WriteAll(diagnostics);
+            return 1;
         }
 
-        return diagnostics.HasErrors ? 1 : 0;
+        DiagnosticRenderer.WriteAll(diagnostics);
+
+        if (diagnostics.HasErrors)
+        {
+            return 1;
+        }
+
+        int types = model.AllTypes().Count();
+        string entry = model.EntryPoint is null ? "none" : "Program.Main";
+        string files = compilation.Units.Count == 1 ? "1 file" : $"{compilation.Units.Count} files";
+
+        Console.WriteLine(
+            $"{compilation.Label}: ok, {files}, {types} types, entry point {entry}.");
+
+        return 0;
+    }
+
+    /// <summary>
+    /// <para>Gathers the files a path names and takes them through the whole front end.</para>
+    /// <para>Returns null only when the files could not be gathered at all, which is a broken
+    /// project file. Everything else is reported into the bag and left for the caller to
+    /// decide about, since some commands have something worth printing even so.</para>
+    /// </summary>
+    private static (SourceDiscovery.Compilation Compilation, SemanticModel Model)? Compile(
+        string path,
+        DiagnosticBag diagnostics,
+        bool requireEntryPoint)
+    {
+        if (SourceDiscovery.Gather(path, diagnostics) is not { } compilation)
+        {
+            return null;
+        }
+
+        SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, requireEntryPoint);
+        TypeChecker.Check(compilation.Units, model, diagnostics);
+        DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+
+        return (compilation, model);
     }
 
     /// <summary>
@@ -207,36 +222,33 @@ public static class Program
     /// </summary>
     private static int RunLower(string[] args)
     {
-        if (args.Length < 2)
+        if (PathArgument(args, "lower") is not { } path)
         {
-            Console.Error.WriteLine($"{ToolName}: 'lower' requires a file path.");
             return 1;
         }
 
-        string path = args[1];
-
-        if (!File.Exists(path))
-        {
-            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
-            return 1;
-        }
-
-        SourceText source = SourceText.FromFile(path);
         DiagnosticBag diagnostics = new();
 
-        CompilationUnit unit = Parser.Parse(source, diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics);
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
-
-        if (diagnostics.HasErrors)
+        if (Compile(path, diagnostics, requireEntryPoint: false) is not var (compilation, model)
+            || diagnostics.HasErrors)
         {
-            DiagnosticRenderer.WriteAll(source, diagnostics);
+            DiagnosticRenderer.WriteAll(diagnostics);
             return 1;
         }
 
-        CompilationUnit lowered = Lowering.Lower(unit, model);
-        Console.Out.Write(AstPrinter.Print(lowered));
+        // One tree per file, each headed by the file it came from, since a compilation of
+        // several would otherwise print as one undivided wall.
+        IReadOnlyList<CompilationUnit> lowered = Lowering.Lower(compilation.Units, model);
+
+        for (int index = 0; index < lowered.Count; index++)
+        {
+            if (lowered.Count > 1)
+            {
+                Console.WriteLine($"comment {lowered[index].Source.FileName}");
+            }
+
+            Console.Out.Write(AstPrinter.Print(lowered[index]));
+        }
 
         return 0;
     }
@@ -248,47 +260,34 @@ public static class Program
     /// </summary>
     private static int RunProgram(string[] args)
     {
-        if (args.Length < 2)
+        if (PathArgument(args, "run") is not { } path)
         {
-            Console.Error.WriteLine($"{ToolName}: 'run' requires a file path.");
             return 1;
         }
 
-        string path = args[1];
-
-        if (!File.Exists(path))
-        {
-            Console.Error.WriteLine($"{ToolName}: file not found: {path}");
-            return 1;
-        }
-
-        SourceText source = SourceText.FromFile(path);
         DiagnosticBag diagnostics = new();
 
-        CompilationUnit unit = Parser.Parse(source, diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
-
-        if (diagnostics.Count > 0)
+        if (Compile(path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
         {
-            DiagnosticRenderer.WriteAll(source, diagnostics);
+            DiagnosticRenderer.WriteAll(diagnostics);
+            return 1;
         }
+
+        DiagnosticRenderer.WriteAll(diagnostics);
 
         if (diagnostics.HasErrors)
         {
             return 1;
         }
 
-        CompilationUnit lowered = Lowering.Lower(unit, model);
-
         try
         {
             // Qualified because the class shares its name with its namespace.
-            return ProfiC.Interpreter.Interpreter.Run(lowered, model);
+            return ProfiC.Interpreter.Interpreter.Run(
+                Lowering.Lower(compilation.Units, model), model);
         }
         catch (Exception failure)
-            when (DiagnosticRenderer.DescribeFailure(source, failure) is { } description)
+            when (DiagnosticRenderer.DescribeFailure(compilation.Label, failure) is { } description)
         {
             // Something the program did. A fault in the compiler is not described, and travels.
             Console.Error.WriteLine(description);

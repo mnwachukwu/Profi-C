@@ -158,7 +158,7 @@ public sealed class BuiltInCatalogueTests
 
         Resolver.Resolve(unit, diagnostics);
 
-        Assert.That(diagnostics.Select(d => d.Id), Does.Contain("PFC0203"));
+        Assert.That(diagnostics.Select(d => d.Id), Does.Contain("PC0203"));
     }
 
     [Test]

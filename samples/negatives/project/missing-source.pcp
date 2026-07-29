@@ -1,0 +1,12 @@
+comment begin
+    A project that names a file that is not there.
+
+    Checked before compiling begins, so a mistyped path is reported as itself rather than as
+    every name the missing file would have declared.
+end comment
+
+project Missing
+    source nowhere.pc
+    source ../runtime/empty-optional.pc
+    source ../runtime/empty-optional.pc
+end project

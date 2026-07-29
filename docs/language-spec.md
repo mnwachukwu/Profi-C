@@ -22,7 +22,7 @@ description of that area.
 | 9. Functions and closures | Not yet written |
 | 10. Exceptions | Not yet written |
 | 11. The standard library | Not yet written |
-| 12. Execution and entry point | Not yet written |
+| 12. Execution and entry point | Partly written: what a compilation is made of |
 
 ---
 
@@ -33,7 +33,7 @@ description of that area.
 | | |
 |---|---|
 | Name | Profi-C |
-| Source file extension | `.pfc` |
+| Source file extension | `.pc` |
 | Target | CIL, on `net10.0` |
 | Implementation language | C# |
 
@@ -110,7 +110,7 @@ Every other sentence is explanation and requires nothing. Where explanation and 
 to disagree, the rule governs and the explanation is at fault.
 
 A **diagnostic** is a message a conforming implementation produces about a source program.
-Diagnostics carry an identifier of the form `PFC` followed by four digits, a severity, and a
+Diagnostics carry an identifier of the form `PC` followed by four digits, a severity, and a
 source span. Two severities exist: **error**, which prevents compilation, and **warning**,
 which does not.
 
@@ -140,7 +140,7 @@ converts to `Model`, in this or any later version. See section 3.
 
 ### 1.1 Source files
 
-A source file is Unicode text. The conventional extension is `.pfc`.
+A source file is Unicode text. The conventional extension is `.pc`.
 
 A **line terminator** is a carriage return followed by a line feed, or a line feed alone.
 Each counts as one terminator. A carriage return not followed by a line feed is whitespace
@@ -318,14 +318,14 @@ zero-width position just past the final character.
 
 | Identifier | Reported when |
 |---|---|
-| `PFC0001` | A character appears that begins no token |
-| `PFC0002` | A string literal is not closed before a line terminator or the end of the file |
-| `PFC0003` | A character literal is not closed |
-| `PFC0004` | A character literal does not hold exactly one character |
-| `PFC0005` | A block comment is not closed before the end of the file |
-| `PFC0006` | A character sequence is used that is an operator in C# and has no reading in Profi-C |
-| `PFC0007` | An escape sequence is not recognized |
-| `PFC0008` | A Unicode escape is not followed by four hexadecimal digits |
+| `PC0001` | A character appears that begins no token |
+| `PC0002` | A string literal is not closed before a line terminator or the end of the file |
+| `PC0003` | A character literal is not closed |
+| `PC0004` | A character literal does not hold exactly one character |
+| `PC0005` | A block comment is not closed before the end of the file |
+| `PC0006` | A character sequence is used that is an operator in C# and has no reading in Profi-C |
+| `PC0007` | An escape sequence is not recognized |
+| `PC0008` | A Unicode escape is not followed by four hexadecimal digits |
 
 Scanning never stops at the first error. Each of these has a defined recovery, so a file
 containing several mistakes reports all of them in one pass and still yields a usable token
@@ -460,7 +460,7 @@ Temperature? t = new Temperature(21.5);
 let unwrapped = t.Value();          comment the optional's Value; unwrapped is a Temperature
 Console.WriteLine(unwrapped.Value());   comment now the model's; 21.5
 
-let d = t.Describe();               comment PFC0306: a Temperature? has no member 'Describe'
+let d = t.Describe();               comment PC0306: a Temperature? has no member 'Describe'
 ```
 
 The two names are in scope together only after narrowing, which is where the rule above
@@ -504,3 +504,53 @@ by field, an enumeration prints its member name, a model prints its type name.
 `global model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
 and `Reference`, which may not be declared at all — every program must declare `Program`, but
 may not declare a second one, and may not use the name for an ordinary model.
+
+### 12.1 What a compilation is made of
+
+A compilation is a set of source files. Declarations across all of them share one scope, so a
+file may name a type another file declares, in either order, with nothing written to arrange
+it. Which files form the set is settled before compiling begins, and there are two ways to
+settle it.
+
+**A source file names its folder.** Compiling `bookshelf/Program.pc` compiles it together with
+every other `.pc` directly in `bookshelf`, except those that declare `Program`. A file that
+declares `Program` is a program; a file that does not is shared code available to all of them.
+A folder may therefore hold several programs, each seeing the same shared code and none seeing
+the others. The rule does not descend into subfolders.
+
+**A project file names files and folders.** A `.pcp` lists what a build is made of, across as
+many folders as it names:
+
+```
+comment A storefront, spread across folders.
+
+project Storefront
+    source Program.pc
+    source models
+    source pricing
+end project
+```
+
+A `source` naming a folder takes every `.pc` directly inside it and does not descend, so a
+nested folder is named by its own `source` and what a project builds can be read off the file.
+Paths are relative to the project file and are written with forward slashes on every platform.
+A `comment` line, and any blank line, is ignored.
+
+A project file is not Profi-C. It describes a build rather than a computation, nothing in it
+is compiled, and its vocabulary is only `project`, `source`, `comment`, and `end project`.
+
+Because `Program` may be declared once in a compilation, a project listing two files that each
+declare one is rejected, naming the second.
+
+### 12.2 A name belongs to one type
+
+Two types may not share a name, whether they are written in one file or across several. The
+second is rejected, and the message says where the first one is, since a reader looking at the
+second cannot see it and may not have the other file open.
+
+Nothing merges them. A type is declared in one place, and there is no implicit partial type: a
+name appearing twice is far more often two people writing the same thing than one type
+deliberately split, and a language that joined them silently would hide the first case
+completely. Whether an explicit `partial` should exist is left open for a later version — it is
+a question interoperating with .NET may eventually force, and one that should be answered
+deliberately rather than fallen into.

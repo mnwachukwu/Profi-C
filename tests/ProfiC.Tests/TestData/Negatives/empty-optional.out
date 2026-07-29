@@ -1,2 +1,2 @@
 8 is at 2
-empty-optional.pfc: unhandled EmptyOptionalException: Cannot read the value of an empty optional.
+empty-optional.pc: unhandled EmptyOptionalException: Cannot read the value of an empty optional.

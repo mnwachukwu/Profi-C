@@ -86,7 +86,7 @@ public sealed class CommentTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PFC0002" }));
+            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0002" }));
             Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
             {
                 TokenType.StringLiteral, TokenType.Let, TokenType.EndOfFile,

@@ -96,7 +96,7 @@ public sealed class ResolverTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0204" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0204" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("'this.count'"));
             Assert.That(diagnostics.Single().Message, Does.Contain("field"));
         });
@@ -109,7 +109,7 @@ public sealed class ResolverTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0204" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0204" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("'Holder.total'"));
         });
     }
@@ -119,7 +119,7 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = ResolveBody("        let x = nowhere;");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0200" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0200" }));
     }
 
     [Test]
@@ -138,7 +138,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0204" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0204" }));
     }
 
     // ---- Scoping ------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ public sealed class ResolverTests
                     let outer = inner;
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0200" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0200" }));
     }
 
     [Test]
@@ -180,7 +180,7 @@ public sealed class ResolverTests
                     let value = 2;
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0202" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0202" }));
     }
 
     [Test]
@@ -188,7 +188,7 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = ResolveBody("        let value = value;");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0200" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0200" }));
     }
 
     [Test]
@@ -202,7 +202,7 @@ public sealed class ResolverTests
                     let outside = i;
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0200" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0200" }));
     }
 
     [Test]
@@ -243,7 +243,7 @@ public sealed class ResolverTests
                     Fixed = 2;
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0205" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0205" }));
     }
 
     /// <summary>
@@ -262,7 +262,7 @@ public sealed class ResolverTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0206" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0206" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("fresh"));
         });
     }
@@ -297,7 +297,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0201" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0201" }));
     }
 
     [Test]
@@ -339,7 +339,7 @@ public sealed class ResolverTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Does.Contain("PFC0207"));
+            Assert.That(IdsOf(diagnostics), Does.Contain("PC0207"));
 
             foreach (ModelSymbol type in model.AllTypes().OfType<ModelSymbol>())
             {
@@ -361,7 +361,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0208" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0208" }));
     }
 
     [Test]
@@ -376,7 +376,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0209" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0209" }));
     }
 
     [Test]
@@ -388,7 +388,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0210" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0210" }));
     }
 
     [Test]
@@ -434,7 +434,7 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = Resolve($"model {name}\nend model");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0203" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0203" }));
     }
 
     [Test]
@@ -461,15 +461,24 @@ public sealed class ResolverTests
         // invitation to inherit from them.
         (_, DiagnosticBag diagnostics) = Resolve($"model Mine extends {name}\nend model");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0217" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0217" }));
     }
 
+    /// <summary>
+    /// Two types of one name are rejected, and the message says where the other one is. Nothing
+    /// merges them: there is no implicit partial type, so a name written twice is two mistakes
+    /// meeting rather than one type in two pieces.
+    /// </summary>
     [Test]
     public void DeclaringTheSameTypeTwiceIsRejected()
     {
         (_, DiagnosticBag diagnostics) = Resolve("model Dog\nend model\nmodel Dog\nend model");
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0202" }));
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0218" }));
+            Assert.That(diagnostics.Single().Message, Does.Contain("on line 1"));
+        });
     }
 
     // ---- The entry point ------------------------------------------------------------------------
@@ -484,7 +493,7 @@ public sealed class ResolverTests
         Assert.Multiple(() =>
         {
             Assert.That(IdsOf(without), Is.Empty);
-            Assert.That(IdsOf(with), Is.EqualTo(new[] { "PFC0212" }));
+            Assert.That(IdsOf(with), Is.EqualTo(new[] { "PC0212" }));
         });
     }
 
@@ -499,7 +508,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0213" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0213" }));
     }
 
     [Test]
@@ -513,7 +522,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0212" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0212" }));
     }
 
     // ---- Receivers -----------------------------------------------------------------------------
@@ -550,7 +559,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0215" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0215" }));
     }
 
     [Test]
@@ -565,7 +574,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0216" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0216" }));
     }
 
     [Test]
@@ -598,7 +607,7 @@ public sealed class ResolverTests
             end model
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0101" }),
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0101" }),
                     "the resolver should stay quiet about syntax that never parsed");
     }
 

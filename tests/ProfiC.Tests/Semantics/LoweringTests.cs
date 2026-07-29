@@ -356,7 +356,7 @@ public sealed class LoweringTests
     {
         string root = LexerTestBase.RepositoryRootForTests;
 
-        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "samples"), "*.pfc"))
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "samples"), "*.pc"))
         {
             SourceText source = SourceText.FromFile(path);
             DiagnosticBag diagnostics = new();

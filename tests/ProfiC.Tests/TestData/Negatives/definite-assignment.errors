@@ -1,4 +1,4 @@
-definite-assignment.pfc(13,27): error PFC0400: 'total' is used here before it has been given a value.
-definite-assignment.pfc(22,27): error PFC0400: 'chosen' is used here before it has been given a value.
-definite-assignment.pfc(30,31): error PFC0400: 'attempted' is used here before it has been given a value.
-definite-assignment.pfc(34,9): error PFC0320: 'Limit' is a constant, so it must be given a value where it is declared.
+definite-assignment.pc(13,27): error PC0400: 'total' is used here before it has been given a value.
+definite-assignment.pc(22,27): error PC0400: 'chosen' is used here before it has been given a value.
+definite-assignment.pc(30,31): error PC0400: 'attempted' is used here before it has been given a value.
+definite-assignment.pc(34,9): error PC0320: 'Limit' is a constant, so it must be given a value where it is declared.

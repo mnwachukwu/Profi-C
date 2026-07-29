@@ -1,0 +1,41 @@
+comment begin
+    A shelf of books.
+
+    Shared code as well, and it names Book freely. Files in a folder are compiled together, so
+    neither has to be declared before the other.
+end comment
+
+model Shelf
+
+    Book[] books;
+
+    public function Shelf()
+        this.books = {};
+    end function
+
+    public function Add(Book book)
+        this.books.Insert(book);
+    end function
+
+    public integer function Count()
+        yield this.books.Count();
+    end function
+
+    public string function Describe(integer index)
+        yield this.books[index].Describe();
+    end function
+
+    comment The earliest book on the shelf, or nothing when the shelf is empty.
+    Book? function Oldest()
+        Book? found;
+
+        for each book in this.books
+            if not found.HasValue() or book.Year() < found.Value().Year()
+                found = book;
+            end if
+        end for
+
+        yield found;
+    end function
+
+end model

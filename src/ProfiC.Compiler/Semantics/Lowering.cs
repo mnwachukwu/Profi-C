@@ -20,19 +20,29 @@ public sealed class Lowering
 
     private Lowering(SemanticModel model) => _model = model;
 
-    /// <summary>Lowers a checked compilation unit.</summary>
-    public static CompilationUnit Lower(CompilationUnit unit, SemanticModel model)
+    /// <summary>Lowers every file of a checked compilation.</summary>
+    public static IReadOnlyList<CompilationUnit> Lower(
+        IReadOnlyList<CompilationUnit> units,
+        SemanticModel model)
     {
-        ArgumentNullException.ThrowIfNull(unit);
+        ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(model);
 
         Lowering lowering = new(model);
 
-        return new CompilationUnit(
+        return [.. units.Select(unit => new CompilationUnit(
             unit.Span,
             unit.Usings,
             [.. unit.Declarations.Select(lowering.LowerDeclaration)],
-            unit.Source);
+            unit.Source))];
+    }
+
+    /// <summary>Lowers one file, which is a compilation of one.</summary>
+    public static CompilationUnit Lower(CompilationUnit unit, SemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        return Lower([unit], model)[0];
     }
 
     // ---- Declarations ---------------------------------------------------------------------

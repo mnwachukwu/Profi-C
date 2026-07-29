@@ -12,6 +12,8 @@ public sealed partial class Parser
     /// </summary>
     private CompilationUnit ParseCompilationUnit()
     {
+        using DiagnosticBag.FileScope reporting = _diagnostics.InFile(_source);
+
         Token start = Current;
         List<UsingDirective> usings = [];
 

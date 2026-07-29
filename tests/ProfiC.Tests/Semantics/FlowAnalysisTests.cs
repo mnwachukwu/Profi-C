@@ -44,7 +44,7 @@ public sealed class FlowAnalysisTests
             """
                     integer x;
                     let y = x;
-            """)), Is.EqualTo(new[] { "PFC0400" }));
+            """)), Is.EqualTo(new[] { "PC0400" }));
     }
 
     [Test]
@@ -72,7 +72,7 @@ public sealed class FlowAnalysisTests
             """
                     integer x;
                     x = x;
-            """)), Is.EqualTo(new[] { "PFC0400" }));
+            """)), Is.EqualTo(new[] { "PC0400" }));
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public sealed class FlowAnalysisTests
                         x = 1;
                     end if
                     let y = x;
-            """)), Is.EqualTo(new[] { "PFC0400" }));
+            """)), Is.EqualTo(new[] { "PC0400" }));
     }
 
     [Test]
@@ -135,7 +135,7 @@ public sealed class FlowAnalysisTests
                             x = 2;
                         end if
                         let y = x;
-                """)), Is.EqualTo(new[] { "PFC0400" }));
+                """)), Is.EqualTo(new[] { "PC0400" }));
         });
     }
 
@@ -150,7 +150,7 @@ public sealed class FlowAnalysisTests
                         x = 1;
                     end while
                     let y = x;
-            """)), Is.EqualTo(new[] { "PFC0400" }));
+            """)), Is.EqualTo(new[] { "PC0400" }));
     }
 
     [Test]
@@ -180,7 +180,7 @@ public sealed class FlowAnalysisTests
                                 x = 2;
                         end switch
                         let y = x;
-                """)), Is.EqualTo(new[] { "PFC0400" }));
+                """)), Is.EqualTo(new[] { "PC0400" }));
 
             Assert.That(IdsOf(CheckBody(
                 """
@@ -230,7 +230,7 @@ public sealed class FlowAnalysisTests
                     catch Exception problem
                         let y = x;
                     end try
-            """)), Is.EqualTo(new[] { "PFC0400" }));
+            """)), Is.EqualTo(new[] { "PC0400" }));
     }
 
     /// <summary>
@@ -261,7 +261,7 @@ public sealed class FlowAnalysisTests
                     finally
                         let y = x;
                     end try
-            """)), Is.EqualTo(new[] { "PFC0400" }));
+            """)), Is.EqualTo(new[] { "PC0400" }));
     }
 
     /// <summary>
@@ -312,7 +312,7 @@ public sealed class FlowAnalysisTests
                         yield 0;
                     end try
                     let y = x;
-            """)), Does.Contain("PFC0400").Or.Contain("PFC0318"));
+            """)), Does.Contain("PC0400").Or.Contain("PC0318"));
     }
 
     // ---- Constructors -------------------------------------------------------------------------
@@ -330,7 +330,7 @@ public sealed class FlowAnalysisTests
                     this.x = a;
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0402" }));
+            """)), Is.EqualTo(new[] { "PC0402" }));
     }
 
     [Test]
@@ -393,7 +393,7 @@ public sealed class FlowAnalysisTests
             """
                     integer? maybe;
                     integer definite = maybe;
-            """)), Is.EqualTo(new[] { "PFC0329" }));
+            """)), Is.EqualTo(new[] { "PC0329" }));
     }
 
     /// <summary>
@@ -422,7 +422,7 @@ public sealed class FlowAnalysisTests
                         integer inside = maybe;
                     end if
                     integer outside = maybe;
-            """)), Is.EqualTo(new[] { "PFC0329" }));
+            """)), Is.EqualTo(new[] { "PC0329" }));
     }
 
     [Test]
@@ -464,7 +464,7 @@ public sealed class FlowAnalysisTests
                     if a.HasValue() or b.HasValue()
                         integer x = a;
                     end if
-            """)), Is.EqualTo(new[] { "PFC0329" }));
+            """)), Is.EqualTo(new[] { "PC0329" }));
     }
 
     [Test]
@@ -535,7 +535,7 @@ public sealed class FlowAnalysisTests
                     end if
                 end function
             end model
-            """)), Is.EqualTo(new[] { "PFC0329" }));
+            """)), Is.EqualTo(new[] { "PC0329" }));
     }
 
     [Test]

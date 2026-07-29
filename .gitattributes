@@ -12,6 +12,10 @@
 *.tokens -text
 *.ast    -text
 *.out    -text
+*.errors -text
 
 # Profi-C source, including the samples the golden files are recorded from.
-*.pfc text eol=lf
+*.pc  text eol=lf
+
+# Profi-C project files.
+*.pcp text eol=lf

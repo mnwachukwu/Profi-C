@@ -1,0 +1,26 @@
+comment begin
+    Something for sale.
+
+    This folder is reached only because storefront.pcp names it. A source file compiles with
+    the folder it sits in; a project reaches as many folders as it lists.
+end comment
+
+model Product
+
+    string name;
+    integer pence;
+
+    public function Product(string called, integer costing)
+        this.name = called;
+        this.pence = costing;
+    end function
+
+    public string function Name()
+        yield this.name;
+    end function
+
+    public integer function Pence()
+        yield this.pence;
+    end function
+
+end model

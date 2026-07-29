@@ -1,0 +1,33 @@
+comment begin
+    Taking money off, in exact fractions.
+
+    A percentage written as a real would drift; a fraction takes a third off a price and means
+    exactly a third.
+end comment
+
+model Discount
+
+    string label;
+    fraction share;
+
+    public function Discount(string called, fraction taken)
+        this.label = called;
+        this.share = taken;
+    end function
+
+    public string function Label()
+        yield this.label;
+    end function
+
+    comment begin
+        What is left of a price after this discount.
+
+        The arithmetic is exact: a quarter off 2499 is exactly 7497|4 pence, and only the last
+        step asks for the real that a price is usually shown as.
+    end comment
+    public real function Apply(integer pence)
+        fraction kept = 1 - this.share;
+        yield (pence * kept).ToReal();
+    end function
+
+end model

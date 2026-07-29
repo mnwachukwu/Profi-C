@@ -82,11 +82,10 @@ public sealed partial class Resolver
 
     private void BindField(FieldDecl field)
     {
-        TypeSymbol type = ResolveType(field.Type);
-
         if (_model.GetSymbol(field) is FieldSymbol symbol)
         {
-            _model.BindType(field, type);
+            // Settled when signatures were, so it is read rather than resolved again.
+            _model.BindType(field, symbol.Type);
 
             // A global model has no instances, so an instance member on one could never be
             // reached.
@@ -115,7 +114,9 @@ public sealed partial class Resolver
     {
         FunctionSymbol? symbol = _model.GetSymbol(function) as FunctionSymbol;
 
-        if (function.ReturnType is not null)
+        // A member's signature was settled once every type was known. A local function or a
+        // lambda has no collected symbol, so its own types are resolved here instead.
+        if (symbol is null && function.ReturnType is not null)
         {
             ResolveType(function.ReturnType);
         }
@@ -136,13 +137,20 @@ public sealed partial class Resolver
         {
             InScope(() =>
             {
-                foreach (ParameterDecl parameter in function.Parameters)
+                for (int index = 0; index < function.Parameters.Count; index++)
                 {
-                    TypeSymbol type = ResolveType(parameter.Type);
-                    ParameterSymbol parameterSymbol = new(parameter.Name, type)
-                    {
-                        Declaration = parameter,
-                    };
+                    ParameterDecl parameter = function.Parameters[index];
+
+                    // A member's parameters already exist on its symbol, correctly typed. Using
+                    // those rather than making a second set is what keeps the type a caller is
+                    // checked against and the type the body sees from ever disagreeing.
+                    ParameterSymbol parameterSymbol =
+                        symbol is not null && index < symbol.Parameters.Count
+                            ? symbol.Parameters[index]
+                            : new ParameterSymbol(parameter.Name, ResolveType(parameter.Type))
+                            {
+                                Declaration = parameter,
+                            };
 
                     Declare(parameterSymbol, parameter);
                     _model.Bind(parameter, parameterSymbol);

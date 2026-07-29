@@ -394,6 +394,14 @@ public sealed partial class Parser
         Token start = Current;
         Expression expression = ParseExpression();
 
+        // Nothing was read, so there is no statement to terminate. Asking for the semicolon
+        // anyway reports the same token a second time, which reads as two separate mistakes.
+        if (expression is MissingExpr)
+        {
+            Advance();
+            return new ExpressionStmt(SpanFrom(start), expression);
+        }
+
         if (Match(TokenType.Equal))
         {
             Expression value = ParseExpression();

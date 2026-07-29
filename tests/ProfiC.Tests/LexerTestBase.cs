@@ -83,16 +83,27 @@ public abstract class LexerTestBase
     /// <summary>The repository root, for fixtures that do not derive from this class.</summary>
     public static string RepositoryRootForTests => RepositoryRoot;
 
-    /// <summary>Every .pfc file in the repository's samples directory.</summary>
+    /// <summary>
+    /// <para>Every single-file sample: the programs in <c>samples</c>, and the corpus in
+    /// <c>samples/reference</c> that exercises the syntax without being a program.</para>
+    /// <para>The two are kept apart because a folder is compiled as a unit. <c>tour.pc</c>
+    /// declares a model of nearly every shape, which would collide with the programs beside it
+    /// if they shared a folder. The multi-file samples and the negatives have their own
+    /// fixtures.</para>
+    /// </summary>
     protected static IEnumerable<string> SampleFiles =>
-        Directory.EnumerateFiles(Path.Combine(RepositoryRoot, "samples"), "*.pfc")
-                 .OrderBy(p => p, StringComparer.Ordinal);
+        new[] { "samples", Path.Combine("samples", "reference") }
+            .Select(folder => Path.Combine(RepositoryRoot, folder))
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*.pc"))
+            .OrderBy(p => Path.GetFileName(p), StringComparer.Ordinal);
 
     /// <summary>Names of the sample files, used to label test cases readably.</summary>
     public static IEnumerable<string> SampleNames =>
         SampleFiles.Select(Path.GetFileName)!;
 
-    /// <summary>Loads a sample by file name.</summary>
+    /// <summary>Loads a sample by file name, from whichever of the two folders holds it.</summary>
     protected static SourceText LoadSample(string name) =>
-        SourceText.FromFile(Path.Combine(RepositoryRoot, "samples", name));
+        SourceText.FromFile(
+            SampleFiles.First(path => string.Equals(
+                Path.GetFileName(path), name, StringComparison.Ordinal)));
 }

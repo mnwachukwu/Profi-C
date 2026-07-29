@@ -18,8 +18,31 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
 
     private readonly List<Diagnostic> _diagnostics = [];
 
+    private SourceText? _source;
+
     /// <summary>The number of diagnostics collected.</summary>
     public int Count => _diagnostics.Count;
+
+    /// <summary>
+    /// <para>Marks the file that reports belong to until the returned scope is disposed.</para>
+    /// <para>A pass walks one file at a time, so which file it is on is a property of where the
+    /// pass has reached rather than of each report. Scoping it here keeps every reporting site
+    /// unchanged now that a compilation spans several files.</para>
+    /// </summary>
+    public FileScope InFile(SourceText source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        FileScope scope = new(this, _source);
+        _source = source;
+        return scope;
+    }
+
+    /// <summary>Restores the previously reported-in file when disposed.</summary>
+    public readonly struct FileScope(DiagnosticBag bag, SourceText? previous) : IDisposable
+    {
+        public void Dispose() => bag._source = previous;
+    }
 
     /// <summary>True once any error has been reported. Warnings do not set this.</summary>
     public bool HasErrors { get; private set; }
@@ -37,7 +60,7 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
             return;
         }
 
-        Add(Diagnostic.Create(descriptor, span, args));
+        Add(Diagnostic.Create(descriptor, span, _source, args));
     }
 
     /// <summary>Adds an already-constructed diagnostic. Ignored once the cap is reached.</summary>
@@ -58,9 +81,15 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
         }
     }
 
-    /// <summary>Returns the diagnostics ordered by source position.</summary>
+    /// <summary>
+    /// Returns the diagnostics ordered by file, then by position within it. With one file this
+    /// is position order, as it was before a compilation could span several.
+    /// </summary>
     public IReadOnlyList<Diagnostic> Sorted() =>
-        [.. _diagnostics.OrderBy(d => d.Span.Start.Offset).ThenBy(d => d.Id, StringComparer.Ordinal)];
+        [.. _diagnostics
+            .OrderBy(d => d.FileName, StringComparer.Ordinal)
+            .ThenBy(d => d.Span.Start.Offset)
+            .ThenBy(d => d.Id, StringComparer.Ordinal)];
 
     public IEnumerator<Diagnostic> GetEnumerator() => _diagnostics.GetEnumerator();
 

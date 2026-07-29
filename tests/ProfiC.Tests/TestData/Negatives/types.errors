@@ -1,8 +1,8 @@
-types.pfc(17,25): error PFC0300: Cannot use a string where an integer is expected.
-types.pfc(20,18): error PFC0301: A fraction does not become a real on its own, because the result would surprise you. Write 'ToReal()' to ask for it.
-types.pfc(21,22): error PFC0301: A real does not become a fraction on its own, because the result would surprise you. Write 'ToFraction()' to ask for it.
-types.pfc(24,19): error PFC0303: '*' is not defined for a boolean and an integer.
-types.pfc(27,20): error PFC0300: Cannot use a Shape where a Circle is expected.
-types.pfc(30,19): error PFC0300: Cannot use an integer where a Model is expected.
-types.pfc(33,24): error PFC0305: The branches of an if expression must have the same type, and these are an integer and a string.
-types.pfc(36,31): error PFC0324: This divides by zero.
+types.pc(17,25): error PC0300: Cannot use a string where an integer is expected.
+types.pc(20,18): error PC0301: A fraction does not become a real on its own, because the result would surprise you. Write 'ToReal()' to ask for it.
+types.pc(21,22): error PC0301: A real does not become a fraction on its own, because the result would surprise you. Write 'ToFraction()' to ask for it.
+types.pc(24,19): error PC0303: '*' is not defined for a boolean and an integer.
+types.pc(27,20): error PC0300: Cannot use a Shape where a Circle is expected.
+types.pc(30,19): error PC0300: Cannot use an integer where a Model is expected.
+types.pc(33,24): error PC0305: The branches of an if expression must have the same type, and these are an integer and a string.
+types.pc(36,31): error PC0324: This divides by zero.

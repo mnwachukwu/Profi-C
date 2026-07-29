@@ -201,7 +201,7 @@ read at all until presence is proven. All of it reports errors with positions an
 rather than stopping at the first mistake.
 
 ```bash
-dotnet run --project src/ProfiC.Cli -- run samples/hello.pfc
+dotnet run --project src/ProfiC.Cli -- run samples/hello.pc
 ```
 
 The interpreter is not a stopgap. It runs the same lowered tree the emitter will, so once both
@@ -220,7 +220,7 @@ takes one command.
 dotnet publish src/ProfiC.Cli.Alias -p:PublishProfile=dist
 ```
 
-That writes two identical executables into `dist/`: `profi-c`, and the shorter `pfc`. Either
+That writes two identical executables into `dist/`: `profi-c`, and the shorter `pc`. Either
 name works everywhere below. (In Visual Studio, right-click **ProfiC.Cli.Alias → Publish** and
 pick the `dist` profile — it does the same thing.)
 
@@ -260,7 +260,7 @@ entry point is a function called `Main` inside a `global model` named `Program`,
 Profi-C's spelling of C#'s `static class`. Members of a `global model` are already global, so
 writing `global function Main()` is allowed but adds nothing.
 
-Save something worth watching as `hello.pfc`, anywhere you like:
+Save something worth watching as `hello.pc`, anywhere you like:
 
 ```
 global model Program
@@ -277,7 +277,7 @@ end model
 ### 4. Run it
 
 ```bash
-pfc run hello.pfc
+pc run hello.pc
 ```
 
 `run` checks the program and then executes it on the interpreter. Nothing runs until
@@ -287,34 +287,81 @@ mistake the front end can see. No file is produced — the CIL emitter is what w
 To check without running:
 
 ```bash
-pfc check hello.pfc
+pc check hello.pc
 ```
 
 Errors come back all at once rather than one per run, with positions, in the format editors
 already parse. A file with several mistakes in it reports like this:
 
 ```
-scratch.pfc(4,27): error PFC0330: 'Count' is a function, so it has to be called: write 'Count()'.
-scratch.pfc(7,27): error PFC0400: 'total' is used here before it has been given a value.
-scratch.pfc(10,27): error PFC0303: '+' is not defined for an integer? and an integer.
+scratch.pc(4,27): error PC0330: 'Count' is a function, so it has to be called: write 'Count()'.
+scratch.pc(7,27): error PC0400: 'total' is used here before it has been given a value.
+scratch.pc(10,27): error PC0303: '+' is not defined for an integer? and an integer.
 ```
 
 Three mistakes, three messages, one run — and each caught by a different part of the compiler.
+
+### 5. More than one file
+
+A program grows out of one file eventually. Put the next model in its own file beside the
+first, and it is already visible:
+
+```
+bookshelf/
+  Program.pc     declares Program, so it is the program
+  Book.pc        declares no Program, so it is shared code
+  Shelf.pc       likewise
+```
+
+```bash
+pc run bookshelf/Program.pc
+```
+
+The rule is one sentence: **a file that declares `Program` is a program, and every other `.pc`
+in the folder is shared code that all of them can see.** Nothing has to be imported, listed, or
+declared in an order.
+
+That also means a folder can hold several programs at once, which is what a folder of
+exercises or of half-finished ideas actually looks like. Add `Audit.pc` with its own `Main` and
+it becomes a second program: it sees `Book.pc` and `Shelf.pc` too, ignores `Program.pc`
+entirely, and a mistake in either one is not visited on the other.
+
+The folder rule does not descend into subfolders. When a program outgrows a single folder,
+write a project file — a `.pcp` — that lists what the build is made of:
+
+```
+comment A storefront, spread across folders.
+
+project Storefront
+    source Program.pc
+    source models
+    source pricing
+end project
+```
+
+```bash
+pc run storefront/storefront.pcp
+```
+
+A `source` naming a folder takes every `.pc` directly inside it, and does not descend, so what
+a project builds can always be read off the file. Paths are relative to the project file. The
+format is deliberately small and is not Profi-C: it describes a build, not a computation, and
+nothing in it compiles.
 
 ### Seeing the machinery
 
 The remaining commands print each stage of compilation, which is most of why the tool exists:
 
 ```bash
-pfc tokens hello.pfc
+pc tokens hello.pc
 ```
 
 ```bash
-pfc ast hello.pfc
+pc ast hello.pc
 ```
 
 ```bash
-pfc lower samples/sorting.pfc
+pc lower samples/sorting.pc
 ```
 
 `lower` is the interesting one — it shows the simplified tree the interpreter actually walks,
@@ -324,7 +371,7 @@ explicit.
 ### One thing to remember
 
 `dist` holds a **copy** of the tool from when you published it. If you change the compiler's
-own source, re-run step 1 or `pfc` will keep running the old build. While working on the
+own source, re-run step 1 or `pc` will keep running the old build. While working on the
 compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go stale.
 
 ## Documentation
@@ -373,21 +420,31 @@ Every one of these runs. Each is a complete program, and each is there to show o
 
 | Sample | What it is for |
 |---|---|
-| [hello.pfc](samples/hello.pfc) | The smallest legal program |
-| [fizzbuzz.pfc](samples/fizzbuzz.pfc) | Range loops and an if/else-if chain |
-| [fibonacci.pfc](samples/fibonacci.pfc) | The same sequence written recursively and iteratively, side by side |
-| [primes.pfc](samples/primes.pfc) | The Sieve of Eratosthenes; sets used as a workspace |
-| [sorting.pfc](samples/sorting.pfc) | Insertion sort, and why `and` short-circuiting matters |
-| [binary-search.pfc](samples/binary-search.pfc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
-| [fractions.pfc](samples/fractions.pfc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
-| [runtime-fractions.pfc](samples/runtime-fractions.pfc) | Building fractions from values with `Fraction.Create`, when literals will not do |
-| [standard-library.pfc](samples/standard-library.pfc) | Everything the language provides without declaring anything |
-| [shapes.pfc](samples/shapes.pfc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
-| [bank.pfc](samples/bank.pfc) | Exceptions, including one the program declares — and when to yield an optional instead |
-| [tour.pfc](samples/tour.pfc) | Every construct in the grammar, once. Not a program; it checks but does not run |
+| [hello.pc](samples/hello.pc) | The smallest legal program |
+| [fizzbuzz.pc](samples/fizzbuzz.pc) | Range loops and an if/else-if chain |
+| [fibonacci.pc](samples/fibonacci.pc) | The same sequence written recursively and iteratively, side by side |
+| [primes.pc](samples/primes.pc) | The Sieve of Eratosthenes; sets used as a workspace |
+| [sorting.pc](samples/sorting.pc) | Insertion sort, and why `and` short-circuiting matters |
+| [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
+| [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
+| [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
+| [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
+| [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
+| [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
+`samples/reference/` holds four files that are not programs and declare no entry point:
+[tour.pc](samples/reference/tour.pc), which contains every construct in the grammar exactly
+once, and `literals.pc`, `operators.pc`, and `comments.pc`, which exercise the scanner. They
+sit apart from the programs because a folder is compiled as a unit, and `namespace` does not
+yet scope: `tour.pc` wraps its declarations in `namespace Tour`, and until that means
+something they are simply names beside every other. They belong with the programs once it
+does.
 
-`literals.pfc`, `operators.pfc`, and `comments.pfc` exercise the scanner and likewise declare
-no entry point.
+Two samples are more than one file, and each shows a different way of saying so:
+
+| Sample | What it is for |
+|---|---|
+| [bookshelf/](samples/bookshelf/) | **A folder is enough.** `Program.pc` beside `Book.pc` and `Shelf.pc`, with nothing said to connect them |
+| [storefront/](samples/storefront/) | **A project across folders.** [storefront.pcp](samples/storefront/storefront.pcp) lists a file and two folders |
 
 Each runnable sample's output is recorded under `tests/ProfiC.Tests/TestData/Running/` and
 asserted on every build, so a sample that starts printing the wrong answer fails the suite.
@@ -403,24 +460,32 @@ Programs the compiler rejects:
 
 | Sample | Mistakes |
 |---|---|
-| [csharp-habits.pfc](samples/negatives/compile/csharp-habits.pfc) | `&&`, `\|\|`, `!`, `+=`, `++`, `**`, and a typed range counter |
-| [optionals.pfc](samples/negatives/compile/optionals.pfc) | Using an optional without proving it holds something |
-| [definite-assignment.pfc](samples/negatives/compile/definite-assignment.pfc) | Reading a variable before it has a value; a constant with none |
-| [types.pfc](samples/negatives/compile/types.pfc) | Types that do not mix, and a division by a literal zero |
-| [members.pfc](samples/negatives/compile/members.pfc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
-| [blocks.pfc](samples/negatives/compile/blocks.pfc) | An `end` that closes the wrong construct |
+| [csharp-habits.pc](samples/negatives/compile/csharp-habits.pc) | `&&`, `\|\|`, `!`, `+=`, `++`, `**`, and a typed range counter |
+| [optionals.pc](samples/negatives/compile/optionals.pc) | Using an optional without proving it holds something |
+| [definite-assignment.pc](samples/negatives/compile/definite-assignment.pc) | Reading a variable before it has a value; a constant with none |
+| [types.pc](samples/negatives/compile/types.pc) | Types that do not mix, and a division by a literal zero |
+| [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
+| [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
 see:
 
 | Sample | Failure |
 |---|---|
-| [divide-by-zero.pfc](samples/negatives/runtime/divide-by-zero.pfc) | `DivideByZeroException` — a divisor that arrived in a variable |
-| [index-out-of-range.pfc](samples/negatives/runtime/index-out-of-range.pfc) | `IndexOutOfRangeException` — one index past the end |
-| [empty-optional.pfc](samples/negatives/runtime/empty-optional.pfc) | `EmptyOptionalException` — `Value()` on an optional that turned out empty |
-| [overflow.pfc](samples/negatives/runtime/overflow.pfc) | `OverflowException` — a factorial too large for an integer |
-| [runaway-recursion.pfc](samples/negatives/runtime/runaway-recursion.pfc) | Recursion with no base case |
-| [uncaught-exception.pfc](samples/negatives/runtime/uncaught-exception.pfc) | A declared exception no catch clause matches |
+| [divide-by-zero.pc](samples/negatives/runtime/divide-by-zero.pc) | `DivideByZeroException` — a divisor that arrived in a variable |
+| [index-out-of-range.pc](samples/negatives/runtime/index-out-of-range.pc) | `IndexOutOfRangeException` — one index past the end |
+| [empty-optional.pc](samples/negatives/runtime/empty-optional.pc) | `EmptyOptionalException` — `Value()` on an optional that turned out empty |
+| [overflow.pc](samples/negatives/runtime/overflow.pc) | `OverflowException` — a factorial too large for an integer |
+| [runaway-recursion.pc](samples/negatives/runtime/runaway-recursion.pc) | Recursion with no base case |
+| [uncaught-exception.pc](samples/negatives/runtime/uncaught-exception.pc) | A declared exception no catch clause matches |
+
+Projects that will not build:
+
+| Sample | Mistake |
+|---|---|
+| [two-programs.pcp](samples/negatives/project/two-programs.pcp) | Two files that each declare `Program` |
+| [unknown-entry.pcp](samples/negatives/project/unknown-entry.pcp) | Words a project file does not have |
+| [missing-source.pcp](samples/negatives/project/missing-source.pcp) | A path that is not there, and one listed twice |
 
 How each one fails is recorded under `tests/ProfiC.Tests/TestData/Negatives/` and asserted on
 every build, holding the wording as well as the outcome. A compile sample must be rejected
@@ -436,11 +501,14 @@ src/
   ProfiC.Runtime/      the value types a program uses: fraction, set, deep equality
   ProfiC.Interpreter/  runs the lowered tree
   ProfiC.Cli/          the profi-c command
-  ProfiC.Cli.Alias/    pfc, the short name for the same command
+  ProfiC.Cli.Alias/    pc, the short name for the same command
 tests/
   ProfiC.Tests/
 docs/
-samples/               .pfc programs
+samples/               .pc programs, one per file
+  bookshelf/           one program across three files in a folder
+  storefront/          one program across three folders, listed by a .pcp
+  reference/           tour.pc and the scanner corpus; not programs
   negatives/           programs that are wrong on purpose
 ```
 

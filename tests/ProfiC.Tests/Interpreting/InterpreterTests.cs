@@ -1054,7 +1054,7 @@ public sealed class InterpreterTests
     [Test]
     public void HelloWorldRuns()
     {
-        string path = Path.Combine(LexerTestBase.RepositoryRootForTests, "samples", "hello.pfc");
+        string path = Path.Combine(LexerTestBase.RepositoryRootForTests, "samples", "hello.pc");
 
         Assert.That(Run(File.ReadAllText(path)), Does.Contain("Hello, World!"));
     }

@@ -51,7 +51,7 @@ public sealed partial class Interpreter
     /// this deliberately does not handle.</para>
     /// </summary>
     public static int Run(
-        CompilationUnit lowered,
+        IReadOnlyList<CompilationUnit> lowered,
         SemanticModel model,
         TextWriter? output = null)
     {
@@ -74,14 +74,27 @@ public sealed partial class Interpreter
         }
     }
 
-    private int Execute(CompilationUnit unit)
+    /// <summary>Runs one lowered file, which is a program of one.</summary>
+    public static int Run(
+        CompilationUnit lowered,
+        SemanticModel model,
+        TextWriter? output = null)
     {
-        foreach (Declaration declaration in unit.Declarations)
+        ArgumentNullException.ThrowIfNull(lowered);
+
+        return Run([lowered], model, output);
+    }
+
+    private int Execute(IReadOnlyList<CompilationUnit> units)
+    {
+        // Types across every file are collected before any global is initialized, so that an
+        // initializer in one file may name a type declared in another.
+        foreach (Declaration declaration in units.SelectMany(unit => unit.Declarations))
         {
             CollectTypes(declaration);
         }
 
-        foreach (Declaration declaration in unit.Declarations)
+        foreach (Declaration declaration in units.SelectMany(unit => unit.Declarations))
         {
             InitializeGlobals(declaration);
         }

@@ -274,7 +274,18 @@ public sealed partial class Parser
         Expect(TokenType.Then);
         Expression thenValue = ParseExpression();
 
-        Expect(TokenType.Else);
+        if (!Check(TokenType.Else))
+        {
+            // Reported here rather than through Expect, and the branch is not attempted: with
+            // no 'else' there is nothing to read, and trying anyway reports the same token
+            // twice — once for the word that is missing and once for the value that follows it.
+            _diagnostics.Report(DiagnosticDescriptors.IfExpressionWithoutElse, SpanFrom(start));
+
+            return new IfExpr(
+                SpanFrom(start), condition, thenValue, new MissingExpr(EmptySpanHere()));
+        }
+
+        Advance();
         Expression elseValue = ParseExpression();
 
         return new IfExpr(SpanFrom(start), condition, thenValue, elseValue);

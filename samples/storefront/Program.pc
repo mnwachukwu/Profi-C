@@ -1,0 +1,38 @@
+comment begin
+    A program across three folders.
+
+    Its files do not sit together, so the folder rule cannot gather them. storefront.pcp lists
+    what the build is made of instead:
+
+        pc run samples/storefront/storefront.pcp
+end comment
+
+global model Program
+
+    function Main()
+        Product[] basket =
+        {
+            new Product("kettle", 2499),
+            new Product("mug", 799),
+            new Product("tea", 349)
+        };
+
+        Discount quarterOff = new Discount("quarter off", 1|4);
+
+        integer full = 0;
+        real due = 0.0;
+
+        for each item in basket
+            real after = quarterOff.Apply(item.Pence());
+
+            Console.WriteLine(
+                item.Name() + ": " + item.Pence() + " becomes " + after);
+
+            full = full + item.Pence();
+            due = due + after;
+        end for
+
+        Console.WriteLine(quarterOff.Label() + ": " + full + " becomes " + due);
+    end function
+
+end model

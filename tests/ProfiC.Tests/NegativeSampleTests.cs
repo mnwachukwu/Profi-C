@@ -28,14 +28,16 @@ public sealed class NegativeSampleTests : LexerTestBase
     private static string NegativeDirectory(string kind) =>
         Path.Combine(RepositoryRoot, "samples", "negatives", kind);
 
-    private static IEnumerable<string> NamesIn(string kind) =>
-        Directory.EnumerateFiles(NegativeDirectory(kind), "*.pfc")
+    private static IEnumerable<string> NamesIn(string kind, string pattern = "*.pc") =>
+        Directory.EnumerateFiles(NegativeDirectory(kind), pattern)
                  .Select(Path.GetFileName)
                  .OrderBy(name => name, StringComparer.Ordinal)!;
 
     public static IEnumerable<string> CompileFailureNames => NamesIn("compile");
 
     public static IEnumerable<string> RuntimeFailureNames => NamesIn("runtime");
+
+    public static IEnumerable<string> ProjectFailureNames => NamesIn("project", "*.pcp");
 
     /// <summary>
     /// Loads a negative sample under its bare file name, so that the diagnostics it produces
@@ -60,7 +62,7 @@ public sealed class NegativeSampleTests : LexerTestBase
         Assert.That(diagnostics.HasErrors, Is.True, $"{name} was supposed to be rejected");
 
         string actual = string.Concat(
-            diagnostics.Sorted().Select(d => DiagnosticRenderer.Format(source, d) + "\n"));
+            diagnostics.Sorted().Select(d => DiagnosticRenderer.Format(d) + "\n"));
 
         AssertMatchesGolden(actual, Path.ChangeExtension(name, ".errors"), name);
     }
@@ -81,7 +83,7 @@ public sealed class NegativeSampleTests : LexerTestBase
         // The point of a runtime negative is that nothing was knowable earlier. One that fails
         // to compile is testing the wrong thing and belongs under compile instead.
         Assert.That(
-            diagnostics.Sorted().Select(d => DiagnosticRenderer.Format(source, d)),
+            diagnostics.Sorted().Select(d => DiagnosticRenderer.Format(d)),
             Is.Empty,
             $"{name} should compile cleanly and fail only when run");
 
@@ -91,7 +93,7 @@ public sealed class NegativeSampleTests : LexerTestBase
             () => ProfiC.Interpreter.Interpreter.Run(Lowering.Lower(unit, model), model, output),
             $"{name} was supposed to fail when run");
 
-        string? description = DiagnosticRenderer.DescribeFailure(source, failure!);
+        string? description = DiagnosticRenderer.DescribeFailure(source.FileName, failure!);
 
         Assert.That(
             description,
@@ -102,6 +104,54 @@ public sealed class NegativeSampleTests : LexerTestBase
         string actual = output.ToString().ReplaceLineEndings("\n") + description + "\n";
 
         AssertMatchesGolden(actual, Path.ChangeExtension(name, ".out"), name);
+    }
+
+    // ---- Projects that must not build ---------------------------------------------------
+
+    /// <summary>
+    /// A project is read from disk, so these are entered through discovery rather than through
+    /// the parser. What a project gets wrong is caught before any program is compiled — except
+    /// for listing two programs, which only the resolver can see.
+    /// </summary>
+    [TestCaseSource(nameof(ProjectFailureNames))]
+    public void ProjectFailure_IsRejectedWithTheDiagnosticsItRecorded(string name)
+    {
+        string path = Path.Combine(NegativeDirectory("project"), name);
+        DiagnosticBag diagnostics = new();
+
+        if (SourceDiscovery.Gather(path, diagnostics) is { } compilation)
+        {
+            SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics);
+            TypeChecker.Check(compilation.Units, model, diagnostics);
+            DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+        }
+
+        Assert.That(diagnostics.HasErrors, Is.True, $"{name} was supposed to be rejected");
+
+        string actual = string.Concat(
+            diagnostics.Sorted().Select(d => ShortenLeadingPath(DiagnosticRenderer.Format(d)) + "\n"));
+
+        AssertMatchesGolden(actual, Path.ChangeExtension(name, ".errors"), name);
+    }
+
+    /// <summary>
+    /// Cuts a rendered diagnostic's leading path back to the file name, so that what is
+    /// recorded reads the same on every machine. A project reaches files in other folders, and
+    /// those arrive as full paths. Only the path before the position is touched — a message
+    /// may quote a path of its own, and that is part of what is being pinned.
+    /// </summary>
+    private static string ShortenLeadingPath(string line)
+    {
+        int position = line.IndexOf('(', StringComparison.Ordinal);
+
+        if (position < 0)
+        {
+            return line;
+        }
+
+        int separator = line[..position].LastIndexOfAny(['/', '\\']);
+
+        return separator < 0 ? line : line[(separator + 1)..];
     }
 
     // ---- The recorded expectations ------------------------------------------------------

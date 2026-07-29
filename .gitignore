@@ -10,8 +10,8 @@ publish/
 *.pdb
 
 # Emitted Profi-C assemblies
-*.pfc.dll
-*.pfc.exe
+*.pc.dll
+*.pc.exe
 
 # Test results
 [Tt]est[Rr]esult*/
@@ -45,5 +45,5 @@ desktop.ini
 *.log
 *.tmp
 
-# Local publish output, for putting profi-c and pfc on PATH
+# Local publish output, for putting profi-c and pc on PATH
 dist/

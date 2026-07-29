@@ -108,6 +108,8 @@ public sealed class Lexer
     /// </summary>
     public List<Token> Scan()
     {
+        using DiagnosticBag.FileScope reporting = _diagnostics.InFile(_source);
+
         List<Token> tokens = [];
 
         while (true)

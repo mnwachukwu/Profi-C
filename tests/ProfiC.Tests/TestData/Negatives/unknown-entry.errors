@@ -1,0 +1,2 @@
+unknown-entry.pcp(10,1): error PC0604: 'include' is not something a project file says. Write 'source' and a path.
+unknown-entry.pcp(11,1): error PC0604: 'reference' is not something a project file says. Write 'source' and a path.

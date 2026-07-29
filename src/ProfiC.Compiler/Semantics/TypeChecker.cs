@@ -35,22 +35,38 @@ public sealed partial class TypeChecker
         _diagnostics = diagnostics;
     }
 
-    /// <summary>Checks a resolved compilation unit.</summary>
+    /// <summary>Checks every file of a resolved compilation.</summary>
+    public static void Check(
+        IReadOnlyList<CompilationUnit> units,
+        SemanticModel model,
+        DiagnosticBag diagnostics)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(diagnostics);
+
+        TypeChecker checker = new(model, diagnostics);
+
+        foreach (CompilationUnit unit in units)
+        {
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(unit.Source);
+
+            foreach (Declaration declaration in unit.Declarations)
+            {
+                checker.CheckDeclaration(declaration);
+            }
+        }
+    }
+
+    /// <summary>Checks one file, which is a compilation of one.</summary>
     public static void Check(
         CompilationUnit unit,
         SemanticModel model,
         DiagnosticBag diagnostics)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(diagnostics);
 
-        TypeChecker checker = new(model, diagnostics);
-
-        foreach (Declaration declaration in unit.Declarations)
-        {
-            checker.CheckDeclaration(declaration);
-        }
+        Check([unit], model, diagnostics);
     }
 
     private void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[] args) =>

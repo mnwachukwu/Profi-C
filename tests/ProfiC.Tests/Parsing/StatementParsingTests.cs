@@ -121,7 +121,7 @@ public sealed class StatementParsingTests : ParserTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0111" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0111" }));
             Assert.That(diagnostics.Single().Message, Does.Contain($"Remove the '{type}'"));
         });
     }
@@ -451,7 +451,7 @@ public sealed class StatementParsingTests : ParserTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0110" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0110" }));
             Assert.That(diagnostics.Single().Message, Does.Contain(what));
             Assert.That(diagnostics.Single().Message, Does.Contain("Move it out"));
         });

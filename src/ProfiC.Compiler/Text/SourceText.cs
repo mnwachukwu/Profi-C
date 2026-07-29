@@ -133,6 +133,13 @@ public sealed class SourceText
         return Text.AsSpan(start, end - start);
     }
 
+    /// <summary>
+    /// Returns the offset of the first character of a one-based line number, or -1 if there is
+    /// no such line. This is what turns a line number back into a span.
+    /// </summary>
+    public int OffsetOfLine(int lineNumber) =>
+        lineNumber < 1 || lineNumber > _lineStarts.Length ? -1 : _lineStarts[lineNumber - 1];
+
     /// <summary>Returns the text covered by a span.</summary>
     public ReadOnlySpan<char> GetText(SourceSpan span) =>
         Text.AsSpan(span.Start.Offset, span.Length);

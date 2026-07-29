@@ -1,0 +1,32 @@
+comment begin
+    A book.
+
+    This file declares no Program, so it is shared code: every program in this folder sees it
+    without saying anything to arrange that.
+end comment
+
+model Book
+
+    string title;
+    string author;
+    integer year;
+
+    public function Book(string writtenTitle, string writtenBy, integer published)
+        this.title = writtenTitle;
+        this.author = writtenBy;
+        this.year = published;
+    end function
+
+    public string function Title()
+        yield this.title;
+    end function
+
+    public integer function Year()
+        yield this.year;
+    end function
+
+    public string function Describe()
+        yield this.title + " by " + this.author + " (" + this.year + ")";
+    end function
+
+end model

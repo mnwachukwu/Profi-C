@@ -1,0 +1,32 @@
+comment begin
+    A program in three files.
+
+    This file declares Program, so it is the program. Running it compiles Book.pc and Shelf.pc
+    alongside, because they are in this folder and declare no Program of their own.
+
+        pc run samples/bookshelf/Program.pc
+end comment
+
+global model Program
+
+    function Main()
+        Shelf shelf = new Shelf();
+
+        shelf.Add(new Book("Frankenstein", "Mary Shelley", 1818));
+        shelf.Add(new Book("Dracula", "Bram Stoker", 1897));
+        shelf.Add(new Book("Beloved", "Toni Morrison", 1987));
+
+        Console.WriteLine(shelf.Count() + " books:");
+
+        for i = 0 until shelf.Count()
+            Console.WriteLine("  " + shelf.Describe(i));
+        end for
+
+        Book? oldest = shelf.Oldest();
+
+        if oldest.HasValue()
+            Console.WriteLine("oldest: " + oldest.Value().Title());
+        end if
+    end function
+
+end model

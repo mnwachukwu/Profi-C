@@ -36,11 +36,19 @@ public sealed class GoldenCoverageTests : LexerTestBase
         Is.EqualTo(Expected(SampleNames)),
         "the recorded syntax trees and the samples have drifted apart");
 
+    /// <summary>
+    /// Output is recorded for both kinds of runnable sample: the single files in
+    /// <c>samples</c>, recorded under their own name, and the folders beneath it, recorded
+    /// under the folder's.
+    /// </summary>
     [Test]
     public void EveryRecordedOutputHasARunnableSampleBehindIt() => Assert.That(
         Recorded(
             Path.Combine(RepositoryRoot, "tests", "ProfiC.Tests", "TestData", "Running"),
             ".out"),
-        Is.EqualTo(Expected(Interpreting.SampleProgramTests.RunnableSampleNames)),
+        Is.EqualTo(Expected(
+            Interpreting.SampleProgramTests.RunnableSampleNames.Concat(
+                Interpreting.MultiFileSampleTests.EntryPoints.Select(
+                    entry => Path.GetDirectoryName(entry)!)))),
         "the recorded outputs and the runnable samples have drifted apart");
 }

@@ -19,15 +19,14 @@ public static class DiagnosticRenderer
     /// <para>Every .NET tool already parses this, which makes an editor problem matcher a
     /// short regular expression rather than a bespoke parser.</para>
     /// </summary>
-    public static string Format(SourceText source, Diagnostic diagnostic)
+    public static string Format(Diagnostic diagnostic)
     {
-        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(diagnostic);
 
         SourcePosition start = diagnostic.Span.Start;
         string severity = diagnostic.Severity == DiagnosticSeverity.Error ? "error" : "warning";
 
-        return $"{source.FileName}({start.Line},{start.Column}): {severity} {diagnostic.Id}: {diagnostic.Message}";
+        return $"{diagnostic.FileName}({start.Line},{start.Column}): {severity} {diagnostic.Id}: {diagnostic.Message}";
     }
 
     /// <summary>
@@ -37,40 +36,43 @@ public static class DiagnosticRenderer
     /// exception the language raised, and an exception the program declared and threw. Anything
     /// else is a fault in the compiler, and null tells the caller to let it travel.</para>
     /// </summary>
-    public static string? DescribeFailure(SourceText source, Exception failure)
+    public static string? DescribeFailure(string label, Exception failure)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(label);
         ArgumentNullException.ThrowIfNull(failure);
 
         return failure switch
         {
-            ProfiCRuntimeException => $"{source.FileName}: {failure.Message}",
+            ProfiCRuntimeException => $"{label}: {failure.Message}",
 
             UncaughtProfiCException uncaught =>
-                $"{source.FileName}: unhandled {uncaught.TypeName}: {uncaught.Text}",
+                $"{label}: unhandled {uncaught.TypeName}: {uncaught.Text}",
 
             _ when BuiltInExceptions.IsBuiltIn(failure) =>
-                $"{source.FileName}: unhandled {failure.GetType().Name}: {failure.Message}",
+                $"{label}: unhandled {failure.GetType().Name}: {failure.Message}",
 
             _ => null,
         };
     }
 
-    /// <summary>Writes every diagnostic in the bag, in source order, to standard error.</summary>
-    public static void WriteAll(SourceText source, DiagnosticBag diagnostics)
+    /// <summary>
+    /// Writes every diagnostic in the bag to standard error, ordered by file and then by
+    /// position. Each carries the file it was reported in, so a compilation of several files
+    /// needs nothing more to say where a problem is.
+    /// </summary>
+    public static void WriteAll(DiagnosticBag diagnostics)
     {
-        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
         foreach (Diagnostic diagnostic in diagnostics.Sorted())
         {
-            Console.Error.WriteLine(Format(source, diagnostic));
+            Console.Error.WriteLine(Format(diagnostic));
         }
 
         if (diagnostics.IsFull)
         {
             Console.Error.WriteLine(
-                $"{source.FileName}: error: too many errors; stopped after {DiagnosticBag.MaximumDiagnostics}.");
+                $"error: too many errors; stopped after {DiagnosticBag.MaximumDiagnostics}.");
         }
     }
 }

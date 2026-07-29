@@ -30,6 +30,12 @@ public sealed partial class Resolver
     private readonly DiagnosticBag _diagnostics;
     private readonly SemanticModel _model = new();
 
+    /// <summary>
+    /// The file being collected from, so that a type records where it was declared. Null once
+    /// collection is over, since every later pass works on the whole compilation at once.
+    /// </summary>
+    private SourceText? _currentSource;
+
     /// <summary>Types declared anywhere, by name, for lookup during the second pass.</summary>
     private readonly Dictionary<string, DeclaredTypeSymbol> _typesByName =
         new(StringComparer.Ordinal);
@@ -56,21 +62,54 @@ public sealed partial class Resolver
     /// The rules <em>about</em> a <c>Program</c> that is present are checked either way.</para>
     /// </summary>
     public static SemanticModel Resolve(
+        IReadOnlyList<CompilationUnit> units,
+        DiagnosticBag diagnostics,
+        bool requireEntryPoint = false)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(diagnostics);
+
+        Resolver resolver = new(diagnostics);
+
+        // Every file's declarations are collected before any body is bound, which is what lets
+        // a file name a type another file declares without regard to the order they arrive in.
+        foreach (CompilationUnit unit in units)
+        {
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(unit.Source);
+
+            resolver._currentSource = unit.Source;
+            resolver.CollectDeclarations(unit);
+        }
+
+        resolver._currentSource = null;
+
+        resolver.LinkInheritance();
+        resolver.SettleMemberSignatures();
+
+        if (units.Count > 0)
+        {
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(units[0].Source);
+            resolver.CheckEntryPoint(units[0], requireEntryPoint);
+        }
+
+        foreach (CompilationUnit unit in units)
+        {
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(unit.Source);
+            resolver.BindBodies(unit);
+        }
+
+        return resolver._model;
+    }
+
+    /// <summary>Resolves one file, which is a compilation of one.</summary>
+    public static SemanticModel Resolve(
         CompilationUnit unit,
         DiagnosticBag diagnostics,
         bool requireEntryPoint = false)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        ArgumentNullException.ThrowIfNull(diagnostics);
 
-        Resolver resolver = new(diagnostics);
-
-        resolver.CollectDeclarations(unit);
-        resolver.LinkInheritance();
-        resolver.CheckEntryPoint(unit, requireEntryPoint);
-        resolver.BindBodies(unit);
-
-        return resolver._model;
+        return Resolve([unit], diagnostics, requireEntryPoint);
     }
 
     // ---- Reporting ------------------------------------------------------------------------

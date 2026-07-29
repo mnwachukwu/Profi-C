@@ -1,4 +1,5 @@
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Semantics;
 
@@ -43,6 +44,12 @@ public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modif
 
     /// <summary>The namespace or model this was declared in.</summary>
     public Symbol? Container { get; internal set; }
+
+    /// <summary>
+    /// The file this was declared in. A compilation spans several, so where a type came from
+    /// is not answered by its declaration alone.
+    /// </summary>
+    public SourceText? DeclaredIn { get; internal set; }
 
     /// <summary>Members declared directly on this type, keyed by name.</summary>
     public Dictionary<string, List<Symbol>> Members { get; } = new(StringComparer.Ordinal);
@@ -162,7 +169,11 @@ public sealed class FieldSymbol(
     TypeSymbol type,
     DeclarationModifiers modifiers) : Symbol(name)
 {
-    public TypeSymbol Type { get; } = type;
+    /// <summary>
+    /// The declared type. Collected as a placeholder and settled once every type is known,
+    /// because a field may name a type declared after it, or in another file.
+    /// </summary>
+    public TypeSymbol Type { get; internal set; } = type;
 
     public DeclarationModifiers Modifiers { get; } = modifiers;
 
@@ -180,8 +191,11 @@ public sealed class FunctionSymbol(
     IReadOnlyList<ParameterSymbol> parameters,
     DeclarationModifiers modifiers) : Symbol(name)
 {
-    /// <summary>Null when the function yields nothing.</summary>
-    public TypeSymbol? ReturnType { get; } = returnType;
+    /// <summary>
+    /// Null when the function yields nothing. Settled once every type is known, for the same
+    /// reason a field's type is.
+    /// </summary>
+    public TypeSymbol? ReturnType { get; internal set; } = returnType;
 
     public IReadOnlyList<ParameterSymbol> Parameters { get; } = parameters;
 
@@ -209,7 +223,11 @@ public sealed class FunctionSymbol(
 /// <summary>One parameter of a function or lambda.</summary>
 public sealed class ParameterSymbol(string name, TypeSymbol type) : Symbol(name)
 {
-    public TypeSymbol Type { get; } = type;
+    /// <summary>
+    /// The declared type. Settled once every type is known, for the same reason a field's
+    /// type is.
+    /// </summary>
+    public TypeSymbol Type { get; internal set; } = type;
 
     public override string Kind => "parameter";
 }

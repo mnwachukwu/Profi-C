@@ -24,7 +24,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0001" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0001" }));
             Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
             {
                 TokenType.Let, TokenType.Identifier, TokenType.EndOfFile,
@@ -39,7 +39,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0001", "PFC0001", "PFC0001", "PFC0001" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0001", "PC0001", "PC0001", "PC0001" }));
             Assert.That(tokens, Has.Count.EqualTo(1));
         });
     }
@@ -51,7 +51,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0002" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0002" }));
 
             // Reported at the opening quote, which is where the missing one belongs.
             Assert.That(diagnostics.Single().Span.Start.Line, Is.EqualTo(1));
@@ -74,7 +74,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0003" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0003" }));
             Assert.That(tokens[^2].Type, Is.EqualTo(TokenType.Let));
         });
     }
@@ -88,7 +88,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0004" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0004" }));
             Assert.That(tokens[0].Type, Is.EqualTo(TokenType.CharLiteral));
         });
     }
@@ -100,7 +100,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0005" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0005" }));
             Assert.That(diagnostics.Single().Span.Start.Line, Is.EqualTo(2));
             Assert.That(tokens.Select(t => t.Type),
                         Is.EqualTo(new[] { TokenType.Let, TokenType.EndOfFile }));
@@ -116,7 +116,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
             Assert.That(diagnostics.Single().Message, Does.Contain($"'{suggestion}'"));
         });
     }
@@ -132,7 +132,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
             Assert.That(diagnostics.Single().Message, Does.Contain("'^'"));
         });
     }
@@ -172,7 +172,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
             Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
             {
                 TokenType.Identifier, TokenType.Equal, TokenType.IntegerLiteral,
@@ -196,7 +196,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
             Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
             {
                 TokenType.Identifier, TokenType.IntegerLiteral, TokenType.EndOfFile,
@@ -232,7 +232,7 @@ public sealed class RecoveryTests : LexerTestBase
             diagnostics);
 
         _ = unit;
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
     }
 
     /// <summary>
@@ -308,7 +308,7 @@ public sealed class RecoveryTests : LexerTestBase
         // The asymmetry with "--" is deliberate: "a++b" has no valid reading, because
         // Profi-C has no unary plus for the second "+" to be part of.
         (_, DiagnosticBag diagnostics) = ScanRaw("i++;");
-        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PFC0006" }));
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0006" }));
     }
 
     [Test]
@@ -326,7 +326,7 @@ public sealed class RecoveryTests : LexerTestBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(IdsOf(diagnostics), Does.Contain("PFC0007"));
+            Assert.That(IdsOf(diagnostics), Does.Contain("PC0007"));
             Assert.That(tokens, Has.Count.EqualTo(2));
         });
     }
@@ -336,7 +336,7 @@ public sealed class RecoveryTests : LexerTestBase
     public void MalformedUnicodeEscape_IsReported(string source)
     {
         (_, DiagnosticBag diagnostics) = ScanRaw(source);
-        Assert.That(IdsOf(diagnostics), Does.Contain("PFC0008"));
+        Assert.That(IdsOf(diagnostics), Does.Contain("PC0008"));
     }
 
     [Test]
@@ -353,7 +353,7 @@ public sealed class RecoveryTests : LexerTestBase
         Assert.Multiple(() =>
         {
             Assert.That(IdsOf(diagnostics),
-                        Is.EqualTo(new[] { "PFC0001", "PFC0004", "PFC0002", "PFC0006" }));
+                        Is.EqualTo(new[] { "PC0001", "PC0004", "PC0002", "PC0006" }));
             Assert.That(tokens, Is.Not.Empty);
             Assert.That(diagnostics.HasErrors, Is.True);
         });
