@@ -46,6 +46,7 @@ public static class ReservedWords
             ["function"] = TokenType.Function,
             ["global"] = TokenType.Global,
             ["if"] = TokenType.If,
+            ["import"] = TokenType.Import,
             ["in"] = TokenType.In,
             ["integer"] = TokenType.Integer,
             ["is"] = TokenType.Is,

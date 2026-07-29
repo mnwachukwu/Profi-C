@@ -21,6 +21,25 @@ public sealed class SampleCorpusTests : LexerTestBase
         return (source, tokens, diagnostics);
     }
 
+    /// <summary>
+    /// Every kind of token appearing anywhere in the samples, the multi-file ones included.
+    /// The coverage tests below ask what the corpus contains rather than what any one file
+    /// does, so they read all of it.
+    /// </summary>
+    private static HashSet<TokenType> EveryTokenKindInTheCorpus()
+    {
+        HashSet<TokenType> seen = [];
+
+        foreach (string path in EverySampleFile)
+        {
+            DiagnosticBag diagnostics = new();
+            List<Token> tokens = new Lexer(SourceText.FromFile(path), diagnostics).Scan();
+            seen.UnionWith(tokens.Select(t => t.Type));
+        }
+
+        return seen;
+    }
+
     [Test]
     public void TheCorpusIsNotEmpty()
     {
@@ -127,13 +146,7 @@ public sealed class SampleCorpusTests : LexerTestBase
     [Test]
     public void Corpus_UsesEveryReservedWord()
     {
-        HashSet<TokenType> seen = [];
-
-        foreach (string name in SampleNames)
-        {
-            (_, List<Token> tokens, _) = ScanSample(name);
-            seen.UnionWith(tokens.Select(t => t.Type));
-        }
+        HashSet<TokenType> seen = EveryTokenKindInTheCorpus();
 
         List<string> missing = [.. ReservedWords.Keywords
             .Where(entry => !seen.Contains(entry.Value))
@@ -146,13 +159,7 @@ public sealed class SampleCorpusTests : LexerTestBase
     [Test]
     public void Corpus_UsesEveryOperatorAndPunctuationMark()
     {
-        HashSet<TokenType> seen = [];
-
-        foreach (string name in SampleNames)
-        {
-            (_, List<Token> tokens, _) = ScanSample(name);
-            seen.UnionWith(tokens.Select(t => t.Type));
-        }
+        HashSet<TokenType> seen = EveryTokenKindInTheCorpus();
 
         // Pipe is deliberately absent. A "|" only ever occurs inside a fraction literal,
         // and the scanner consumes "1|3" whole as one FractionLiteral, so no valid program
@@ -185,13 +192,7 @@ public sealed class SampleCorpusTests : LexerTestBase
     [Test]
     public void Corpus_UsesEveryLiteralForm()
     {
-        HashSet<TokenType> seen = [];
-
-        foreach (string name in SampleNames)
-        {
-            (_, List<Token> tokens, _) = ScanSample(name);
-            seen.UnionWith(tokens.Select(t => t.Type));
-        }
+        HashSet<TokenType> seen = EveryTokenKindInTheCorpus();
 
         Assert.That(
             new[]

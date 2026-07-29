@@ -269,6 +269,158 @@ public sealed class MultiFileTests : LexerTestBase
         });
     }
 
+    // ---- Files a file asks for ---------------------------------------------------------------
+
+    /// <summary>An import names one file, and that file joins the compilation.</summary>
+    [Test]
+    public void AnImportBringsTheFileItNames()
+    {
+        Write("lib/Helper.pc", SharedModel);
+        string program = Write("Program.pc",
+            "import \"lib/Helper.pc\";\n" + ProgramCalling("Helper.Twice(21)"));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+            Assert.That(NamesOf(compilation), Is.EqualTo(new[] { "Helper.pc", "Program.pc" }));
+        });
+    }
+
+    /// <summary>
+    /// An imported file's own imports come too. Without that it could not compile, so this is
+    /// the file carrying its dependencies rather than the program naming many.
+    /// </summary>
+    [Test]
+    public void AnImportIsFollowedThroughTheFileItBrings()
+    {
+        Write("lib/Deep.pc", """
+            model Deep
+                public global integer function Four()
+                    yield 4;
+                end function
+            end model
+            """);
+
+        Write("lib/Middle.pc", """
+            import "Deep.pc";
+
+            model Middle
+                public global integer function Eight()
+                    yield Deep.Four() * 2;
+                end function
+            end model
+            """);
+
+        string program = Write("Program.pc",
+            "import \"lib/Middle.pc\";\n" + ProgramCalling("Middle.Eight()"));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.That(
+            NamesOf(compilation),
+            Is.EqualTo(new[] { "Deep.pc", "Middle.pc", "Program.pc" }),
+            "Deep arrives although the program never names it");
+    }
+
+    /// <summary>Two files importing each other terminate rather than looping.</summary>
+    [Test]
+    public void ImportsThatCircleBackTerminate()
+    {
+        Write("A.pc", "import \"B.pc\";\nmodel A\nend model\n");
+        Write("B.pc", "import \"A.pc\";\nmodel B\nend model\n");
+        string program = Write("Program.pc", "import \"A.pc\";\n" + ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.That(NamesOf(compilation), Is.EqualTo(new[] { "A.pc", "B.pc", "Program.pc" }));
+    }
+
+    /// <summary>
+    /// A file reached twice is one file. Importing what the folder rule already found says
+    /// nothing, because there is nothing wrong with agreeing.
+    /// </summary>
+    [Test]
+    public void ImportingWhatTheFolderRuleAlreadyFoundIsSilent()
+    {
+        Write("Helper.pc", SharedModel);
+        string program = Write("Program.pc",
+            "import \"Helper.pc\";\n" + ProgramCalling("Helper.Twice(21)"));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+            Assert.That(compilation.Units, Has.Count.EqualTo(2), "one file, not two");
+        });
+    }
+
+    /// <summary>An import overrides the folder rule's reason to skip a file: it was asked for.</summary>
+    [Test]
+    public void AnImportReachesIntoAnotherFolderWithoutBringingItsNeighbors()
+    {
+        Write("lib/Helper.pc", SharedModel);
+        Write("lib/Unrelated.pc", "model Unrelated\nend model\n");
+        string program = Write("Program.pc",
+            "import \"lib/Helper.pc\";\n" + ProgramCalling("Helper.Twice(21)"));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.That(
+            NamesOf(compilation),
+            Is.EqualTo(new[] { "Helper.pc", "Program.pc" }),
+            "Unrelated.pc sits beside Helper.pc and was not named");
+    }
+
+    private static readonly (string Case, string Import, string Expected)[] BadImports =
+    [
+        ("missing", "import \"nowhere.pc\";", "PC0620"),
+        ("not Profi-C", "import \"notes.txt\";", "PC0621"),
+    ];
+
+    [TestCaseSource(nameof(BadImports))]
+    public void ABadImportIsReported((string Case, string Import, string Expected) row)
+    {
+        Write("notes.txt", "not a program");
+        string program = Write("Program.pc", row.Import + "\n" + ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(program, diagnostics);
+
+        Assert.That(diagnostics.Sorted().Select(d => d.Id), Does.Contain(row.Expected), row.Case);
+    }
+
+    /// <summary>
+    /// An absolute path is a warning, not an error: the program is correct, and correct here.
+    /// It stops being correct anywhere else, which is worth saying before the file travels.
+    /// </summary>
+    [Test]
+    public void AnAbsoluteImportWarnsAndStillCompiles()
+    {
+        string helper = Write("Helper.pc", SharedModel);
+        string program = Write("Program.pc",
+            $"import \"{helper.Replace('\\', '/')}\";\n" + ProgramCalling("Helper.Twice(21)"));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Diagnostic warned = diagnostics.Sorted().Single(d => d.Id == "PC0622");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(warned.Severity, Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(diagnostics.HasErrors, Is.False);
+            Assert.That(compilation.Units, Has.Count.EqualTo(2));
+        });
+    }
+
     // ---- Finding the file that was named ----------------------------------------------------
 
     [Test]

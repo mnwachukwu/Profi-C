@@ -101,6 +101,20 @@ public abstract class LexerTestBase
     public static IEnumerable<string> SampleNames =>
         SampleFiles.Select(Path.GetFileName)!;
 
+    /// <summary>
+    /// <para>Every sample anywhere, the multi-file ones included, as full paths.</para>
+    /// <para>Used where the question is what the samples as a whole contain rather than what
+    /// is recorded against each one. The negatives are left out: what they hold is mistakes.
+    /// </para>
+    /// </summary>
+    public static IEnumerable<string> EverySampleFile =>
+        Directory.EnumerateFiles(Path.Combine(RepositoryRoot, "samples"), "*.pc",
+                                 SearchOption.AllDirectories)
+                 .Where(path => !path.Contains(
+                     Path.DirectorySeparatorChar + "negatives" + Path.DirectorySeparatorChar,
+                     StringComparison.Ordinal))
+                 .OrderBy(path => path, StringComparer.Ordinal);
+
     /// <summary>Loads a sample by file name, from whichever of the two folders holds it.</summary>
     protected static SourceText LoadSample(string name) =>
         SourceText.FromFile(

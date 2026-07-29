@@ -15,7 +15,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [
         "abstract", "and", "as", "base", "begin", "boolean", "break", "case", "catch",
         "character", "constant", "continue", "default", "each", "else", "end", "enumeration",
-        "extends", "false", "finally", "for", "fraction", "function", "global", "if", "in",
+        "extends", "false", "finally", "for", "fraction", "function", "global", "if", "import", "in",
         "integer", "is", "let", "model", "namespace", "new", "not", "or", "override",
         "protected", "public", "real", "sealed", "step", "string", "structure", "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
@@ -41,7 +41,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_ContainsExactlyFiftyFiveWords()
     {
-        Assert.That(ReservedWords.Count, Is.EqualTo(54));
+        Assert.That(ReservedWords.Count, Is.EqualTo(55));
     }
 
     [Test]
@@ -54,7 +54,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_MapsEachWordToADistinctTokenType()
     {
-        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(54));
+        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(55));
     }
 
     [Test]

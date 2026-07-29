@@ -1,0 +1,24 @@
+comment begin
+    Shared text helpers, in a folder of their own.
+
+    This file is not beside the program that uses it, so the folder rule cannot find it. The
+    program names it with an import.
+end comment
+
+model Text
+
+    public global string function Repeat(string what, integer times)
+        string built = "";
+
+        for i = 1 to times
+            built = built + what;
+        end for
+
+        yield built;
+    end function
+
+    public global string function Pad(string what, integer width)
+        yield what + Text.Repeat(" ", Math.Max(0, width - what.Count()));
+    end function
+
+end model

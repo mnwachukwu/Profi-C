@@ -32,6 +32,7 @@ public abstract class SyntaxVisitor
 
     public virtual void VisitCompilationUnit(CompilationUnit node) => DefaultVisit(node);
     public virtual void VisitUsingDirective(UsingDirective node) => DefaultVisit(node);
+    public virtual void VisitImportDirective(ImportDirective node) => DefaultVisit(node);
     public virtual void VisitQualifiedName(QualifiedName node) => DefaultVisit(node);
     public virtual void VisitNamespaceDecl(NamespaceDecl node) => DefaultVisit(node);
     public virtual void VisitModelDecl(ModelDecl node) => DefaultVisit(node);
@@ -120,6 +121,7 @@ public abstract class SyntaxVisitor<TResult>
 
     public virtual TResult VisitCompilationUnit(CompilationUnit node) => DefaultVisit(node);
     public virtual TResult VisitUsingDirective(UsingDirective node) => DefaultVisit(node);
+    public virtual TResult VisitImportDirective(ImportDirective node) => DefaultVisit(node);
     public virtual TResult VisitQualifiedName(QualifiedName node) => DefaultVisit(node);
     public virtual TResult VisitNamespaceDecl(NamespaceDecl node) => DefaultVisit(node);
     public virtual TResult VisitModelDecl(ModelDecl node) => DefaultVisit(node);

@@ -48,21 +48,30 @@ public sealed class NegativeSampleTests : LexerTestBase
 
     // ---- Programs that must not compile -------------------------------------------------
 
+    /// <summary>
+    /// <para>Entered through discovery rather than the parser, which is the path a reader
+    /// takes. Some mistakes are only visible there — an import naming a file that is not
+    /// present is settled before any of these files is compiled.</para>
+    /// <para>Each of these declares <c>Program</c>, so the folder rule gathers each one alone
+    /// and none of them drags in its neighbors.</para>
+    /// </summary>
     [TestCaseSource(nameof(CompileFailureNames))]
     public void CompileFailure_IsRejectedWithTheDiagnosticsItRecorded(string name)
     {
-        SourceText source = Load("compile", name);
+        string path = Path.Combine(NegativeDirectory("compile"), name);
         DiagnosticBag diagnostics = new();
 
-        CompilationUnit unit = Parser.Parse(source, diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics);
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
+        if (SourceDiscovery.Gather(path, diagnostics) is { } compilation)
+        {
+            SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics);
+            TypeChecker.Check(compilation.Units, model, diagnostics);
+            DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+        }
 
         Assert.That(diagnostics.HasErrors, Is.True, $"{name} was supposed to be rejected");
 
         string actual = string.Concat(
-            diagnostics.Sorted().Select(d => DiagnosticRenderer.Format(d) + "\n"));
+            diagnostics.Sorted().Select(d => ShortenLeadingPath(DiagnosticRenderer.Format(d)) + "\n"));
 
         AssertMatchesGolden(actual, Path.ChangeExtension(name, ".errors"), name);
     }

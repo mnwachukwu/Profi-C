@@ -1,0 +1,3 @@
+imports.pc(12,1): error PC0620: There is no file at 'nowhere.pc', which is looked for beside imports.pc.
+imports.pc(13,1): error PC0621: '../runtime/notes.txt' is not a .pc file, so it cannot be compiled with this one.
+imports.pc(14,1): error PC0620: There is no file at 'sideways/Missing.pc', which is looked for beside imports.pc.

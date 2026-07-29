@@ -570,6 +570,30 @@ A `comment` line, and any blank line, is ignored.
 A project file is not Profi-C. It describes a build rather than a computation, nothing in it
 is compiled, and its vocabulary is only `project`, `source`, `comment`, and `end project`.
 
+**A file names another file with `import`.**
+
+```
+import "shared/Tally.pc";
+```
+
+An import brings exactly one file, and whatever that file imports in turn — an imported file
+must be able to compile, and it cannot if what *it* names is left out. It does not apply the
+folder rule at the destination, so no file arrives unnamed by someone.
+
+The path is read relative to the file that wrote the import, and is written with forward
+slashes on every platform. A path from the root of a disk is permitted but **warned about**:
+it resolves only on the machine that wrote it.
+
+**A file reached more than one way is compiled once.** Importing what the folder rule already
+found, or what another file already imported, says nothing — it is one file, not two. A
+duplicate is two *different* files declaring the same type, which is reported where the second
+declaration is.
+
+`import` and `using` do different jobs and neither does the other's. **An import decides which
+files are compiled and affects no name; a using decides which names are reachable unqualified
+and brings in no file.** Which to reach for follows the scale of what is wanted: one file, an
+import; a group of related types, a namespace; a whole build across folders, a project.
+
 Because `Program` may be declared once in a compilation, a project listing two files that each
 declare one is rejected, naming the second.
 

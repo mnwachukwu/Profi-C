@@ -10,17 +10,25 @@ namespace ProfiC.Compiler.Ast;
 public sealed class CompilationUnit(
     SourceSpan span,
     IReadOnlyList<UsingDirective> usings,
+    IReadOnlyList<ImportDirective> imports,
     IReadOnlyList<Declaration> declarations,
     SourceText source) : SyntaxNode(span)
 {
     public IReadOnlyList<UsingDirective> Usings { get; } = usings;
+
+    /// <summary>
+    /// The files this one names to be compiled with it. Read before compiling begins, since
+    /// they decide what there is to compile.
+    /// </summary>
+    public IReadOnlyList<ImportDirective> Imports { get; } = imports;
 
     public IReadOnlyList<Declaration> Declarations { get; } = declarations;
 
     /// <summary>The file this tree was parsed from, carried for diagnostics.</summary>
     public SourceText Source { get; } = source;
 
-    public override IEnumerable<SyntaxNode> Children => Usings.Concat<SyntaxNode>(Declarations);
+    public override IEnumerable<SyntaxNode> Children =>
+        Usings.Concat<SyntaxNode>(Imports).Concat(Declarations);
 
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitCompilationUnit(this);
 
@@ -39,6 +47,25 @@ public sealed class UsingDirective(SourceSpan span, QualifiedName name) : Declar
 
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
         visitor.VisitUsingDirective(this);
+}
+
+/// <summary>
+/// <para>An <c>import</c>, naming one file to compile alongside this one.</para>
+/// <para>Composition rather than visibility: an import decides which files are compiled and
+/// nothing about which names are reachable. Making names reachable is what <c>using</c> does.
+/// </para>
+/// </summary>
+public sealed class ImportDirective(SourceSpan span, string path) : Declaration(span)
+{
+    /// <summary>The path as written, before it is resolved against the importing file.</summary>
+    public string Path { get; } = path;
+
+    public override IEnumerable<SyntaxNode> Children => [];
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitImportDirective(this);
+
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+        visitor.VisitImportDirective(this);
 }
 
 /// <summary>A dotted name, as in <c>Standard.Text</c>.</summary>

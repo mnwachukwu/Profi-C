@@ -127,9 +127,108 @@ public static class SourceDiscovery
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        return PathComparer.Equals(Path.GetExtension(path), ProjectExtension)
+        Compilation? gathered = PathComparer.Equals(Path.GetExtension(path), ProjectExtension)
             ? GatherFromProject(path, diagnostics)
             : GatherFromFolder(path, diagnostics);
+
+        return gathered is null
+            ? null
+            : gathered with { Units = FollowImports(gathered.Units, diagnostics) };
+    }
+
+    // ---- Files a file asks for --------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Adds every file reached by an <c>import</c>, and everything those reach in turn.
+    /// </para>
+    /// <para>Followed to closure rather than one level deep, because an imported file must be
+    /// able to compile, and it cannot if what it imports is left out. That is the file carrying
+    /// its own dependencies, not the program naming many.</para>
+    /// <para>A file already present is not added again, whichever way it arrived. Reaching one
+    /// twice is one file, not two, so it says nothing — a genuine duplicate is two different
+    /// files declaring one type, and the resolver reports that.</para>
+    /// </summary>
+    private static IReadOnlyList<CompilationUnit> FollowImports(
+        IReadOnlyList<CompilationUnit> seed,
+        DiagnosticBag diagnostics)
+    {
+        List<CompilationUnit> all = [.. seed];
+        HashSet<string> seen = new(PathComparer);
+
+        foreach (CompilationUnit unit in seed)
+        {
+            seen.Add(Path.GetFullPath(unit.Source.FileName));
+        }
+
+        // Indexed rather than iterated, so a file added while walking is itself walked. That is
+        // what makes imports transitive, and what is already seen is what stops a cycle looping.
+        for (int index = 0; index < all.Count; index++)
+        {
+            CompilationUnit unit = all[index];
+
+            foreach (ImportDirective import in unit.Imports)
+            {
+                if (ResolveImport(import, unit.Source, diagnostics) is not { } resolved)
+                {
+                    continue;
+                }
+
+                if (!seen.Add(Path.GetFullPath(resolved)))
+                {
+                    continue;
+                }
+
+                all.Add(Parser.Parse(SourceText.FromFile(resolved), diagnostics));
+            }
+        }
+
+        return all;
+    }
+
+    /// <summary>
+    /// <para>Turns a written import into the file it names, or reports why it names none.</para>
+    /// <para>The path is read relative to the file that wrote it, so a program and what it
+    /// imports move together. Forward slashes are accepted everywhere and translated, so one
+    /// spelling works on both platforms.</para>
+    /// </summary>
+    private static string? ResolveImport(
+        ImportDirective import,
+        SourceText importingFile,
+        DiagnosticBag diagnostics)
+    {
+        // Reported against the file that wrote the import rather than the one it names, which
+        // may not exist and in any case did nothing wrong.
+        using DiagnosticBag.FileScope reporting = diagnostics.InFile(importingFile);
+
+        string written = import.Path;
+        string native = written.Replace('/', Path.DirectorySeparatorChar);
+
+        if (Path.IsPathRooted(native))
+        {
+            diagnostics.Report(DiagnosticDescriptors.ImportPathIsAbsolute, import.Span, written);
+        }
+
+        if (!PathComparer.Equals(Path.GetExtension(native), SourceExtension))
+        {
+            diagnostics.Report(DiagnosticDescriptors.ImportNotSource, import.Span, written);
+            return null;
+        }
+
+        string folder = Path.GetDirectoryName(Path.GetFullPath(importingFile.FileName)) ?? ".";
+        string combined = Path.IsPathRooted(native) ? native : Path.Combine(folder, native);
+
+        if (!File.Exists(combined))
+        {
+            diagnostics.Report(
+                DiagnosticDescriptors.ImportNotFound,
+                import.Span,
+                written,
+                Path.GetFileName(importingFile.FileName));
+
+            return null;
+        }
+
+        return combined;
     }
 
     /// <summary>Parses one file on its own, for the commands that work a file at a time.</summary>

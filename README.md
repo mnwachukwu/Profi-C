@@ -332,8 +332,22 @@ exercises or of half-finished ideas actually looks like. Add `Audit.pc` with its
 it becomes a second program: it sees `Book.pc` and `Shelf.pc` too, ignores `Program.pc`
 entirely, and a mistake in either one is not visited on the other.
 
-The folder rule does not descend into subfolders. When a program outgrows a single folder,
-write a project file — a `.pcp` — that lists what the build is made of:
+The folder rule does not descend into subfolders. When one file needs another that isn't
+beside it, name it:
+
+```
+import "shared/Tally.pc";
+```
+
+An import brings **one** file, plus whatever that file imports in turn — an imported file has
+to be able to compile, and it can't if what *it* names is missing. Paths are relative to the
+file that wrote them, with forward slashes on every platform; an absolute path works but warns,
+since it resolves only on the machine that wrote it. Reaching the same file twice is silent —
+it's one file, not two.
+
+`import` and `using` never do each other's job: **an import decides which files are compiled,
+a using decides which names are reachable.** Pick by scale — one file, an import; a group of
+related types, a namespace; a whole build across folders, a project file:
 
 ```
 comment A storefront, spread across folders.
@@ -452,6 +466,7 @@ Two samples are more than one file, and each shows a different way of saying so:
 |---|---|
 | [bookshelf/](samples/bookshelf/) | **A folder is enough.** `Program.pc` beside `Book.pc` and `Shelf.pc`, with nothing said to connect them |
 | [storefront/](samples/storefront/) | **A project across folders.** [storefront.pcp](samples/storefront/storefront.pcp) lists a file and two folders |
+| [toolkit/](samples/toolkit/) | **Naming a file directly.** An `import` reaches into `shared/`, and what it names imports one more |
 
 Each runnable sample's output is recorded under `tests/ProfiC.Tests/TestData/Running/` and
 asserted on every build, so a sample that starts printing the wrong answer fails the suite.
@@ -474,6 +489,7 @@ Programs the compiler rejects:
 | [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
 | [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |
 | [results.pc](samples/negatives/compile/results.pc) | A function that never reaches the result it promises, and a call that yields nothing used as a value |
+| [imports.pc](samples/negatives/compile/imports.pc) | Imports naming a file that is not there, and one that is not Profi-C |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
 see:

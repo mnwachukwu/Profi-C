@@ -33,6 +33,7 @@ public sealed class Lowering
         return [.. units.Select(unit => new CompilationUnit(
             unit.Span,
             unit.Usings,
+            unit.Imports,
             [.. unit.Declarations.Select(lowering.LowerDeclaration)],
             unit.Source))];
     }

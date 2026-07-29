@@ -148,13 +148,16 @@ public static class DiagnosticDescriptors
         + "namespace.");
 
     /// <summary>
-    /// <para>A range loop's counter is written without a type.</para>
+    /// <para>A range loop's counter is written with a type.</para>
     /// <para>Counting is done with integers, so there was never a choice to record — and a
     /// loop that says <c>integer</c> reads as though some other type were available. This
     /// exists because a reader arriving from C# or Java will write one out of habit, and
     /// "expected '='" would explain nothing.</para>
+    /// <para>A warning rather than an error: the loop says exactly one thing, and it says it
+    /// twice. Nothing about what the program means is in doubt, so the compiler corrects the
+    /// spelling rather than refusing the program.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = Error(
+    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = Warning(
         "PC0111",
         "A range loop's counter has no written type",
         "A range loop counts with integers, so its counter takes no type. Remove the "
@@ -646,4 +649,28 @@ public static class DiagnosticDescriptors
         "PC0610",
         "Project builds nothing",
         "This project lists no source, so there is nothing to build.");
+
+    // ---- Imports, PC0620 to PC0629 -------------------------------------------------------
+
+    public static readonly DiagnosticDescriptor ImportNotFound = Error(
+        "PC0620",
+        "Imported file not found",
+        "There is no file at '{0}', which is looked for beside {1}.");
+
+    public static readonly DiagnosticDescriptor ImportNotSource = Error(
+        "PC0621",
+        "Import is not Profi-C",
+        "'{0}' is not a .pc file, so it cannot be compiled with this one.");
+
+    /// <summary>
+    /// <para>An import that names a path from the root of a disk.</para>
+    /// <para>A warning rather than an error: the program is correct, and while it is being
+    /// written the path is correct too. It stops being correct the moment the file is copied,
+    /// shared, cloned, or built anywhere but here, and that is worth saying before then.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ImportPathIsAbsolute = Warning(
+        "PC0622",
+        "Import names an absolute path",
+        "'{0}' names a path from the root of a disk, so it resolves only on the machine it "
+        + "was written on. A path relative to this file travels with it.");
 }

@@ -61,5 +61,5 @@ public abstract class AstTestBase
         new(NextSpan(), modifiers, name, baseTypeName, members ?? []);
 
     protected static CompilationUnit Unit(params Declaration[] declarations) =>
-        new(NextSpan(), [], declarations, new SourceText(string.Empty, "<test>"));
+        new(NextSpan(), [], [], declarations, new SourceText(string.Empty, "<test>"));
 }

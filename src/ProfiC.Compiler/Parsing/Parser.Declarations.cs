@@ -16,10 +16,20 @@ public sealed partial class Parser
 
         Token start = Current;
         List<UsingDirective> usings = [];
+        List<ImportDirective> imports = [];
 
-        while (Check(TokenType.Using))
+        // Both open a file and may be interleaved, since one says which files are compiled and
+        // the other which names are reachable, and neither order changes what either means.
+        while (Check(TokenType.Using) || Check(TokenType.Import))
         {
-            usings.Add(ParseUsing());
+            if (Check(TokenType.Using))
+            {
+                usings.Add(ParseUsing());
+            }
+            else
+            {
+                imports.Add(ParseImport());
+            }
         }
 
         List<Declaration> declarations = [];
@@ -37,7 +47,24 @@ public sealed partial class Parser
             EnsureProgress(before);
         }
 
-        return new CompilationUnit(SpanFrom(start), usings, declarations, _source);
+        return new CompilationUnit(SpanFrom(start), usings, imports, declarations, _source);
+    }
+
+    /// <summary>
+    /// <c>import "path";</c> — one file, named by a string so that a path may hold anything a
+    /// file name can, which an identifier could not.
+    /// </summary>
+    private ImportDirective ParseImport()
+    {
+        Token start = Advance();
+        Token path = Expect(TokenType.StringLiteral, "a quoted path");
+
+        Expect(TokenType.Semicolon);
+
+        // The lexeme is the exact source slice, quotes and all, so the path is the inside.
+        string written = path.Lexeme.Length >= 2 ? path.Lexeme[1..^1] : string.Empty;
+
+        return new ImportDirective(SpanFrom(start), written);
     }
 
     private UsingDirective ParseUsing()

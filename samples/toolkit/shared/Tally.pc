@@ -1,0 +1,16 @@
+comment begin
+    Counting, which leans on Text.
+
+    Program imports this file and not Text.pc, yet Text is still compiled: an imported file
+    brings whatever it imports in turn, because otherwise it could not compile itself.
+end comment
+
+import "Text.pc";
+
+model Tally
+
+    public global string function Bar(string label, integer count)
+        yield Text.Pad(label, 8) + Text.Repeat("#", count);
+    end function
+
+end model

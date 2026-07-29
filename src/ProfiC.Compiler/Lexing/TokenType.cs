@@ -49,6 +49,7 @@ public enum TokenType
     Function,
     Global,
     If,
+    Import,
     In,
     Integer,
     Is,
