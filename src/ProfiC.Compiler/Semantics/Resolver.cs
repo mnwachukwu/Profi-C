@@ -221,35 +221,12 @@ public sealed partial class Resolver
         }
     }
 
-    /// <summary>The built-in models, created on demand and shared.</summary>
-    private readonly Dictionary<string, ModelSymbol> _builtIns = new(StringComparer.Ordinal);
-
-    private ModelSymbol BuiltInModel(string name)
-    {
-        if (_builtIns.TryGetValue(name, out ModelSymbol? model))
-        {
-            return model;
-        }
-
-        model = new ModelSymbol(name, DeclarationModifiers.Public);
-        _builtIns[name] = model;
-
-        // The built-in exceptions really do descend from Exception, so one catch clause takes
-        // them all and Message is inherited rather than repeated on each. Recorded before
-        // anything asks, and the entry above is already in place, so this cannot recur.
-        if (BuiltInExceptionNames.Contains(name))
-        {
-            model.BaseType = BuiltInModel("Exception");
-        }
-
-        // Everything else the language names is a Model, which is what the word means. Said
-        // here as well as in Conversions, because a model reaching an ancestor is answered by
-        // walking the chain and a built-in with no chain would never reach anything.
-        else if (name != "Model")
-        {
-            model.BaseType = BuiltInModel("Model");
-        }
-
-        return model;
-    }
+    /// <summary>
+    /// <para>The symbol for a built-in type.</para>
+    /// <para>Taken from the registry every compilation shares rather than made here, because
+    /// two types are the same type when they are the same object: the catalog's signatures
+    /// name these symbols too, and a DateTime made here would not be the DateTime a member
+    /// says it yields.</para>
+    /// </summary>
+    private static ModelSymbol BuiltInModel(string name) => BuiltInTypes.Of(name);
 }

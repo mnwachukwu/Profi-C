@@ -166,6 +166,27 @@ public sealed partial class Interpreter
     // ---- The members the language provides -------------------------------------------------------
 
     /// <summary>
+    /// <para>Carries out a built-in call and checks that what came back is what the catalog
+    /// said would.</para>
+    /// <para>The catalog is what the type checker believed; this is what actually happened.
+    /// Nothing else compares the two, and the mistake is invisible from a program: a member
+    /// declared to yield an integer that hands back a real prints the same characters, passes
+    /// every recorded output, and only goes wrong somewhere far away where the value is used
+    /// as a count. That is the shape of a bug already met once, in Floor and Ceiling.</para>
+    /// </summary>
+    private StrongBox<object?> Perform(BuiltInId id, object? target, List<object?> arguments)
+    {
+        StrongBox<object?> produced = PerformCore(id, target, arguments);
+
+        if (BuiltInResults.Disagrees(id, produced.Value) is { } complaint)
+        {
+            throw new ProfiCRuntimeException(complaint);
+        }
+
+        return produced;
+    }
+
+    /// <summary>
     /// <para>Carries out a built-in call.</para>
     /// <para>A switch expression over the whole enumeration with no fallback arm, so that a
     /// member in the catalog with no implementation here is a build error rather than a call
@@ -177,7 +198,7 @@ public sealed partial class Interpreter
     // it. A fallback arm also satisfies CS8509, which is the warning that reports a catalog
     // member with no implementation here, so the narrower one is suppressed instead.
 #pragma warning disable CS8524
-    private StrongBox<object?> Perform(BuiltInId id, object? target, List<object?> arguments)
+    private StrongBox<object?> PerformCore(BuiltInId id, object? target, List<object?> arguments)
     {
         object? Argument(int index) => arguments.ElementAtOrDefault(index);
         double Real(int index) => Argument(index) is double d ? d : 0;
@@ -199,6 +220,22 @@ public sealed partial class Interpreter
         char[] Characters(int index) => Argument(index) is ProfiCSet<object?> given
             ? [.. given.OfType<char>()]
             : [];
+
+        // The generator being asked: the one the program is holding, or the one the language
+        // keeps for everything that did not ask for its own.
+        ProfiCRandom Chance() => target as ProfiCRandom ?? _chance;
+
+        DateTime Moment() => target is DateTime moment ? moment : default;
+        DateTime OtherMoment(int index) => Argument(index) is DateTime other ? other : default;
+
+        TimeSpan Length() => target is TimeSpan span ? span : default;
+        TimeSpan Span(int index) => Argument(index) is TimeSpan given ? given : default;
+
+        DateOnly Day() => target is DateOnly day ? day : default;
+        DateOnly OtherDay(int index) => Argument(index) is DateOnly other ? other : default;
+
+        TimeOnly OnTheClock() => target is TimeOnly clock ? clock : default;
+        TimeOnly Clock(int index) => Argument(index) is TimeOnly given ? given : default;
 
         return id switch
         {
@@ -239,6 +276,13 @@ public sealed partial class Interpreter
             BuiltInId.MathAtan => new StrongBox<object?>(Math.Atan(Real(0))),
             BuiltInId.MathAtan2 => new StrongBox<object?>(Math.Atan2(Real(0), Real(1))),
 
+            BuiltInId.MathSinh => new StrongBox<object?>(Math.Sinh(Real(0))),
+            BuiltInId.MathCosh => new StrongBox<object?>(Math.Cosh(Real(0))),
+            BuiltInId.MathTanh => new StrongBox<object?>(Math.Tanh(Real(0))),
+            BuiltInId.MathAsinh => new StrongBox<object?>(Math.Asinh(Real(0))),
+            BuiltInId.MathAcosh => new StrongBox<object?>(Math.Acosh(Real(0))),
+            BuiltInId.MathAtanh => new StrongBox<object?>(Math.Atanh(Real(0))),
+
             BuiltInId.MathAbsInteger => new StrongBox<object?>(Math.Abs(Integer(0))),
             BuiltInId.MathAbsReal => new StrongBox<object?>(Math.Abs(Real(0))),
             BuiltInId.MathAbsFraction => new StrongBox<object?>(Fraction.Abs(Ratio(0))),
@@ -274,6 +318,116 @@ public sealed partial class Interpreter
                 new StrongBox<object?>(new Fraction(Integer(0), Integer(1))),
             BuiltInId.FractionCreateWhole =>
                 new StrongBox<object?>(Fraction.FromInteger(Integer(0))),
+
+            BuiltInId.RandomNew => new StrongBox<object?>(new ProfiCRandom()),
+            BuiltInId.RandomNewSeeded => new StrongBox<object?>(new ProfiCRandom(Integer(0))),
+
+            // One set of members serves both shapes. Reached through a generator the program
+            // holds, the target is that generator; reached through the name, there is none and
+            // the one the language keeps answers instead.
+            BuiltInId.RandomNext => new StrongBox<object?>(Chance().Next()),
+            BuiltInId.RandomNextBelow => new StrongBox<object?>(Chance().Next(Integer(0))),
+            BuiltInId.RandomNextBetween =>
+                new StrongBox<object?>(Chance().Next(Integer(0), Integer(1))),
+            BuiltInId.RandomNextDouble => new StrongBox<object?>(Chance().NextDouble()),
+
+            BuiltInId.DateTimeNewDate => new StrongBox<object?>(
+                MakeMoment(Integer(0), Integer(1), Integer(2), 0, 0, 0)),
+            BuiltInId.DateTimeNewMoment => new StrongBox<object?>(
+                MakeMoment(Integer(0), Integer(1), Integer(2), Integer(3), Integer(4), Integer(5))),
+
+            BuiltInId.DateTimeNow => new StrongBox<object?>(DateTime.Now),
+            BuiltInId.DateTimeToday => new StrongBox<object?>(DateTime.Today),
+
+            BuiltInId.DateTimeYear => new StrongBox<object?>((long)Moment().Year),
+            BuiltInId.DateTimeMonth => new StrongBox<object?>((long)Moment().Month),
+            BuiltInId.DateTimeDay => new StrongBox<object?>((long)Moment().Day),
+            BuiltInId.DateTimeHour => new StrongBox<object?>((long)Moment().Hour),
+            BuiltInId.DateTimeMinute => new StrongBox<object?>((long)Moment().Minute),
+            BuiltInId.DateTimeSecond => new StrongBox<object?>((long)Moment().Second),
+            BuiltInId.DateTimeDayOfWeek => new StrongBox<object?>((long)Moment().DayOfWeek),
+            BuiltInId.DateTimeDayOfYear => new StrongBox<object?>((long)Moment().DayOfYear),
+
+            // A moment never changes, so each of these yields another one.
+            BuiltInId.DateTimeAddDays => new StrongBox<object?>(Moment().AddDays(Real(0))),
+            BuiltInId.DateTimeAddHours => new StrongBox<object?>(Moment().AddHours(Real(0))),
+            BuiltInId.DateTimeAddMinutes => new StrongBox<object?>(Moment().AddMinutes(Real(0))),
+            BuiltInId.DateTimeAddSeconds => new StrongBox<object?>(Moment().AddSeconds(Real(0))),
+            BuiltInId.DateTimeAddYears => new StrongBox<object?>(Moment().AddYears((int)Integer(0))),
+            BuiltInId.DateTimeAddMonths => new StrongBox<object?>(Moment().AddMonths((int)Integer(0))),
+
+            BuiltInId.DateTimeCompareTo =>
+                new StrongBox<object?>((long)Moment().CompareTo(OtherMoment(0))),
+
+            BuiltInId.DateTimeSubtract => new StrongBox<object?>(Moment() - OtherMoment(0)),
+            BuiltInId.DateTimeSubtractSpan => new StrongBox<object?>(Moment() - Span(0)),
+            BuiltInId.DateTimeAdd => new StrongBox<object?>(Moment() + Span(0)),
+
+            BuiltInId.TimeSpanNewTime => new StrongBox<object?>(
+                MakeSpan(0, Integer(0), Integer(1), Integer(2))),
+            BuiltInId.TimeSpanNewSpan => new StrongBox<object?>(
+                MakeSpan(Integer(0), Integer(1), Integer(2), Integer(3))),
+
+            BuiltInId.TimeSpanZero => new StrongBox<object?>(TimeSpan.Zero),
+            BuiltInId.TimeSpanFromDays => new StrongBox<object?>(TimeSpan.FromDays(Real(0))),
+            BuiltInId.TimeSpanFromHours => new StrongBox<object?>(TimeSpan.FromHours(Real(0))),
+            BuiltInId.TimeSpanFromMinutes => new StrongBox<object?>(TimeSpan.FromMinutes(Real(0))),
+            BuiltInId.TimeSpanFromSeconds => new StrongBox<object?>(TimeSpan.FromSeconds(Real(0))),
+
+            BuiltInId.TimeSpanDays => new StrongBox<object?>((long)Length().Days),
+            BuiltInId.TimeSpanHours => new StrongBox<object?>((long)Length().Hours),
+            BuiltInId.TimeSpanMinutes => new StrongBox<object?>((long)Length().Minutes),
+            BuiltInId.TimeSpanSeconds => new StrongBox<object?>((long)Length().Seconds),
+
+            BuiltInId.TimeSpanTotalDays => new StrongBox<object?>(Length().TotalDays),
+            BuiltInId.TimeSpanTotalHours => new StrongBox<object?>(Length().TotalHours),
+            BuiltInId.TimeSpanTotalMinutes => new StrongBox<object?>(Length().TotalMinutes),
+            BuiltInId.TimeSpanTotalSeconds => new StrongBox<object?>(Length().TotalSeconds),
+
+            BuiltInId.TimeSpanAdd => new StrongBox<object?>(Length() + Span(0)),
+            BuiltInId.TimeSpanSubtract => new StrongBox<object?>(Length() - Span(0)),
+            BuiltInId.TimeSpanNegate => new StrongBox<object?>(Length().Negate()),
+            BuiltInId.TimeSpanDuration => new StrongBox<object?>(Length().Duration()),
+            BuiltInId.TimeSpanCompareTo =>
+                new StrongBox<object?>((long)Length().CompareTo(Span(0))),
+
+            BuiltInId.DateNew => new StrongBox<object?>(
+                MakeDate(Integer(0), Integer(1), Integer(2))),
+            BuiltInId.DateToday => new StrongBox<object?>(DateOnly.FromDateTime(DateTime.Now)),
+            BuiltInId.DateFromMoment =>
+                new StrongBox<object?>(DateOnly.FromDateTime(OtherMoment(0))),
+
+            BuiltInId.DateYear => new StrongBox<object?>((long)Day().Year),
+            BuiltInId.DateMonth => new StrongBox<object?>((long)Day().Month),
+            BuiltInId.DateDay => new StrongBox<object?>((long)Day().Day),
+            BuiltInId.DateDayOfWeek => new StrongBox<object?>((long)Day().DayOfWeek),
+            BuiltInId.DateDayOfYear => new StrongBox<object?>((long)Day().DayOfYear),
+
+            BuiltInId.DateAddDays => new StrongBox<object?>(Day().AddDays((int)Integer(0))),
+            BuiltInId.DateAddMonths => new StrongBox<object?>(Day().AddMonths((int)Integer(0))),
+            BuiltInId.DateAddYears => new StrongBox<object?>(Day().AddYears((int)Integer(0))),
+
+            BuiltInId.DateAtTime => new StrongBox<object?>(Day().ToDateTime(Clock(0))),
+            BuiltInId.DateCompareTo => new StrongBox<object?>((long)Day().CompareTo(OtherDay(0))),
+
+            BuiltInId.TimeNewToMinute => new StrongBox<object?>(
+                MakeTime(Integer(0), Integer(1), 0)),
+            BuiltInId.TimeNewToSecond => new StrongBox<object?>(
+                MakeTime(Integer(0), Integer(1), Integer(2))),
+            BuiltInId.TimeNow => new StrongBox<object?>(TimeOnly.FromDateTime(DateTime.Now)),
+            BuiltInId.TimeFromMoment =>
+                new StrongBox<object?>(TimeOnly.FromDateTime(OtherMoment(0))),
+
+            BuiltInId.TimeHour => new StrongBox<object?>((long)OnTheClock().Hour),
+            BuiltInId.TimeMinute => new StrongBox<object?>((long)OnTheClock().Minute),
+            BuiltInId.TimeSecond => new StrongBox<object?>((long)OnTheClock().Second),
+
+            BuiltInId.TimeAddHours => new StrongBox<object?>(OnTheClock().AddHours(Real(0))),
+            BuiltInId.TimeAddMinutes => new StrongBox<object?>(OnTheClock().AddMinutes(Real(0))),
+
+            BuiltInId.TimeToTimeSpan => new StrongBox<object?>(OnTheClock().ToTimeSpan()),
+            BuiltInId.TimeCompareTo =>
+                new StrongBox<object?>((long)OnTheClock().CompareTo(Clock(0))),
 
             // ---- Reached through a value --------------------------------------------------
 
@@ -395,6 +549,75 @@ public sealed partial class Interpreter
     }
 
     private static string AsText(object? value) => ModelOperations.ToDisplayString(value);
+
+    /// <summary>
+    /// <para>Builds a moment, reporting a date that is not one.</para>
+    /// <para>The platform raises an argument error for the thirty-first of February, which is
+    /// the right answer; it is caught and thrown again as the language's own so that the
+    /// message names the numbers that were written.</para>
+    /// </summary>
+    private static DateTime MakeMoment(
+        long year, long month, long day, long hour, long minute, long second)
+    {
+        try
+        {
+            return new DateTime(
+                (int)year, (int)month, (int)day, (int)hour, (int)minute, (int)second);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            string written = hour == 0 && minute == 0 && second == 0
+                ? $"{year}-{month}-{day}"
+                : $"{year}-{month}-{day} {hour}:{minute}:{second}";
+
+            throw new ArgumentException($"There is no such moment as {written}.");
+        }
+    }
+
+    /// <summary>Builds a day, reporting one that is not a day.</summary>
+    private static DateOnly MakeDate(long year, long month, long day)
+    {
+        try
+        {
+            return new DateOnly((int)year, (int)month, (int)day);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            throw new ArgumentException($"There is no such date as {year}-{month}-{day}.");
+        }
+    }
+
+    /// <summary>Builds a time of day, reporting one that no clock reads.</summary>
+    private static TimeOnly MakeTime(long hour, long minute, long second)
+    {
+        try
+        {
+            return new TimeOnly((int)hour, (int)minute, (int)second);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            throw new ArgumentException(
+                $"There is no such time of day as {hour}:{minute}:{second}.");
+        }
+    }
+
+    /// <summary>
+    /// Builds a span, reporting one too large to hold. Days are counted separately rather
+    /// than folded in, so that a span of hours beyond a day still reads as hours.
+    /// </summary>
+    private static TimeSpan MakeSpan(long days, long hours, long minutes, long seconds)
+    {
+        try
+        {
+            return new TimeSpan((int)days, (int)hours, (int)minutes, (int)seconds);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            throw new OverflowException(
+                $"A span of {days} days, {hours} hours, {minutes} minutes and {seconds} "
+                + "seconds is too long to hold.");
+        }
+    }
 
     /// <summary>A run of a string, with the end exclusive, as Subset has it on a set.</summary>
     private static string Subrun(string text, int start, int end)

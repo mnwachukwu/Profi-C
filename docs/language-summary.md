@@ -135,18 +135,21 @@ printing — so models print their type name and an author who wants more overri
 
 | Type | Members |
 |---|---|
-| Sets | `Insert`, `InsertAt`, `Remove`, `RemoveAt`, `Count`, `Contains`, `IndexOf`, `Clear` |
-| `string` | `Insert`, `InsertAt`, `Remove`, `RemoveAt`, `Substring`, `Contains`, `Count`, `IndexOf`, plus indexing |
-| Sets | `Remove` yields `boolean`; other mutators return nothing |
+| Sets | `Insert`, `InsertAt`, `Remove`, `RemoveAt`, `Count`, `Contains`, `IndexOf`, `Clear`, `Subset` |
+| Sets of optionals | `Trim`, `TrimStart`, `TrimEnd` keep the optionals; `TrimAll` drops them and narrows the type |
+| Sets | `Remove` yields `boolean`; other mutators return nothing, and nothing yielding a set changes one |
+| `string` | `Insert`, `InsertAt`, `Remove`, `RemoveAt`, `Substring`, `Subset`, `Contains`, `Count`, `IndexOf`, `ToCharacters`, `Trim` and its two ends, plus indexing |
 | Optionals | `HasValue`, `Or`, `Value` |
 | enumerations | `ToInteger`; `n as Color` converts back, yielding `Color?` |
-| `Math` | `Sqrt`, `Abs`, `Pow`, `PI`, and friends |
-| `Random` | constructed with `new`; returns primitives |
-| `DateTime` | properties re-exposed as methods |
-| File I/O | reads and writes text |
+| `Math` | `Pi` and `E` as values; `Sqrt`, `Cbrt`, `Root`, `Pow`, `Log` and its family, the trig six and their hyperbolic counterparts, `Abs`, `Min`, `Max`, the three roundings, and `Factorial` |
+| `Random` | `new Random()` or `new Random(seed)`, and the same members through the name; `Next` excludes its upper bound, as .NET's does |
+| `DateTime` | `new DateTime(...)`; what .NET reads as a property is read as one here, so `Year` and `Now` take no parentheses |
 | `fraction` | `ToReal` |
 | enumerations | `ToString` returns the member name |
 | `real` | `ToFraction` |
+
+File I/O is not here yet. Neither is a type for a span of time, so how far apart two moments
+are cannot be asked; `CompareTo` answers which came first.
 
 ---
 

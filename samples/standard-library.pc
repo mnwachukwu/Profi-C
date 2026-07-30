@@ -14,6 +14,9 @@ global model Program
     function Main()
         Program.ShowConsole();
         Program.ShowMath();
+        Program.ShowRandom();
+        Program.ShowDateTime();
+        Program.ShowSpansAndParts();
         Program.ShowSets();
         Program.ShowSetsOfOptionals();
         Program.ShowStrings();
@@ -218,6 +221,128 @@ global model Program
         different question of whether they are the same object. Most languages give the
         second meaning to '==' and make you remember it; here you have to ask for it.
     end comment
+    comment begin
+        Chance, in two shapes. A generator a program holds disturbs nothing of anyone else's,
+        and seeding one makes two runs agree — which is what makes a program that uses chance
+        testable. The same questions asked through the name draw from one the language keeps,
+        which is what most programs want and cannot be seeded, exactly as in C#.
+
+        Next excludes its upper bound, so a die is Next(1, 7). Everyone reads that wrong once;
+        reading it the other way here would mean reading it wrong a second time later.
+    end comment
+    function ShowRandom()
+        Console.WriteLine("== Random ==");
+
+        Random rolls = new Random(42);
+        Console.Write("  seeded 42, six rolls:  ");
+
+        for i = 1 to 6
+            Console.Write(rolls.Next(1, 7) + " ");
+        end for
+
+        Console.WriteLine("");
+
+        Random again = new Random(42);
+        Console.Write("  the same seed again:   ");
+
+        for i = 1 to 6
+            Console.Write(again.Next(1, 7) + " ");
+        end for
+
+        Console.WriteLine("");
+
+        comment Drawn from the shared one, so the answers differ every run and only the
+        comment shape of them can be shown.
+        Console.WriteLine("  Random.Next() is whole and not negative: " + (Random.Next() >= 0));
+        Console.WriteLine("  Random.Next(5) is below five:            " + (Random.Next(5) < 5));
+        Console.WriteLine("  Random.NextDouble() is below one:        "
+                          + (Random.NextDouble() < 1.0));
+        Console.WriteLine("");
+    end function
+
+    comment begin
+        A moment in time, and what .NET reads as a property is read as one here: no
+        parentheses on Year, Month or DayOfWeek. A moment never changes, so adding to one
+        yields another, as adding to a string does.
+    end comment
+    function ShowDateTime()
+        Console.WriteLine("== DateTime ==");
+
+        DateTime landing = new DateTime(1969, 7, 20);
+        DateTime liftoff = new DateTime(1969, 7, 16, 13, 32, 0);
+
+        Console.WriteLine("  landing            = " + landing);
+        Console.WriteLine("  liftoff            = " + liftoff);
+        Console.WriteLine("  landing.Year       = " + landing.Year);
+        Console.WriteLine("  landing.Month      = " + landing.Month);
+        Console.WriteLine("  landing.Day        = " + landing.Day);
+        Console.WriteLine("  landing.DayOfWeek  = " + landing.DayOfWeek + " (Sunday is 0)");
+        Console.WriteLine("  landing.DayOfYear  = " + landing.DayOfYear);
+        Console.WriteLine("  liftoff.Hour       = " + liftoff.Hour);
+
+        Console.WriteLine("  AddDays(10)        = " + landing.AddDays(10));
+        Console.WriteLine("  AddDays(0.5)       = " + landing.AddDays(0.5));
+        Console.WriteLine("  AddYears(1)        = " + landing.AddYears(1));
+        Console.WriteLine("  AddMonths(2)       = " + landing.AddMonths(2));
+        Console.WriteLine("  landing unchanged  = " + landing);
+
+        comment Ordering without operators, which is how .NET spells it too.
+        Console.WriteLine("  liftoff came first = " + (liftoff.CompareTo(landing) < 0));
+
+        comment Now and Today are values rather than functions, and differ every run, so only
+        comment what is true of them whenever they are asked is shown.
+        Console.WriteLine("  Today has no time  = " + (DateTime.Today.Hour == 0));
+        Console.WriteLine("");
+    end function
+
+    comment begin
+        Three types sit beside a moment, and what tells them apart is what each leaves out. A
+        span is how long something lasted, with no when. A date is a day with no time of day —
+        a birthday is one, since it is the same day whatever hour it is. A time is a reading on
+        a clock with no day, which is what opening hours are.
+
+        A time is not a span, though both are written with colons: a span may run past a day
+        and may run backwards, while a clock always sits between midnight and the next one.
+    end comment
+    function ShowSpansAndParts()
+        Console.WriteLine("== TimeSpan, Date and Time ==");
+
+        DateTime liftoff = new DateTime(1969, 7, 16, 13, 32, 0);
+        DateTime landing = new DateTime(1969, 7, 20, 20, 17, 40);
+
+        comment What subtracting one moment from another leaves behind.
+        TimeSpan mission = landing.Subtract(liftoff);
+        Console.WriteLine("  the mission took   = " + mission);
+
+        comment Parts against totals: how you say it, against how you measure it.
+        Console.WriteLine("  its days part      = " + mission.Days);
+        Console.WriteLine("  its hours part     = " + mission.Hours);
+        Console.WriteLine("  in hours altogether= " + Math.Round(mission.TotalHours));
+
+        Console.WriteLine("  liftoff plus it    = " + liftoff.Add(mission));
+        Console.WriteLine("  ninety minutes     = " + TimeSpan.FromMinutes(90.0));
+
+        comment A span may run backwards, and says so.
+        Console.WriteLine("  half minus a whole = "
+                          + TimeSpan.FromMinutes(30.0).Subtract(TimeSpan.FromHours(1.0)));
+
+        Date birthday = new Date(1969, 7, 20);
+        Time opening = new Time(9, 0);
+
+        Console.WriteLine("  a date             = " + birthday);
+        Console.WriteLine("  its day of week    = " + birthday.DayOfWeek + " (Sunday is 0)");
+        Console.WriteLine("  a time             = " + opening);
+
+        comment A clock wraps round midnight rather than running past it.
+        Console.WriteLine("  eight hours later  = " + new Time(17, 30).AddHours(8.0));
+
+        comment The two together make a moment, and a moment comes apart into them.
+        Console.WriteLine("  that day at nine   = " + birthday.ToDateTime(opening));
+        Console.WriteLine("  landing's date     = " + Date.FromDateTime(landing));
+        Console.WriteLine("  landing's time     = " + Time.FromDateTime(landing));
+        Console.WriteLine("");
+    end function
+
     function ShowReference()
         Console.WriteLine("== Reference ==");
 

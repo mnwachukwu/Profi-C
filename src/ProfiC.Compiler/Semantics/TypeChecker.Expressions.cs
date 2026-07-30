@@ -612,6 +612,51 @@ public sealed partial class TypeChecker
         DeclaredTypeSymbol type,
         List<TypeSymbol> arguments)
     {
+        // A type the language owns declares nothing a program can read, so its forms of "new"
+        // are listed in the catalog instead and chosen the same way any other overload is.
+        // One that lists none cannot be constructed at all, and is said so here rather than
+        // falling through to the rule below, which would let "new Math()" pass for producing
+        // nothing.
+        // An exception is left to the rule below, which lets every one of them take the
+        // message they all carry without each having to list a form of its own.
+        if (BuiltIns.FindModel(type.Name) is { } named
+            && !named.MayBeConstructed
+            && !BuiltInMembers.IsException(type))
+        {
+            Report(
+                DiagnosticDescriptors.CannotInstantiate,
+                construction,
+                type.Name,
+                "a type the language provides");
+
+            return;
+        }
+
+        if (BuiltIns.FindModel(type.Name) is { MayBeConstructed: true } builtIn)
+        {
+            BuiltInMember? form =
+                builtIn.Constructors.FirstOrDefault(c => AcceptsExactly(c, arguments))
+                ?? builtIn.Constructors.FirstOrDefault(c => Accepts(c, arguments));
+
+            if (form is null)
+            {
+                Report(
+                    DiagnosticDescriptors.WrongArgumentCount,
+                    construction,
+                    type.Name,
+                    Wording.Count(builtIn.Constructors[0].ParameterTypes.Count, "argument"),
+                    arguments.Count);
+
+                return;
+            }
+
+            RecordBuiltIn(construction, form);
+            CheckArgumentsAgainst(
+                construction, construction.Arguments, type.Name, form.ParameterTypes, arguments);
+
+            return;
+        }
+
         List<FunctionSymbol> constructors =
             [.. type.Lookup(type.Name).OfType<FunctionSymbol>().Where(f => f.IsConstructor)];
 

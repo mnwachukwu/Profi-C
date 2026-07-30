@@ -90,6 +90,17 @@ for one function.
 verifies the qualifier and reports a mismatch by name, so a beginner who loses track of
 nesting is told exactly where.
 
+**Nothing depends on where the reader lives.** A program produces the same characters on every
+machine, whatever the operating system has been told about language or region. Numbers are
+rendered with a full stop for the decimal point and no digit grouping; a moment is written
+year first, `2026-07-29`, and a time in twenty-four hours. None of this is the machine's
+default — every rendering names the invariant form deliberately.
+
+This matters more for a teaching language than for most. A student comparing output with a
+classmate or a book should be comparing the program, not the two computers' idea of how a date
+is written; and `07/08/2026` means two different days depending on who is reading it, which is
+not something anyone should have to think about while learning what a loop is.
+
 ### 0.4 Relationship to C#
 
 Profi-C compiles to CIL and runs on the CLR, so it shares C#'s runtime, garbage collector,
@@ -1291,15 +1302,17 @@ the language: the alternative teaches people to write `catch` clauses that swall
 
 ## 11. The standard library
 
-The library is small and is reached without importing anything. Ten names belong to the
+The library is small and is reached without importing anything. Thirteen names belong to the
 language and no program may declare one: `Model`, `Function`, `Exception`, `Console`,
-`Reference`, `Math`, `Fraction`, `Random`, `DateTime`, and `Program`. Of these only
-`Exception` may be extended; `Program` must be declared, exactly once (§12).
+`Reference`, `Math`, `Fraction`, `Random`, `DateTime`, `TimeSpan`, `Date`, `Time`, and
+`Program`. Of these only `Exception` may be extended; `Program` must be declared, exactly
+once (§12).
 
 `Model` and `Function` are the two roots (§3.3, §3.4) rather than things to call.
 
-`Random` and `DateTime` are named but carry no members yet. They are reserved so that adding
-them later cannot collide with a program that used the name.
+**`Random`, `DateTime`, `TimeSpan`, `Date` and `Time` are the ones a program may construct.**
+Every other name here is reached through the name itself; writing `new Math()` is reported
+(`PC0328`).
 
 ### 11.1 On every type
 
@@ -1407,6 +1420,7 @@ string is a string — the same rule `Subset` follows on a set, where a run of o
 | `Math.Log(x)` | `real`. **The NATURAL logarithm** — see below |
 | `Math.Log(x, base)`, `Math.Log10(x)`, `Math.Log2(x)` | `real` |
 | `Math.Sin`, `Cos`, `Tan`, `Asin`, `Acos`, `Atan` | `real` from a `real`, in radians |
+| `Math.Sinh`, `Cosh`, `Tanh`, `Asinh`, `Acosh`, `Atanh` | the hyperbolic six, and their inverses |
 | `Math.Atan2(y, x)` | `real`; takes the two sides, so it knows the quadrant |
 | `Math.Abs(x)` | the type it was given — `integer`, `real`, or `fraction` |
 | `Math.Min(a, b)`, `Math.Max(a, b)` | the type they were given |
@@ -1414,6 +1428,9 @@ string is a string — the same rule `Subset` follows on a set, where a run of o
 | `Math.Factorial(n)` | `integer`; overflows past 20 |
 | `Fraction.Create(numerator, denominator)` | `fraction` |
 | `Fraction.Create(whole)` | `fraction`; a whole number over one |
+| `Random.Next()`, `Next(below)`, `Next(low, high)` | `integer`; the high bound is **excluded** |
+| `Random.NextDouble()` | `real`, from zero up to but never reaching one |
+| `DateTime.Now`, `DateTime.Today` | `DateTime`. **Values, so written without `()`** |
 
 **`Math.Log` of one number is the natural logarithm** — log to base `e`, what mathematicians
 write as `ln`. That is what C#, Java and C all mean by the name, and Profi-C means it too, so
@@ -1426,6 +1443,96 @@ guess and disagreeing with every other language — is worse.
 whatever they were given: the square root of a fraction is usually irrational. Everything else
 has a version for each number the language has, because an answer that arrives as a `real`
 cannot be counted with and a `fraction` that widens to one stops being exact.
+
+### 11.5b Chance
+
+Two shapes, and both are .NET's, unchanged:
+
+```
+Random rolls = new Random(42);        a generator of your own, seeded
+Random any = new Random();            seeded from the clock
+
+rolls.Next(1, 7)                      a die: 1 to 6
+Random.Next(1, 7)                     the same, from the one the language keeps
+```
+
+**`Next` excludes its upper bound**, so a die is `Next(1, 7)` rather than `Next(1, 6)`. Everyone
+reads that wrong once; reading it the other way here would mean reading it wrong a second time
+in whatever language they moved to afterwards.
+
+**The shared generator cannot be seeded**, as .NET's shared one cannot. A program that needs
+the same sequence twice holds its own — and holding its own is the thing that makes it
+reproducible, since nothing else can then disturb it.
+
+### 11.5c Moments
+
+A `DateTime` is constructed from a date, or from a date and a time:
+
+```
+DateTime landing = new DateTime(1969, 7, 20);
+DateTime liftoff = new DateTime(1969, 7, 16, 13, 32, 0);
+```
+
+**What .NET reads as a property is read as one here** — `landing.Year`, `landing.DayOfWeek`,
+`DateTime.Now` — without parentheses. `AddDays`, `AddHours`, `AddMinutes`, `AddSeconds`,
+`AddYears` and `AddMonths` are functions and are called.
+
+A moment never changes: adding to one yields another and leaves the first alone, as adding to
+a string does. Two moments holding the same instant are equal, since `==` compares values.
+
+Ordering is `CompareTo`, which yields a negative number when this moment comes first, zero
+when they are the same, and a positive number when it comes after. There are no comparison
+operators on it.
+
+A date that is not one — the thirty-first of February — throws `ArgumentException` naming the
+numbers that were written.
+
+### 11.5d Spans, days, and times of day
+
+Three more types sit beside `DateTime`, and the difference between them is what each leaves
+out:
+
+| | Holds | Leaves out |
+|---|---|---|
+| `DateTime` | a moment | nothing |
+| `Date` | a day | the time of day |
+| `Time` | a time of day | the day |
+| `TimeSpan` | how long something lasted | when it happened |
+
+**`TimeSpan` is what subtracting one moment from another leaves behind**, and what adding to a
+moment takes:
+
+```
+TimeSpan mission = landing.Subtract(liftoff);     4.06:45:40
+Console.WriteLine(mission.TotalHours);            102.76...
+Console.WriteLine(mission.Days);                  4
+liftoff.Add(mission)                              back to landing
+```
+
+Its **parts** and its **totals** answer different questions. An hour and a half has `Hours` of
+1 and `Minutes` of 30 — how you would say it — and `TotalMinutes` of 90, which is how you would
+measure it. A span may run backwards, and the sign survives being printed: `-00:30:00`.
+
+**`Date` is a day with no time of day.** A birthday is one: it is the same day wherever you are
+and whatever hour it is, and holding it as a moment forces a midnight onto it that nobody
+meant. **`Time` is a time of day with no day** — opening hours are these. Adding to a `Time`
+wraps around midnight, because a clock does.
+
+The two make a moment together, and a moment comes apart into them:
+
+```
+birthday.ToDateTime(opening)      a Date and a Time make a DateTime
+Date.FromDateTime(moment)         and a moment comes apart
+Time.FromDateTime(moment)
+```
+
+.NET calls these two `DateOnly` and `TimeOnly`, having given the plain names away to
+`DateTime` twenty years earlier. Nothing here is committed to that history, so each takes the
+name that says what it is.
+
+A `Time` is not a `TimeSpan`, though both are written with colons. A span is how long something
+lasted, may exceed a day, and may run backwards; a `Time` is a reading on a clock and always
+sits between midnight and the next one.
 
 ### 11.5a How far a real answer can be trusted
 
@@ -1629,6 +1736,8 @@ file-scoped namespace or several block ones, but not both forms at once; `using`
 directives come above any namespace; and a nested namespace whose name repeats an enclosing
 one is legal but warned about, since `Shapes.Shapes.Circle` is more often a mistake than an
 intent.
+
+
 
 
 ---

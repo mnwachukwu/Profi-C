@@ -371,6 +371,15 @@ public sealed partial class Interpreter
 
     private object? EvaluateNew(NewExpr construction, Environment scope, Instance? receiver)
     {
+        // A type the language owns, whose forms of "new" the checker already chose among.
+        if (_model.GetBuiltIn(construction) is { } built)
+        {
+            return Perform(
+                built,
+                target: null,
+                [.. construction.Arguments.Select(a => Evaluate(a, scope, receiver))]).Value;
+        }
+
         if (!_types.TryGetValue(construction.TypeName, out DeclaredTypeSymbol? type))
         {
             return BuildBuiltInException(construction, scope, receiver);
@@ -478,11 +487,20 @@ public sealed partial class Interpreter
 
     private object? EvaluateMember(MemberExpr member, Environment scope, Instance? receiver)
     {
-        // A value the language provides, such as Math.Pi. Written without parentheses, so it
-        // arrives here rather than through a call, and the checker has already said which.
+        // A value the language provides, such as Math.Pi or a moment's Year. Written without
+        // parentheses, so it arrives here rather than through a call, and the checker has
+        // already said which. One reached through a type name has nothing on the left to
+        // read; one reached through a value is asking about that value.
         if (_model.GetBuiltIn(member) is { } constant)
         {
-            return Perform(constant, target: null, []).Value;
+            bool throughTypeName = member.Receiver is IdentifierExpr owner
+                                   && _model.GetSymbol(owner) is DeclaredTypeSymbol;
+
+            object? subject = throughTypeName
+                ? null
+                : Evaluate(member.Receiver, scope, receiver);
+
+            return Perform(constant, subject, []).Value;
         }
 
         // A type name on the left reaches a global member.

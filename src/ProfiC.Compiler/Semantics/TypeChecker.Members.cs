@@ -152,11 +152,11 @@ public sealed partial class TypeChecker
     /// Writes down which member the language provides was chosen, so the back end carries out
     /// that decision rather than making its own from the value in hand.
     /// </summary>
-    private void RecordBuiltIn(MemberExpr member, BuiltInMember chosen)
+    private void RecordBuiltIn(SyntaxNode node, BuiltInMember chosen)
     {
         if (chosen.Id is { } id)
         {
-            _model.BindBuiltIn(member, id);
+            _model.BindBuiltIn(node, id);
         }
     }
 

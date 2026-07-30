@@ -40,6 +40,13 @@ public enum BuiltInId
     MathAtan,
     MathAtan2,
 
+    MathSinh,
+    MathCosh,
+    MathTanh,
+    MathAsinh,
+    MathAcosh,
+    MathAtanh,
+
     // One version per number the language has, since a fraction is a number like any other
     // and an answer that arrives as a real cannot be counted with. The name is shared; which
     // version runs is settled by the argument, and the identifier says which was chosen.
@@ -66,6 +73,83 @@ public enum BuiltInId
 
     FractionCreate,
     FractionCreateWhole,
+
+    RandomNew,
+    RandomNewSeeded,
+    RandomNext,
+    RandomNextBelow,
+    RandomNextBetween,
+    RandomNextDouble,
+
+    DateTimeNewDate,
+    DateTimeNewMoment,
+    DateTimeNow,
+    DateTimeToday,
+    DateTimeYear,
+    DateTimeMonth,
+    DateTimeDay,
+    DateTimeHour,
+    DateTimeMinute,
+    DateTimeSecond,
+    DateTimeDayOfWeek,
+    DateTimeDayOfYear,
+    DateTimeAddDays,
+    DateTimeAddHours,
+    DateTimeAddMinutes,
+    DateTimeAddSeconds,
+    DateTimeAddYears,
+    DateTimeAddMonths,
+    DateTimeCompareTo,
+    DateTimeAdd,
+    DateTimeSubtract,
+    DateTimeSubtractSpan,
+
+    TimeSpanNewTime,
+    TimeSpanNewSpan,
+    TimeSpanZero,
+    TimeSpanFromDays,
+    TimeSpanFromHours,
+    TimeSpanFromMinutes,
+    TimeSpanFromSeconds,
+    TimeSpanDays,
+    TimeSpanHours,
+    TimeSpanMinutes,
+    TimeSpanSeconds,
+    TimeSpanTotalDays,
+    TimeSpanTotalHours,
+    TimeSpanTotalMinutes,
+    TimeSpanTotalSeconds,
+    TimeSpanNegate,
+    TimeSpanDuration,
+    TimeSpanAdd,
+    TimeSpanSubtract,
+    TimeSpanCompareTo,
+
+    DateNew,
+    DateToday,
+    DateFromMoment,
+    DateYear,
+    DateMonth,
+    DateDay,
+    DateDayOfWeek,
+    DateDayOfYear,
+    DateAddDays,
+    DateAddMonths,
+    DateAddYears,
+    DateAtTime,
+    DateCompareTo,
+
+    TimeNewToMinute,
+    TimeNewToSecond,
+    TimeNow,
+    TimeFromMoment,
+    TimeHour,
+    TimeMinute,
+    TimeSecond,
+    TimeAddHours,
+    TimeAddMinutes,
+    TimeToTimeSpan,
+    TimeCompareTo,
 
     // ---- Members of a value, found by the receiver's type ----------------------------------
 
@@ -128,11 +212,23 @@ public enum BuiltInId
 /// <param name="Namespace">The namespace the model belongs to.</param>
 /// <param name="MayBeExtended">Whether a program may write <c>extends</c> against it.</param>
 /// <param name="Members">Members reached through the model's name.</param>
+/// <param name="Constructors">
+/// The forms of <c>new</c> this model accepts, empty for one a program cannot construct.
+/// Held apart from the members rather than being named for the type as a declared
+/// constructor is, so that no spelling reaches one through the model's name.
+/// </param>
 public sealed record BuiltInModelInfo(
     string Name,
     string Namespace,
     bool MayBeExtended,
-    IReadOnlyList<BuiltInMember> Members);
+    IReadOnlyList<BuiltInMember> Members,
+    IReadOnlyList<BuiltInMember>? Constructors = null)
+{
+    public IReadOnlyList<BuiltInMember> Constructors { get; } = Constructors ?? [];
+
+    /// <summary>Whether a program may write <c>new</c> against this model at all.</summary>
+    public bool MayBeConstructed => Constructors.Count > 0;
+}
 
 /// <summary>
 /// <para>The catalog of models the language provides.</para>
@@ -229,6 +325,16 @@ public static class BuiltIns
             Member(BuiltInId.MathAtan2, "Atan2", PrimitiveType.Real,
                    PrimitiveType.Real, PrimitiveType.Real),
 
+            // The hyperbolic six. Named for the circular ones they sit beside, and shaped the
+            // same way, but measured against a hyperbola rather than a circle. A hanging chain
+            // takes the shape of Cosh, which is the one place most people meet them.
+            Member(BuiltInId.MathSinh, "Sinh", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathCosh, "Cosh", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathTanh, "Tanh", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAsinh, "Asinh", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAcosh, "Acosh", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAtanh, "Atanh", PrimitiveType.Real, PrimitiveType.Real),
+
             // Measuring keeps the type it measured, so a distance between integers is one.
             Member(BuiltInId.MathAbsInteger, "Abs", PrimitiveType.Integer, PrimitiveType.Integer),
             Member(BuiltInId.MathAbsReal, "Abs", PrimitiveType.Real, PrimitiveType.Real),
@@ -273,10 +379,196 @@ public static class BuiltIns
                    PrimitiveType.Integer),
         ]),
 
-        // Named, so a program may not declare them, and carrying no members.
-        new("Random", "Standard", MayBeExtended: false, []),
-        new("DateTime", "Standard", MayBeExtended: false, []),
+        // Chance, in two shapes: a generator a program holds, which disturbs nothing of
+        // anyone else's, and the same questions through the name, drawing from one the
+        // language keeps. Most programs want the second and should not have to build
+        // anything to get it.
+        //
+        // The names and the meanings are .NET's, unchanged. Next excludes its upper bound, so
+        // a die is Next(1, 7) — which surprises everyone exactly once, and would surprise them
+        // a second time if this were the one language that read it differently.
+        //
+        // There is no way to seed the shared one, also as in .NET: a program that needs the
+        // same sequence twice holds its own, which is the thing that makes it reproducible.
+        new("Random", "Standard", MayBeExtended: false,
+        [
+            Member(BuiltInId.RandomNext, "Next", PrimitiveType.Integer),
+            Member(BuiltInId.RandomNextBelow, "Next", PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.RandomNextBetween, "Next", PrimitiveType.Integer,
+                   PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.RandomNextDouble, "NextDouble", PrimitiveType.Real),
+        ],
+        [
+            Member(BuiltInId.RandomNew, "Random", RandomType),
+            Member(BuiltInId.RandomNewSeeded, "Random", RandomType, PrimitiveType.Integer),
+        ]),
+
+        // A moment in time. Held as a value would be — two with the same moment are equal —
+        // and never changed: adding to one yields another, as adding to a string does.
+        //
+        // What .NET reads as a property is read as one here, without parentheses. That is
+        // what a value member is for, and it keeps "moment.Year" spelled the way it already
+        // is everywhere else.
+        new("DateTime", "Standard", MayBeExtended: false,
+        [
+            Value(BuiltInId.DateTimeNow, "Now", DateTimeType),
+            Value(BuiltInId.DateTimeToday, "Today", DateTimeType),
+
+            Value(BuiltInId.DateTimeYear, "Year", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeMonth, "Month", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeDay, "Day", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeHour, "Hour", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeMinute, "Minute", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeSecond, "Second", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeDayOfWeek, "DayOfWeek", PrimitiveType.Integer),
+            Value(BuiltInId.DateTimeDayOfYear, "DayOfYear", PrimitiveType.Integer),
+
+            // Each takes a real, as .NET's do, so half a day is sayable and a whole one still
+            // reads as AddDays(10) — an integer widens on the way in.
+            Member(BuiltInId.DateTimeAddDays, "AddDays", DateTimeType, PrimitiveType.Real),
+            Member(BuiltInId.DateTimeAddHours, "AddHours", DateTimeType, PrimitiveType.Real),
+            Member(BuiltInId.DateTimeAddMinutes, "AddMinutes", DateTimeType, PrimitiveType.Real),
+            Member(BuiltInId.DateTimeAddSeconds, "AddSeconds", DateTimeType, PrimitiveType.Real),
+            Member(BuiltInId.DateTimeAddYears, "AddYears", DateTimeType, PrimitiveType.Integer),
+            Member(BuiltInId.DateTimeAddMonths, "AddMonths", DateTimeType, PrimitiveType.Integer),
+
+            // Ordering without operators, which is how .NET spells it too. Negative when this
+            // moment comes first, zero when they are the same, positive when it comes after.
+            Member(BuiltInId.DateTimeCompareTo, "CompareTo", PrimitiveType.Integer, DateTimeType),
+
+            // How far apart two moments are, and moving one by that much. Subtract is
+            // overloaded on what it is given, as .NET's is: a moment leaves a span behind,
+            // and a span leaves an earlier moment.
+            Member(BuiltInId.DateTimeSubtract, "Subtract", TimeSpanType, DateTimeType),
+            Member(BuiltInId.DateTimeSubtractSpan, "Subtract", DateTimeType, TimeSpanType),
+            Member(BuiltInId.DateTimeAdd, "Add", DateTimeType, TimeSpanType),
+        ],
+        [
+            Member(BuiltInId.DateTimeNewDate, "DateTime", DateTimeType,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.DateTimeNewMoment, "DateTime", DateTimeType,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer),
+        ]),
+
+        // How long something lasts, as against when it happened. This is what a moment
+        // subtracted from a moment leaves behind, and what adding to a moment takes.
+        //
+        // Components against totals is the distinction worth reading twice: an hour and a half
+        // has Hours of 1 and Minutes of 30, but TotalMinutes of 90. The first pair is how you
+        // would say it aloud, the second is how you would measure it.
+        new("TimeSpan", "Standard", MayBeExtended: false,
+        [
+            Value(BuiltInId.TimeSpanZero, "Zero", TimeSpanType),
+
+            Member(BuiltInId.TimeSpanFromDays, "FromDays", TimeSpanType, PrimitiveType.Real),
+            Member(BuiltInId.TimeSpanFromHours, "FromHours", TimeSpanType, PrimitiveType.Real),
+            Member(BuiltInId.TimeSpanFromMinutes, "FromMinutes", TimeSpanType, PrimitiveType.Real),
+            Member(BuiltInId.TimeSpanFromSeconds, "FromSeconds", TimeSpanType, PrimitiveType.Real),
+
+            // The parts, as you would say them.
+            Value(BuiltInId.TimeSpanDays, "Days", PrimitiveType.Integer),
+            Value(BuiltInId.TimeSpanHours, "Hours", PrimitiveType.Integer),
+            Value(BuiltInId.TimeSpanMinutes, "Minutes", PrimitiveType.Integer),
+            Value(BuiltInId.TimeSpanSeconds, "Seconds", PrimitiveType.Integer),
+
+            // The whole of it, measured in one unit. A real, since most spans are not a whole
+            // number of anything.
+            Value(BuiltInId.TimeSpanTotalDays, "TotalDays", PrimitiveType.Real),
+            Value(BuiltInId.TimeSpanTotalHours, "TotalHours", PrimitiveType.Real),
+            Value(BuiltInId.TimeSpanTotalMinutes, "TotalMinutes", PrimitiveType.Real),
+            Value(BuiltInId.TimeSpanTotalSeconds, "TotalSeconds", PrimitiveType.Real),
+
+            Member(BuiltInId.TimeSpanAdd, "Add", TimeSpanType, TimeSpanType),
+            Member(BuiltInId.TimeSpanSubtract, "Subtract", TimeSpanType, TimeSpanType),
+            Member(BuiltInId.TimeSpanNegate, "Negate", TimeSpanType),
+            Member(BuiltInId.TimeSpanDuration, "Duration", TimeSpanType),
+            Member(BuiltInId.TimeSpanCompareTo, "CompareTo", PrimitiveType.Integer, TimeSpanType),
+        ],
+        [
+            Member(BuiltInId.TimeSpanNewTime, "TimeSpan", TimeSpanType,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.TimeSpanNewSpan, "TimeSpan", TimeSpanType,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer,
+                   PrimitiveType.Integer),
+        ]),
+
+        // A day with no time of day. A birthday is one of these: it is the same day wherever
+        // you are and whatever hour it is, and holding it as a moment forces a midnight
+        // nobody meant onto it.
+        //
+        // .NET spells this DateOnly, having already given the plain name away to DateTime
+        // twenty years earlier. Nothing here is committed to that history, so it takes the
+        // name that says what it is.
+        new("Date", "Standard", MayBeExtended: false,
+        [
+            Value(BuiltInId.DateToday, "Today", DateType),
+            Member(BuiltInId.DateFromMoment, "FromDateTime", DateType, DateTimeType),
+
+            Value(BuiltInId.DateYear, "Year", PrimitiveType.Integer),
+            Value(BuiltInId.DateMonth, "Month", PrimitiveType.Integer),
+            Value(BuiltInId.DateDay, "Day", PrimitiveType.Integer),
+            Value(BuiltInId.DateDayOfWeek, "DayOfWeek", PrimitiveType.Integer),
+            Value(BuiltInId.DateDayOfYear, "DayOfYear", PrimitiveType.Integer),
+
+            Member(BuiltInId.DateAddDays, "AddDays", DateType, PrimitiveType.Integer),
+            Member(BuiltInId.DateAddMonths, "AddMonths", DateType, PrimitiveType.Integer),
+            Member(BuiltInId.DateAddYears, "AddYears", DateType, PrimitiveType.Integer),
+
+            // A day and a time of day together make a moment, which is the way back.
+            Member(BuiltInId.DateAtTime, "ToDateTime", DateTimeType, TimeType),
+            Member(BuiltInId.DateCompareTo, "CompareTo", PrimitiveType.Integer, DateType),
+        ],
+        [
+            Member(BuiltInId.DateNew, "Date", DateType,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer),
+        ]),
+
+        // A time of day with no day. Opening hours are these: nine in the morning is nine
+        // every day, and pinning it to one would say something nobody meant.
+        //
+        // Not a span, though both are written with colons: a span is how long something
+        // lasted and may be longer than a day or run backwards, while this is a reading on a
+        // clock and always sits between midnight and the next.
+        new("Time", "Standard", MayBeExtended: false,
+        [
+            Value(BuiltInId.TimeNow, "Now", TimeType),
+            Member(BuiltInId.TimeFromMoment, "FromDateTime", TimeType, DateTimeType),
+
+            Value(BuiltInId.TimeHour, "Hour", PrimitiveType.Integer),
+            Value(BuiltInId.TimeMinute, "Minute", PrimitiveType.Integer),
+            Value(BuiltInId.TimeSecond, "Second", PrimitiveType.Integer),
+
+            // Adding wraps around midnight rather than overflowing, since a clock does.
+            Member(BuiltInId.TimeAddHours, "AddHours", TimeType, PrimitiveType.Real),
+            Member(BuiltInId.TimeAddMinutes, "AddMinutes", TimeType, PrimitiveType.Real),
+
+            // How far into the day it is, which is a span.
+            Member(BuiltInId.TimeToTimeSpan, "ToTimeSpan", TimeSpanType),
+            Member(BuiltInId.TimeCompareTo, "CompareTo", PrimitiveType.Integer, TimeType),
+        ],
+        [
+            Member(BuiltInId.TimeNewToMinute, "Time", TimeType,
+                   PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.TimeNewToSecond, "Time", TimeType,
+                   PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer),
+        ]),
     ];
+
+    /// <summary>
+    /// The DateTime model as a type, for the members that yield one. Taken from the shared
+    /// registry rather than made here, since a member's signature has to name the very same
+    /// symbol the resolver hands a program.
+    /// </summary>
+    private static ModelSymbol DateTimeType => BuiltInTypes.Of("DateTime");
+
+    private static ModelSymbol TimeSpanType => BuiltInTypes.Of("TimeSpan");
+
+    private static ModelSymbol RandomType => BuiltInTypes.Of("Random");
+
+    private static ModelSymbol DateType => BuiltInTypes.Of("Date");
+
+    private static ModelSymbol TimeType => BuiltInTypes.Of("Time");
 
     /// <summary>Every built-in model name. No program may declare one of these.</summary>
     public static readonly IReadOnlySet<string> ModelNames =

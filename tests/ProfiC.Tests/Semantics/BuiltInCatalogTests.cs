@@ -59,6 +59,172 @@ public sealed class BuiltInCatalogTests
         (BuiltInId.MathAtan, "Console.WriteLine(Math.Atan(0.0))", "0\n"),
         (BuiltInId.MathAtan2, "Console.WriteLine(Math.Atan2(0.0, 1.0))", "0\n"),
 
+        // Each hyperbolic at the point where its answer is a whole number.
+        (BuiltInId.MathSinh, "Console.WriteLine(Math.Sinh(0.0))", "0\n"),
+        (BuiltInId.MathCosh, "Console.WriteLine(Math.Cosh(0.0))", "1\n"),
+        (BuiltInId.MathTanh, "Console.WriteLine(Math.Tanh(0.0))", "0\n"),
+        (BuiltInId.MathAsinh, "Console.WriteLine(Math.Asinh(0.0))", "0\n"),
+        (BuiltInId.MathAcosh, "Console.WriteLine(Math.Acosh(1.0))", "0\n"),
+        (BuiltInId.MathAtanh, "Console.WriteLine(Math.Atanh(0.0))", "0\n"),
+
+        // Chance is asked for something that has to hold whatever it drew, since the draw
+        // itself is different every run.
+        (BuiltInId.RandomNew,
+         "Random any = new Random();\n        Console.WriteLine(any.Next(5) < 5)", "true\n"),
+        (BuiltInId.RandomNewSeeded,
+         "Random a = new Random(42);\n        Random b = new Random(42);\n"
+         + "        Console.WriteLine(a.Next() == b.Next())", "true\n"),
+        (BuiltInId.RandomNext, "Console.WriteLine(Random.Next() >= 0)", "true\n"),
+        (BuiltInId.RandomNextBelow, "Console.WriteLine(Random.Next(5) < 5)", "true\n"),
+        (BuiltInId.RandomNextBetween,
+         "let n = Random.Next(1, 7);\n        Console.WriteLine(n >= 1 and n < 7)", "true\n"),
+        (BuiltInId.RandomNextDouble, "Console.WriteLine(Random.NextDouble() < 1.0)", "true\n"),
+
+        (BuiltInId.DateTimeNewDate, "Console.WriteLine(new DateTime(1969, 7, 20))", "1969-07-20\n"),
+        (BuiltInId.DateTimeNewMoment,
+         "Console.WriteLine(new DateTime(2000, 1, 2, 3, 4, 5))", "2000-01-02 03:04:05\n"),
+
+        // Now and Today differ every run, so each is asked something that does not.
+        (BuiltInId.DateTimeNow,
+         "Console.WriteLine(DateTime.Now.Year > 2000)", "true\n"),
+        (BuiltInId.DateTimeToday,
+         "Console.WriteLine(DateTime.Today.Hour)", "0\n"),
+
+        (BuiltInId.DateTimeYear, "Console.WriteLine(new DateTime(1969, 7, 20).Year)", "1969\n"),
+        (BuiltInId.DateTimeMonth, "Console.WriteLine(new DateTime(1969, 7, 20).Month)", "7\n"),
+        (BuiltInId.DateTimeDay, "Console.WriteLine(new DateTime(1969, 7, 20).Day)", "20\n"),
+        (BuiltInId.DateTimeHour,
+         "Console.WriteLine(new DateTime(2000, 1, 2, 3, 4, 5).Hour)", "3\n"),
+        (BuiltInId.DateTimeMinute,
+         "Console.WriteLine(new DateTime(2000, 1, 2, 3, 4, 5).Minute)", "4\n"),
+        (BuiltInId.DateTimeSecond,
+         "Console.WriteLine(new DateTime(2000, 1, 2, 3, 4, 5).Second)", "5\n"),
+
+        // The twentieth of July 1969 was a Sunday, which is nought.
+        (BuiltInId.DateTimeDayOfWeek,
+         "Console.WriteLine(new DateTime(1969, 7, 20).DayOfWeek)", "0\n"),
+        (BuiltInId.DateTimeDayOfYear,
+         "Console.WriteLine(new DateTime(1969, 7, 20).DayOfYear)", "201\n"),
+
+        (BuiltInId.DateTimeAddDays,
+         "Console.WriteLine(new DateTime(1969, 7, 20).AddDays(10))", "1969-07-30\n"),
+        (BuiltInId.DateTimeAddHours,
+         "Console.WriteLine(new DateTime(1969, 7, 20).AddHours(3))", "1969-07-20 03:00:00\n"),
+        (BuiltInId.DateTimeAddMinutes,
+         "Console.WriteLine(new DateTime(1969, 7, 20).AddMinutes(90))", "1969-07-20 01:30:00\n"),
+        (BuiltInId.DateTimeAddSeconds,
+         "Console.WriteLine(new DateTime(1969, 7, 20).AddSeconds(61))", "1969-07-20 00:01:01\n"),
+        (BuiltInId.DateTimeAddYears,
+         "Console.WriteLine(new DateTime(1969, 7, 20).AddYears(1))", "1970-07-20\n"),
+        (BuiltInId.DateTimeAddMonths,
+         "Console.WriteLine(new DateTime(1969, 7, 20).AddMonths(2))", "1969-09-20\n"),
+
+        (BuiltInId.DateTimeCompareTo,
+         "let early = new DateTime(1969, 7, 16);\n"
+         + "        Console.WriteLine(early.CompareTo(new DateTime(1969, 7, 20)) < 0)", "true\n"),
+
+        (BuiltInId.DateTimeSubtract,
+         "let landing = new DateTime(1969, 7, 20);\n"
+         + "        Console.WriteLine(landing.Subtract(new DateTime(1969, 7, 16)))",
+         "4.00:00:00\n"),
+        (BuiltInId.DateTimeSubtractSpan,
+         "Console.WriteLine(new DateTime(1969, 7, 20).Subtract(TimeSpan.FromDays(4.0)))",
+         "1969-07-16\n"),
+        (BuiltInId.DateTimeAdd,
+         "Console.WriteLine(new DateTime(1969, 7, 16).Add(TimeSpan.FromDays(4.0)))",
+         "1969-07-20\n"),
+
+        (BuiltInId.TimeSpanNewTime, "Console.WriteLine(new TimeSpan(1, 30, 0))", "01:30:00\n"),
+        (BuiltInId.TimeSpanNewSpan, "Console.WriteLine(new TimeSpan(2, 3, 0, 0))", "2.03:00:00\n"),
+        (BuiltInId.TimeSpanZero, "Console.WriteLine(TimeSpan.Zero)", "00:00:00\n"),
+
+        (BuiltInId.TimeSpanFromDays, "Console.WriteLine(TimeSpan.FromDays(1.5))", "1.12:00:00\n"),
+        (BuiltInId.TimeSpanFromHours, "Console.WriteLine(TimeSpan.FromHours(2.0))", "02:00:00\n"),
+        (BuiltInId.TimeSpanFromMinutes,
+         "Console.WriteLine(TimeSpan.FromMinutes(90.0))", "01:30:00\n"),
+        (BuiltInId.TimeSpanFromSeconds,
+         "Console.WriteLine(TimeSpan.FromSeconds(61.0))", "00:01:01\n"),
+
+        // The parts against the totals: an hour and a half is one hour and thirty minutes,
+        // and is ninety minutes.
+        (BuiltInId.TimeSpanDays, "Console.WriteLine(TimeSpan.FromDays(1.5).Days)", "1\n"),
+        (BuiltInId.TimeSpanHours, "Console.WriteLine(TimeSpan.FromMinutes(90.0).Hours)", "1\n"),
+        (BuiltInId.TimeSpanMinutes,
+         "Console.WriteLine(TimeSpan.FromMinutes(90.0).Minutes)", "30\n"),
+        (BuiltInId.TimeSpanSeconds,
+         "Console.WriteLine(TimeSpan.FromSeconds(61.0).Seconds)", "1\n"),
+        (BuiltInId.TimeSpanTotalDays, "Console.WriteLine(TimeSpan.FromHours(12.0).TotalDays)", "0.5\n"),
+        (BuiltInId.TimeSpanTotalHours,
+         "Console.WriteLine(TimeSpan.FromMinutes(90.0).TotalHours)", "1.5\n"),
+        (BuiltInId.TimeSpanTotalMinutes,
+         "Console.WriteLine(TimeSpan.FromMinutes(90.0).TotalMinutes)", "90\n"),
+        (BuiltInId.TimeSpanTotalSeconds,
+         "Console.WriteLine(TimeSpan.FromMinutes(1.0).TotalSeconds)", "60\n"),
+
+        (BuiltInId.TimeSpanAdd,
+         "Console.WriteLine(TimeSpan.FromHours(1.0).Add(TimeSpan.FromMinutes(30.0)))",
+         "01:30:00\n"),
+
+        // A span may run backwards, and the sign survives being printed.
+        (BuiltInId.TimeSpanSubtract,
+         "Console.WriteLine(TimeSpan.FromMinutes(30.0).Subtract(TimeSpan.FromHours(1.0)))",
+         "-00:30:00\n"),
+        (BuiltInId.TimeSpanNegate,
+         "Console.WriteLine(TimeSpan.FromHours(1.0).Negate())", "-01:00:00\n"),
+        (BuiltInId.TimeSpanDuration,
+         "Console.WriteLine(TimeSpan.FromHours(1.0).Negate().Duration())", "01:00:00\n"),
+        (BuiltInId.TimeSpanCompareTo,
+         "let short = TimeSpan.FromMinutes(30.0);\n"
+         + "        Console.WriteLine(short.CompareTo(TimeSpan.FromHours(1.0)) < 0)", "true\n"),
+
+        (BuiltInId.DateNew, "Console.WriteLine(new Date(1969, 7, 20))", "1969-07-20\n"),
+        (BuiltInId.DateToday, "Console.WriteLine(Date.Today.Year > 2000)", "true\n"),
+        (BuiltInId.DateFromMoment,
+         "Console.WriteLine(Date.FromDateTime(new DateTime(1969, 7, 20, 20, 17, 40)))",
+         "1969-07-20\n"),
+
+        (BuiltInId.DateYear, "Console.WriteLine(new Date(1969, 7, 20).Year)", "1969\n"),
+        (BuiltInId.DateMonth, "Console.WriteLine(new Date(1969, 7, 20).Month)", "7\n"),
+        (BuiltInId.DateDay, "Console.WriteLine(new Date(1969, 7, 20).Day)", "20\n"),
+        (BuiltInId.DateDayOfWeek, "Console.WriteLine(new Date(1969, 7, 20).DayOfWeek)", "0\n"),
+        (BuiltInId.DateDayOfYear, "Console.WriteLine(new Date(1969, 7, 20).DayOfYear)", "201\n"),
+
+        (BuiltInId.DateAddDays,
+         "Console.WriteLine(new Date(1969, 7, 20).AddDays(10))", "1969-07-30\n"),
+        (BuiltInId.DateAddMonths,
+         "Console.WriteLine(new Date(1969, 7, 20).AddMonths(2))", "1969-09-20\n"),
+        (BuiltInId.DateAddYears,
+         "Console.WriteLine(new Date(1969, 7, 20).AddYears(1))", "1970-07-20\n"),
+
+        (BuiltInId.DateAtTime,
+         "Console.WriteLine(new Date(1969, 7, 20).ToDateTime(new Time(9, 0)))",
+         "1969-07-20 09:00:00\n"),
+        (BuiltInId.DateCompareTo,
+         "let early = new Date(1969, 7, 16);\n"
+         + "        Console.WriteLine(early.CompareTo(new Date(1969, 7, 20)) < 0)", "true\n"),
+
+        (BuiltInId.TimeNewToMinute, "Console.WriteLine(new Time(9, 5))", "09:05:00\n"),
+        (BuiltInId.TimeNewToSecond, "Console.WriteLine(new Time(9, 5, 30))", "09:05:30\n"),
+        (BuiltInId.TimeNow, "Console.WriteLine(Time.Now.Hour >= 0)", "true\n"),
+        (BuiltInId.TimeFromMoment,
+         "Console.WriteLine(Time.FromDateTime(new DateTime(1969, 7, 20, 20, 17, 40)))",
+         "20:17:40\n"),
+
+        (BuiltInId.TimeHour, "Console.WriteLine(new Time(17, 30).Hour)", "17\n"),
+        (BuiltInId.TimeMinute, "Console.WriteLine(new Time(17, 30).Minute)", "30\n"),
+        (BuiltInId.TimeSecond, "Console.WriteLine(new Time(17, 30, 5).Second)", "5\n"),
+
+        // A clock wraps round midnight rather than overflowing.
+        (BuiltInId.TimeAddHours, "Console.WriteLine(new Time(17, 30).AddHours(8.0))", "01:30:00\n"),
+        (BuiltInId.TimeAddMinutes,
+         "Console.WriteLine(new Time(17, 30).AddMinutes(45.0))", "18:15:00\n"),
+
+        (BuiltInId.TimeToTimeSpan,
+         "Console.WriteLine(new Time(17, 30).ToTimeSpan())", "17:30:00\n"),
+        (BuiltInId.TimeCompareTo,
+         "let open = new Time(9, 0);\n"
+         + "        Console.WriteLine(open.CompareTo(new Time(17, 30)) < 0)", "true\n"),
+
         // Each of these is written with an argument of exactly its own type, since that is
         // what picks it: an integer would widen into the real and fraction versions too.
         (BuiltInId.MathAbsInteger, "Console.WriteLine(Math.Abs(-3))", "3\n"),
@@ -133,6 +299,10 @@ public sealed class BuiltInCatalogTests
         return
         [
             .. BuiltIns.Models.SelectMany(m => m.Members),
+
+            // The forms of "new" are held apart from the members, so they have to be gathered
+            // apart from them too or one could be added with nothing noticing.
+            .. BuiltIns.Models.SelectMany(m => m.Constructors),
             .. BuiltIns.OnSet(set),
 
             // A set of optionals answers four the others do not, since only there is there

@@ -33,6 +33,26 @@ public static class ModelOperations
 
         // An enumeration member shows the name that was written, not the number behind it.
         EnumValue member => member.MemberName,
+
+        // Year first, and the time only when there is one. The platform's own rendering is
+        // "01/02/2000", which leaves a reader to guess whether that is January or February
+        // depending on where they learned to write dates. This order is the same everywhere,
+        // and it sorts the way it reads.
+        DateTime moment => moment.TimeOfDay == TimeSpan.Zero
+            ? moment.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : moment.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+
+        // The "c" form, which .NET defines as culture-invariant rather than merely rendering
+        // it that way. It shows days only when there are some, keeps the sign, and keeps a
+        // fraction of a second where there is one — a hand-written pattern dropped the sign,
+        // so a span of minus half an hour read as half an hour.
+        TimeSpan length => length.ToString("c", CultureInfo.InvariantCulture),
+
+        // Year first and hours in twenty-four, for the same reason a moment is: the order is
+        // the same wherever the reader learned to write one, and it sorts as it reads.
+        DateOnly day => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        TimeOnly clock => clock.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+
         IFormattable number => number.ToString(null, CultureInfo.InvariantCulture),
         _ => value.ToString() ?? string.Empty,
     };

@@ -20,6 +20,14 @@ public sealed partial class Interpreter
     /// <summary>Global storage, for the fields of a global model.</summary>
     private readonly Environment _globals = new(parent: null);
 
+    /// <summary>
+    /// <para>The generator behind <c>Random.Integer</c> and the two beside it, for every
+    /// program that did not ask for one of its own.</para>
+    /// <para>One per run rather than one per process, so two programs run in the same session
+    /// — as the tests do — cannot draw from each other's sequence.</para>
+    /// </summary>
+    private readonly ProfiCRandom _chance = new();
+
     /// <summary>Every type declared, so that construction can find one by name.</summary>
     private readonly Dictionary<string, DeclaredTypeSymbol> _types = new(StringComparer.Ordinal);
 

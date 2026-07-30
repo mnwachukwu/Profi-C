@@ -1466,6 +1466,41 @@ public sealed class TypeCheckerTests
     public void AnExceptionStillTakesItsMessage(string body, string[] expected) =>
         Assert.That(IdsOf(CheckWithThing(body)), Is.EqualTo(expected));
 
+    /// <summary>
+    /// <para>A type the language provides is constructible only if it says so.</para>
+    /// <para>Without this the check fell through to the rule for a declared type with no
+    /// constructor, which accepts an empty <c>new</c> — so <c>new Math()</c> passed and
+    /// produced nothing at all.</para>
+    /// </summary>
+    [TestCase("        let m = new Math();")]
+    [TestCase("        let c = new Console();")]
+    [TestCase("        let f = new Fraction(1, 2);")]
+    [TestCase("        let r = new Reference();")]
+    public void ATypeTheLanguageProvidesIsNotConstructedUnlessItSaysSo(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Does.Contain("PC0328"));
+
+    /// <summary>The two that do say so, and the forms each accepts.</summary>
+    [TestCase("        Random r = new Random();", new string[0])]
+    [TestCase("        Random r = new Random(42);", new string[0])]
+    [TestCase("        Random r = new Random(1, 2);", new[] { "PC0308" })]
+    [TestCase("        DateTime d = new DateTime(2026, 7, 29);", new string[0])]
+    [TestCase("        DateTime d = new DateTime(2026, 7, 29, 13, 0, 0);", new string[0])]
+    [TestCase("        DateTime d = new DateTime(2026);", new[] { "PC0308" })]
+    public void TheConstructibleOnesTakeTheFormsTheyList(string body, string[] expected) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(expected));
+
+    /// <summary>
+    /// What .NET reads as a property is read as one here, so a moment's parts are written
+    /// without parentheses and writing them is reported — the same pair of diagnostics that
+    /// tells a reader which of the two anything is.
+    /// </summary>
+    [TestCase("        let y = new DateTime(2026, 7, 29).Year;", new string[0])]
+    [TestCase("        let y = new DateTime(2026, 7, 29).Year();", new[] { "PC0338" })]
+    [TestCase("        let n = new Random(1).Next();", new string[0])]
+    [TestCase("        let n = new Random(1).Next;", new[] { "PC0330" })]
+    public void AMomentsPartsAreReadWithoutParentheses(string body, string[] expected) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(expected));
+
     private static DiagnosticBag CheckWithThing(string body) => Check($$"""
         model Thing
             public integer v;

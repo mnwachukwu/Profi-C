@@ -11,6 +11,18 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
+          MemberExpr 'ShowRandom'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowDateTime'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ShowSpansAndParts'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
           MemberExpr 'ShowSets'
             IdentifierExpr 'Program'
       ExpressionStmt
@@ -729,6 +741,454 @@ CompilationUnit
               MemberExpr 'WriteLine'
                 IdentifierExpr 'Console'
               LiteralExpr "  missing.Value()    -> refused, as it should be" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowRandom'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== Random ==" [String]
+      VarDeclStmt 'rolls'
+        NamedTypeSyntax 'Random'
+        NewExpr 'Random'
+          LiteralExpr 42 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  seeded 42, six rolls:  " [String]
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 6 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                MemberExpr 'Next'
+                  IdentifierExpr 'rolls'
+                LiteralExpr 1 [Integer]
+                LiteralExpr 7 [Integer]
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      VarDeclStmt 'again'
+        NamedTypeSyntax 'Random'
+        NewExpr 'Random'
+          LiteralExpr 42 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  the same seed again:   " [String]
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 6 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                MemberExpr 'Next'
+                  IdentifierExpr 'again'
+                LiteralExpr 1 [Integer]
+                LiteralExpr 7 [Integer]
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Random.Next() is whole and not negative: " [String]
+            ParenthesizedExpr
+              BinaryExpr '>='
+                CallExpr
+                  MemberExpr 'Next'
+                    IdentifierExpr 'Random'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Random.Next(5) is below five:            " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'Next'
+                    IdentifierExpr 'Random'
+                  LiteralExpr 5 [Integer]
+                LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Random.NextDouble() is below one:        " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'NextDouble'
+                    IdentifierExpr 'Random'
+                LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowDateTime'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== DateTime ==" [String]
+      VarDeclStmt 'landing'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 1969 [Integer]
+          LiteralExpr 7 [Integer]
+          LiteralExpr 20 [Integer]
+      VarDeclStmt 'liftoff'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 1969 [Integer]
+          LiteralExpr 7 [Integer]
+          LiteralExpr 16 [Integer]
+          LiteralExpr 13 [Integer]
+          LiteralExpr 32 [Integer]
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing            = " [String]
+            IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  liftoff            = " [String]
+            IdentifierExpr 'liftoff'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing.Year       = " [String]
+            MemberExpr 'Year'
+              IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing.Month      = " [String]
+            MemberExpr 'Month'
+              IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing.Day        = " [String]
+            MemberExpr 'Day'
+              IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  landing.DayOfWeek  = " [String]
+              MemberExpr 'DayOfWeek'
+                IdentifierExpr 'landing'
+            LiteralExpr " (Sunday is 0)" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing.DayOfYear  = " [String]
+            MemberExpr 'DayOfYear'
+              IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  liftoff.Hour       = " [String]
+            MemberExpr 'Hour'
+              IdentifierExpr 'liftoff'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  AddDays(10)        = " [String]
+            CallExpr
+              MemberExpr 'AddDays'
+                IdentifierExpr 'landing'
+              LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  AddDays(0.5)       = " [String]
+            CallExpr
+              MemberExpr 'AddDays'
+                IdentifierExpr 'landing'
+              LiteralExpr 0.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  AddYears(1)        = " [String]
+            CallExpr
+              MemberExpr 'AddYears'
+                IdentifierExpr 'landing'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  AddMonths(2)       = " [String]
+            CallExpr
+              MemberExpr 'AddMonths'
+                IdentifierExpr 'landing'
+              LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing unchanged  = " [String]
+            IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  liftoff came first = " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'CompareTo'
+                    IdentifierExpr 'liftoff'
+                  IdentifierExpr 'landing'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Today has no time  = " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                MemberExpr 'Hour'
+                  MemberExpr 'Today'
+                    IdentifierExpr 'DateTime'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowSpansAndParts'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== TimeSpan, Date and Time ==" [String]
+      VarDeclStmt 'liftoff'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 1969 [Integer]
+          LiteralExpr 7 [Integer]
+          LiteralExpr 16 [Integer]
+          LiteralExpr 13 [Integer]
+          LiteralExpr 32 [Integer]
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'landing'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 1969 [Integer]
+          LiteralExpr 7 [Integer]
+          LiteralExpr 20 [Integer]
+          LiteralExpr 20 [Integer]
+          LiteralExpr 17 [Integer]
+          LiteralExpr 40 [Integer]
+      VarDeclStmt 'mission'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'Subtract'
+            IdentifierExpr 'landing'
+          IdentifierExpr 'liftoff'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the mission took   = " [String]
+            IdentifierExpr 'mission'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  its days part      = " [String]
+            MemberExpr 'Days'
+              IdentifierExpr 'mission'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  its hours part     = " [String]
+            MemberExpr 'Hours'
+              IdentifierExpr 'mission'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  in hours altogether= " [String]
+            CallExpr
+              MemberExpr 'Round'
+                IdentifierExpr 'Math'
+              MemberExpr 'TotalHours'
+                IdentifierExpr 'mission'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  liftoff plus it    = " [String]
+            CallExpr
+              MemberExpr 'Add'
+                IdentifierExpr 'liftoff'
+              IdentifierExpr 'mission'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  ninety minutes     = " [String]
+            CallExpr
+              MemberExpr 'FromMinutes'
+                IdentifierExpr 'TimeSpan'
+              LiteralExpr 90.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  half minus a whole = " [String]
+            CallExpr
+              MemberExpr 'Subtract'
+                CallExpr
+                  MemberExpr 'FromMinutes'
+                    IdentifierExpr 'TimeSpan'
+                  LiteralExpr 30.0 [Real]
+              CallExpr
+                MemberExpr 'FromHours'
+                  IdentifierExpr 'TimeSpan'
+                LiteralExpr 1.0 [Real]
+      VarDeclStmt 'birthday'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 1969 [Integer]
+          LiteralExpr 7 [Integer]
+          LiteralExpr 20 [Integer]
+      VarDeclStmt 'opening'
+        NamedTypeSyntax 'Time'
+        NewExpr 'Time'
+          LiteralExpr 9 [Integer]
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a date             = " [String]
+            IdentifierExpr 'birthday'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  its day of week    = " [String]
+              MemberExpr 'DayOfWeek'
+                IdentifierExpr 'birthday'
+            LiteralExpr " (Sunday is 0)" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a time             = " [String]
+            IdentifierExpr 'opening'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  eight hours later  = " [String]
+            CallExpr
+              MemberExpr 'AddHours'
+                NewExpr 'Time'
+                  LiteralExpr 17 [Integer]
+                  LiteralExpr 30 [Integer]
+              LiteralExpr 8.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  that day at nine   = " [String]
+            CallExpr
+              MemberExpr 'ToDateTime'
+                IdentifierExpr 'birthday'
+              IdentifierExpr 'opening'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing's date     = " [String]
+            CallExpr
+              MemberExpr 'FromDateTime'
+                IdentifierExpr 'Date'
+              IdentifierExpr 'landing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  landing's time     = " [String]
+            CallExpr
+              MemberExpr 'FromDateTime'
+                IdentifierExpr 'Time'
+              IdentifierExpr 'landing'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

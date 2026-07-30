@@ -18,6 +18,46 @@
   Floor(-7|2)    = -4
   2.0 ^ 8.0      = 256
 
+== Random ==
+  seeded 42, six rolls:  2 3 2 3 4 1 
+  the same seed again:   2 3 2 3 4 1 
+  Random.Next() is whole and not negative: true
+  Random.Next(5) is below five:            true
+  Random.NextDouble() is below one:        true
+
+== DateTime ==
+  landing            = 1969-07-20
+  liftoff            = 1969-07-16 13:32:00
+  landing.Year       = 1969
+  landing.Month      = 7
+  landing.Day        = 20
+  landing.DayOfWeek  = 0 (Sunday is 0)
+  landing.DayOfYear  = 201
+  liftoff.Hour       = 13
+  AddDays(10)        = 1969-07-30
+  AddDays(0.5)       = 1969-07-20 12:00:00
+  AddYears(1)        = 1970-07-20
+  AddMonths(2)       = 1969-09-20
+  landing unchanged  = 1969-07-20
+  liftoff came first = true
+  Today has no time  = true
+
+== TimeSpan, Date and Time ==
+  the mission took   = 4.06:45:40
+  its days part      = 4
+  its hours part     = 6
+  in hours altogether= 103
+  liftoff plus it    = 1969-07-20 20:17:40
+  ninety minutes     = 01:30:00
+  half minus a whole = -00:30:00
+  a date             = 1969-07-20
+  its day of week    = 0 (Sunday is 0)
+  a time             = 09:00:00
+  eight hours later  = 01:30:00
+  that day at nine   = 1969-07-20 09:00:00
+  landing's date     = 1969-07-20
+  landing's time     = 20:17:40
+
 == members of a set ==
   Count()        = 3
   IndexOf(30)    = 2
