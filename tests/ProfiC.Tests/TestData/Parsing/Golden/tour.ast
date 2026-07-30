@@ -1,6 +1,6 @@
 CompilationUnit
   UsingDirective
-    QualifiedName 'Standard'
+    QualifiedName 'Tour.Shapes'
   NamespaceDecl 'Tour'
     QualifiedName 'Tour'
     EnumerationDecl 'Color' [public]
@@ -447,3 +447,23 @@ CompilationUnit
         NamedTypeSyntax 'string'
         YieldStmt
           LiteralExpr "a value" [String]
+    ModelDecl 'Surveying'
+      FunctionDecl 'SidesOf' [public]
+        NamedTypeSyntax 'integer'
+        ParameterDecl 'shape'
+          NamedTypeSyntax 'Polygon'
+        YieldStmt
+          MemberExpr 'sides'
+            IdentifierExpr 'shape'
+  NamespaceDecl 'Tour.Shapes'
+    QualifiedName 'Tour.Shapes'
+    ModelDecl 'Polygon' [public]
+      FieldDecl 'sides' [public]
+        NamedTypeSyntax 'integer'
+      FunctionDecl 'Polygon' [public]
+        ParameterDecl 'count'
+          NamedTypeSyntax 'integer'
+        AssignmentStmt
+          MemberExpr 'sides'
+            ThisExpr
+          IdentifierExpr 'count'

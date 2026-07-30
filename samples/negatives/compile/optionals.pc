@@ -1,9 +1,9 @@
 ##
-Reading an optional without proving there is anything in it.
+    Reading an optional without proving there is anything in it.
 
-This program does not compile. An optional cannot be read as a plain value, and the
-members of what it holds are out of reach until presence is proven — which is what the
-language has instead of null.
+    This program does not compile. An optional cannot be read as a plain value, and the
+    members of what it holds are out of reach until presence is proven — which is what the
+    language has instead of null.
 ##
 
 model Account

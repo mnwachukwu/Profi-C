@@ -1,9 +1,9 @@
 ##
-Habits from other languages, and what Profi-C says about each.
+    Habits from other languages, and what Profi-C says about each.
 
-This program does not compile. Every line below is a spelling a C#, Java, or Python
-author reaches for without thinking, and each one is named rather than left to produce a
-confusing parse error further down the file.
+    This program does not compile. Every line below is a spelling a C#, Java, or Python
+    author reaches for without thinking, and each one is named rather than left to produce a
+    confusing parse error further down the file.
 ##
 
 global model Program

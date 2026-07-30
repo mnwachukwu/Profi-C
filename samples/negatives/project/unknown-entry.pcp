@@ -1,9 +1,9 @@
 ##
-A project that says something a project cannot say.
+    A project that says something a project cannot say.
 
-The whole vocabulary is 'project', 'source', 'reference', 'end project', and the language's
-two comment forms. A project file describes a build, not a computation, so it borrows nothing
-else from the language.
+    The whole vocabulary is 'project', 'source', 'reference', 'end project', and the language's
+    two comment forms. A project file describes a build, not a computation, so it borrows nothing
+    else from the language.
 ##
 
 project Unknown

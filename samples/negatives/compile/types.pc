@@ -1,8 +1,8 @@
 ##
-Values used where they do not fit.
+    Values used where they do not fit.
 
-This program does not compile. The type checker reports each mismatch where it happens,
-naming both what arrived and what was wanted.
+    This program does not compile. The type checker reports each mismatch where it happens,
+    naming both what arrived and what was wanted.
 ##
 
 model Shape

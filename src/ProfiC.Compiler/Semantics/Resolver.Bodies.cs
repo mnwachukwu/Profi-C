@@ -46,6 +46,12 @@ public sealed partial class Resolver
         DeclaredTypeSymbol? savedType = _currentType;
         ModelSymbol? savedModel = _currentModel;
 
+        // Names inside a body are read from where the type sits, so a body reaches its
+        // neighbors unqualified and reaches outward from there.
+        (NamespaceSymbol? Scope, Text.SourceText? File) savedContext = symbol is null
+            ? (_lookupNamespace, _lookupFile)
+            : EnterTypeContext(symbol);
+
         _currentType = symbol;
         _currentModel = symbol as ModelSymbol;
 
@@ -77,6 +83,7 @@ public sealed partial class Resolver
         {
             _currentType = savedType;
             _currentModel = savedModel;
+            RestoreContext(savedContext);
         }
     }
 

@@ -1,9 +1,9 @@
 ##
-Insisting on an optional that turned out to be empty.
+    Insisting on an optional that turned out to be empty.
 
-This program compiles. 'Value()' is the way to read an optional without proving presence
-first — it insists, and throws when there is nothing there. 'HasValue()' and 'Or(...)'
-are the two ways to ask instead of insist.
+    This program compiles. 'Value()' is the way to read an optional without proving presence
+    first — it insists, and throws when there is nothing there. 'HasValue()' and 'Or(...)'
+    are the two ways to ask instead of insist.
 ##
 
 global model Program

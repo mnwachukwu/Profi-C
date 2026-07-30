@@ -1,14 +1,14 @@
 ##
-Claims about a base type that do not hold.
+    Claims about a base type that do not hold.
 
-This program does not compile. 'override' names a function above this one, and the compiler
-checks that the function is there, that it was offered for overriding, and that this one
-yields what it yields.
+    This program does not compile. 'override' names a function above this one, and the compiler
+    checks that the function is there, that it was offered for overriding, and that this one
+    yields what it yields.
 
-The way an unchecked override fails is quiet, which is the reason for checking it. Rename a
-base function, or let a parameter type drift by one, and a function stays marked 'override'
-while overriding nothing at all. It compiles, it runs, and every call through the base type
-reaches the old version.
+    The way an unchecked override fails is quiet, which is the reason for checking it. Rename a
+    base function, or let a parameter type drift by one, and a function stays marked 'override'
+    while overriding nothing at all. It compiles, it runs, and every call through the base type
+    reaches the old version.
 ##
 
 model Shape

@@ -1,8 +1,8 @@
 ##
-Recursion with no base case.
+    Recursion with no base case.
 
-This program compiles. Countdown never stops calling itself, because the test that would
-end it is missing. The failure names the cause rather than exhausting the stack.
+    This program compiles. Countdown never stops calling itself, because the test that would
+    end it is missing. The failure names the cause rather than exhausting the stack.
 ##
 
 global model Program

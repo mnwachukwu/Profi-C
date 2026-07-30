@@ -26,6 +26,12 @@
     <!-- For the one format in which failures are shown to a person, so the recorded
          expectations of the negative samples are what a reader will actually see. -->
     <ProjectReference Include="..\..\src\ProfiC.Cli\ProfiC.Cli.csproj" />
+
+    <!-- Built but not referenced. Nothing here calls into the alias; it is here so that the
+         command a reader actually types exists to be launched, since every other test reaches
+         the compiler in process and would pass with no working executable at all. -->
+    <ProjectReference Include="..\..\src\ProfiC.Cli.Alias\ProfiC.Cli.Alias.csproj"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

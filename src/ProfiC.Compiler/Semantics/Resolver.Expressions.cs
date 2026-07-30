@@ -78,12 +78,64 @@ public sealed partial class Resolver
                 break;
 
             case MemberExpr member:
-                BindExpression(member.Receiver);
+                BindMemberReceiver(member);
                 break;
 
             case LambdaExpr lambda:
                 BindLambda(lambda);
                 break;
+        }
+    }
+
+    /// <summary>
+    /// <para>Binds what a member is read from.</para>
+    /// <para><c>Shapes.Circle.Area()</c> and <c>account.Balance()</c> are the same shape, and
+    /// only where the name leads decides which. So a run of plain names is offered to the type
+    /// lookup first: if it reaches one, the whole run is that type and nothing in it was ever
+    /// an expression. Otherwise the receiver is bound as a value, which is what it is.</para>
+    /// <para>Tried longest-first, since <c>Shapes.Circle</c> naming a type has to beat
+    /// <c>Shapes</c> naming one with a <c>Circle</c> member — the longer run is the more
+    /// specific reading, and a type whose name is a namespace's is not otherwise separable
+    /// from a namespace holding a type.</para>
+    /// </summary>
+    private void BindMemberReceiver(MemberExpr member)
+    {
+        if (NameSpine(member.Receiver) is { Count: > 1 } parts
+            && LookupQualifiedType(parts) is { } type)
+        {
+            RequireVisibleType(member.Receiver, type);
+            _model.Bind(member.Receiver, type);
+            return;
+        }
+
+        BindExpression(member.Receiver);
+    }
+
+    /// <summary>
+    /// The run of plain names an expression is, or null where it is anything else. Only names
+    /// joined by dots can be a qualified type; a call or an index in the middle settles that
+    /// what is being read is a value.
+    /// </summary>
+    private static List<string>? NameSpine(Expression expression)
+    {
+        List<string> parts = [];
+
+        for (Expression current = expression; ;)
+        {
+            switch (current)
+            {
+                case IdentifierExpr identifier:
+                    parts.Insert(0, identifier.Name);
+                    return parts;
+
+                case MemberExpr member:
+                    parts.Insert(0, member.MemberName);
+                    current = member.Receiver;
+                    break;
+
+                default:
+                    return null;
+            }
         }
     }
 
@@ -104,10 +156,15 @@ public sealed partial class Resolver
 
         // A type name is legal here: it is how a global member is reached, as in
         // "Program.Describe(x)".
-        if (_typesByName.TryGetValue(identifier.Name, out DeclaredTypeSymbol? type))
+        if (LookupType(identifier.Name) is { } type)
         {
             RequireVisibleType(identifier, type);
             _model.Bind(identifier, type);
+            return;
+        }
+
+        if (ReportIfAmbiguous(identifier, identifier.Name))
+        {
             return;
         }
 
@@ -206,11 +263,16 @@ public sealed partial class Resolver
             BindExpression(argument);
         }
 
-        if (_typesByName.TryGetValue(construction.TypeName, out DeclaredTypeSymbol? type))
+        if (LookupQualifiedType(construction.TypeName.Split('.')) is { } type)
         {
             RequireVisibleType(construction, type);
             _model.Bind(construction, type);
             _model.BindType(construction, type);
+            return;
+        }
+
+        if (ReportIfAmbiguous(construction, construction.TypeName))
+        {
             return;
         }
 

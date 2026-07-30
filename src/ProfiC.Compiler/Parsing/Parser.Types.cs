@@ -112,7 +112,17 @@ public sealed partial class Parser
             return new FunctionTypeSyntax(SpanFrom(token), returnType: null, ParseTypeList());
         }
 
-        return new NamedTypeSyntax(token.Span, name);
+        // A dotted name says where to look before saying what to look for. Only a name may be
+        // qualified, since everything else a type can be is built out of one.
+        List<string> parts = [name];
+
+        while (Check(TokenType.Dot))
+        {
+            Advance();
+            parts.Add(ExpectIdentifier());
+        }
+
+        return new NamedTypeSyntax(SpanFrom(token), parts);
     }
 
     /// <summary>

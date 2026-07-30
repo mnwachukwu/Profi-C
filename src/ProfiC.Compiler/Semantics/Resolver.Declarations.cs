@@ -24,12 +24,15 @@ public sealed partial class Resolver
             case NamespaceDecl namespaceDecl:
             {
                 NamespaceSymbol target = DeclareNamespace(namespaceDecl.Name, enclosing);
+                NamespaceSymbol? saved = _lookupNamespace;
+                _lookupNamespace = target;
 
                 foreach (Declaration member in namespaceDecl.Declarations)
                 {
                     CollectDeclaration(member, target);
                 }
 
+                _lookupNamespace = saved;
                 break;
             }
 
@@ -50,12 +53,58 @@ public sealed partial class Resolver
         }
     }
 
+    /// <summary>
+    /// Whether a namespace of this name already sits somewhere around this one. The global
+    /// namespace is nameless and is skipped, since nothing can repeat an empty name.
+    /// </summary>
+    private static bool RepeatsAnEnclosingName(NamespaceSymbol enclosing, string part)
+    {
+        for (NamespaceSymbol? scope = enclosing; scope is not null; scope = scope.Parent)
+        {
+            if (scope.Name.Length > 0 && string.Equals(scope.Name, part, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Says when a declaration takes a name the language also uses. A warning rather than a
+    /// refusal: the nearer name wins, which is the ordinary rule, and Standard.X still reaches
+    /// what was shadowed.
+    /// </summary>
+    private void WarnIfShadowsStandard(string name, Declaration declaration)
+    {
+        if (BuiltInTypeNames.Contains(name))
+        {
+            Report(DiagnosticDescriptors.ShadowsStandardType, declaration, name);
+        }
+    }
+
     private NamespaceSymbol DeclareNamespace(QualifiedName name, NamespaceSymbol enclosing)
     {
+        // Namespaces merge, so a program writing this one would be adding types that then read
+        // as the language's own. Refused at the root only: a Standard nested inside something
+        // else is an ordinary name that happens to be spelled the same.
+        if (ReferenceEquals(enclosing, _model.GlobalNamespace)
+            && name.Parts is [BuiltInTypes.StandardName, ..])
+        {
+            Report(DiagnosticDescriptors.StandardNamespaceIsReserved, name);
+        }
+
         NamespaceSymbol current = enclosing;
 
         foreach (string part in name.Parts)
         {
+            // Said before the namespace is made, so that a dotted name repeating a part of
+            // itself is caught as readily as one repeating what it is written inside.
+            if (RepeatsAnEnclosingName(current, part))
+            {
+                Report(DiagnosticDescriptors.NamespaceRepeatsEnclosingName, name, part);
+            }
+
             if (!current.Namespaces.TryGetValue(part, out NamespaceSymbol? child))
             {
                 child = new NamespaceSymbol(part, current);
@@ -95,11 +144,7 @@ public sealed partial class Resolver
         NamespaceSymbol enclosing,
         IReadOnlyList<Declaration> members)
     {
-        if (BuiltInTypeNames.Contains(name))
-        {
-            Report(DiagnosticDescriptors.ReservedTypeName, declaration, name);
-            return;
-        }
+        WarnIfShadowsStandard(name, declaration);
 
         if (!enclosing.Types.TryAdd(name, symbol))
         {
@@ -110,7 +155,7 @@ public sealed partial class Resolver
         symbol.Container = enclosing;
         symbol.DeclaredIn = _currentSource;
         symbol.Project = _currentProject;
-        _typesByName[name] = symbol;
+        _allTypes.Add(symbol);
         _model.Bind(declaration, symbol);
 
         CheckTypeModifiers(symbol, declaration);
@@ -238,15 +283,12 @@ public sealed partial class Resolver
         IReadOnlyList<Declaration> members,
         NamespaceSymbol enclosing)
     {
-        if (BuiltInTypeNames.Contains(symbol.Name))
-        {
-            Report(DiagnosticDescriptors.ReservedTypeName, declaration, symbol.Name);
-            return;
-        }
+        WarnIfShadowsStandard(symbol.Name, declaration);
 
         symbol.Container = owner;
         owner.AddMember(symbol);
-        _typesByName[symbol.Name] = symbol;
+        _allTypes.Add(symbol);
+        _nestedTypes[symbol.Name] = symbol;
         _model.Bind(declaration, symbol);
 
         CheckTypeModifiers(symbol, declaration);
@@ -263,11 +305,7 @@ public sealed partial class Resolver
             Declaration = declaration,
         };
 
-        if (BuiltInTypeNames.Contains(symbol.Name))
-        {
-            Report(DiagnosticDescriptors.ReservedTypeName, declaration, symbol.Name);
-            return;
-        }
+        WarnIfShadowsStandard(symbol.Name, declaration);
 
         if (owner is null)
         {
@@ -290,7 +328,12 @@ public sealed partial class Resolver
         // top-level one is. Nesting says where a type sits, not which build it belongs to.
         symbol.Project = _currentProject;
 
-        _typesByName[symbol.Name] = symbol;
+        _allTypes.Add(symbol);
+
+        if (owner is not null)
+        {
+            _nestedTypes[symbol.Name] = symbol;
+        }
         _model.Bind(declaration, symbol);
 
         // Ordinals continue from the last explicit value, so an unmarked member is one more
@@ -336,11 +379,12 @@ public sealed partial class Resolver
     /// </summary>
     private void SettleMemberSignatures()
     {
-        foreach (DeclaredTypeSymbol type in _typesByName.Values)
+        foreach (DeclaredTypeSymbol type in _allTypes)
         {
             // Entered so that a type named in a signature is judged from where it was written:
             // which project may reach it, and which file to report against when it cannot.
             DeclaredTypeSymbol? saved = _currentType;
+            (NamespaceSymbol? Scope, Text.SourceText? File) savedContext = EnterTypeContext(type);
             _currentType = type;
 
             if (type.DeclaredIn is { } file)
@@ -354,6 +398,7 @@ public sealed partial class Resolver
             }
 
             _currentType = saved;
+            RestoreContext(savedContext);
         }
     }
 
@@ -414,7 +459,7 @@ public sealed partial class Resolver
     /// </summary>
     private void LinkInheritance()
     {
-        foreach (DeclaredTypeSymbol type in _typesByName.Values)
+        foreach (DeclaredTypeSymbol type in _allTypes)
         {
             if (type is not ModelSymbol model
                 || model.Declaration is not ModelDecl { BaseTypeName: { } baseName } declaration)
@@ -422,29 +467,44 @@ public sealed partial class Resolver
                 continue;
             }
 
-            if (!_typesByName.TryGetValue(baseName, out DeclaredTypeSymbol? baseType))
+            // Read from where the model sits, so that a base named without qualifying it is
+            // looked for beside the model first, exactly as any other name would be.
+            (NamespaceSymbol? Scope, Text.SourceText? File) saved = EnterTypeContext(type);
+            DeclaredTypeSymbol? baseType = LookupType(baseName);
+            bool ambiguous = baseType is null && ReportIfAmbiguous(declaration, baseName);
+            RestoreContext(saved);
+
+            if (ambiguous)
             {
-                if (!BuiltInTypeNames.Contains(baseName))
+                continue;
+            }
+
+            if (baseType is null)
+            {
+                Report(DiagnosticDescriptors.TypeNotFound, declaration, baseName);
+                continue;
+            }
+
+            // A type the language owns is reached through Standard like any other, so what it
+            // permits has to be asked here rather than only where a name failed to resolve.
+            if (BuiltInTypeNames.Contains(baseType.Name)
+                && ReferenceEquals(baseType.Container, BuiltInTypes.Standard))
+            {
+                if (baseType.Name == "Model")
                 {
-                    Report(DiagnosticDescriptors.TypeNotFound, declaration, baseName);
-                }
-                else if (baseName == "Exception" || BuiltInExceptionNames.Contains(baseName))
-                {
-                    // Recorded rather than merely permitted, so that a model extending
-                    // Exception inherits Message and one catch clause takes it.
-                    model.BaseType = BuiltInModel(baseName);
-                }
-                else if (baseName != "Model")
-                {
-                    // Console and the rest are models only so that their members resolve.
-                    // None of them has anything to inherit, and saying so is far better than
-                    // accepting the line and quietly producing a model with no base at all.
-                    Report(DiagnosticDescriptors.CannotExtendBuiltInType, declaration, baseName);
+                    // Legal and redundant, exactly as ": object" is in C#. Every model extends
+                    // Model already, so writing it leaves the base where it was.
+                    continue;
                 }
 
-                // What remains is "extends Model": legal and redundant, exactly as ": object"
-                // is in C#, and it leaves the base where it already was.
-                continue;
+                if (!BuiltIns.MayBeExtended(baseType.Name))
+                {
+                    // Console and the rest are models only so that their members resolve. None
+                    // has anything to inherit, and saying so is far better than accepting the
+                    // line and quietly producing a model with no base at all.
+                    Report(DiagnosticDescriptors.CannotExtendBuiltInType, declaration, baseName);
+                    continue;
+                }
             }
 
             if (baseType is not ModelSymbol baseModel)
@@ -471,7 +531,7 @@ public sealed partial class Resolver
     /// </summary>
     private void DetectInheritanceCycles()
     {
-        foreach (DeclaredTypeSymbol type in _typesByName.Values)
+        foreach (DeclaredTypeSymbol type in _allTypes)
         {
             if (type is not ModelSymbol model)
             {
@@ -507,7 +567,10 @@ public sealed partial class Resolver
     private void CheckEntryPoint(CompilationUnit unit, bool required)
     {
         List<DeclaredTypeSymbol> programs =
-            [.. _typesByName.Values.Where(t => string.Equals(t.Name, "Program", StringComparison.Ordinal))];
+            // Found wherever it sits. A namespace organizes names, and the entry point is
+            // reached by the compiler rather than by a name any program has to write, so
+            // putting Program inside one changes where it is written and nothing else.
+            [.. _allTypes.Where(t => string.Equals(t.Name, "Program", StringComparison.Ordinal))];
 
         if (programs.Count == 0)
         {

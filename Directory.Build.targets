@@ -1,0 +1,27 @@
+<Project>
+
+  <!--
+    Where "dotnet publish" puts things.
+
+    Read after each project rather than before it, which is the whole reason this is a
+    .targets file and not the .props beside it: OutputType is set in the project body, so a
+    condition on it is only answerable once that body has been read.
+
+    The two commands land together in one folder, which is what a reader puts on their PATH.
+    Everything else is left out of publishing entirely: a library has nothing to ship on its
+    own, and a test project would otherwise scatter its harness beside the commands.
+
+    One folder means one configuration at a time: publishing Debug over Release replaces what
+    is there rather than sitting beside it. Publishing defaults to Release, which is what
+    belongs in a folder a reader runs from.
+  -->
+
+  <PropertyGroup Condition="'$(OutputType)' == 'Exe' and '$(IsTestProject)' != 'true'">
+    <PublishDir>$(MSBuildThisFileDirectory)dist\</PublishDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OutputType)' != 'Exe' or '$(IsTestProject)' == 'true'">
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+
+</Project>

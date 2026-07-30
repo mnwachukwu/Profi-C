@@ -1,12 +1,12 @@
 ##
-A book, and what a shelf can be asked about one.
+    A book, and what a shelf can be asked about one.
 
-Nothing here knows there is a lending desk. That is the point of putting it in a project of
-its own: it can be built, read, and reused without the program that happens to use it today.
+    Nothing here knows there is a lending desk. That is the point of putting it in a project of
+    its own: it can be built, read, and reused without the program that happens to use it today.
 
-Public, because Library is meant to use it. A type written with no visibility reaches its own
-project and no further, which is why Wording beside it stays inside Books however many
-projects reference this one.
+    Public, because Library is meant to use it. A type written with no visibility reaches its own
+    project and no further, which is why Wording beside it stays inside Books however many
+    projects reference this one.
 ##
 
 public model Book

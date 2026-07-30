@@ -1,12 +1,12 @@
 ##
-How Books phrases things, which is nobody else's business.
+    How Books phrases things, which is nobody else's business.
 
-No visibility is written, so this reaches its own project and stops there. Library references
-Books and still cannot name Wording — which is the point. Books can change how it phrases a
-book, or delete this model outright, without breaking anyone, because nobody outside could
-have depended on it.
+    No visibility is written, so this reaches its own project and stops there. Library references
+    Books and still cannot name Wording — which is the point. Books can change how it phrases a
+    book, or delete this model outright, without breaking anyone, because nobody outside could
+    have depended on it.
 
-Book is public for the opposite reason: Library is meant to use it, so it says so.
+    Book is public for the opposite reason: Library is meant to use it, so it says so.
 ##
 
 model Wording

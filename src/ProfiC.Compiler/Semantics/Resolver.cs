@@ -47,9 +47,6 @@ public sealed partial class Resolver
     private IReadOnlyDictionary<SourceText, string> _projects =
         new Dictionary<SourceText, string>();
 
-    /// <summary>Types declared anywhere, by name, for lookup during the second pass.</summary>
-    private readonly Dictionary<string, DeclaredTypeSymbol> _typesByName =
-        new(StringComparer.Ordinal);
 
     /// <summary>The model whose member is being resolved, for <c>this</c> and <c>base</c>.</summary>
     private ModelSymbol? _currentModel;
@@ -105,6 +102,10 @@ public sealed partial class Resolver
 
         resolver._currentSource = null;
         resolver._currentProject = string.Empty;
+
+        // After every file, because a using may name a namespace that a file read later
+        // declares: the directives are unordered with respect to what they reach.
+        resolver.ResolveUsings(units);
 
         resolver.LinkInheritance();
         resolver.SettleMemberSignatures();
@@ -224,26 +225,53 @@ public sealed partial class Resolver
                     return primitive;
                 }
 
-                if (_typesByName.TryGetValue(named.Name, out DeclaredTypeSymbol? declared))
+                if (LookupQualifiedType(named.Parts) is { } declared)
                 {
                     RequireVisibleType(named, declared);
+                    RequireInhabitable(named, declared);
                     return declared;
                 }
 
-                // "Model" is a reserved type name rather than a keyword, so it arrives here
-                // as an ordinary identifier and is recognized at this point.
-                if (BuiltInTypeNames.Contains(named.Name))
+                if (ReportIfAmbiguous(named, named.Text))
                 {
-                    return BuiltInModel(named.Name);
+                    return ErrorType.Instance;
                 }
 
-                Report(DiagnosticDescriptors.TypeNotFound, named, named.Name);
+                Report(DiagnosticDescriptors.TypeNotFound, named, named.Text);
                 return ErrorType.Instance;
             }
 
             default:
                 return ErrorType.Instance;
         }
+    }
+
+    /// <summary>
+    /// <para>Rejects a type nothing can be, written where a value's type belongs.</para>
+    /// <para>Two kinds reach here. A <c>global model</c> has no instances by definition, which
+    /// is what the word means. And four the language provides are names to reach members
+    /// through — <c>Console</c>, <c>Math</c>, <c>Reference</c>, and <c>Fraction</c>, which is
+    /// the model beside the <c>fraction</c> type rather than that type.</para>
+    /// <para>Without this each of them is a declaration every rule accepts and no value can
+    /// ever fill, which runs.</para>
+    /// </summary>
+    private void RequireInhabitable(NamedTypeSyntax named, DeclaredTypeSymbol declared)
+    {
+        bool empty = declared is ModelSymbol { IsGlobal: true }
+                     || (ReferenceEquals(declared.Container, BuiltInTypes.Standard)
+                         && BuiltIns.HasNoInstances(declared.Name));
+
+        if (!empty)
+        {
+            return;
+        }
+
+        // A capital letter away from the type that was almost certainly meant.
+        string fix = PrimitiveType.ByName.ContainsKey(declared.Name.ToLowerInvariant())
+            ? $"Write '{declared.Name.ToLowerInvariant()}' for the type of that name."
+            : $"Its members are reached through the name '{declared.Name}' instead.";
+
+        Report(DiagnosticDescriptors.TypeHasNoValues, named, declared.Name, fix);
     }
 
     /// <summary>

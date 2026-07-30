@@ -1,17 +1,17 @@
 ##
-Naming a file directly.
+    Naming a file directly.
 
-The folder rule gathers what sits beside a program. When the code you want is somewhere
-else, an import names it:
+    The folder rule gathers what sits beside a program. When the code you want is somewhere
+    else, an import names it:
 
-    pc run samples/toolkit/Program.pc
+        pc run samples/toolkit/Program.pc
 
-An import names one file, and paths are written relative to the file that wrote them, with
-forward slashes on every platform. It brings that file and whatever that file imports in
-turn — Tally.pc imports Text.pc, so Text arrives without this program mentioning it.
+    An import names one file, and paths are written relative to the file that wrote them, with
+    forward slashes on every platform. It brings that file and whatever that file imports in
+    turn — Tally.pc imports Text.pc, so Text arrives without this program mentioning it.
 
-Reach for an import when you want one file. For a group of related types, reach for a
-namespace; for a whole build across folders, reach for a project file.
+    Reach for an import when you want one file. For a group of related types, reach for a
+    namespace; for a whole build across folders, reach for a project file.
 ##
 
 import "shared/Tally.pc";

@@ -96,6 +96,28 @@ public sealed partial class Parser
             return ParseNamespace();
         }
 
+        // A directive reaching here is one written below a namespace, since the only other
+        // place they are read is the prologue. Consumed rather than merely refused, so that
+        // the rest of the line is not then reported as several more mistakes.
+        if (Check(TokenType.Using) || Check(TokenType.Import))
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.DirectiveInsideNamespace,
+                Current.Span,
+                Current.Type == TokenType.Using ? "using" : "import");
+
+            if (Current.Type == TokenType.Using)
+            {
+                ParseUsing();
+            }
+            else
+            {
+                ParseImport();
+            }
+
+            return null;
+        }
+
         Token start = Current;
         DeclarationModifiers modifiers = ParseModifiers();
 

@@ -1,13 +1,13 @@
 ##
-The Fibonacci sequence, computed two ways.
+    The Fibonacci sequence, computed two ways.
 
-Both functions produce the same answers, and the difference between them is the point.
-The recursive one mirrors the definition exactly and is the easier of the two to read.
-The iterative one keeps two numbers and walks forward.
+    Both functions produce the same answers, and the difference between them is the point.
+    The recursive one mirrors the definition exactly and is the easier of the two to read.
+    The iterative one keeps two numbers and walks forward.
 
-The recursive version recomputes the same values over and over: asking for Fibonacci(30)
-calls Fibonacci(28) twice, Fibonacci(27) three times, and so on. Try raising the limit and
-watch where it stops being instant.
+    The recursive version recomputes the same values over and over: asking for Fibonacci(30)
+    calls Fibonacci(28) twice, Fibonacci(27) three times, and so on. Try raising the limit and
+    watch where it stops being instant.
 ##
 
 global model Program

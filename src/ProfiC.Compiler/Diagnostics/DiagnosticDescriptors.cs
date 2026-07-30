@@ -265,10 +265,81 @@ public static class DiagnosticDescriptors
         "Name already declared",
         "'{0}' is already declared in this scope.");
 
-    public static readonly DiagnosticDescriptor ReservedTypeName = Error(
+    /// <summary>
+    /// <para>A type declared with the name of one the language provides.</para>
+    /// <para>A warning rather than a refusal, because the library sits in a namespace like
+    /// anything else and a nearer name wins over one merely in scope. Declaring a
+    /// <c>Math</c> is a program saying it has its own, which is allowed and reversible:
+    /// <c>Standard.Math</c> still reaches the other one.</para>
+    /// <para>Worth saying all the same. Losing <c>Math.Sqrt</c> to a model of your own is
+    /// almost never what was meant, and the reader who finds out by the call failing has a
+    /// worse afternoon than the one told here.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ShadowsStandardType = Warning(
         "PC0203",
-        "Reserved type name",
-        "'{0}' is a built-in type and cannot be redeclared.");
+        "This shadows a type the language provides",
+        "'{0}' is also the name of a type in Standard, and a name declared here wins over one "
+        + "in scope. Write 'Standard.{0}' to reach the other, or rename this.");
+
+    /// <summary>
+    /// <para>A program declaring the namespace the language owns.</para>
+    /// <para>Namespaces merge, so this would let a program add types that then read as
+    /// provided by Profi-C. <c>Standard.X</c> means "the language gives you this", and it can
+    /// only keep meaning that if nothing else may write there.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor StandardNamespaceIsReserved = Error(
+        "PC0229",
+        "Standard belongs to the language",
+        "'Standard' is the namespace the language's own types live in, and a program may not "
+        + "add to it. Name this namespace something else.");
+
+    /// <summary>
+    /// <para><c>using Standard;</c>, which brings nothing.</para>
+    /// <para>Standard is in scope in every file with nothing written, and at the same rank a
+    /// using would put it at — so this line changes no name in the file, including when
+    /// another using offers the same one.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor StandardNeedsNoUsing = Warning(
+        "PC0230",
+        "Standard is already in scope",
+        "Every file reaches Standard without saying so, so this line brings nothing.");
+
+    /// <summary>
+    /// <para>A <c>using</c> or <c>import</c> written inside a namespace.</para>
+    /// <para>Both are answers about the file: which names it reaches, and which files are
+    /// compiled with it. Neither narrows to part of one, so writing one inside a namespace
+    /// would say something the language has no way to mean.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor DirectiveInsideNamespace = Error(
+        "PC0231",
+        "This belongs above any namespace",
+        "'{0}' is a statement about the whole file, so it goes above every namespace in it.");
+
+    /// <summary>
+    /// <para>A namespace whose name repeats one it sits inside.</para>
+    /// <para>Legal, and almost never meant: <c>Shapes.Shapes.Circle</c> is what a reader has to
+    /// write afterwards, and it reads as a slip rather than as a distinction. A warning rather
+    /// than an error because it is only a name, and a program that means it works.</para>
+    /// </summary>
+    /// <summary>
+    /// <para>A type nothing can ever be, written where a value's type belongs.</para>
+    /// <para>A global model has no instances, and four of the language's own are names to
+    /// reach members through rather than things to hold. Declaring one is accepted by every
+    /// rule taken singly and produces a variable that can never be filled: nothing assigns to
+    /// it, nothing reads from it, and the program runs.</para>
+    /// <para>The mistake it usually is: <c>Fraction</c> for <c>fraction</c>, a capital letter
+    /// away, where the alternative is an error about a fraction not fitting a Fraction.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeHasNoValues = Error(
+        "PC0233",
+        "Nothing can be of this type",
+        "'{0}' has no instances, so nothing can ever be held here. {1}");
+
+    public static readonly DiagnosticDescriptor NamespaceRepeatsEnclosingName = Warning(
+        "PC0232",
+        "This namespace repeats one around it",
+        "'{0}' already sits inside a namespace of that name, so its types are reached as "
+        + "'{0}.{0}.…'. Rename this one if that was not meant.");
 
     /// <summary>
     /// <para>The diagnostic that pays for requiring <c>this.</c> on every member access.</para>
@@ -453,6 +524,35 @@ public static class DiagnosticDescriptors
     /// <para>A caller holding the base type reads the result as the base declared it, so a
     /// different one would be a lie told through every such call.</para>
     /// </summary>
+    /// <summary>
+    /// <para>A name that more than one used namespace offers.</para>
+    /// <para>Nothing breaks the tie. A namespace around the name is nearer than one merely
+    /// used, and an enclosing namespace is nearer than the one outside it — but usings name no
+    /// order between themselves, so choosing either would make what a program means depend on
+    /// which line was written first.</para>
+    /// <para>Reported where the name is read rather than at the usings, because two namespaces
+    /// sharing a name is only a problem once something needs it.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor AmbiguousTypeName = Error(
+        "PC0226",
+        "This name is offered by more than one namespace",
+        "'{0}' could mean {1}. Both are used here and neither is nearer, so write the one you "
+        + "mean in full.");
+
+    public static readonly DiagnosticDescriptor NamespaceNotFound = Error(
+        "PC0227",
+        "No such namespace",
+        "No namespace named '{0}' is declared in this compilation.");
+
+    /// <summary>
+    /// A namespace used twice in one file. The second brings nothing the first did not, so it
+    /// is a line that could be deleted without changing what the file means.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NamespaceUsedTwice = Error(
+        "PC0228",
+        "This namespace is already used here",
+        "'{0}' is already used in this file.");
+
     public static readonly DiagnosticDescriptor OverrideResultDiffers = Error(
         "PC0225",
         "Override yields a different result",

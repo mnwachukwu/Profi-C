@@ -203,6 +203,10 @@ line with it**:
 ##
 ```
 
+The body is indented under the marks by convention rather than by rule — the compiler reads a
+block the same either way. It is worth writing because an editor folds by indentation with
+nothing told to it, so a long comment collapses out of the way.
+
 That closing rule settles two things at once.
 
 **Nesting is not an idea that can go wrong, because it is not an idea.** The first `##` after
@@ -1410,11 +1414,49 @@ the language: the alternative teaches people to write `catch` clauses that swall
 
 ## 11. The standard library
 
-The library is small and is reached without importing anything. Thirteen names belong to the
-language and no program may declare one: `Model`, `Function`, `Exception`, `Console`,
-`Reference`, `Math`, `Fraction`, `Random`, `DateTime`, `TimeSpan`, `Date`, `Time`, and
-`Program`. Of these only `Exception` may be extended; `Program` must be declared, exactly
-once (§12).
+The library is small, and lives in a namespace named **`Standard`**: `Model`, `Function`,
+`Exception` and its subtypes, `Console`, `Reference`, `Math`, `Fraction`, `Random`,
+`DateTime`, `TimeSpan`, `Date`, and `Time`. Of these only `Exception` may be extended.
+
+**`Standard` is in scope in every file with nothing written**, so the library is reached
+without importing anything, and `Standard.Math` is legal without a `using` too — qualifying a
+name never needed one. Writing `using Standard;` is legal and warned (`PC0230`): it brings
+nothing that is not already there.
+
+It sits at the same rank a `using` would put it at, rather than beneath. That matters only
+once a second namespace can offer one of these names — .NET interop, in a later version —
+and then it matters a great deal: at equal rank a bare `DateTime` with both in scope is
+**ambiguous** (`PC0226`) and the program says which it meant, where a lower rank would have
+let the import quietly take the name. Nothing collides with `Standard` today, which is why
+the rule is worth fixing now: it costs nothing until it costs everything.
+
+**A program may declare these names.** A `Math` of your own is legal, wins over the library's
+by the ordinary nearest-name rule, and is warned about (`PC0203`) because losing `Math.Sqrt`
+is almost never what was meant. `Standard.Math` still reaches the other one.
+
+**A program may not declare `namespace Standard`** (`PC0229`). Namespaces merge, so it would
+let a program add types that then read as the language's own, and `Standard.X` can only keep
+meaning "the language gives you this" if nothing else may write there.
+
+`Program` is not part of `Standard`. It is a name reserved for something a program *provides*
+rather than something the language does, and must be declared exactly once (§12).
+
+**Four of them hold no values** — `Console`, `Math`, `Reference`, and `Fraction`. They are
+names to reach members through, and naming one where a value's type belongs is an error
+(`PC0233`), as it is for any `global model`, which has no instances by definition:
+
+```
+Math m;              PC0233: nothing can be of this type
+fraction half = 1|2;  the type; Fraction is the model beside it
+```
+
+`Fraction` is the one this mostly catches, a capital letter away from the type meant, so the
+message names `fraction` rather than only refusing what was written. Without the rule the
+declaration is accepted by every other rule taken singly, and produces a variable nothing can
+ever fill.
+
+`Model` and `Function` are **not** in that set: neither can be constructed, and both hold
+values all the same, since every model converts to one and every function to the other.
 
 `Model` and `Function` are the two roots (§3.3, §3.4) rather than things to call.
 
@@ -1871,7 +1913,7 @@ completely. Whether an explicit `partial` should exist is left open for a later 
 a question interoperating with .NET may eventually force, and one that should be answered
 deliberately rather than fallen into.
 
-### 12.3 Namespaces, as they stand
+### 12.3 Namespaces
 
 A namespace is written in either of two forms:
 
@@ -1884,16 +1926,76 @@ namespace Shapes               block: closes with "end namespace"
 end namespace
 ```
 
-**Neither form scopes anything today.** Both parse, and a `using` parses, but a type declared
-inside a namespace is reached by its bare name exactly as though the namespace were not
-written, and a `using` is read and ignored. Nothing is rejected that should be, and nothing is
-accepted that will later be rejected on the strength of the namespace alone.
+Namespaces nest, either by writing a dotted name or by writing one inside another. **Two
+namespaces may each declare a type of the same name**, which is most of what they are for.
 
-What is settled about the design and not yet built: namespaces nest; a file may hold one
-file-scoped namespace or several block ones, but not both forms at once; `using` and `import`
-directives come above any namespace; and a nested namespace whose name repeats an enclosing
-one is legal but warned about, since `Shapes.Shapes.Circle` is more often a mistake than an
-intent.
+#### How a bare name is read
+
+From the namespace it sits in, then outward through every namespace around it, ending at the
+global one. If none of those has it, then the namespaces in scope: whatever the file wrote
+`using` of, and `Standard` (§11).
+
+**Nearest wins.** A `Circle` beside you is the one you meant, whatever else in the program
+shares the name — so a namespace reaches its own types with nothing written, and reaches
+anything outside it without a `using` either. The global namespace is on that path, and a
+namespace is not: a type declared outside every namespace is reachable from inside one, and a
+type inside one is not reachable from outside without saying so.
+
+Only a tie **among the namespaces in scope** is ambiguous (`PC0226`), because those name no
+order between themselves. It is reported where the name is read, not at the `using`.
+
+#### Qualifying
+
+Writing the namespace in front reaches past all of that:
+
+```
+Shapes.Circle flat = new Shapes.Circle();
+Solids.Circle round = new Solids.Circle();
+```
+
+A qualified name works in every position a type appears — a variable's type, a parameter, a
+result, after `new`, and as the receiver of a global member — and needs **no `using`**, since a
+using shortens a name and a qualified one already says where to look. That is what makes
+`Standard.Math` reachable from a program that declared a `Math` of its own.
+
+What comes before the last part is itself read the way a bare name is: from where it is
+written, outward. So `Shapes.Circle` inside `Tour` reaches `Tour.Shapes` if there is one, and
+the top-level `Shapes` otherwise.
+
+A run of names is read as a type before any of it is read as a value, longest first — the more
+specific reading wins, and a type whose name matches a namespace's is not otherwise separable
+from a namespace holding a type. A run that reaches no type is a value, which is why
+`account.holder.Name()` still means what it says.
+
+#### The two forms together
+
+Both forms may appear in one file, and a block written under a file-scoped one is **a child of
+it**:
+
+```
+namespace App;
+
+namespace Models              this is App.Models
+    model Book
+    end model
+end namespace
+```
+
+So `App.Models.Book` names it from outside, and `Models.Book` from anywhere already inside
+`App`. This differs from C#, which forbids mixing the two: here the file-scoped form says what
+the file is, and a block inside it says where in the file.
+
+#### Two rules about writing them
+
+**`using` and `import` come above every namespace** (`PC0231`). Both are statements about the
+whole file — which names it reaches, and which files are compiled with it — and neither
+narrows to part of one, so writing one inside a namespace would say something the language has
+no way to mean.
+
+**A namespace repeating a name it sits inside is warned about** (`PC0232`), whether written as
+a nested block or as a dotted name repeating itself. `Shapes.Shapes.Circle` is what a reader
+has to write afterwards, and it reads as a slip rather than a distinction. A warning rather
+than an error, because it is only a name and a program that means it works.
 
 **A `using` cannot form a circle, and will not be made to.** Two namespaces whose types name
 each other are ordinary, and stay legal however the files are arranged. A namespace is a way of
@@ -1958,7 +2060,7 @@ Warnings do not block compilation; everything else does.
 | `PC0200` | error | Name not found |
 | `PC0201` | error | Type not found |
 | `PC0202` | error | Name already declared |
-| `PC0203` | error | Reserved type name |
+| `PC0203` | warning | This shadows a type the language provides |
 | `PC0204` | error | Member access needs a receiver |
 | `PC0205` | error | Cannot assign to a constant |
 | `PC0206` | error | Cannot assign to a loop variable |
@@ -1981,6 +2083,14 @@ Warnings do not block compilation; everything else does.
 | `PC0223` | error | Overridden function is not virtual |
 | `PC0224` | error | This hides a function from the base |
 | `PC0225` | error | Override yields a different result |
+| `PC0226` | error | This name is offered by more than one namespace |
+| `PC0227` | error | No such namespace |
+| `PC0228` | error | This namespace is already used here |
+| `PC0229` | error | Standard belongs to the language |
+| `PC0230` | warning | Standard is already in scope |
+| `PC0231` | error | This belongs above any namespace |
+| `PC0232` | warning | This namespace repeats one around it |
+| `PC0233` | error | Nothing can be of this type |
 
 ### PC0300 to PC0399
 

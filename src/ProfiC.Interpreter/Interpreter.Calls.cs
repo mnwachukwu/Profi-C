@@ -42,8 +42,7 @@ public sealed partial class Interpreter
         List<object?> arguments = [.. call.Arguments.Select(a => Evaluate(a, scope, receiver))];
 
         // A type name on the left: either a built-in like Console, or a global function.
-        if (member.Receiver is IdentifierExpr name
-            && _model.GetSymbol(name) is DeclaredTypeSymbol)
+        if (TypeNamedBy(member.Receiver) is not null)
         {
             // Which version of an overloaded name this is was settled while checking, weighing
             // what the arguments actually are. Looking it up again by name would find the

@@ -1,14 +1,14 @@
 ##
-Exceptions, and when to reach for one.
+    Exceptions, and when to reach for one.
 
-An exception is for a case the caller cannot reasonably be asked to check first, or one
-that must not be quietly ignored. Overdrawing an account is both: the balance may change
-between the check and the withdrawal, and silently doing nothing would be worse than
-stopping.
+    An exception is for a case the caller cannot reasonably be asked to check first, or one
+    that must not be quietly ignored. Overdrawing an account is both: the balance may change
+    between the check and the withdrawal, and silently doing nothing would be worse than
+    stopping.
 
-Compare that with looking up an account by name, at the bottom. A name that is not there
-is ordinary, not exceptional, so that one yields an optional instead. Choosing between the
-two is most of what there is to learn here.
+    Compare that with looking up an account by name, at the bottom. A name that is not there
+    is ordinary, not exceptional, so that one yields an optional instead. Choosing between the
+    two is most of what there is to learn here.
 ##
 
 # A model may extend Exception, which is how a program names its own failures.
@@ -104,8 +104,8 @@ global model Program
     end function
 
     ##
-    Yields an optional rather than throwing. A missing name is a normal answer to a
-    question, and the caller has to deal with it either way.
+        Yields an optional rather than throwing. A missing name is a normal answer to a
+        question, and the caller has to deal with it either way.
     ##
     Account? function Find(Account[] accounts, string who)
         for each account in accounts

@@ -1,12 +1,12 @@
 ##
-Insertion sort.
+    Insertion sort.
 
-Walk left to right. Everything behind the current position is already in order, so take
-the current value out, slide the larger values right to make a gap, and drop it in.
+    Walk left to right. Everything behind the current position is already in order, so take
+    the current value out, slide the larger values right to make a gap, and drop it in.
 
-It is the sort people actually use by hand for a deck of cards, and it is the clearest one
-to read. It is also slow on large sets — every value may have to slide past every other —
-which is a fair thing to notice early.
+    It is the sort people actually use by hand for a deck of cards, and it is the clearest one
+    to read. It is also slow on large sets — every value may have to slide past every other —
+    which is a fair thing to notice early.
 ##
 
 global model Program
@@ -19,8 +19,8 @@ global model Program
     end function
 
     ##
-    Yields a sorted copy, leaving the original alone. A set is a reference, so sorting in
-    place would change what the caller passed in — surprising unless it was asked for.
+        Yields a sorted copy, leaving the original alone. A set is a reference, so sorting in
+        place would change what the caller passed in — surprising unless it was asked for.
     ##
     integer[] function Sorted(integer[] values)
         integer[] result = {};
@@ -34,8 +34,8 @@ global model Program
             integer j = i - 1;
 
             ##
-            'and' stops as soon as the left side is false, which matters here: once j
-            reaches -1 there is no result[j] to read, and the second test is never run.
+                'and' stops as soon as the left side is false, which matters here: once j
+                reaches -1 there is no result[j] to read, and the second test is never run.
             ##
             while j >= 0 and result[j] > current
                 result[j + 1] = result[j];

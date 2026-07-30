@@ -1,0 +1,140 @@
+{
+  // Colours for Profi-C source, applied to this repository only.
+  //
+  // A TextMate grammar picks scopes rather than colours; a theme picks the colours. These
+  // rules sit between the two, so the language reads the same whichever theme is on, and
+  // nobody has to change their theme to read a .pc file.
+  //
+  // Editing a colour here applies the moment the file is saved. Editing the grammar under
+  // editors/vscode does not: a grammar is read once when the extension loads, so a change
+  // there needs the window reloaded.
+  //
+  // The palette avoids red entirely. Red is what a squiggle uses, and a language that spends
+  // it on ordinary keywords has nothing left to say something is wrong with.
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      // ---- What a thing is -------------------------------------------------------------
+
+      // The primitive types: integer, real, boolean, character, string, fraction. Their own
+      // colour, held apart from the types a program declares as well as from the words
+      // around them, since which primitive a thing is tends to be the question being asked.
+      //
+      // 'model', 'function', and 'let' share it: those three introduce a thing that then
+      // holds something, which is the same kind of statement a type name makes.
+      {
+        "scope": ["storage.type.profi-c", "keyword.declaration.profi-c"],
+        "settings": { "foreground": "#9D7CD8" }
+      },
+
+      // Words that say how far something reaches, words that build a program's shape, and
+      // the three spelled-out operators: public, protected, internal, global, constant,
+      // virtual, override, abstract, sealed, extends, namespace, using, import, new, as, is,
+      // base, this, and 'and', 'or', 'not'.
+      //
+      // The operators belong here rather than with flow because they are read rather than
+      // followed: 'not ready' is a thing you evaluate, where 'if' is a thing that happens.
+      // Spelling them as words was the point, and this is the colour words get.
+      {
+        "scope": [
+          "storage.modifier.profi-c",
+          "keyword.other.profi-c",
+          "keyword.other.declaration.profi-c",
+          "keyword.operator.word.profi-c"
+        ],
+        "settings": { "foreground": "#569CD6" }
+      },
+
+      // A type a program declares, and one the language provides. The same colour: which of
+      // the two a name is matters far less than that it is a type.
+      {
+        "scope": ["entity.name.type.profi-c", "support.class.profi-c"],
+        "settings": { "foreground": "#4EC9B0" }
+      },
+
+      // ---- What runs -------------------------------------------------------------------
+
+      // Flow, and the closer that ends it. 'end while' matches 'while', so a block and its
+      // end read as one thing.
+      {
+        "scope": [
+          "keyword.control.profi-c",
+          "keyword.control.end.profi-c"
+        ],
+        "settings": { "foreground": "#C586C0" }
+      },
+
+      // ---- What things are called ------------------------------------------------------
+
+      // A function, declared or called. Well away from flow: a call and a branch are the two
+      // things a reader scans for, and telling them apart is most of reading a body.
+      {
+        "scope": [
+          "entity.name.function.profi-c",
+          "entity.name.function.call.profi-c"
+        ],
+        "settings": { "foreground": "#DCDCAA" }
+      },
+
+      // A parameter, where it is declared. Light, and in the same family as the word that
+      // declared it: a parameter belongs to its function more than to the body reading it.
+      //
+      // This marks the signature and nothing else. Colouring a parameter where it is *used*
+      // would mean knowing that a name in the body is bound to one, which is a question about
+      // meaning rather than about shape, and no grammar can answer it — the compiler can, and
+      // will, once the editor is able to ask. The scope name will not change when it does.
+      //
+      // Members are deliberately left alone: 'this.' already marks them, and a colour on top
+      // of a prefix the language requires would be saying the same thing twice.
+      {
+        "scope": "variable.parameter.profi-c",
+        "settings": { "foreground": "#D0BFFF" }
+      },
+
+      // ---- Values ----------------------------------------------------------------------
+
+      // Text and characters. Muted rather than vivid: a string is often the least
+      // interesting thing on its line, and warm enough to be found when it is not.
+      {
+        "scope": [
+          "string.quoted.double.profi-c",
+          "string.quoted.single.profi-c"
+        ],
+        "settings": { "foreground": "#C4794A" }
+      },
+
+      // Numbers sit in the same warm family and are told from a string by being lighter,
+      // which is enough: the two rarely need telling apart at a glance, and green is spoken
+      // for by comments.
+      {
+        "scope": [
+          "constant.numeric.integer.profi-c",
+          "constant.numeric.real.profi-c",
+          "constant.numeric.fraction.profi-c"
+        ],
+        "settings": { "foreground": "#E6C07B" }
+      },
+
+      {
+        "scope": "constant.language.profi-c",
+        "settings": { "foreground": "#569CD6" }
+      },
+
+      // An escape has to stand out from the text around it, since it is the one place inside
+      // a string where a character does not mean itself.
+      {
+        "scope": "constant.character.escape.profi-c",
+        "settings": { "foreground": "#E6C07B" }
+      },
+
+      // Both comment forms together. A comment is a comment whichever mark opened it, and
+      // splitting them would be the one distinction a reader has no use for.
+      {
+        "scope": [
+          "comment.block.profi-c",
+          "comment.line.number-sign.profi-c"
+        ],
+        "settings": { "foreground": "#4C9A5A" }
+      }
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 ##
-An index past the end of a set.
+    An index past the end of a set.
 
-This program compiles. How many values a set holds is not known until it runs, so an
-index that is too large is caught at the moment it is used.
+    This program compiles. How many values a set holds is not known until it runs, so an
+    index that is too large is caught at the moment it is used.
 ##
 
 global model Program

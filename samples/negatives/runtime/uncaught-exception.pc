@@ -1,8 +1,8 @@
 ##
-An exception nobody catches.
+    An exception nobody catches.
 
-This program compiles. The catch clause names a type the thrown value is not, so the
-exception travels past it and out of the program.
+    This program compiles. The catch clause names a type the thrown value is not, so the
+    exception travels past it and out of the program.
 ##
 
 model InsufficientFundsException extends Exception

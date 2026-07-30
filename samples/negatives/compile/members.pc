@@ -1,8 +1,8 @@
 ##
-Members reached the wrong way.
+    Members reached the wrong way.
 
-This program does not compile. Every member the language provides is a function, an
-instance member needs an instance, and a call that yields nothing has no result to use.
+    This program does not compile. Every member the language provides is a function, an
+    instance member needs an instance, and a call that yields nothing has no result to use.
 ##
 
 model Counter

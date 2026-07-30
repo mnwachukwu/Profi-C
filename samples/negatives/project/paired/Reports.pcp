@@ -1,8 +1,8 @@
 ##
-The far half of the circle drawn in circular.pcp.
+    The far half of the circle drawn in circular.pcp.
 
-This project references the one that references it. Wanting the two together is reasonable;
-saying so from both ends is what makes neither of them buildable.
+    This project references the one that references it. Wanting the two together is reasonable;
+    saying so from both ends is what makes neither of them buildable.
 ##
 
 project Reports

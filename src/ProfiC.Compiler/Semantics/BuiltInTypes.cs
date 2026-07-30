@@ -15,7 +15,39 @@ namespace ProfiC.Compiler.Semantics;
 /// </summary>
 public static class BuiltInTypes
 {
+    /// <summary>The name of the namespace every type the language owns belongs to.</summary>
+    public const string StandardName = "Standard";
+
     private static readonly Dictionary<string, ModelSymbol> Known = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// <para>The namespace holding every type the language provides.</para>
+    /// <para>Shared for the same reason the symbols in it are: what it holds never varies, so
+    /// one of them serves every compilation, and a <c>Standard.DateTime</c> named in one place
+    /// is the same type as a <c>DateTime</c> named in another.</para>
+    /// <para>Its parent is null rather than any compilation's global namespace, which is what
+    /// makes sharing it safe — a parent would differ per compilation and tie it to one.</para>
+    /// <para>Built on first use rather than with this class, because what belongs in it is
+    /// read from the catalog and the catalog names types from here: settling either one while
+    /// the other is still being built would read a list that does not exist yet.</para>
+    /// </summary>
+    public static NamespaceSymbol Standard => Lazy.Value;
+
+    private static readonly Lazy<NamespaceSymbol> Lazy = new(BuildStandard);
+
+    private static NamespaceSymbol BuildStandard()
+    {
+        NamespaceSymbol standard = new(StandardName, parent: null);
+
+        foreach (string name in BuiltIns.AllTypeNames.OrderBy(n => n, StringComparer.Ordinal))
+        {
+            ModelSymbol model = Of(name);
+            model.Container = standard;
+            standard.Types[name] = model;
+        }
+
+        return standard;
+    }
 
     /// <summary>
     /// The symbol for a built-in type, made the first time it is asked for. Anything the

@@ -6,6 +6,18 @@ namespace ProfiC.Compiler.Semantics;
 public sealed partial class TypeChecker
 {
     /// <summary>
+    /// <para>The type a receiver names, or null where it is a value.</para>
+    /// <para>Only a written name can name a type: an identifier, or a run of them joined by
+    /// dots. <c>this</c> is bound to the type around it and is still a value rather than that
+    /// type's name, which is the difference between reading a field and reaching a global one.
+    /// </para>
+    /// </summary>
+    private DeclaredTypeSymbol? TypeNamedBy(Expression receiver) =>
+        receiver is IdentifierExpr or MemberExpr
+            ? _model.GetSymbol(receiver) as DeclaredTypeSymbol
+            : null;
+
+    /// <summary>
     /// <para>Works out what a member access denotes.</para>
     /// <para>Two shapes reach here: a member of a value, and a member of a type. The second is
     /// how a global member is reached, since a bare name never finds one.</para>
@@ -13,10 +25,12 @@ public sealed partial class TypeChecker
     private TypeSymbol CheckMember(MemberExpr member)
     {
         // A type name on the left means a global member, so the receiver is not a value.
-        if (member.Receiver is IdentifierExpr identifier
-            && _model.GetSymbol(identifier) is DeclaredTypeSymbol declaredType)
+        // Asked of the receiver whatever shape it is: a qualified name is a run of member
+        // accesses that the resolver already settled onto one type, and it names that type
+        // exactly as a bare identifier does.
+        if (TypeNamedBy(member.Receiver) is { } declaredType)
         {
-            _model.BindType(identifier, declaredType);
+            _model.BindType(member.Receiver, declaredType);
             return CheckStaticMember(member, declaredType);
         }
 
@@ -352,13 +366,11 @@ public sealed partial class TypeChecker
         MemberExpr member,
         List<TypeSymbol> arguments)
     {
-        // A type name on the left reaches a global member.
-        bool onType = member.Receiver is IdentifierExpr identifier
-                      && _model.GetSymbol(identifier) is DeclaredTypeSymbol;
+        // A type name on the left reaches a global member, however that name was written.
+        DeclaredTypeSymbol? named = TypeNamedBy(member.Receiver);
+        bool onType = named is not null;
 
-        TypeSymbol receiver = onType
-            ? (TypeSymbol)_model.GetSymbol((IdentifierExpr)member.Receiver)!
-            : CheckExpression(member.Receiver);
+        TypeSymbol receiver = named ?? CheckExpression(member.Receiver);
 
         if (receiver.IsError)
         {

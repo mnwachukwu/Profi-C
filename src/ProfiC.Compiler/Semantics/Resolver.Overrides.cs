@@ -16,7 +16,7 @@ public sealed partial class Resolver
     /// </summary>
     private void CheckOverrides()
     {
-        foreach (DeclaredTypeSymbol type in _typesByName.Values)
+        foreach (DeclaredTypeSymbol type in _allTypes)
         {
             // Every model, not only one that wrote "extends": each inherits ToString and
             // Equals from Model, so overriding is something even a model with no base does.

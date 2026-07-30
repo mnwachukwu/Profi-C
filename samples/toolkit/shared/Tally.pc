@@ -1,8 +1,8 @@
 ##
-Counting, which leans on Text.
+    Counting, which leans on Text.
 
-Program imports this file and not Text.pc, yet Text is still compiled: an imported file
-brings whatever it imports in turn, because otherwise it could not compile itself.
+    Program imports this file and not Text.pc, yet Text is still compiled: an imported file
+    brings whatever it imports in turn, because otherwise it could not compile itself.
 ##
 
 import "Text.pc";

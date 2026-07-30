@@ -9,9 +9,30 @@ namespace ProfiC.Compiler.Ast;
 /// rather than a keyword, and enforcing that it cannot be redeclared is the resolver's job.
 /// </para>
 /// </summary>
-public sealed class NamedTypeSyntax(SourceSpan span, string name) : TypeSyntax(span)
+public sealed class NamedTypeSyntax : TypeSyntax
 {
-    public string Name { get; } = name;
+    public NamedTypeSyntax(SourceSpan span, string name)
+        : this(span, [name])
+    {
+    }
+
+    public NamedTypeSyntax(SourceSpan span, IReadOnlyList<string> parts)
+        : base(span) => Parts = parts;
+
+    /// <summary>
+    /// The name as written, in pieces: <c>Shapes.Flat.Circle</c> is three. Everything before
+    /// the last names where to look, and the last names the type.
+    /// </summary>
+    public IReadOnlyList<string> Parts { get; }
+
+    /// <summary>The type's own name, without whatever qualified it.</summary>
+    public string Name => Parts[^1];
+
+    /// <summary>The whole thing as written, for a message that has to quote it back.</summary>
+    public string Text => string.Join('.', Parts);
+
+    /// <summary>Whether anything was written in front of the name.</summary>
+    public bool IsQualified => Parts.Count > 1;
 
     public override IEnumerable<SyntaxNode> Children => [];
 

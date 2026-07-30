@@ -1,9 +1,9 @@
 ##
-A division the compiler cannot see.
+    A division the compiler cannot see.
 
-This program compiles. Dividing by a literal zero is refused before it runs, but a
-divisor that arrives in a variable can only be found out at the moment of division, so
-this one throws.
+    This program compiles. Dividing by a literal zero is refused before it runs, but a
+    divisor that arrives in a variable can only be found out at the moment of division, so
+    this one throws.
 ##
 
 global model Program

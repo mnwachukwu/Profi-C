@@ -225,7 +225,16 @@ public sealed partial class Parser
     private Expression ParseNew()
     {
         Token start = Advance();
-        string typeName = ExpectIdentifier();
+        List<string> parts = [ExpectIdentifier()];
+
+        // Qualified the same way a type written anywhere else is, since this is one.
+        while (Check(TokenType.Dot))
+        {
+            Advance();
+            parts.Add(ExpectIdentifier());
+        }
+
+        string typeName = string.Join('.', parts);
 
         Expect(TokenType.LeftParen);
         List<Expression> arguments = ParseArguments();

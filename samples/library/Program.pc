@@ -1,9 +1,9 @@
 ##
-The lending desk.
+    The lending desk.
 
-Book comes from the Books project, which library.pcp references. It is written here exactly
-as though it had been declared beside this file — a reference decides what a build is made
-of, and changes nothing about how a type is named or used.
+    Book comes from the Books project, which library.pcp references. It is written here exactly
+    as though it had been declared beside this file — a reference decides what a build is made
+    of, and changes nothing about how a type is named or used.
 ##
 
 global model Program

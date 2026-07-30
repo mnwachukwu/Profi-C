@@ -217,12 +217,17 @@ public enum BuiltInId
 /// Held apart from the members rather than being named for the type as a declared
 /// constructor is, so that no spelling reaches one through the model's name.
 /// </param>
+/// <param name="HasNoInstances">
+/// Whether nothing can ever be of this type, so that naming it as a variable's type is a
+/// mistake rather than a declaration nothing can fill.
+/// </param>
 public sealed record BuiltInModelInfo(
     string Name,
     string Namespace,
     bool MayBeExtended,
     IReadOnlyList<BuiltInMember> Members,
-    IReadOnlyList<BuiltInMember>? Constructors = null)
+    IReadOnlyList<BuiltInMember>? Constructors = null,
+    bool HasNoInstances = false)
 {
     public IReadOnlyList<BuiltInMember> Constructors { get; } = Constructors ?? [];
 
@@ -263,7 +268,7 @@ public static class BuiltIns
 
         new("Exception", "Standard", MayBeExtended: true, []),
 
-        new("Console", "Standard", MayBeExtended: false,
+        new("Console", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             // Both take a value of any type — a null parameter type means "anything" — so no
             // overload per primitive is needed in a version with no generics.
@@ -272,7 +277,7 @@ public static class BuiltIns
             Member(BuiltInId.ConsoleRead, "Read", new OptionalType(PrimitiveType.String)),
         ]),
 
-        new("Reference", "Standard", MayBeExtended: false,
+        new("Reference", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             Member(BuiltInId.ReferenceEquals, "Equals", PrimitiveType.Boolean, [null, null]),
         ]),
@@ -283,7 +288,7 @@ public static class BuiltIns
         //
         // The exact-match rule picks among them: an integer widens to both real and fraction,
         // so without it the order these are written in would decide what "Abs(-3)" means.
-        new("Math", "Standard", MayBeExtended: false,
+        new("Math", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             // Written without parentheses, since neither is something to do.
             Value(BuiltInId.MathPi, "Pi", PrimitiveType.Real),
@@ -367,7 +372,7 @@ public static class BuiltIns
 
         // "fraction" is the type and a reserved word; "Fraction" is the model beside it,
         // holding what a fraction needs that is not a member of one.
-        new("Fraction", "Standard", MayBeExtended: false,
+        new("Fraction", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             Member(BuiltInId.FractionCreate, "Create", PrimitiveType.Fraction,
                    PrimitiveType.Integer, PrimitiveType.Integer),
@@ -598,6 +603,14 @@ public static class BuiltIns
     public static bool MayBeExtended(string name) =>
         ExceptionNames.Contains(name)
         || Models.FirstOrDefault(m => m.Name == name)?.MayBeExtended == true;
+
+    /// <summary>
+    /// <para>Whether nothing can ever be of this type.</para>
+    /// <para>Not read off having no constructors: Model and Function have none and hold values
+    /// all the same, since every model and every function converts to one. These four are
+    /// names to reach members through, and a variable of one could never be filled.</para>
+    /// </summary>
+    public static bool HasNoInstances(string name) => FindModel(name)?.HasNoInstances == true;
 
     /// <summary>The model of that name, or null if the language does not own it.</summary>
     public static BuiltInModelInfo? FindModel(string name) =>

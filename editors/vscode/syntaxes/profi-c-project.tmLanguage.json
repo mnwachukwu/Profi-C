@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Profi-C Project",
+  "scopeName": "source.profi-c-project",
+  "patterns": [
+    { "include": "#comment-block" },
+    { "include": "#comment-line" },
+    { "include": "#header" },
+    { "include": "#entry" },
+    { "include": "#end" }
+  ],
+  "repository": {
+
+    "comment-block": {
+      "comment": "The same two forms a program uses, so a project file is annotated the same way.",
+      "name": "comment.block.profi-c",
+      "begin": "##",
+      "end": "##.*$"
+    },
+
+    "comment-line": {
+      "name": "comment.line.number-sign.profi-c",
+      "match": "#.*$"
+    },
+
+    "header": {
+      "match": "^\\s*(project)\\s+(\\S+)",
+      "captures": {
+        "1": { "name": "keyword.other.profi-c" },
+        "2": { "name": "entity.name.type.profi-c" }
+      }
+    },
+
+    "entry": {
+      "comment": "The whole vocabulary besides the header and the closer. A word that is not one of these is reported by the compiler, and is left unhighlighted here so that it looks as wrong as it is.",
+      "match": "^\\s*(source|reference)\\s+(\\S+)",
+      "captures": {
+        "1": { "name": "keyword.other.profi-c" },
+        "2": { "name": "string.unquoted.path.profi-c" }
+      }
+    },
+
+    "end": {
+      "match": "^\\s*(end\\s+project)\\b",
+      "captures": { "1": { "name": "keyword.other.profi-c" } }
+    }
+  }
+}

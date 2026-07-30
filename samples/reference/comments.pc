@@ -1,16 +1,17 @@
 # A line comment, running to the end of the line.
 
 ##
-A block comment. It opens with two marks and closes with the next two, and everything on
-the closing line goes with them.
+    A block comment. It opens with two marks and closes with the next two, and everything on
+    the closing line goes with them.
 
-That last part settles two questions at once. There is no nesting to get wrong, because
-there is no depth to count: the first pair after the opener closes it, whatever was
-written in between. And nothing can follow a closer and still be code, so a comment is a
-line of its own or the end of a line, never a parenthesis in the middle of one.
+    That last part settles two questions at once. There is no nesting to get wrong, because
+    there is no depth to count: the first pair after the opener closes it, whatever was
+    written in between. And nothing can follow a closer and still be code, so a comment is a
+    line of its own or the end of a line, never a parenthesis in the middle of one.
 
-A block may span as many lines as it needs, and its text sits flush with the marks rather
-than indented under them, since there is no word for it to hang from.
+    A block may span as many lines as it needs. Its text is indented under the marks, which
+    is a convention rather than a rule: the compiler reads a block the same either way, and
+    an editor folds a long one away by indentation alone.
 ##
 
 ## A block may open and close on one line. ##
@@ -33,9 +34,9 @@ global model Comments
         total = total + 1;             # A comment after one.
 
         ##
-        A block comment inside a function body, taking the indentation of the code around
-        it. Nothing written in here can close it early except another pair of marks, and a
-        single mark cannot.
+            A block comment inside a function body, taking the indentation of the code around
+            it. Nothing written in here can close it early except another pair of marks, and a
+            single mark cannot.
         ##
 
         if total > 0

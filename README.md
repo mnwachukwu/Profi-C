@@ -26,7 +26,7 @@ convenience. A few consequences you can see immediately:
 - **`and`, `or`, `not`** instead of `&&`, `||`, `!`.
 - **Fractions are exact.** `22|7` is a rational literal, so `1|3 + 1|6` is exactly `1|2` —
   no floating-point drift.
-- **Comments are marked and reserve nothing.** `#` runs to the end of a line; `##` opens a
+- **Comments are marked, not named.** `#` runs to the end of a line; `##` opens a
   block closed by the next `##`, which takes the rest of its line with it.
 
 Profi-C is deliberately full-featured rather than minimal. It has single inheritance with
@@ -201,7 +201,7 @@ read-only inside the body, which removes the classic closure-capture trap.
 | Lowering | Complete |
 | Interpreter | Complete |
 | Multi-file compilation, projects, imports | Complete |
-| Namespaces | Parse, but do not scope yet |
+| Namespaces, `using`, qualified names | Complete |
 | Closure conversion | Not started |
 | Standard library beyond the built-ins | Not started |
 | CIL emitter | Not started |
@@ -211,10 +211,13 @@ read before it holds a value, and an optional cannot be read at all until presen
 All of it reports errors with positions and recovers rather than stopping at the first
 mistake.
 
-**The one gap in the front end is namespaces.** Both forms parse and a `using` parses, but
-nothing scopes them: a type declared inside a namespace is reached by its bare name, exactly
-as though the namespace were not written. That is the next piece of work, and after it come
-closure conversion, the standard library, and then the emitter.
+**Namespaces scope.** Two of them may each declare a `Circle`; a bare name reaches whichever is
+nearest, and a qualified one — `Shapes.Circle`, `Standard.Math` — reaches past that with no
+`using` required. The library lives in `Standard`, which is in scope in every file without
+being asked for.
+
+**The front end is complete.** What comes next is closure conversion, then the standard
+library, then the emitter.
 
 ```bash
 dotnet run --project src/ProfiC.Cli -- run samples/hello.pc
@@ -428,6 +431,36 @@ explicit.
 `dist` holds a **copy** of the tool from when you published it. If you change the compiler's
 own source, re-run step 1 or `pc` will keep running the old build. While working on the
 compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go stale.
+
+## Syntax highlighting in VS Code
+
+**Not on the Marketplace**, and not soon — Profi-C is young enough that publishing an
+extension would be a shopfront with nothing behind it. [editors/vscode/](editors/vscode/)
+holds it, and installing means copying that folder where VS Code looks. There is no build
+step; it is all declarative.
+
+Change the first line to wherever you cloned this, then run the rest as-is.
+
+```powershell
+$repo = "D:\Repos\Profi-C"
+$dest = "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0"
+Remove-Item -Recurse -Force $dest -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+Copy-Item "$repo\editors\vscode\*" $dest -Recurse -Force
+```
+
+```bash
+repo=~/Profi-C
+dest=~/.vscode/extensions/profi-c-0.1.0
+rm -rf "$dest" && mkdir -p "$dest" && cp -R "$repo/editors/vscode/." "$dest"
+```
+
+Reload the window afterwards and open a `.pc` file. You get colour, bracket matching, `Ctrl+/`
+for comments, and indentation that follows `end`. You do not get diagnostics, completion, or
+hover — those need a language server, which is later work.
+
+[editors/vscode/README.md](editors/vscode/README.md) covers Insiders, versioning the folder,
+and linking rather than copying if you mean to edit the grammar.
 
 ## Documentation
 

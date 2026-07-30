@@ -310,6 +310,18 @@ public sealed partial class Interpreter
     }
 
     /// <summary>
+    /// <para>The type a receiver names, or null where it is a value.</para>
+    /// <para>Only a written name can name a type: an identifier, or a run of them joined by
+    /// dots. <c>this</c> is bound to the type around it and is still a value rather than that
+    /// type's name, which is the difference between reading a field and reaching a global one.
+    /// </para>
+    /// </summary>
+    private DeclaredTypeSymbol? TypeNamedBy(Expression receiver) =>
+        receiver is IdentifierExpr or MemberExpr
+            ? _model.GetSymbol(receiver) as DeclaredTypeSymbol
+            : null;
+
+    /// <summary>
     /// <para>Copies a structure wherever one is stored or passed.</para>
     /// <para>This is the whole of value semantics. Models are references and are never copied,
     /// which is why one method can serve both.</para>

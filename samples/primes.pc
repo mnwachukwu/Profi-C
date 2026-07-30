@@ -1,12 +1,12 @@
 ##
-The Sieve of Eratosthenes.
+    The Sieve of Eratosthenes.
 
-Rather than testing each number for divisibility, this crosses out the multiples of every
-prime it finds. Each number is visited a handful of times instead of being divided by
-everything below it, which is why the sieve is the one everybody still teaches.
+    Rather than testing each number for divisibility, this crosses out the multiples of every
+    prime it finds. Each number is visited a handful of times instead of being divided by
+    everything below it, which is why the sieve is the one everybody still teaches.
 
-The crossing-out starts at n * n. Every smaller multiple of n has a factor below n, so it
-was already crossed out when that smaller factor had its turn.
+    The crossing-out starts at n * n. Every smaller multiple of n has a factor below n, so it
+    was already crossed out when that smaller factor had its turn.
 ##
 
 global model Program
@@ -32,8 +32,8 @@ global model Program
     end function
 
     ##
-    Yields a set where position n says whether n is composite. Position 0 and 1 are never
-    read: neither is prime, and neither is composite either.
+        Yields a set where position n says whether n is composite. Position 0 and 1 are never
+        read: neither is prime, and neither is composite either.
     ##
     boolean[] function Sieve(integer limit)
         boolean[] composite = {};

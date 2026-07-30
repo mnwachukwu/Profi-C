@@ -1,8 +1,8 @@
 ##
-A shelf of books.
+    A shelf of books.
 
-Shared code as well, and it names Book freely. Files in a folder are compiled together, so
-neither has to be declared before the other.
+    Shared code as well, and it names Book freely. Files in a folder are compiled together, so
+    neither has to be declared before the other.
 ##
 
 model Shelf

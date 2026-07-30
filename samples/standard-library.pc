@@ -1,12 +1,12 @@
 ##
-What the language gives you without declaring anything.
+    What the language gives you without declaring anything.
 
-Four models are always in scope — Console, Math, Reference, and Fraction — and every
-value carries members of its own. Nothing here is imported or installed; these are part
-of the language rather than a library you add.
+    Four models are always in scope — Console, Math, Reference, and Fraction — and every
+    value carries members of its own. Nothing here is imported or installed; these are part
+    of the language rather than a library you add.
 
-This is v1's whole standard library. Random, DateTime, and file access are named in the
-specification but are not built yet.
+    This is v1's whole standard library. Random, DateTime, and file access are named in the
+    specification but are not built yet.
 ##
 
 global model Program
@@ -45,16 +45,16 @@ global model Program
         Console.WriteLine("== Math ==");
 
         ##
-        A root and a power are the two that leave the rationals behind, so both answer in
-        reals whatever they were given.
+            A root and a power are the two that leave the rationals behind, so both answer in
+            reals whatever they were given.
         ##
         Console.WriteLine("  Sqrt(16.0)     = " + Math.Sqrt(16.0));
         Console.WriteLine("  Pow(2.0, 8.0)  = " + Math.Pow(2.0, 8.0));
 
         ##
-        Everything else has a version for each number the language has, and measuring or
-        choosing keeps the type it was given. So an integer in gives an integer back, and
-        a fraction stays exact.
+            Everything else has a version for each number the language has, and measuring or
+            choosing keeps the type it was given. So an integer in gives an integer back, and
+            a fraction stays exact.
         ##
         Console.WriteLine("  Abs(-3)        = " + Math.Abs(-3));
         Console.WriteLine("  Abs(-3.5)      = " + Math.Abs(-3.5));
@@ -65,10 +65,10 @@ global model Program
         Console.WriteLine("  Max(3.5, 7.5)  = " + Math.Max(3.5, 7.5));
 
         ##
-        Rounding lands on a whole number, so each of these yields an integer and can be
-        used as a count or an index. Between them they are the three honest ways to get
-        from a real to an integer, which is why there is no single 'ToInteger' that would
-        have to pick one of the three silently.
+            Rounding lands on a whole number, so each of these yields an integer and can be
+            used as a count or an index. Between them they are the three honest ways to get
+            from a real to an integer, which is why there is no single 'ToInteger' that would
+            have to pick one of the three silently.
         ##
         Console.WriteLine("  Floor(3.7)     = " + Math.Floor(3.7));
         Console.WriteLine("  Ceiling(3.2)   = " + Math.Ceiling(3.2));
@@ -103,8 +103,8 @@ global model Program
         Console.WriteLine("  after Clear()  = " + values.Count() + " left");
 
         ##
-        Subset copies a run out. The end is exclusive, which is the reading 'until' has
-        and the one that lets two halves of a split add back up to the whole.
+            Subset copies a run out. The end is exclusive, which is the reading 'until' has
+            and the one that lets two halves of a split add back up to the whole.
         ##
         integer[] row = {10, 20, 30, 40, 50};
         Console.WriteLine("  Subset(2)      = " + row.Subset(2));
@@ -114,16 +114,16 @@ global model Program
     end function
 
     ##
-    A set of optionals answers four more, because only there is there anything empty to
-    drop. Three of them work on the ends and leave an empty in the middle alone, so what
-    comes back is still a set of optionals. TrimAll takes every one, so nothing left can
-    be absent — and the type says so, which is why the result needs no unwrapping.
+        A set of optionals answers four more, because only there is there anything empty to
+        drop. Three of them work on the ends and leave an empty in the middle alone, so what
+        comes back is still a set of optionals. TrimAll takes every one, so nothing left can
+        be absent — and the type says so, which is why the result needs no unwrapping.
 
-    Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
-    safe: the promise that nothing is absent is about the set you were given, and since
-    the original is untouched and separate, nothing can put an empty into it afterwards.
-    Had it filtered in place, the promise would have been about a set someone else was
-    still holding.
+        Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
+        safe: the promise that nothing is absent is about the set you were given, and since
+        the original is untouched and separate, nothing can put an empty into it afterwards.
+        Had it filtered in place, the promise would have been about a set someone else was
+        still holding.
     ##
     function ShowSetsOfOptionals()
         Console.WriteLine("== a set of optionals ==");
@@ -146,8 +146,8 @@ global model Program
     end function
 
     ##
-    A string answers the same questions a set does, on purpose: Count() rather than
-    Length, so there is one name for the idea rather than two.
+        A string answers the same questions a set does, on purpose: Count() rather than
+        Length, so there is one name for the idea rather than two.
     ##
     function ShowStrings()
         Console.WriteLine("== members of a string ==");
@@ -157,9 +157,9 @@ global model Program
         Console.WriteLine("  Contains(\"gram\")   = " + word.Contains("gram"));
         Console.WriteLine("  IndexOf(\"gram\")    = " + word.IndexOf("gram"));
         ##
-        Substring and Subset both cut a run out, and differ in the second number:
-        Substring takes how many, Subset takes where to stop. Whichever you have is the
-        one to write, and both give back a string.
+            Substring and Subset both cut a run out, and differ in the second number:
+            Substring takes how many, Subset takes where to stop. Whichever you have is the
+            one to write, and both give back a string.
         ##
         Console.WriteLine("  Substring(3, 4)    = " + word.Substring(3, 4));
         Console.WriteLine("  Subset(3, 7)       = " + word.Subset(3, 7));
@@ -170,10 +170,10 @@ global model Program
         Console.WriteLine("  InsertAt(0, \">\")   = " + word.InsertAt(0, ">"));
 
         ##
-        Each of the three trims takes from a different end, and each takes nothing (so
-        whitespace goes), a string (so any of its characters go), or a set of characters.
-        The last form is the one to reach for when the characters were worked out rather
-        than typed.
+            Each of the three trims takes from a different end, and each takes nothing (so
+            whitespace goes), a string (so any of its characters go), or a set of characters.
+            The last form is the one to reach for when the characters were worked out rather
+            than typed.
         ##
         Console.WriteLine("  Trim() on \"  hi  \" = [" + "  hi  ".Trim() + "]");
         Console.WriteLine("  Trim(\"x\")          = [" + "xxhixx".Trim("x") + "]");
@@ -217,18 +217,18 @@ global model Program
     end function
 
     ##
-    '==' compares what two values are, member by member. Reference.Equals asks the
-    different question of whether they are the same object. Most languages give the
-    second meaning to '==' and make you remember it; here you have to ask for it.
+        '==' compares what two values are, member by member. Reference.Equals asks the
+        different question of whether they are the same object. Most languages give the
+        second meaning to '==' and make you remember it; here you have to ask for it.
     ##
     ##
-    Chance, in two shapes. A generator a program holds disturbs nothing of anyone else's,
-    and seeding one makes two runs agree — which is what makes a program that uses chance
-    testable. The same questions asked through the name draw from one the language keeps,
-    which is what most programs want and cannot be seeded, exactly as in C#.
+        Chance, in two shapes. A generator a program holds disturbs nothing of anyone else's,
+        and seeding one makes two runs agree — which is what makes a program that uses chance
+        testable. The same questions asked through the name draw from one the language keeps,
+        which is what most programs want and cannot be seeded, exactly as in C#.
 
-    Next excludes its upper bound, so a die is Next(1, 7). Everyone reads that wrong once;
-    reading it the other way here would mean reading it wrong a second time later.
+        Next excludes its upper bound, so a die is Next(1, 7). Everyone reads that wrong once;
+        reading it the other way here would mean reading it wrong a second time later.
     ##
     function ShowRandom()
         Console.WriteLine("== Random ==");
@@ -261,9 +261,9 @@ global model Program
     end function
 
     ##
-    A moment in time, and what .NET reads as a property is read as one here: no
-    parentheses on Year, Month or DayOfWeek. A moment never changes, so adding to one
-    yields another, as adding to a string does.
+        A moment in time, and what .NET reads as a property is read as one here: no
+        parentheses on Year, Month or DayOfWeek. A moment never changes, so adding to one
+        yields another, as adding to a string does.
     ##
     function ShowDateTime()
         Console.WriteLine("== DateTime ==");
@@ -296,13 +296,13 @@ global model Program
     end function
 
     ##
-    Three types sit beside a moment, and what tells them apart is what each leaves out. A
-    span is how long something lasted, with no when. A date is a day with no time of day —
-    a birthday is one, since it is the same day whatever hour it is. A time is a reading on
-    a clock with no day, which is what opening hours are.
+        Three types sit beside a moment, and what tells them apart is what each leaves out. A
+        span is how long something lasted, with no when. A date is a day with no time of day —
+        a birthday is one, since it is the same day whatever hour it is. A time is a reading on
+        a clock with no day, which is what opening hours are.
 
-    A time is not a span, though both are written with colons: a span may run past a day
-    and may run backwards, while a clock always sits between midnight and the next one.
+        A time is not a span, though both are written with colons: a span may run past a day
+        and may run backwards, while a clock always sits between midnight and the next one.
     ##
     function ShowSpansAndParts()
         Console.WriteLine("== TimeSpan, Date and Time ==");

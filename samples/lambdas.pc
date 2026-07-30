@@ -1,13 +1,13 @@
 ##
-Functions as values.
+    Functions as values.
 
-A function in Profi-C is a value like any other: it has a type, it can be stored in a
-variable, held in a set, passed to another function, and handed back from one. Everything
-below is that one idea in different shapes.
+    A function in Profi-C is a value like any other: it has a type, it can be stored in a
+    variable, held in a set, passed to another function, and handed back from one. Everything
+    below is that one idea in different shapes.
 
-A function's type is written the way its declaration is: the result, then 'function', then
-what it takes. So 'integer function(integer)' takes an integer and yields one, and
-'function(string)' takes a string and yields nothing.
+    A function's type is written the way its declaration is: the result, then 'function', then
+    what it takes. So 'integer function(integer)' takes an integer and yields one, and
+    'function(string)' takes a string and yields nothing.
 ##
 
 global model Program
@@ -25,12 +25,12 @@ global model Program
     # ---- The two ways to write one ------------------------------------------------
 
     ##
-    A short function is written on one line: its parameters, then 'yield', then the one
-    thing it produces. A longer one is written out with 'function' and closed with
-    'end function', and yields its result the way any other function does.
+        A short function is written on one line: its parameters, then 'yield', then the one
+        thing it produces. A longer one is written out with 'function' and closed with
+        'end function', and yields its result the way any other function does.
 
-    Both spell producing a value the same way, because it is the same act. Nothing new has
-    to be learned to read the short form.
+        Both spell producing a value the same way, because it is the same act. Nothing new has
+        to be learned to read the short form.
     ##
     function WritingThemDown()
         integer function(integer) increment = (a) yield a + 1;
@@ -53,17 +53,17 @@ global model Program
     # ---- Where the types go -------------------------------------------------------
 
     ##
-    A parameter is a bare name wherever the surrounding code already says what it holds.
-    Above, 'integer function(integer)' on the left says 'a' is an integer, so writing it
-    again on the right would say the same thing twice — and the compiler says so.
+        A parameter is a bare name wherever the surrounding code already says what it holds.
+        Above, 'integer function(integer)' on the left says 'a' is an integer, so writing it
+        again on the right would say the same thing twice — and the compiler says so.
 
-    Four things say it, and between them they cover every place a lambda can be written:
-    a declared type, the element type of a set being built, the parameter of the function
-    being called, and the result of the function doing the yielding.
+        Four things say it, and between them they cover every place a lambda can be written:
+        a declared type, the element type of a set being built, the parameter of the function
+        being called, and the result of the function doing the yielding.
 
-    That leaves exactly one place a lambda writes its own types, and it is the place
-    nothing else says anything: a 'let'. The two rules meet with no gap between them, so
-    a lambda always has one spelling that says nothing twice and leaves nothing unsaid.
+        That leaves exactly one place a lambda writes its own types, and it is the place
+        nothing else says anything: a 'let'. The two rules meet with no gap between them, so
+        a lambda always has one spelling that says nothing twice and leaves nothing unsaid.
     ##
     function WhereTheTypesGo()
         # Nothing on the left, so the lambda says it.
@@ -83,8 +83,8 @@ global model Program
     # ---- Taking one as a parameter -------------------------------------------------
 
     ##
-    A function that takes a function is the whole point of them being values. Apply does
-    not know what it is applying, which is what lets one function serve every caller.
+        A function that takes a function is the whole point of them being values. Apply does
+        not know what it is applying, which is what lets one function serve every caller.
     ##
     integer[] function Apply(integer[] values, integer function(integer) transform)
         integer[] results = {};
@@ -127,9 +127,9 @@ global model Program
     # ---- Handing one back ---------------------------------------------------------
 
     ##
-    A function may yield a function. The one handed back remembers 'by', which belonged to
-    the call that made it — that is what closing over a value means. The declared result
-    says what 'n' holds, so the lambda being yielded leaves it out.
+        A function may yield a function. The one handed back remembers 'by', which belonged to
+        the call that made it — that is what closing over a value means. The declared result
+        says what 'n' holds, so the lambda being yielded leaves it out.
     ##
     integer function(integer) function AdderOf(integer by)
         yield (n) yield n + by;
@@ -149,9 +149,9 @@ global model Program
     # ---- What a function remembers -------------------------------------------------
 
     ##
-    A loop variable is fresh on every turn, so each function made inside the loop closes
-    over its own. This is the trap that catches people in languages where the variable is
-    shared: there, every function would report the last value.
+        A loop variable is fresh on every turn, so each function made inside the loop closes
+        over its own. This is the trap that catches people in languages where the variable is
+        shared: there, every function would report the last value.
     ##
     function Remembering()
         integer function()[] reporters = {};
@@ -174,9 +174,9 @@ global model Program
     end function
 
     ##
-    A function that has a name is already a value, so it needs no lambda around it. A
-    member reached through an instance is that member bound to the instance, and calling it
-    later still knows which one it belongs to.
+        A function that has a name is already a value, so it needs no lambda around it. A
+        member reached through an instance is that member bound to the instance, and calling it
+        later still knows which one it belongs to.
     ##
     function NamingOneThatAlreadyExists()
         integer function(integer) tripled = Program.Triple;
@@ -192,13 +192,13 @@ global model Program
     # ---- Holding one without naming its shape ---------------------------------------
 
     ##
-    'Function' is the type every function type descends from, so it holds one whatever it
-    takes and yields. A set holds one type, which is why a root is needed at all: without
-    it there is no way to keep functions of different shapes together.
+        'Function' is the type every function type descends from, so it holds one whatever it
+        takes and yields. A set holds one type, which is why a root is needed at all: without
+        it there is no way to keep functions of different shapes together.
 
-    It says nothing about what the parameters hold, so a lambda written into one writes its
-    own types — the same rule as everywhere else, reaching the same answer. And it cannot be
-    called, because calling needs a signature and this is the type that has none.
+        It says nothing about what the parameters hold, so a lambda written into one writes its
+        own types — the same rule as everywhere else, reaching the same answer. And it cannot be
+        called, because calling needs a signature and this is the type that has none.
     ##
     function HoldingAnyFunctionAtAll()
         Function[] assorted =

@@ -1,9 +1,9 @@
 ##
-Reading a variable before it has been given a value.
+    Reading a variable before it has been given a value.
 
-This program does not compile. Every local must be proved to hold a value on every path
-that reaches it, which is the other half of doing without null: there is no "unset" state
-for a program to stumble into.
+    This program does not compile. Every local must be proved to hold a value on every path
+    that reaches it, which is the other half of doing without null: there is no "unset" state
+    for a program to stumble into.
 ##
 
 global model Program

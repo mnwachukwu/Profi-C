@@ -1,12 +1,17 @@
 ##
-A tour of Profi-C.
+    A tour of Profi-C.
 
-Every construct in the grammar appears here at least once. The file is meant to be
-read, and to be scanned by the compiler as a test that nothing in the grammar is
-unreachable.
+    Every construct in the grammar appears here at least once. The file is meant to be
+    read, and to be scanned by the compiler as a test that nothing in the grammar is
+    unreachable.
 ##
 
-using Standard;
+##
+    A using names a namespace declared somewhere in this compilation, and brings its types into
+    this file under their bare names. The one below is declared at the foot of this same file:
+    directives are unordered with respect to what they reach, which is the whole point of them.
+##
+using Tour.Shapes;
 
 namespace Tour
 
@@ -33,10 +38,10 @@ namespace Tour
     # ---- A model with inheritance ------------------------------------------------
 
     ##
-    Every visibility on one model. A field with no word reaches its own type; protected adds
-    whatever extends it; internal adds the rest of the project; public adds everywhere. The
-    same four words apply to a type, except that a type says nothing far more often than it
-    says public — so silence there means the project, as it means the type here.
+        Every visibility on one model. A field with no word reaches its own type; protected adds
+        whatever extends it; internal adds the rest of the project; public adds everywhere. The
+        same four words apply to a type, except that a type says nothing far more often than it
+        says public — so silence there means the project, as it means the type here.
     ##
     public abstract model Shape
         integer sides;
@@ -240,6 +245,33 @@ namespace Tour
             yield "a value";
         end function
 
+    end model
+
+    ##
+        Polygon is declared in Tour.Shapes, which is nested inside this namespace rather than
+        around it — so the walk outward never reaches it, and the 'using' at the top of the file
+        is what makes this name resolve.
+    ##
+    model Surveying
+        public integer function SidesOf(Polygon shape)
+            yield shape.sides;
+        end function
+    end model
+
+end namespace
+
+##
+    A second namespace, nested under the first by writing its dotted name. What it holds is
+    reached from above without qualifying it, because the file said 'using Tour.Shapes'.
+##
+namespace Tour.Shapes
+
+    public model Polygon
+        public integer sides;
+
+        public function Polygon(integer count)
+            this.sides = count;
+        end function
     end model
 
 end namespace

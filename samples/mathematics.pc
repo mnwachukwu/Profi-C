@@ -1,13 +1,13 @@
 ##
-Everything Math provides.
+    Everything Math provides.
 
-Two of these are values rather than functions, so they are written without parentheses.
-The rest are called. Whichever you guess, the compiler says which it is.
+    Two of these are values rather than functions, so they are written without parentheses.
+    The rest are called. Whichever you guess, the compiler says which it is.
 
-Roots, powers and logarithms all answer in reals, because those are the operations that
-leave the rationals behind: the square root of a fraction is usually irrational, and so is
-the logarithm of almost anything. Measuring, choosing and rounding do not, so each of those
-has a version for every number the language has.
+    Roots, powers and logarithms all answer in reals, because those are the operations that
+    leave the rationals behind: the square root of a fraction is usually irrational, and so is
+    the logarithm of almost anything. Measuring, choosing and rounding do not, so each of those
+    has a version for every number the language has.
 ##
 
 global model Program
@@ -59,12 +59,12 @@ global model Program
     # ---- Logarithms -----------------------------------------------------------------
 
     ##
-    Careful here, and the care is worth spelling out. Log of ONE number is the NATURAL
-    logarithm — log to base E, what mathematicians write as ln. That is what C#, Java and C
-    all mean by the name, and Profi-C means it too, so a program moved between them gives
-    the same answer.
+        Careful here, and the care is worth spelling out. Log of ONE number is the NATURAL
+        logarithm — log to base E, what mathematicians write as ln. That is what C#, Java and C
+        all mean by the name, and Profi-C means it too, so a program moved between them gives
+        the same answer.
 
-    For base ten, write Log10, or Log with the base as a second argument.
+        For base ten, write Log10, or Log with the base as a second argument.
     ##
     function Logarithms()
         Console.WriteLine("== logarithms ==");
@@ -77,15 +77,15 @@ global model Program
     end function
 
     ##
-    Shown to four places rather than in full.
+        Shown to four places rather than in full.
 
-    A root, a logarithm and an angle are worked out by the machine's own arithmetic
-    library, and those are allowed to differ in the last bit from one computer to the
-    next — the answer is right either way, but the final digit is not something a program
-    should be written to depend on. Rounding first says which digits are being claimed.
+        A root, a logarithm and an angle are worked out by the machine's own arithmetic
+        library, and those are allowed to differ in the last bit from one computer to the
+        next — the answer is right either way, but the final digit is not something a program
+        should be written to depend on. Rounding first says which digits are being claimed.
 
-    Where an exact answer exists it is given exactly, so the lines above that print a
-    whole number really do print one everywhere.
+        Where an exact answer exists it is given exactly, so the lines above that print a
+        whole number really do print one everywhere.
     ##
     real function ToFourPlaces(real value)
         yield Math.Round(value * 10000.0) / 10000.0;
@@ -94,9 +94,9 @@ global model Program
     # ---- Angles ---------------------------------------------------------------------
 
     ##
-    Angles are in radians, as they are everywhere else that has these. A half turn is Pi.
-    The names are the abbreviations the mathematics is written with, kept as they are
-    because they are borrowed rather than invented here.
+        Angles are in radians, as they are everywhere else that has these. A half turn is Pi.
+        The names are the abbreviations the mathematics is written with, kept as they are
+        because they are borrowed rather than invented here.
     ##
     function Angles()
         Console.WriteLine("== angles ==");
@@ -122,8 +122,8 @@ global model Program
     # ---- Measuring and choosing -----------------------------------------------------
 
     ##
-    These keep the type they were given, so a distance between whole numbers is whole and a
-    fraction stays exact. That is what lets the answer be counted with afterwards.
+        These keep the type they were given, so a distance between whole numbers is whole and a
+        fraction stays exact. That is what lets the answer be counted with afterwards.
     ##
     function MeasuringAndChoosing()
         Console.WriteLine("== measuring and choosing ==");
@@ -144,12 +144,12 @@ global model Program
     # ---- Rounding -------------------------------------------------------------------
 
     ##
-    Each of these lands on a whole number, so each yields an integer and can be used as a
-    count or an index. Between them they are the three honest ways from a real to an
-    integer, which is why there is no single conversion that would have to pick one of the
-    three without being asked.
+        Each of these lands on a whole number, so each yields an integer and can be used as a
+        count or an index. Between them they are the three honest ways from a real to an
+        integer, which is why there is no single conversion that would have to pick one of the
+        three without being asked.
 
-    A half goes away from zero, the rule taught in school.
+        A half goes away from zero, the rule taught in school.
     ##
     function Rounding()
         Console.WriteLine("== rounding ==");

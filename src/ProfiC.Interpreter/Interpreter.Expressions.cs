@@ -380,7 +380,18 @@ public sealed partial class Interpreter
                 [.. construction.Arguments.Select(a => Evaluate(a, scope, receiver))]).Value;
         }
 
-        if (!_types.TryGetValue(construction.TypeName, out DeclaredTypeSymbol? type))
+        // Read from what the resolver settled rather than looked up by the name as written.
+        // The two agree for a bare name and part company for a qualified one, where the text
+        // is "Shapes.Circle" and no type is called that: the type is the one the resolver
+        // reached by reading that name from where it was written, which it already recorded.
+        //
+        // Taken from the type it denotes rather than the symbol it refers to, because the
+        // checker rebinds the latter to whichever constructor the arguments chose.
+        // A type the language owns is built by the runtime rather than as an instance of a
+        // declared model: an Exception is a real one, so that catching it and letting it reach
+        // the top both work. A model extending one is declared, and is not this.
+        if (_model.GetType(construction) is not DeclaredTypeSymbol type
+            || ReferenceEquals(type.Container, BuiltInTypes.Standard))
         {
             return BuildBuiltInException(construction, scope, receiver);
         }
@@ -493,8 +504,7 @@ public sealed partial class Interpreter
         // read; one reached through a value is asking about that value.
         if (_model.GetBuiltIn(member) is { } constant)
         {
-            bool throughTypeName = member.Receiver is IdentifierExpr owner
-                                   && _model.GetSymbol(owner) is DeclaredTypeSymbol;
+            bool throughTypeName = TypeNamedBy(member.Receiver) is not null;
 
             object? subject = throughTypeName
                 ? null
@@ -504,8 +514,7 @@ public sealed partial class Interpreter
         }
 
         // A type name on the left reaches a global member.
-        if (member.Receiver is IdentifierExpr name
-            && _model.GetSymbol(name) is DeclaredTypeSymbol)
+        if (TypeNamedBy(member.Receiver) is not null)
         {
             return _model.GetSymbol(member) switch
             {

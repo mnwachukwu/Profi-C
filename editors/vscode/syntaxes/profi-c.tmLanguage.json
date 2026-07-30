@@ -1,0 +1,240 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Profi-C",
+  "scopeName": "source.profi-c",
+  "patterns": [
+    { "include": "#comment-block" },
+    { "include": "#comment-line" },
+    { "include": "#string" },
+    { "include": "#character" },
+    { "include": "#fraction" },
+    { "include": "#number" },
+    { "include": "#end" },
+    { "include": "#declaration" },
+    { "include": "#keyword" },
+    { "include": "#type" },
+    { "include": "#reserved-type" },
+    { "include": "#qualifier" },
+    { "include": "#typed-name" },
+    { "include": "#constant" },
+    { "include": "#call" },
+    { "include": "#operator" }
+  ],
+  "repository": {
+
+    "comment-block": {
+      "comment": "Opens at ## and closes at the NEXT ##, which takes the rest of its line with it. The closer must therefore match to end of line, or a line reading '## and then some' would leave the tail as code.",
+      "name": "comment.block.profi-c",
+      "begin": "##",
+      "end": "##.*$"
+    },
+
+    "comment-line": {
+      "comment": "A single mark. Placed after the block rule so that ## is never read as two of these.",
+      "name": "comment.line.number-sign.profi-c",
+      "match": "#.*$"
+    },
+
+    "string": {
+      "name": "string.quoted.double.profi-c",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.profi-c", "match": "\\\\(u[0-9A-Fa-f]{4}|[nt\\\\\"'0])" },
+        { "name": "invalid.illegal.unknown-escape.profi-c", "match": "\\\\." }
+      ]
+    },
+
+    "character": {
+      "name": "string.quoted.single.profi-c",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        { "name": "constant.character.escape.profi-c", "match": "\\\\(u[0-9A-Fa-f]{4}|[nt\\\\\"'0])" },
+        { "name": "invalid.illegal.unknown-escape.profi-c", "match": "\\\\." }
+      ]
+    },
+
+    "fraction": {
+      "comment": "Matched before the plain number rule, or 22|7 reads as two integers around an operator.",
+      "name": "constant.numeric.fraction.profi-c",
+      "match": "\\b[0-9]+\\|[0-9]+\\b"
+    },
+
+    "number": {
+      "patterns": [
+        { "name": "constant.numeric.real.profi-c", "match": "\\b[0-9]+\\.[0-9]+\\b" },
+        { "name": "constant.numeric.integer.profi-c", "match": "\\b[0-9]+\\b" }
+      ]
+    },
+
+    "end": {
+      "comment": "A closer names what it closes, so the pair reads as one thing rather than a keyword beside a noun.",
+      "match": "\\b(end)\\b(?:\\s+(if|while|for|function|model|structure|enumeration|namespace|try|switch))?",
+      "captures": {
+        "1": { "name": "keyword.control.end.profi-c" },
+        "2": { "name": "keyword.control.end.profi-c" }
+      }
+    },
+
+    "declaration": {
+      "comment": "A word and the name after it, wherever that name can only be a type or a function. Each rule captures the word too, and so has to be offered before the plain keyword rules: a keyword matched on its own consumes itself, and the name beside it is then reached with nothing left to say what it is.",
+      "patterns": [
+        {
+          "comment": "Held apart from 'namespace' below so it can be coloured with 'function' and 'let': the words that introduce a thing which then holds something. A model, a structure, and an enumeration hold members; a function holds a body; a let holds a value. A namespace holds none of those — it only says where a name sits.",
+          "match": "\\b(model|structure|enumeration)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.profi-c" },
+            "2": { "name": "entity.name.type.profi-c" }
+          }
+        },
+        {
+          "comment": "A namespace's own name is left plain. It names a place rather than a thing, and colouring it as a type made 'Tour.Shapes' read as though Shapes were declared inside a Tour. The whole dotted name is consumed here even though nothing is said about it, so that the qualifier rule below cannot take the first segment and leave the rest — which is what made these render half one colour and half another.",
+          "match": "\\b(namespace)\\s+@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*",
+          "captures": {
+            "1": { "name": "keyword.other.declaration.profi-c" }
+          }
+        },
+        {
+          "comment": "And the namespace a using names, for the same reason and by the same means.",
+          "match": "\\b(using)\\s+@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*",
+          "captures": {
+            "1": { "name": "keyword.other.profi-c" }
+          }
+        },
+        {
+          "match": "\\b(function)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.profi-c" },
+            "2": { "name": "entity.name.function.profi-c" }
+          }
+        },
+        {
+          "comment": "What a model extends is a type and can be nothing else.",
+          "match": "\\b(extends)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*)",
+          "captures": {
+            "1": { "name": "storage.modifier.profi-c" },
+            "2": { "name": "entity.name.type.profi-c" }
+          }
+        },
+        {
+          "comment": "Without this the name after 'new' is followed by '(' and reads as a function call, which is the one place the grammar said something untrue rather than nothing.",
+          "match": "\\b(new)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*)",
+          "captures": {
+            "1": { "name": "keyword.other.profi-c" },
+            "2": { "name": "entity.name.type.profi-c" }
+          }
+        },
+        {
+          "comment": "A caught exception names its type before the name it binds.",
+          "match": "\\b(catch)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*)",
+          "captures": {
+            "1": { "name": "keyword.control.profi-c" },
+            "2": { "name": "entity.name.type.profi-c" }
+          }
+        },
+        {
+          "comment": "Both type operators take a type on the right and nothing else.",
+          "match": "\\b(is|as)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*)",
+          "captures": {
+            "1": { "name": "keyword.other.profi-c" },
+            "2": { "name": "entity.name.type.profi-c" }
+          }
+        }
+      ]
+    },
+
+    "typed-name": {
+      "comment": "A type standing in front of the name it describes, with no keyword to announce it: a field, a local, or a parameter. Offered after the primitive and provided types so those keep their own colour, and requiring a leading capital, which is convention rather than rule and so is the one thing here that can quietly miss.",
+      "patterns": [
+        {
+          "match": "^\\s*([\\p{Lu}][\\p{L}\\p{Nd}_]*(?:\\.[\\p{Lu}][\\p{L}\\p{Nd}_]*)*)((?:\\[\\])?\\??)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)\\s*(?=[;=])",
+          "captures": { "1": { "name": "entity.name.type.profi-c" } }
+        },
+        {
+          "match": "[(,]\\s*([\\p{Lu}][\\p{L}\\p{Nd}_]*(?:\\.[\\p{Lu}][\\p{L}\\p{Nd}_]*)*)((?:\\[\\])?\\??)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)\\s*(?=[,)])",
+          "captures": {
+            "1": { "name": "entity.name.type.profi-c" },
+            "3": { "name": "variable.parameter.profi-c" }
+          }
+        },
+        {
+          "comment": "A parameter whose type is a primitive. The type has to be captured here rather than left for the rule that usually colours it: this match begins at the bracket or comma, one character earlier, and the engine takes whichever match starts first — so leaving the word alone would mean consuming it with nothing said about it.",
+          "match": "([(,])\\s*(integer|real|boolean|character|string|fraction)((?:\\[\\])?\\??)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)\\s*(?=[,)])",
+          "captures": {
+            "2": { "name": "storage.type.profi-c" },
+            "4": { "name": "variable.parameter.profi-c" }
+          }
+        }
+      ]
+    },
+
+    "qualifier": {
+      "comment": "A name with a dot after it: the type a global member is reached through, or the namespace a type is. Told from a value's member by the leading capital, which is convention rather than rule — a local named Total would be coloured as though it were a type. That is the cost of having no semantic model, and it is a smaller one than leaving every 'Program.Run()' and 'Circle.Pi' unlit.",
+      "match": "\\b([\\p{Lu}][\\p{L}\\p{Nd}_]*)\\s*(?=\\.)",
+      "captures": { "1": { "name": "entity.name.type.profi-c" } }
+    },
+
+    "keyword": {
+      "patterns": [
+        {
+          "comment": "Words that direct what runs.",
+          "name": "keyword.control.profi-c",
+          "match": "\\b(if|then|else|while|for|each|in|to|until|step|switch|case|default|break|continue|yield|try|catch|finally|throw|begin)\\b"
+        },
+        {
+          "comment": "Words that say what something is or how far it reaches. Kept apart from the primitive types below: a reader telling a modifier from a type at a glance is worth more than the two matching.",
+          "name": "storage.modifier.profi-c",
+          "match": "\\b(public|protected|internal|global|constant|virtual|override|abstract|sealed|extends)\\b"
+        },
+        {
+          "comment": "The same words, where no name follows: a lambda written 'function(a, b)', and 'let' anywhere.",
+          "name": "keyword.declaration.profi-c",
+          "match": "\\b(model|structure|enumeration|function|let)\\b"
+        },
+        {
+          "comment": "Words that introduce or compose a declaration.",
+          "name": "keyword.other.profi-c",
+          "match": "\\b(namespace|using|import|new|as|is|base|this)\\b"
+        },
+        {
+          "comment": "Spelled out rather than punctuated, which is the point of them.",
+          "name": "keyword.operator.word.profi-c",
+          "match": "\\b(and|or|not)\\b"
+        }
+      ]
+    },
+
+    "type": {
+      "comment": "The primitive types, which are reserved words rather than names.",
+      "name": "storage.type.profi-c",
+      "match": "\\b(integer|real|boolean|character|string|fraction)\\b"
+    },
+
+    "reserved-type": {
+      "comment": "Types the language provides. Not keywords, so the scanner reads them as ordinary names; they are listed here because a reader still meets them as part of the language.",
+      "name": "support.class.profi-c",
+      "match": "\\b(Model|Function|Console|Reference|Math|Random|Fraction|DateTime|TimeSpan|Date|Time|Standard|Program|Exception|ArgumentException|DivideByZeroException|EmptyOptionalException|FormatException|IndexOutOfRangeException|InvalidCastException|OverflowException)\\b"
+    },
+
+    "constant": {
+      "name": "constant.language.profi-c",
+      "match": "\\b(true|false)\\b"
+    },
+
+    "call": {
+      "comment": "A name with an argument list after it. Matched late, so a keyword is never taken for one.",
+      "match": "(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)\\s*(?=\\()",
+      "captures": { "1": { "name": "entity.name.function.call.profi-c" } }
+    },
+
+    "operator": {
+      "patterns": [
+        { "name": "keyword.operator.comparison.profi-c", "match": "==|!=|<=|>=|<|>" },
+        { "name": "keyword.operator.assignment.profi-c", "match": "=" },
+        { "name": "keyword.operator.arithmetic.profi-c", "match": "\\+|-|\\*|/|%|\\^" },
+        { "name": "keyword.operator.optional.profi-c", "match": "\\?" }
+      ]
+    }
+  }
+}

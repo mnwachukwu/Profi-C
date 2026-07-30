@@ -39,6 +39,9 @@ let count = 1;      # and may end a line of code
 ##
 ```
 
+Indenting the body is convention rather than rule — the compiler reads a block the same either
+way — and it is what lets an editor fold a long one away by indentation alone.
+
 `##` closes at the next `##` **and takes the rest of that line with it**. Two things follow. Comments do not nest, and cannot: the first pair after the opener closes the block whatever was written between, so a comment about comments cannot half-close itself. And a comment is a line of its own or the end of a line, never the middle of one — since the closer eats its line, nothing can follow one and still be code.
 
 A run of marks is a heading rather than an error, the extra ones being comment text. A single `#` cannot close a block. An unclosed block is a scan error, reported at the opener.
@@ -289,6 +292,6 @@ specification.
 
 ## 7. Two details worth knowing
 
-**Warnings are few and each one names its fix.** Nine exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, an import naming an absolute path, imports that form a circle, and a `switch` leaving enumeration members unhandled. Every other diagnostic is an error. Warnings do not block compilation.
+**Warnings are few and each one names its fix.** Twelve exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, an import naming an absolute path, imports that form a circle, a `switch` leaving enumeration members unhandled, a type shadowing one the language provides, `using Standard;` where Standard is already in scope, and a namespace repeating a name it sits inside. Every other diagnostic is an error. Warnings do not block compilation.
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.

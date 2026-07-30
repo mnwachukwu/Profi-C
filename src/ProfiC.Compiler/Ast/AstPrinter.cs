@@ -70,7 +70,7 @@ public sealed class AstPrinter(bool includePositions = false)
         FunctionDecl n => Name(n.Name, n.Modifiers),
         ParameterDecl n => Quote(n.Name),
 
-        NamedTypeSyntax n => Quote(n.Name),
+        NamedTypeSyntax n => Quote(n.Text),
 
         VarDeclStmt n => Quote(n.Name)
                          + (n.IsConstant ? " [constant]" : string.Empty)

@@ -1,12 +1,12 @@
 ##
-Two projects referencing each other.
+    Two projects referencing each other.
 
-An error, where the same shape between files is only a warning, and the difference is what
-a project is. Files in a circle still all belong to one compilation, so nothing about
-reading them together is in question. A reference crosses from one build to another, and a
-build that has to exist before itself cannot be produced.
+    An error, where the same shape between files is only a warning, and the difference is what
+    a project is. Files in a circle still all belong to one compilation, so nothing about
+    reading them together is in question. A reference crosses from one build to another, and a
+    build that has to exist before itself cannot be produced.
 
-The fix is a third project holding what both need, referenced by both.
+    The fix is a third project holding what both need, referenced by both.
 ##
 
 project Ledger

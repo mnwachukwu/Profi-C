@@ -1,13 +1,13 @@
 ##
-Choosing among fixed alternatives.
+    Choosing among fixed alternatives.
 
-A switch compares one value against constant labels. Labels may be grouped, and a group
-runs only its own statements — there is no falling through from one group into the next,
-so nothing has to be written to prevent it.
+    A switch compares one value against constant labels. Labels may be grouped, and a group
+    runs only its own statements — there is no falling through from one group into the next,
+    so nothing has to be written to prevent it.
 
-Over an enumeration, a switch that leaves members out and writes no 'default' is warned
-about, naming the ones with no case. That is what makes adding a member safe: every switch
-that has to change says so, where it has to change.
+    Over an enumeration, a switch that leaves members out and writes no 'default' is warned
+    about, naming the ones with no case. That is what makes adding a member safe: every switch
+    that has to change says so, where it has to change.
 ##
 
 enumeration Suit
@@ -31,7 +31,7 @@ global model Program
     # ---- One case per member --------------------------------------------------------
 
     ##
-    Every member has a case, so nothing is left unhandled and the compiler says nothing.
+        Every member has a case, so nothing is left unhandled and the compiler says nothing.
     ##
     string function NameOf(Suit suit)
         switch suit
@@ -62,8 +62,8 @@ global model Program
     # ---- Grouping labels ------------------------------------------------------------
 
     ##
-    Several labels may share one group. This is the case other languages need 'break' for;
-    here a group simply ends where the next label begins.
+        Several labels may share one group. This is the case other languages need 'break' for;
+        here a group simply ends where the next label begins.
     ##
     string function ColorOf(Suit suit)
         switch suit
@@ -86,8 +86,8 @@ global model Program
     # ---- Letting a default cover the rest ---------------------------------------------
 
     ##
-    Thirteen ranks and only three of them are worth naming, so a default handles the rest.
-    Writing one says "everything else is covered", which is why it silences the warning.
+        Thirteen ranks and only three of them are worth naming, so a default handles the rest.
+        Writing one says "everything else is covered", which is why it silences the warning.
     ##
     integer function ValueOf(Rank rank)
         switch rank
@@ -116,9 +116,9 @@ global model Program
     # ---- What else a switch can examine ------------------------------------------------
 
     ##
-    Integers, characters, strings, and booleans may all be switched on. A real or a
-    fraction may not: two of those can be equal without being the same numeral, and a case
-    label is a comparison the reader has to be able to trust.
+        Integers, characters, strings, and booleans may all be switched on. A real or a
+        fraction may not: two of those can be equal without being the same numeral, and a case
+        label is a comparison the reader has to be able to trust.
     ##
     function SwitchingOnOtherThings()
         string command = "deal";

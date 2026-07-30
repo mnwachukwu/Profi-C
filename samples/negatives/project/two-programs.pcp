@@ -1,11 +1,11 @@
 ##
-A project that lists two programs.
+    A project that lists two programs.
 
-Program is declared once in a compilation, because it is the name the entry point lives
-in. Two files each declaring one cannot be built together, and the second is named.
+    Program is declared once in a compilation, because it is the name the entry point lives
+    in. Two files each declaring one cannot be built together, and the second is named.
 
-The folder rule never runs into this, since it takes only the program that was named and
-the shared code beside it. A project has to be told.
+    The folder rule never runs into this, since it takes only the program that was named and
+    the shared code beside it. A project has to be told.
 ##
 
 project TwoPrograms
