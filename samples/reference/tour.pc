@@ -32,13 +32,21 @@ namespace Tour
 
     # ---- A model with inheritance ------------------------------------------------
 
+    ##
+    Every visibility on one model. A field with no word reaches its own type; protected adds
+    whatever extends it; internal adds the rest of the project; public adds everywhere. The
+    same four words apply to a type, except that a type says nothing far more often than it
+    says public — so silence there means the project, as it means the type here.
+    ##
     public abstract model Shape
-        protected string name;
         integer sides;
+        protected string name;
+        internal integer revision;
 
         public function Shape(string label)
             this.name = label;
             this.sides = 0;
+            this.revision = 1;
         end function
 
         public virtual string function Describe()

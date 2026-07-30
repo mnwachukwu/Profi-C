@@ -128,7 +128,7 @@ public sealed class MultiFileTests : LexerTestBase
 
         DiagnosticBag diagnostics = new();
         SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
-        SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics);
+        SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, projects: compilation.Projects);
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
 
@@ -171,7 +171,7 @@ public sealed class MultiFileTests : LexerTestBase
 
         DiagnosticBag diagnostics = new();
         SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
-        SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, requireEntryPoint: true);
+        SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, requireEntryPoint: true, compilation.Projects);
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
 
@@ -199,7 +199,7 @@ public sealed class MultiFileTests : LexerTestBase
         SourceDiscovery.Compilation compilation =
             SourceDiscovery.Gather(Path.Combine(_folder, "both.pcp"), diagnostics)!;
 
-        Resolver.Resolve(compilation.Units, diagnostics);
+        Resolver.Resolve(compilation.Units, diagnostics, projects: compilation.Projects);
 
         Diagnostic duplicate = diagnostics.Sorted().First(d => d.Id == "PC0217");
 
@@ -269,6 +269,271 @@ public sealed class MultiFileTests : LexerTestBase
         });
     }
 
+    // ---- Projects a project asks for ----------------------------------------------------------
+
+    /// <summary>Writes a project file, and returns the path to it.</summary>
+    private string WriteProject(string name, string body) =>
+        Write(name, $"project {Path.GetFileNameWithoutExtension(name)}\n{body}end project\n");
+
+    /// <summary>
+    /// A reference brings the referenced project's files, so its types are there to use.
+    /// </summary>
+    [Test]
+    public void AReferenceBringsTheReferencedProjectsTypes()
+    {
+        Write("core/Helper.pc", SharedModel);
+        WriteProject("core/core.pcp", "    source Helper.pc\n");
+
+        Write("app/Program.pc", ProgramCalling("Helper.Twice(21)"));
+        string app = WriteProject("app/app.pcp",
+            "    reference ../core/core.pcp\n    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(app, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+
+            Assert.That(
+                compilation.Units.Select(u => Path.GetFileName(u.Source.FileName)),
+                Is.EqualTo(new[] { "Helper.pc", "Program.pc" }),
+                "what a project is built on arrives before the project itself");
+
+            Assert.That(compilation.Label, Is.EqualTo("app"), "the build is named by its root");
+        });
+    }
+
+    /// <summary>
+    /// References are followed to closure, and reach as far as they are chained. A project uses
+    /// the types of everything its references bring, which is what a reference brings them for.
+    /// </summary>
+    [Test]
+    public void AReferenceIsFollowedThroughTheProjectItBrings()
+    {
+        Write("deep/Deep.pc", """
+            model Deep
+                public global integer function Four()
+                    yield 4;
+                end function
+            end model
+            """);
+
+        WriteProject("deep/deep.pcp", "    source Deep.pc\n");
+
+        Write("middle/Middle.pc", """
+            model Middle
+                public global integer function Eight()
+                    yield Deep.Four() * 2;
+                end function
+            end model
+            """);
+
+        WriteProject("middle/middle.pcp",
+            "    reference ../deep/deep.pcp\n    source Middle.pc\n");
+
+        Write("app/Program.pc", ProgramCalling("Middle.Eight() + Deep.Four()"));
+        string app = WriteProject("app/app.pcp",
+            "    reference ../middle/middle.pcp\n    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(app, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+
+            Assert.That(
+                compilation.Units.Select(u => Path.GetFileName(u.Source.FileName)),
+                Is.EqualTo(new[] { "Deep.pc", "Middle.pc", "Program.pc" }),
+                "deepest first, and Deep arrives although the program never named it");
+        });
+    }
+
+    /// <summary>
+    /// Two projects referencing one third bring it once. A project reached twice is one project,
+    /// which is what makes a shared project shareable.
+    /// </summary>
+    [Test]
+    public void AProjectReferencedByTwoOthersArrivesOnce()
+    {
+        Write("core/Helper.pc", SharedModel);
+        WriteProject("core/core.pcp", "    source Helper.pc\n");
+
+        Write("left/Left.pc", "model Left\nend model\n");
+        WriteProject("left/left.pcp", "    reference ../core/core.pcp\n    source Left.pc\n");
+
+        Write("right/Right.pc", "model Right\nend model\n");
+        WriteProject("right/right.pcp", "    reference ../core/core.pcp\n    source Right.pc\n");
+
+        Write("app/Program.pc", ProgramCalling("Helper.Twice(21)"));
+        string app = WriteProject("app/app.pcp",
+            "    reference ../left/left.pcp\n    reference ../right/right.pcp\n"
+            + "    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(app, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+            Assert.That(compilation.Units, Has.Count.EqualTo(4), "Helper.pc arrives once");
+        });
+    }
+
+    /// <summary>
+    /// <para>Two projects referencing each other are an error, where two files importing each
+    /// other are only a warning.</para>
+    /// <para>The difference is what a project is. Files in a circle still all belong to one
+    /// compilation, so reading them together is never in question. A reference crosses from one
+    /// build to another, and a build that has to exist before itself cannot be produced.</para>
+    /// </summary>
+    [Test]
+    public void TwoProjectsReferencingEachOtherAreRejected()
+    {
+        Write("left/Left.pc", "model Left\nend model\n");
+        Write("right/Right.pc", "model Right\nend model\n");
+
+        WriteProject("right/right.pcp", "    reference ../left/left.pcp\n    source Right.pc\n");
+        string left = WriteProject("left/left.pcp",
+            "    reference ../right/right.pcp\n    source Left.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(left, diagnostics);
+
+        Diagnostic circle = diagnostics.Sorted().Single(d => d.Id == "PC0624");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(circle.Severity, Is.EqualTo(DiagnosticSeverity.Error));
+
+            Assert.That(
+                circle.Message,
+                Does.Contain("left references right, which references left"));
+        });
+    }
+
+    /// <summary>A project referencing itself is a circle of one, said the same way.</summary>
+    [Test]
+    public void AProjectReferencingItselfIsRejected()
+    {
+        Write("Program.pc", ProgramCalling("\"x\""));
+        string project = WriteProject("solo.pcp", "    reference solo.pcp\n    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(project, diagnostics);
+
+        Assert.That(
+            diagnostics.Sorted().Single(d => d.Id == "PC0624").Message,
+            Does.Contain("solo references solo"));
+    }
+
+    /// <summary>A circle drawn through a third project is one circle, named in full.</summary>
+    [Test]
+    public void ACircleThroughAThirdProjectIsReportedOnce()
+    {
+        Write("a/A.pc", "model A\nend model\n");
+        Write("b/B.pc", "model B\nend model\n");
+        Write("c/C.pc", "model C\nend model\n");
+
+        WriteProject("b/b.pcp", "    reference ../c/c.pcp\n    source B.pc\n");
+        WriteProject("c/c.pcp", "    reference ../a/a.pcp\n    source C.pc\n");
+        string a = WriteProject("a/a.pcp", "    reference ../b/b.pcp\n    source A.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(a, diagnostics);
+
+        Assert.That(
+            diagnostics.Sorted().Where(d => d.Id == "PC0624").Select(d => d.Message).Single(),
+            Does.Contain("a references b, which references c, which references a"));
+    }
+
+    /// <summary>
+    /// One file listed by two projects leaves undecided which project it belongs to. Compiling
+    /// it twice would report every type in it as declared twice, which says where the copies
+    /// are without saying that nothing was copied.
+    /// </summary>
+    [Test]
+    public void OneFileListedByTwoProjectsIsRejected()
+    {
+        Write("core/Helper.pc", SharedModel);
+        WriteProject("core/core.pcp", "    source Helper.pc\n");
+
+        Write("app/Program.pc", ProgramCalling("Helper.Twice(21)"));
+        string app = WriteProject("app/app.pcp",
+            "    reference ../core/core.pcp\n    source ../core/Helper.pc\n    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(app, diagnostics);
+
+        Assert.That(
+            diagnostics.Sorted().Single(d => d.Id == "PC0625").Message,
+            Does.Contain("'Helper.pc' is listed by core and by app"));
+    }
+
+    private static readonly (string Case, string Entry, string Expected)[] BadReferences =
+    [
+        ("missing", "    reference nowhere.pcp\n", "PC0621"),
+        ("not a project", "    reference Program.pc\n", "PC0622"),
+        ("no path", "    reference\n", "PC0620"),
+    ];
+
+    [TestCaseSource(nameof(BadReferences))]
+    public void ABadReferenceIsReported((string Case, string Entry, string Expected) row)
+    {
+        Write("Program.pc", ProgramCalling("\"x\""));
+        string project = WriteProject("bad.pcp", row.Entry + "    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(project, diagnostics);
+
+        Assert.That(diagnostics.Sorted().Select(d => d.Id), Does.Contain(row.Expected), row.Case);
+    }
+
+    /// <summary>Naming one project twice is a mistake in the project file, as a source is.</summary>
+    [Test]
+    public void AProjectReferencedTwiceIsReported()
+    {
+        Write("core/Helper.pc", SharedModel);
+        WriteProject("core/core.pcp", "    source Helper.pc\n");
+
+        Write("app/Program.pc", ProgramCalling("Helper.Twice(21)"));
+        string app = WriteProject("app/app.pcp",
+            "    reference ../core/core.pcp\n    reference ../core/core.pcp\n"
+            + "    source Program.pc\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(app, diagnostics);
+
+        Assert.That(diagnostics.Sorted().Select(d => d.Id), Does.Contain("PC0623"));
+    }
+
+    /// <summary>
+    /// A project made only of references builds what they bring. Composition is naming
+    /// something, so this is not the project that builds nothing.
+    /// </summary>
+    [Test]
+    public void AProjectOfNothingButReferencesBuildsWhatTheyBring()
+    {
+        Write("core/Helper.pc", SharedModel);
+        WriteProject("core/core.pcp", "    source Helper.pc\n");
+
+        Write("app/Program.pc", ProgramCalling("Helper.Twice(21)"));
+        WriteProject("app/app.pcp", "    source Program.pc\n");
+
+        string whole = WriteProject("whole.pcp",
+            "    reference core/core.pcp\n    reference app/app.pcp\n");
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(whole, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+            Assert.That(compilation.Units, Has.Count.EqualTo(2));
+        });
+    }
+
     // ---- Files a file asks for ---------------------------------------------------------------
 
     /// <summary>An import names one file, and that file joins the compilation.</summary>
@@ -326,18 +591,163 @@ public sealed class MultiFileTests : LexerTestBase
             "Deep arrives although the program never names it");
     }
 
-    /// <summary>Two files importing each other terminate rather than looping.</summary>
+    // ---- Imports that circle ------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Two files importing each other are warned about, and still build.</para>
+    /// <para>A warning rather than an error because nothing here is unbuildable: a compilation
+    /// reads every file it gathers together, and reaching one twice adds nothing the first
+    /// reach did not. What it costs is a reader with no file to open first.</para>
+    /// </summary>
     [Test]
-    public void ImportsThatCircleBackTerminate()
+    public void TwoFilesImportingEachOtherAreWarnedAboutAndStillBuild()
     {
-        Write("A.pc", "import \"B.pc\";\nmodel A\nend model\n");
-        Write("B.pc", "import \"A.pc\";\nmodel B\nend model\n");
-        string program = Write("Program.pc", "import \"A.pc\";\n" + ProgramCalling("\"x\""));
+        Write("lib/A.pc", "import \"../other/B.pc\";\nmodel A\nend model\n");
+        Write("other/B.pc", "import \"../lib/A.pc\";\nmodel B\nend model\n");
+        string program = Write("Program.pc", "import \"lib/A.pc\";\n" + ProgramCalling("\"x\""));
 
         DiagnosticBag diagnostics = new();
         SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
 
-        Assert.That(NamesOf(compilation), Is.EqualTo(new[] { "A.pc", "B.pc", "Program.pc" }));
+        Diagnostic circle = diagnostics.Sorted().Single(d => d.Id == "PC0614");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(circle.Severity, Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(diagnostics.HasErrors, Is.False, "a circle of files still builds");
+
+            Assert.That(
+                circle.Message,
+                Does.Contain("A.pc imports B.pc, which imports A.pc"),
+                "the circle is read back, and the program that led into it is left out");
+
+            Assert.That(
+                NamesOf(compilation),
+                Is.EqualTo(new[] { "A.pc", "B.pc", "Program.pc" }),
+                "the walk still terminates");
+        });
+    }
+
+    /// <summary>A file importing itself is a circle of one, said the same way.</summary>
+    [Test]
+    public void AFileImportingItselfIsReported()
+    {
+        string program = Write("Program.pc", "import \"Program.pc\";\n" + ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(program, diagnostics);
+
+        Assert.That(
+            diagnostics.Sorted().Single(d => d.Id == "PC0614").Message,
+            Does.Contain("Program.pc imports Program.pc"));
+    }
+
+    /// <summary>A circle drawn through a third file is one circle, named in full.</summary>
+    [Test]
+    public void ACircleThroughAThirdFileIsReportedOnce()
+    {
+        Write("a/A.pc", "import \"../b/B.pc\";\nmodel A\nend model\n");
+        Write("b/B.pc", "import \"../c/C.pc\";\nmodel B\nend model\n");
+        Write("c/C.pc", "import \"../a/A.pc\";\nmodel C\nend model\n");
+        string program = Write("Program.pc", "import \"a/A.pc\";\n" + ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(program, diagnostics);
+
+        Assert.That(
+            diagnostics.Sorted().Where(d => d.Id == "PC0614").Select(d => d.Message).Single(),
+            Does.Contain("A.pc imports B.pc, which imports C.pc, which imports A.pc"));
+    }
+
+    /// <summary>
+    /// Two files importing one third file is not a circle. Reaching a file twice is what makes
+    /// shared code shared, and only reaching back to a file still waiting on this one is a circle.
+    /// </summary>
+    [Test]
+    public void TwoFilesImportingOneThirdIsNotACircle()
+    {
+        Write("lib/Shared.pc", SharedModel);
+        Write("lib/Left.pc", "import \"Shared.pc\";\nmodel Left\nend model\n");
+        Write("lib/Right.pc", "import \"Shared.pc\";\nmodel Right\nend model\n");
+        string program = Write("Program.pc",
+            "import \"lib/Left.pc\";\nimport \"lib/Right.pc\";\n" + ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(program, diagnostics)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Sorted().Select(d => d.Id), Is.Empty);
+            Assert.That(compilation.Units, Has.Count.EqualTo(4));
+        });
+    }
+
+    /// <summary>
+    /// The circle is reported against the import that closes it, so the reader is taken to the
+    /// line to delete rather than to whichever file the compiler happened to start from.
+    /// </summary>
+    [Test]
+    public void ACircleIsReportedWhereItCloses()
+    {
+        Write("lib/A.pc", "import \"../other/B.pc\";\nmodel A\nend model\n");
+        string closing = Write("other/B.pc", "import \"../lib/A.pc\";\nmodel B\nend model\n");
+        string program = Write("Program.pc", "import \"lib/A.pc\";\n" + ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(program, diagnostics);
+
+        Diagnostic circle = diagnostics.Sorted().Single(d => d.Id == "PC0614");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Path.GetFullPath(circle.Source!.FileName), Is.EqualTo(Path.GetFullPath(closing)));
+            Assert.That(circle.Span.Start.Line, Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>
+    /// A project's files are held to the rule too. The project already names both, so the
+    /// imports say nothing a build needs — and what they do say is a circle.
+    /// </summary>
+    [Test]
+    public void ACircleAmongAProjectsFilesIsReported()
+    {
+        Write("models/Account.pc", "import \"../services/Ledger.pc\";\nmodel Account\nend model\n");
+        Write("services/Ledger.pc", "import \"../models/Account.pc\";\nmodel Ledger\nend model\n");
+        Write("Program.pc", ProgramCalling("\"x\""));
+
+        string project = Write("Bank.pcp", """
+            project Bank
+                source Program.pc
+                source models
+                source services
+            end project
+            """);
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(project, diagnostics);
+
+        Assert.That(
+            diagnostics.Sorted().Single(d => d.Id == "PC0614").Message,
+            Does.Contain("Account.pc imports Ledger.pc, which imports Account.pc"));
+    }
+
+    /// <summary>
+    /// Files beside one another are compiled together without importing at all, so writing the
+    /// imports anyway draws a circle where there was none. This is the mistake the rule catches
+    /// most often, and the one whose fix is to write nothing.
+    /// </summary>
+    [Test]
+    public void NeighborsThatImportEachOtherAreReported()
+    {
+        Write("A.pc", "import \"B.pc\";\nmodel A\nend model\n");
+        Write("B.pc", "import \"A.pc\";\nmodel B\nend model\n");
+        string program = Write("Program.pc", ProgramCalling("\"x\""));
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(program, diagnostics);
+
+        Assert.That(diagnostics.Sorted().Count(d => d.Id == "PC0614"), Is.EqualTo(1));
     }
 
     /// <summary>

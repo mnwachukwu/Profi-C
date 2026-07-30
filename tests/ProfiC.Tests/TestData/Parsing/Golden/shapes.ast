@@ -24,6 +24,12 @@ CompilationUnit
           CallExpr
             MemberExpr 'Area'
               ThisExpr
+    FunctionDecl 'ToString' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        CallExpr
+          MemberExpr 'Describe'
+            ThisExpr
   ModelDecl 'Rectangle' extends Shape
     FieldDecl 'width'
       NamedTypeSyntax 'real'
@@ -118,9 +124,7 @@ CompilationUnit
           CallExpr
             MemberExpr 'WriteLine'
               IdentifierExpr 'Console'
-            CallExpr
-              MemberExpr 'Describe'
-                IdentifierExpr 'shape'
+            IdentifierExpr 'shape'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

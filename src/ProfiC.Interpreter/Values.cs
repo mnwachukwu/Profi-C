@@ -25,6 +25,17 @@ public sealed class Instance(DeclaredTypeSymbol type) : IProfiCModel
     /// <summary>The type this is an instance of.</summary>
     public DeclaredTypeSymbol Type { get; } = type;
 
+    /// <summary>
+    /// <para>How to render this, when its type declares a <c>ToString</c> of its own.</para>
+    /// <para>Running one means evaluating a Profi-C function, which only the interpreter can
+    /// do — so it hands the work back rather than this class reaching for it. Null where no
+    /// type in the chain declares one, and the default below stands.</para>
+    /// <para>Carried per instance rather than looked up per call because everything that
+    /// prints a value ends at <c>ToString</c>: a value on its own, a value inside a set, a
+    /// field of a structure. Anything that reaches this reaches the declared one too.</para>
+    /// </summary>
+    internal Func<Instance, string>? Renderer { get; set; }
+
     /// <summary>Field storage, by the symbol that declared each field.</summary>
     public Dictionary<FieldSymbol, object?> Fields { get; } = [];
 
@@ -68,7 +79,7 @@ public sealed class Instance(DeclaredTypeSymbol type) : IProfiCModel
     /// <summary>Copies a structure. Models are never copied, so this is only ever used on values.</summary>
     public Instance Copy()
     {
-        Instance copy = new(Type);
+        Instance copy = new(Type) { Renderer = Renderer };
 
         foreach ((FieldSymbol field, object? value) in Fields)
         {
@@ -87,14 +98,18 @@ public sealed class Instance(DeclaredTypeSymbol type) : IProfiCModel
         System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 
     /// <summary>
-    /// A structure prints field by field, a model prints its type name. The difference is
-    /// forced: a structure cannot contain itself, so walking its fields ends, while a model
-    /// can take part in a cycle and printing has no equivalent of the trick equality uses.
+    /// <para>A declared <c>ToString</c> if the type has one, and the default otherwise.</para>
+    /// <para>The defaults differ, and the difference is forced: a structure prints field by
+    /// field because a structure cannot contain itself and the walk therefore ends, while a
+    /// model prints its type name because a model can take part in a cycle and printing has no
+    /// equivalent of the trick equality uses. Overriding is how an author says more.</para>
     /// </summary>
     public override string ToString() =>
-        Type.IsValueType
-            ? ModelOperations.StructureToString(Type.Name, this)
-            : Type.Name;
+        Renderer is { } declared
+            ? declared(this)
+            : Type.IsValueType
+                ? ModelOperations.StructureToString(Type.Name, this)
+                : Type.Name;
 }
 
 /// <summary>

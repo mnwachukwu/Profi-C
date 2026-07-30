@@ -52,6 +52,7 @@ public enum TokenType
     Import,
     In,
     Integer,
+    Internal,
     Is,
     Let,
     Model,

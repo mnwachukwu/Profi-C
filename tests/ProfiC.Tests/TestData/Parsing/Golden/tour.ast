@@ -27,9 +27,11 @@ CompilationUnit
             ThisExpr
           IdentifierExpr 'right'
     ModelDecl 'Shape' [public abstract]
+      FieldDecl 'sides'
+        NamedTypeSyntax 'integer'
       FieldDecl 'name' [protected]
         NamedTypeSyntax 'string'
-      FieldDecl 'sides'
+      FieldDecl 'revision' [internal]
         NamedTypeSyntax 'integer'
       FunctionDecl 'Shape' [public]
         ParameterDecl 'label'
@@ -42,6 +44,10 @@ CompilationUnit
           MemberExpr 'sides'
             ThisExpr
           LiteralExpr 0 [Integer]
+        AssignmentStmt
+          MemberExpr 'revision'
+            ThisExpr
+          LiteralExpr 1 [Integer]
       FunctionDecl 'Describe' [public virtual]
         NamedTypeSyntax 'string'
         YieldStmt

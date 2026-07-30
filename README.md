@@ -91,9 +91,14 @@ the word if you like it, but it adds nothing.
 
 ### Models and inheritance
 
-Members are private by default; `public` and `protected` opt out. `this.` is mandatory —
-a bare identifier reaches only locals and parameters, which keeps the distinction between a
-local and object state visible rather than hidden.
+Members are private by default; `protected`, `internal`, and `public` widen that in turn.
+**Types default to `internal`** — reachable anywhere in their project, and nowhere else. Both
+defaults are the same rule: a declaration with no word belongs to the smallest thing that could
+own it, and a member's owner is its type while a type's owner is its project. There's no
+`private` keyword, because private is what writing nothing gets you.
+
+`this.` is mandatory — a bare identifier reaches only locals and parameters, which keeps the
+distinction between a local and object state visible rather than hidden.
 
 ```
 model Shape
@@ -354,6 +359,12 @@ file that wrote them, with forward slashes on every platform; an absolute path w
 since it resolves only on the machine that wrote it. Reaching the same file twice is silent —
 it's one file, not two.
 
+**Imports that circle are warned about.** If A imports B and B imports A it still builds — a
+compilation reads every file it gathers together — but neither file is the one you read first,
+so the compiler says so at the import that closes the circle. The fix is usually to write less:
+files beside each other are already compiled together and need no import at all, so a circle
+only happens across folders.
+
 `import` and `using` never do each other's job: **an import decides which files are compiled,
 a using decides which names are reachable.** Pick by scale — one file, an import; a group of
 related types, a namespace; a whole build across folders, a project file:
@@ -376,6 +387,21 @@ A `source` naming a folder takes every `.pc` directly inside it, and does not de
 a project builds can always be read off the file. Paths are relative to the project file. The
 format is deliberately small and is not Profi-C: it describes a build, not a computation, and
 nothing in it compiles.
+
+**A project builds on another with `reference`**, which brings that project's types:
+
+```
+project Storefront
+    reference ../Core/Core.pcp
+    source Program.pc
+    source models
+end project
+```
+
+References are followed as far as they chain, a project reached twice is brought once, and what
+a project references is built before the project itself. Unlike imports, projects **may not**
+reference in a circle: a build that has to exist before itself can't be produced, so that one is
+an error. Code two projects both need goes in a third they both reference.
 
 ### Seeing the machinery
 
@@ -488,6 +514,7 @@ Two samples are more than one file, and each shows a different way of saying so:
 | [bookshelf/](samples/bookshelf/) | **A folder is enough.** `Program.pc` beside `Book.pc` and `Shelf.pc`, with nothing said to connect them |
 | [storefront/](samples/storefront/) | **A project across folders.** [storefront.pcp](samples/storefront/storefront.pcp) lists a file and two folders |
 | [toolkit/](samples/toolkit/) | **Naming a file directly.** An `import` reaches into `shared/`, and what it names imports one more |
+| [library/](samples/library/) | **A project built on another.** [library.pcp](samples/library/library.pcp) references `books/books.pcp` and uses its types |
 
 Each runnable sample's output is recorded under `tests/ProfiC.Tests/TestData/Running/` and
 asserted on every build, so a sample that starts printing the wrong answer fails the suite.
@@ -512,6 +539,8 @@ Programs the compiler rejects:
 | [switching.pc](samples/negatives/compile/switching.pc) | A switch on a real, a label that is not constant, one value handled twice, and a member left unhandled |
 | [results.pc](samples/negatives/compile/results.pc) | A function that never reaches the result it promises, and a call that yields nothing used as a value |
 | [imports.pc](samples/negatives/compile/imports.pc) | Imports naming a file that is not there, and one that is not Profi-C |
+| [visibility.pc](samples/negatives/compile/visibility.pc) | Reaching a private and a protected member from outside, two visibilities on one declaration, and `protected` on a type |
+| [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
 see:
@@ -532,6 +561,7 @@ Projects that will not build:
 | [two-programs.pcp](samples/negatives/project/two-programs.pcp) | Two files that each declare `Program` |
 | [unknown-entry.pcp](samples/negatives/project/unknown-entry.pcp) | Words a project file does not have |
 | [missing-source.pcp](samples/negatives/project/missing-source.pcp) | A path that is not there, and one listed twice |
+| [circular.pcp](samples/negatives/project/circular.pcp) | Two projects referencing each other, so neither can be built first |
 
 How each one fails is recorded under `tests/ProfiC.Tests/TestData/Negatives/` and asserted on
 every build, holding the wording as well as the outcome. A compile sample must be rejected
@@ -555,6 +585,7 @@ samples/               .pc programs, one per file
   bookshelf/           one program across three files in a folder
   storefront/          one program across three folders, listed by a .pcp
   toolkit/             one program reaching other files by import
+  library/             one project referencing another
   reference/           tour.pc and the scanner corpus; not programs
   negatives/           programs that are wrong on purpose
 ```

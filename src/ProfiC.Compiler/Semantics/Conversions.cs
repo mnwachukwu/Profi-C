@@ -89,6 +89,17 @@ public static class Conversions
             return ConversionKind.Implicit;
         }
 
+        // Every type inherits Model's members, but a value type never converts to Model: that
+        // conversion is boxing, which the language does not have.
+        //
+        // Asked before the walk below rather than after it, because reaching Model is not a
+        // question about a model's ancestors. Every model reaches it, whether or not it wrote
+        // "extends" — so a walk that stops where the writing stops answers the wrong question.
+        if (to is ModelSymbol { Name: "Model" })
+        {
+            return from.IsValueType ? ConversionKind.None : ConversionKind.Implicit;
+        }
+
         // A model reaches any of its ancestors.
         if (from is ModelSymbol fromModel && to is ModelSymbol toModel)
         {
@@ -103,13 +114,6 @@ public static class Conversions
         if (to is ModelSymbol { Name: "Function" })
         {
             return from is FunctionType ? ConversionKind.Implicit : ConversionKind.None;
-        }
-
-        // Every type inherits Model's members, but a value type never converts to Model:
-        // that conversion is boxing, which the language does not have.
-        if (to is ModelSymbol { Name: "Model" })
-        {
-            return from.IsValueType ? ConversionKind.None : ConversionKind.Implicit;
         }
 
         // A set converts only to a set of the very same element type. Allowing a set of

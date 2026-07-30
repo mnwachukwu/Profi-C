@@ -1,0 +1,1 @@
+Reports.pcp(9,1): error PC0624: This reference closes a circle: Ledger references Reports, which references Ledger. Neither project can be built before the other, so neither can be built. Code both need belongs in a third project they both reference.

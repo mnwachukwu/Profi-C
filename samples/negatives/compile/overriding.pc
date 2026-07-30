@@ -1,0 +1,71 @@
+##
+Claims about a base type that do not hold.
+
+This program does not compile. 'override' names a function above this one, and the compiler
+checks that the function is there, that it was offered for overriding, and that this one
+yields what it yields.
+
+The way an unchecked override fails is quiet, which is the reason for checking it. Rename a
+base function, or let a parameter type drift by one, and a function stays marked 'override'
+while overriding nothing at all. It compiles, it runs, and every call through the base type
+reaches the old version.
+##
+
+model Shape
+
+    public virtual string function Describe()
+        yield "shape";
+    end function
+
+    public virtual real function Area()
+        yield 0.0;
+    end function
+
+    # Not virtual, so Shape did not offer it.
+    public string function Name()
+        yield "shape";
+    end function
+
+end model
+
+model Square extends Shape
+
+    # A name that drifted by one letter.
+    public override string function Describ()
+        yield "square";
+    end function
+
+    # Shape never offered this one.
+    public override string function Name()
+        yield "square";
+    end function
+
+    # Overriding, but yielding something a caller holding a Shape would not expect.
+    public override integer function Area()
+        yield 9;
+    end function
+
+    # An override that forgot to say so. Nothing spells "hide the base one on purpose".
+    public string function Describe()
+        yield "square";
+    end function
+
+end model
+
+model Tag
+
+    # Every model inherits ToString and Equals from Model, so overriding one needs no
+    # 'extends'. Overriding something Model does not have still does not work.
+    public override string function Nonsense()
+        yield "nothing above declares this";
+    end function
+
+end model
+
+global model Program
+
+    function Main()
+        Console.WriteLine(new Square().Describe());
+    end function
+
+end model

@@ -68,7 +68,7 @@ public sealed class MultiFileSampleTests : LexerTestBase
 
         Assert.That(compilation, Is.Not.Null, $"{entry} could not be gathered");
 
-        SemanticModel model = Resolver.Resolve(compilation!.Units, diagnostics, requireEntryPoint: true);
+        SemanticModel model = Resolver.Resolve(compilation!.Units, diagnostics, requireEntryPoint: true, compilation.Projects);
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
 

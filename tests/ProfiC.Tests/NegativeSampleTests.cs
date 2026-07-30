@@ -63,7 +63,7 @@ public sealed class NegativeSampleTests : LexerTestBase
 
         if (SourceDiscovery.Gather(path, diagnostics) is { } compilation)
         {
-            SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics);
+            SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, projects: compilation.Projects);
             TypeChecker.Check(compilation.Units, model, diagnostics);
             DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
         }
@@ -130,7 +130,7 @@ public sealed class NegativeSampleTests : LexerTestBase
 
         if (SourceDiscovery.Gather(path, diagnostics) is { } compilation)
         {
-            SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics);
+            SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, projects: compilation.Projects);
             TypeChecker.Check(compilation.Units, model, diagnostics);
             DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
         }

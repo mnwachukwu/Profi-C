@@ -376,6 +376,89 @@ public static class DiagnosticDescriptors
         "Main declares no result or an integer",
         "'Main' must declare no result, or an integer, which becomes the program's exit code.");
 
+    /// <summary>
+    /// <para>Two visibility words on one declaration.</para>
+    /// <para>Each names a different reach, so writing two says two different things about the
+    /// same declaration and neither can be the one that was meant.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ConflictingVisibility = Error(
+        "PC0219",
+        "Two visibilities on one declaration",
+        "'{0}' is written {1}, and one declaration has one visibility. Keep the word that "
+        + "says how far this should reach.");
+
+    /// <summary>
+    /// <para><c>protected</c> on a type.</para>
+    /// <para>Protected means "and anything extending the type that declares it", which is a
+    /// sentence about a member. A type has no declaring type to extend, so the word has
+    /// nothing to name. Its reach is the project or the world: <c>internal</c> or
+    /// <c>public</c>.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeCannotBeProtected = Error(
+        "PC0220",
+        "A type cannot be protected",
+        "'protected' says a member is reachable from anything extending the type that declares "
+        + "it, and '{0}' is a type. Write 'internal' for its project, or 'public' for anywhere.");
+
+    /// <summary>
+    /// <para>A type named from outside the project that declares it.</para>
+    /// <para>A type with no visibility written reaches its own project, which is the narrowest
+    /// thing that could own it — the same rule that makes an unmarked member reach its own
+    /// type. Only <c>public</c> widens it, and only <c>internal</c> can fail here.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeIsNotVisible = Error(
+        "PC0221",
+        "Type belongs to another project",
+        "'{0}' is internal to {1}, and this is {2}. Mark it 'public' if {2} is meant to use it.");
+
+    /// <summary>
+    /// <para><c>override</c> on a function that overrides nothing.</para>
+    /// <para>The word is a claim about a base type, and a claim nothing checked is worth
+    /// nothing: a renamed base function, or a parameter list that drifted by one type, leaves
+    /// a function still marked <c>override</c> and now overriding nothing at all. It would
+    /// compile, and every call through the base type would reach the old one.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NothingToOverride = Error(
+        "PC0222",
+        "Nothing to override",
+        "'{0}' is marked 'override', but {1} declares no '{0}' with these parameters. Check "
+        + "the name and the parameter types, or drop 'override' if this is a new function.");
+
+    /// <summary>
+    /// <para><c>override</c> on a function whose base was never marked <c>virtual</c>.</para>
+    /// <para>Overriding is something a base type offers rather than something a derived type
+    /// takes. A base that never said <c>virtual</c> is entitled to assume its own version is
+    /// the one that runs.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BaseIsNotVirtual = Error(
+        "PC0223",
+        "Overridden function is not virtual",
+        "'{0}' overrides a function in {1} that is not marked 'virtual', so {1} did not offer "
+        + "it for overriding. Mark the one in {1} 'virtual'.");
+
+    /// <summary>
+    /// <para>A function redeclaring one from a base type without saying <c>override</c>.</para>
+    /// <para>There is no way to write "hide the base one deliberately", so this is always
+    /// either an override that forgot to say so or a name collision. Both want reporting, and
+    /// the message names the word that resolves the first.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor HidesBaseFunction = Error(
+        "PC0224",
+        "This hides a function from the base",
+        "{1} already declares '{0}' with these parameters. Write 'override' to replace it, or "
+        + "rename this one.");
+
+    /// <summary>
+    /// <para>An override that yields something other than what it overrides.</para>
+    /// <para>A caller holding the base type reads the result as the base declared it, so a
+    /// different one would be a lie told through every such call.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor OverrideResultDiffers = Error(
+        "PC0225",
+        "Override yields a different result",
+        "'{0}' yields {1}, and the one it overrides in {2} yields {3}. An override yields what "
+        + "it overrides, since a caller holding a {2} reads the result as {2} declared it.");
+
     public static readonly DiagnosticDescriptor DuplicateTypeDeclaration = Error(
         "PC0217",
         "Type already declared",
@@ -646,6 +729,18 @@ public static class DiagnosticDescriptors
         "'{0}' is a value rather than a function, so it is written without '()'.");
 
     /// <summary>
+    /// <para>A member reached from further away than it is declared to reach.</para>
+    /// <para>One message for all four levels, because what a reader needs is the same each
+    /// time: how far the member reaches, and the word that would widen it. Naming the
+    /// visibility it has rather than describing it keeps the message true whichever level was
+    /// written, including the one written by writing nothing.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor MemberIsNotVisible = Error(
+        "PC0339",
+        "Member cannot be reached from here",
+        "'{0}' is {1} in {2}, so it cannot be reached here. {3}");
+
+    /// <summary>
     /// <para>An instance member reached through the name of its type.</para>
     /// <para>There is no instance for it to belong to, so there is nothing to read. Marking
     /// the member <c>global</c> is usually what was meant — a <c>constant</c> is not global on
@@ -748,7 +843,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ProjectUnknownEntry = Error(
         "PC0604",
         "Unrecognized project entry",
-        "'{0}' is not something a project file says. Write 'source' and a path.");
+        "'{0}' is not something a project file says. A project names files with 'source' and "
+        + "other projects with 'reference'.");
 
     public static readonly DiagnosticDescriptor ProjectSourceMissingPath = Error(
         "PC0605",
@@ -803,4 +899,71 @@ public static class DiagnosticDescriptors
         "Import names an absolute path",
         "'{0}' names a path from the root of a disk, so it resolves only on the machine it "
         + "was written on. A path relative to this file travels with it.");
+
+    /// <summary>
+    /// <para>An import reaching a file that reaches back, however many files apart.</para>
+    /// <para>A warning rather than an error, because nothing about a circle is unbuildable: a
+    /// compilation reads every file it gathers together, and reaching one twice adds nothing
+    /// the first reach did not. What a circle costs is a reader, who has no file to open first
+    /// — and a circle drawn across four files is one nobody meant to draw.</para>
+    /// <para>The fix is usually to write less. Files beside one another are compiled together
+    /// with no import between them, so a circle is always drawn across folders, and a project
+    /// file names files across folders without one of them importing another.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CircularImport = Warning(
+        "PC0614",
+        "Imports form a circle",
+        "This import closes a circle: {0}. It builds — a compilation reads every file it "
+        + "gathers together — but no file in the circle is the one to open first. Files beside "
+        + "one another need no import between them, and a project file spans folders without "
+        + "one file importing another.");
+
+    // ---- Project references, PC0620 to PC0629 ---------------------------------------------
+
+    public static readonly DiagnosticDescriptor ProjectReferenceMissingPath = Error(
+        "PC0620",
+        "Reference with no path",
+        "'reference' must be followed by the path of a project file.");
+
+    public static readonly DiagnosticDescriptor ProjectReferenceNotFound = Error(
+        "PC0621",
+        "Referenced project not found",
+        "There is no project file at '{0}'.");
+
+    public static readonly DiagnosticDescriptor ProjectReferenceIsNotAProject = Error(
+        "PC0622",
+        "Reference is not a project",
+        "'{0}' is not a .pcp file. A project references projects; it names files with 'source'.");
+
+    public static readonly DiagnosticDescriptor ProjectReferencedTwice = Error(
+        "PC0623",
+        "Project referenced more than once",
+        "'{0}' is already referenced by this project.");
+
+    /// <summary>
+    /// <para>Projects referencing one another, however many projects apart.</para>
+    /// <para>An error where the same shape between files is only a warning, and the difference
+    /// is what a project is. Files in a circle still all belong to one compilation, so nothing
+    /// about reading them together is in question. A reference crosses from one build to
+    /// another, and a build that has to exist before itself cannot be produced — which stays
+    /// true, and becomes literal, the moment a project is something separately built.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CircularProjectReference = Error(
+        "PC0624",
+        "Projects reference each other",
+        "This reference closes a circle: {0}. Neither project can be built before the other, "
+        + "so neither can be built. Code both need belongs in a third project they both "
+        + "reference.");
+
+    /// <summary>
+    /// <para>One file listed by two projects in the same build.</para>
+    /// <para>A file belongs to the project that names it, and two claims on one file leave that
+    /// undecided. Compiling it twice would report every type in it as declared twice, which
+    /// says where the copies are without saying that nothing was copied.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor SourceBelongsToTwoProjects = Error(
+        "PC0625",
+        "Two projects claim one file",
+        "'{0}' is listed by {1} and by {2}. A file belongs to one project. Let the project "
+        + "that owns it keep it, and have the other reference that project.");
 }

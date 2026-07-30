@@ -203,11 +203,57 @@ public sealed class TypeCheckerTests
     /// <summary>
     /// Boxing is refused rather than deferred, so this stays an error in every version.
     /// </summary>
+    [TestCase("        Model m = 1;", TestName = "a number")]
+    [TestCase("        Model m = 'c';", TestName = "a character")]
+    [TestCase("        Model m = true;", TestName = "a boolean")]
+    public void AValueTypeNeverConvertsToModel(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0300" }));
+
     [Test]
-    public void AValueTypeNeverConvertsToModel()
-    {
-        Assert.That(IdsOf(CheckBody("        Model m = 1;")), Is.EqualTo(new[] { "PC0300" }));
-    }
+    public void AStructureNeverConvertsToModel() => Assert.That(
+        IdsOf(Check("""
+            structure Point
+                public integer X;
+            end structure
+
+            enumeration Color
+                Red
+            end enumeration
+
+            global model Program
+                function Main()
+                    Model a = new Point();
+                    Model b = Color.Red;
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "PC0300", "PC0300" }));
+
+    /// <summary>
+    /// <para>Every model reaches Model, whether or not it wrote the word.</para>
+    /// <para>Both spellings, because a model that says <c>extends Model</c> and one that says
+    /// nothing are the same model, and a rule that held for one and not the other would make
+    /// writing the implicit thing out change what a program means.</para>
+    /// </summary>
+    [TestCase("model Thing extends Model\nend model", TestName = "written out")]
+    [TestCase("model Thing\nend model", TestName = "left implicit")]
+    public void EveryModelConvertsToModel(string declaration) => Assert.That(
+        IdsOf(Check($$"""
+            {{declaration}}
+
+            global model Program
+                function Main()
+                    Model held = new Thing();
+                    Console.WriteLine(Program.Describe(new Thing()));
+                    Console.WriteLine(Reference.Equals(held, held));
+                end function
+
+                string function Describe(Model m)
+                    yield "got " + m;
+                end function
+            end model
+            """)),
+        Is.Empty);
 
     // ---- Operators -----------------------------------------------------------------------------
 

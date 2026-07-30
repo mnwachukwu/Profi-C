@@ -15,6 +15,7 @@ public enum DeclarationModifiers
     None = 0,
     Public = 1 << 0,
     Protected = 1 << 1,
+    Internal = 1 << 8,
     Global = 1 << 2,
     Virtual = 1 << 3,
     Override = 1 << 4,
@@ -34,6 +35,7 @@ public static class DeclarationModifiersExtensions
     {
         TokenType.Public => DeclarationModifiers.Public,
         TokenType.Protected => DeclarationModifiers.Protected,
+        TokenType.Internal => DeclarationModifiers.Internal,
         TokenType.Global => DeclarationModifiers.Global,
         TokenType.Virtual => DeclarationModifiers.Virtual,
         TokenType.Override => DeclarationModifiers.Override,
@@ -55,6 +57,7 @@ public static class DeclarationModifiersExtensions
 
         if (modifiers.Has(DeclarationModifiers.Public)) { words.Add("public"); }
         if (modifiers.Has(DeclarationModifiers.Protected)) { words.Add("protected"); }
+        if (modifiers.Has(DeclarationModifiers.Internal)) { words.Add("internal"); }
         if (modifiers.Has(DeclarationModifiers.Global)) { words.Add("global"); }
         if (modifiers.Has(DeclarationModifiers.Constant)) { words.Add("constant"); }
         if (modifiers.Has(DeclarationModifiers.Virtual)) { words.Add("virtual"); }

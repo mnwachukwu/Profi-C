@@ -134,6 +134,7 @@ public sealed partial class TypeChecker
     {
         Symbol first = candidates[0];
         _model.Bind(member, first);
+        RequireVisible(member, first, member.MemberName);
 
         return first switch
         {
@@ -187,16 +188,19 @@ public sealed partial class TypeChecker
         TypeSymbol receiver,
         string name)
     {
+        // A member the type declares for itself wins, which is what makes ToString and Equals
+        // overridable: both are members every model inherits, and one inherited from Model that
+        // could not be replaced would be a promise the language makes and does not keep.
+        if (DeclaresMember(receiver, name))
+        {
+            return [];
+        }
+
         IReadOnlyList<BuiltInMember> found = BuiltInMembers.FindAll(receiver, name);
 
         if (found.Count > 0)
         {
             return found;
-        }
-
-        if (DeclaresMember(receiver, name))
-        {
-            return [];
         }
 
         if (UnnarrowedTypeOf(receiverExpression) is { } declared
@@ -444,6 +448,8 @@ public sealed partial class TypeChecker
         {
             RequireGlobal(member, declared, chosen);
         }
+
+        RequireVisible(member, chosen, member.MemberName);
 
         _model.Bind(member, chosen);
         _model.Bind(call, chosen);

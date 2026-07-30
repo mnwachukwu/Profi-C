@@ -385,7 +385,7 @@ public sealed partial class Interpreter
             return BuildBuiltInException(construction, scope, receiver);
         }
 
-        Instance instance = new(type);
+        Instance instance = new(type) { Renderer = RendererFor(type) };
 
         // Fields start at their initializers, which run before any constructor body.
         InitializeFields(instance, type);

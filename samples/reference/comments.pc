@@ -44,19 +44,6 @@ global model Comments
         end if
     end function
 
-    ##
-    Nothing is reserved by any of this. "comment", "begin" and "end" were three words a
-    program could not use before; only "end" still is, and that is for closing a construct
-    rather than a comment.
-    ##
-    function Boundaries()
-        integer comment = 1;
-        integer commentary = 2;
-        integer beginning = 3;
-
-        Console.WriteLine(comment + commentary + beginning);
-    end function
-
 end model
 
 # A trailing comment at the very end of the file.

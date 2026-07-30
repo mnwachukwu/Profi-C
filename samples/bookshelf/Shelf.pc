@@ -26,7 +26,7 @@ model Shelf
     end function
 
     # The earliest book on the shelf, or nothing when the shelf is empty.
-    Book? function Oldest()
+    public Book? function Oldest()
         Book? found;
 
         for each book in this.books

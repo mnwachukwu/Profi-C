@@ -1,0 +1,16 @@
+##
+A lending desk, built on a project of books.
+
+The reference is what makes Book usable here without this project listing the folder it
+lives in. Books decides what it is made of; Library says only that it builds on Books. Move
+a file inside Books and nothing here changes, which is the whole reason the line is worth
+writing instead of another 'source'.
+
+A second program wanting books would write the same one line. That is the difference
+between a reference and a source: a source claims files, a reference builds on a project.
+##
+
+project Library
+    reference books/books.pcp
+    source Program.pc
+end project

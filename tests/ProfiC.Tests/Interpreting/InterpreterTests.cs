@@ -1466,4 +1466,118 @@ public sealed class InterpreterTests
             end model
             """)),
         Is.EqualTo(new[] { "true", "false" }));
+
+    // ---- A declared ToString ------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Every way of printing a value reaches a declared ToString.</para>
+    /// <para>One list rather than one test each, because the point is that they agree: a value
+    /// on its own, a value joined to a string, a value inside a set, and the call written out
+    /// all end at the same function, and any of them going its own way is the bug.</para>
+    /// </summary>
+    [Test]
+    public void ADeclaredToStringIsReachedHoweverAValueIsPrinted() => Assert.That(
+        Lines(Run("""
+            model Tag
+                string label;
+
+                public function Tag(string what)
+                    this.label = what;
+                end function
+
+                public override string function ToString()
+                    yield "<" + this.label + ">";
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Tag one = new Tag("a");
+
+                    Console.WriteLine(one.ToString());
+                    Console.WriteLine(one);
+                    Console.WriteLine("joined: " + one);
+                    Console.WriteLine({new Tag("x"), new Tag("y")});
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "<a>", "<a>", "joined: <a>", "{<x>, <y>}" }));
+
+    /// <summary>A structure may override it as freely, and keeps field-by-field otherwise.</summary>
+    [Test]
+    public void AStructureMayDeclareToStringToo() => Assert.That(
+        Lines(Run("""
+            structure Point
+                public integer X;
+                public integer Y;
+
+                public function Point(integer x, integer y)
+                    this.X = x;
+                    this.Y = y;
+                end function
+
+                public override string function ToString()
+                    yield "(" + this.X + ", " + this.Y + ")";
+                end function
+            end structure
+
+            structure Plain
+                public integer N;
+
+                public function Plain(integer n)
+                    this.N = n;
+                end function
+            end structure
+
+            global model Program
+                function Main()
+                    Console.WriteLine(new Point(1, 2));
+                    Console.WriteLine(new Plain(3));
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "(1, 2)", "Plain { 3 }" }));
+
+    /// <summary>
+    /// Dispatch is on the runtime type, so a value held as its base prints the version its own
+    /// type declared. Anything less would make printing disagree with calling.
+    /// </summary>
+    [Test]
+    public void ToStringDispatchesOnTheRuntimeType() => Assert.That(
+        Lines(Run("""
+            model Shape
+                public override string function ToString()
+                    yield "shape";
+                end function
+            end model
+
+            model Square extends Shape
+                public override string function ToString()
+                    yield "square";
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Shape held = new Square();
+                    Console.WriteLine(held);
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "square" }));
+
+    /// <summary>A model declaring none prints its type name, which is the default it inherits.</summary>
+    [Test]
+    public void AModelDeclaringNoToStringPrintsItsTypeName() => Assert.That(
+        Lines(Run("""
+            model Plain
+            end model
+
+            global model Program
+                function Main()
+                    Console.WriteLine(new Plain());
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "Plain" }));
 }

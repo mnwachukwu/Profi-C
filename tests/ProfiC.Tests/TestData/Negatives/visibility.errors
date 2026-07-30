@@ -1,0 +1,6 @@
+visibility.pc(37,1): error PC0220: 'protected' says a member is reachable from anything extending the type that declares it, and 'Confused' is a type. Write 'internal' for its project, or 'public' for anywhere.
+visibility.pc(38,5): error PC0219: 'count' is written public and internal, and one declaration has one visibility. Keep the word that says how far this should reach.
+visibility.pc(45,19): error PC0339: 'Vault' is private in Vault, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.
+visibility.pc(48,27): error PC0339: 'secret' is private in Vault, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.
+visibility.pc(49,27): error PC0339: 'Hidden' is private in Vault, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.
+visibility.pc(52,27): error PC0339: 'guarded' is protected in Vault, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.

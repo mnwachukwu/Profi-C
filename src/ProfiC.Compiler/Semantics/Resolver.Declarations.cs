@@ -109,6 +109,7 @@ public sealed partial class Resolver
 
         symbol.Container = enclosing;
         symbol.DeclaredIn = _currentSource;
+        symbol.Project = _currentProject;
         _typesByName[name] = symbol;
         _model.Bind(declaration, symbol);
 
@@ -119,14 +120,39 @@ public sealed partial class Resolver
     /// <summary>Rejects modifier combinations that cannot mean anything.</summary>
     private void CheckTypeModifiers(DeclaredTypeSymbol symbol, Declaration declaration)
     {
-        if (symbol is not ModelSymbol model)
+        CheckVisibilityWords(symbol.Modifiers, symbol.Name, declaration);
+
+        // Protected names a line of descent from the type that declares the member. A type has
+        // no declaring type, so there is no line for the word to name.
+        if (symbol.Modifiers.Has(DeclarationModifiers.Protected))
         {
-            return;
+            Report(DiagnosticDescriptors.TypeCannotBeProtected, declaration, symbol.Name);
         }
 
-        if (model.IsSealed && model.IsAbstract)
+        if (symbol is ModelSymbol { IsSealed: true, IsAbstract: true } model)
         {
             Report(DiagnosticDescriptors.SealedAndAbstract, declaration, model.Name);
+        }
+    }
+
+    /// <summary>
+    /// Rejects a declaration written with two visibilities. Each names a different reach, so
+    /// two of them say two things about one declaration and neither can be the one meant.
+    /// </summary>
+    private void CheckVisibilityWords(
+        DeclarationModifiers modifiers,
+        string name,
+        Declaration declaration)
+    {
+        DeclarationModifiers written = modifiers & VisibilityExtensions.Words;
+
+        if (int.PopCount((int)written) > 1)
+        {
+            Report(
+                DiagnosticDescriptors.ConflictingVisibility,
+                declaration,
+                name,
+                written.ToDisplayString().Replace(" ", " and ", StringComparison.Ordinal));
         }
     }
 
@@ -151,6 +177,7 @@ public sealed partial class Resolver
                         Declaration = field,
                     };
 
+                    CheckVisibilityWords(field.Modifiers, field.Name, field);
                     owner.AddMember(symbol);
                     _model.Bind(field, symbol);
                     break;
@@ -176,6 +203,7 @@ public sealed partial class Resolver
                                         && string.Equals(function.Name, owner.Name, StringComparison.Ordinal),
                     };
 
+                    CheckVisibilityWords(function.Modifiers, function.Name, function);
                     owner.AddMember(symbol);
                     _model.Bind(function, symbol);
                     break;
@@ -258,6 +286,10 @@ public sealed partial class Resolver
             owner.AddMember(symbol);
         }
 
+        // A nested type is in the same project as the file that declared it, exactly as a
+        // top-level one is. Nesting says where a type sits, not which build it belongs to.
+        symbol.Project = _currentProject;
+
         _typesByName[symbol.Name] = symbol;
         _model.Bind(declaration, symbol);
 
@@ -306,29 +338,50 @@ public sealed partial class Resolver
     {
         foreach (DeclaredTypeSymbol type in _typesByName.Values)
         {
-            foreach (Symbol member in type.Members.Values.SelectMany(overloads => overloads))
+            // Entered so that a type named in a signature is judged from where it was written:
+            // which project may reach it, and which file to report against when it cannot.
+            DeclaredTypeSymbol? saved = _currentType;
+            _currentType = type;
+
+            if (type.DeclaredIn is { } file)
             {
-                switch (member)
-                {
-                    case FieldSymbol { Declaration: FieldDecl declaration } field:
-                        field.Type = ResolveType(declaration.Type);
-                        break;
+                using DiagnosticBag.FileScope reporting = _diagnostics.InFile(file);
+                SettleSignaturesOf(type);
+            }
+            else
+            {
+                SettleSignaturesOf(type);
+            }
 
-                    case FunctionSymbol { Declaration: FunctionDecl declaration } function:
-                        function.ReturnType = declaration.ReturnType is null
-                            ? null
-                            : ResolveType(declaration.ReturnType);
+            _currentType = saved;
+        }
+    }
 
-                        foreach (ParameterSymbol parameter in function.Parameters)
+    /// <summary>Settles the declared types in one type's member signatures.</summary>
+    private void SettleSignaturesOf(DeclaredTypeSymbol type)
+    {
+        foreach (Symbol member in type.Members.Values.SelectMany(overloads => overloads))
+        {
+            switch (member)
+            {
+                case FieldSymbol { Declaration: FieldDecl declaration } field:
+                    field.Type = ResolveType(declaration.Type);
+                    break;
+
+                case FunctionSymbol { Declaration: FunctionDecl declaration } function:
+                    function.ReturnType = declaration.ReturnType is null
+                        ? null
+                        : ResolveType(declaration.ReturnType);
+
+                    foreach (ParameterSymbol parameter in function.Parameters)
+                    {
+                        if (parameter.Declaration is ParameterDecl written)
                         {
-                            if (parameter.Declaration is ParameterDecl written)
-                            {
-                                parameter.Type = ResolveWrittenType(written);
-                            }
+                            parameter.Type = ResolveWrittenType(written);
                         }
+                    }
 
-                        break;
-                }
+                    break;
             }
         }
     }

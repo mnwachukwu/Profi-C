@@ -1,3 +1,4 @@
+using System.Text;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Parsing;
@@ -38,8 +39,14 @@ public static class SourceDiscovery
     /// <para>The files a command compiles, and the name to label the compilation with.</para>
     /// <para><see cref="Units"/> is in the order the files are compiled. The first is always
     /// the one the reader named, when they named a source file.</para>
+    /// <para><see cref="Projects"/> says which project each file belongs to, which is how far
+    /// an <c>internal</c> declared in it reaches. A file missing from it belongs to the one
+    /// unnamed project every compilation has, which is what a build nobody divided is.</para>
     /// </summary>
-    public sealed record Compilation(string Label, IReadOnlyList<CompilationUnit> Units);
+    public sealed record Compilation(
+        string Label,
+        IReadOnlyList<CompilationUnit> Units,
+        IReadOnlyDictionary<SourceText, string> Projects);
 
     /// <summary>A file a command was pointed at, and which of the two kinds it is.</summary>
     public readonly record struct FileTarget(string Path, bool IsProject);
@@ -131,12 +138,28 @@ public static class SourceDiscovery
             ? GatherFromProject(path, diagnostics)
             : GatherFromFolder(path, diagnostics);
 
-        return gathered is null
-            ? null
-            : gathered with { Units = FollowImports(gathered.Units, diagnostics) };
+        if (gathered is null)
+        {
+            return null;
+        }
+
+        Dictionary<SourceText, string> projects = new(gathered.Projects);
+
+        return gathered with
+        {
+            Units = FollowImports(gathered.Units, projects, diagnostics),
+            Projects = projects,
+        };
     }
 
     // ---- Files a file asks for --------------------------------------------------------------
+
+    /// <summary>One import that resolved, as an edge from the file that wrote it to the file it names.</summary>
+    private readonly record struct Reach(
+        string From,
+        string To,
+        SourceText Source,
+        ImportDirective Directive);
 
     /// <summary>
     /// <para>Adds every file reached by an <c>import</c>, and everything those reach in turn.
@@ -147,12 +170,17 @@ public static class SourceDiscovery
     /// <para>A file already present is not added again, whichever way it arrived. Reaching one
     /// twice is one file, not two, so it says nothing — a genuine duplicate is two different
     /// files declaring one type, and the resolver reports that.</para>
+    /// <para>Every edge is kept even when the file at its end is already here, because whether
+    /// a file arrives twice and whether the imports circle are separate questions, and only the
+    /// edges answer the second.</para>
     /// </summary>
     private static IReadOnlyList<CompilationUnit> FollowImports(
         IReadOnlyList<CompilationUnit> seed,
+        Dictionary<SourceText, string> projects,
         DiagnosticBag diagnostics)
     {
         List<CompilationUnit> all = [.. seed];
+        List<Reach> reaches = [];
         HashSet<string> seen = new(PathComparer);
 
         foreach (CompilationUnit unit in seed)
@@ -161,10 +189,12 @@ public static class SourceDiscovery
         }
 
         // Indexed rather than iterated, so a file added while walking is itself walked. That is
-        // what makes imports transitive, and what is already seen is what stops a cycle looping.
+        // what makes imports transitive, and what is already seen is what stops a cycle looping
+        // here — the circle is reported afterwards, from the edges this collects.
         for (int index = 0; index < all.Count; index++)
         {
             CompilationUnit unit = all[index];
+            string from = Path.GetFullPath(unit.Source.FileName);
 
             foreach (ImportDirective import in unit.Imports)
             {
@@ -173,16 +203,134 @@ public static class SourceDiscovery
                     continue;
                 }
 
-                if (!seen.Add(Path.GetFullPath(resolved)))
-                {
-                    continue;
-                }
+                string to = Path.GetFullPath(resolved);
+                reaches.Add(new Reach(from, to, unit.Source, import));
 
-                all.Add(Parser.Parse(SourceText.FromFile(resolved), diagnostics));
+                if (seen.Add(to))
+                {
+                    CompilationUnit brought = Parser.Parse(SourceText.FromFile(resolved), diagnostics);
+                    all.Add(brought);
+
+                    // An imported file belongs to the project of whoever imported it. No project
+                    // listed it, and the file that asked for it is the only claim there is.
+                    if (projects.TryGetValue(unit.Source, out string? importing))
+                    {
+                        projects[brought.Source] = importing;
+                    }
+                }
             }
         }
 
+        ReportCircles(all, reaches, diagnostics);
+
         return all;
+    }
+
+    /// <summary>
+    /// <para>Reports every circle the imports draw.</para>
+    /// <para>A depth-first walk, marking each file while it is on the path and again once it is
+    /// finished with. An import reaching a file still on the path closes a circle, and the path
+    /// from that file onwards is the circle itself — the files walked through to get there are
+    /// not part of it and are left out of what is said.</para>
+    /// <para>Each edge is examined once, so one circle is reported once however many files lead
+    /// into it, and two circles sharing a file are still two.</para>
+    /// </summary>
+    private static void ReportCircles(
+        IReadOnlyList<CompilationUnit> units,
+        IReadOnlyList<Reach> reaches,
+        DiagnosticBag diagnostics)
+    {
+        if (reaches.Count == 0)
+        {
+            return;
+        }
+
+        Dictionary<string, List<Reach>> outgoing = new(PathComparer);
+
+        foreach (Reach reach in reaches)
+        {
+            if (!outgoing.TryGetValue(reach.From, out List<Reach>? fromHere))
+            {
+                outgoing[reach.From] = fromHere = [];
+            }
+
+            fromHere.Add(reach);
+        }
+
+        // False while a file is on the path, true once it is done with. Both readings are the
+        // reason this is a dictionary of flags rather than a set: a file on the path closes a
+        // circle, and one already finished with cannot.
+        Dictionary<string, bool> visited = new(PathComparer);
+        List<Reach> path = [];
+
+        // Started from the compilation's files in the order they are compiled, so that what is
+        // reported does not depend on how a dictionary happened to order its keys.
+        foreach (CompilationUnit unit in units)
+        {
+            Walk(Path.GetFullPath(unit.Source.FileName));
+        }
+
+        void Walk(string file)
+        {
+            if (visited.ContainsKey(file))
+            {
+                return;
+            }
+
+            visited[file] = false;
+
+            if (outgoing.TryGetValue(file, out List<Reach>? fromHere))
+            {
+                foreach (Reach reach in fromHere)
+                {
+                    if (visited.TryGetValue(reach.To, out bool done) && !done)
+                    {
+                        Report(reach);
+                        continue;
+                    }
+
+                    path.Add(reach);
+                    Walk(reach.To);
+                    path.RemoveAt(path.Count - 1);
+                }
+            }
+
+            visited[file] = true;
+        }
+
+        void Report(Reach closing)
+        {
+            // Where the circle begins: the step that first left the file this import reaches
+            // back to. A file importing itself never took such a step, and its circle is the
+            // one import.
+            int opened = path.FindIndex(step => PathComparer.Equals(step.From, closing.To));
+            List<Reach> circle = opened < 0 ? [closing] : [.. path[opened..], closing];
+
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(closing.Source);
+
+            diagnostics.Report(
+                DiagnosticDescriptors.CircularImport,
+                closing.Directive.Span,
+                Describe(circle));
+        }
+    }
+
+    /// <summary>
+    /// Reads a circle back as a sentence: <c>A.pc imports B.pc, which imports A.pc</c>. Files
+    /// are named without their folders, as every other import message names them, since the
+    /// diagnostic already points at the import that says where to look.
+    /// </summary>
+    private static string Describe(IReadOnlyList<Reach> circle)
+    {
+        StringBuilder sentence = new(Path.GetFileName(circle[0].From));
+
+        for (int step = 0; step < circle.Count; step++)
+        {
+            sentence.Append(step == 0 ? " imports " : ", which imports ")
+                    .Append(Path.GetFileName(circle[step].To));
+        }
+
+        return sentence.ToString();
     }
 
     /// <summary>
@@ -215,7 +363,11 @@ public static class SourceDiscovery
         }
 
         string folder = Path.GetDirectoryName(Path.GetFullPath(importingFile.FileName)) ?? ".";
-        string combined = Path.IsPathRooted(native) ? native : Path.Combine(folder, native);
+
+        // Collapsed rather than left as combined, so that a path climbing out of a folder names
+        // the file it reached instead of the route it took. Diagnostics reported in an imported
+        // file carry this name, and "lib/../other/B.pc" is a worse answer to where than "other/B.pc".
+        string combined = Path.GetFullPath(Path.IsPathRooted(native) ? native : Path.Combine(folder, native));
 
         if (!File.Exists(combined))
         {
@@ -281,7 +433,10 @@ public static class SourceDiscovery
             }
         }
 
-        return new Compilation(Path.GetFileName(path), units);
+        // Every file here belongs to the one project a compilation nobody divided has, so
+        // nothing is recorded: a file the map does not mention reads as that project, and the
+        // map stays empty rather than repeating one name once per file.
+        return new Compilation(Path.GetFileName(path), units, new Dictionary<SourceText, string>());
     }
 
     /// <summary>
@@ -299,16 +454,218 @@ public static class SourceDiscovery
 
     // ---- A project file -------------------------------------------------------------------
 
+    /// <summary>
+    /// <para>Gathers a project and every project it references, to closure.</para>
+    /// <para>Referenced projects are compiled first, so a build reads in the order it depends:
+    /// what a project is built on is already there by the time the project itself arrives.
+    /// </para>
+    /// </summary>
     private static Compilation? GatherFromProject(string path, DiagnosticBag diagnostics)
     {
-        if (ProjectFile.Read(path, diagnostics) is not { } project)
+        if (ProjectFile.Read(path, diagnostics) is not { } root)
         {
             return null;
         }
 
-        List<CompilationUnit> units =
-            [.. project.SourceFiles.Select(file => Parser.Parse(SourceText.FromFile(file), diagnostics))];
+        Dictionary<string, ProjectFile> byPath = new(PathComparer)
+        {
+            [Path.GetFullPath(path)] = root,
+        };
 
-        return new Compilation(project.Name, units);
+        if (!ReadReferenced(root, byPath, diagnostics))
+        {
+            return null;
+        }
+
+        ReportProjectCircles(root, byPath, diagnostics);
+
+        List<CompilationUnit> units = [];
+        Dictionary<SourceText, string> projects = [];
+
+        // Which project claimed a file, so that two claims on one file are told apart from one
+        // project naming a file twice — which its own reader already caught.
+        Dictionary<string, string> owner = new(PathComparer);
+
+        foreach (ProjectFile project in InReferenceOrder(root, byPath))
+        {
+            foreach (ProjectFile.Entry source in project.SourceFiles)
+            {
+                string full = Path.GetFullPath(source.Path);
+
+                if (owner.TryGetValue(full, out string? first))
+                {
+                    using DiagnosticBag.FileScope reporting = diagnostics.InFile(project.Source);
+
+                    diagnostics.Report(
+                        DiagnosticDescriptors.SourceBelongsToTwoProjects,
+                        source.Span,
+                        Path.GetFileName(source.Path),
+                        first,
+                        project.Name);
+
+                    continue;
+                }
+
+                owner[full] = project.Name;
+
+                CompilationUnit unit = Parser.Parse(SourceText.FromFile(source.Path), diagnostics);
+                units.Add(unit);
+                projects[unit.Source] = project.Name;
+            }
+        }
+
+        return new Compilation(root.Name, units, projects);
     }
+
+    /// <summary>
+    /// Reads every project reachable by <c>reference</c>, keyed by full path. False when one of
+    /// them could not be read, since a build missing a project it was told to include is not a
+    /// build whose remaining mistakes are worth listing.
+    /// </summary>
+    private static bool ReadReferenced(
+        ProjectFile root,
+        Dictionary<string, ProjectFile> byPath,
+        DiagnosticBag diagnostics)
+    {
+        Queue<ProjectFile> pending = new([root]);
+        bool whole = true;
+
+        while (pending.Count > 0)
+        {
+            foreach (ProjectFile.Entry reference in pending.Dequeue().References)
+            {
+                if (byPath.ContainsKey(reference.Path))
+                {
+                    continue;
+                }
+
+                if (ProjectFile.Read(reference.Path, diagnostics) is not { } referenced)
+                {
+                    whole = false;
+                    continue;
+                }
+
+                byPath[reference.Path] = referenced;
+                pending.Enqueue(referenced);
+            }
+        }
+
+        return whole;
+    }
+
+    /// <summary>
+    /// <para>Every project in the build, each one after the projects it references.</para>
+    /// <para>A circle has already been reported by the time this runs, and what is marked as
+    /// finished with is what keeps it from looping here.</para>
+    /// </summary>
+    private static List<ProjectFile> InReferenceOrder(
+        ProjectFile root,
+        IReadOnlyDictionary<string, ProjectFile> byPath)
+    {
+        List<ProjectFile> ordered = [];
+        HashSet<string> placed = new(PathComparer);
+
+        Place(root);
+
+        return ordered;
+
+        void Place(ProjectFile project)
+        {
+            if (!placed.Add(Path.GetFullPath(project.Source.FileName)))
+            {
+                return;
+            }
+
+            foreach (ProjectFile.Entry reference in project.References)
+            {
+                if (byPath.TryGetValue(reference.Path, out ProjectFile? referenced))
+                {
+                    Place(referenced);
+                }
+            }
+
+            ordered.Add(project);
+        }
+    }
+
+    /// <summary>
+    /// Reports every circle the references draw, the same walk the imports get and for the same
+    /// reason: a reference reaching a project still waiting on this one closes a circle, and
+    /// the path from that project onwards is the circle itself.
+    /// </summary>
+    private static void ReportProjectCircles(
+        ProjectFile root,
+        IReadOnlyDictionary<string, ProjectFile> byPath,
+        DiagnosticBag diagnostics)
+    {
+        Dictionary<string, bool> visited = new(PathComparer);
+        List<(ProjectFile From, ProjectFile.Entry Reference)> path = [];
+
+        Walk(root);
+
+        void Walk(ProjectFile project)
+        {
+            string here = Path.GetFullPath(project.Source.FileName);
+
+            if (visited.ContainsKey(here))
+            {
+                return;
+            }
+
+            visited[here] = false;
+
+            foreach (ProjectFile.Entry reference in project.References)
+            {
+                if (!byPath.TryGetValue(reference.Path, out ProjectFile? referenced))
+                {
+                    continue;
+                }
+
+                if (visited.TryGetValue(reference.Path, out bool done) && !done)
+                {
+                    Report(project, reference);
+                    continue;
+                }
+
+                path.Add((project, reference));
+                Walk(referenced);
+                path.RemoveAt(path.Count - 1);
+            }
+
+            visited[here] = true;
+        }
+
+        void Report(ProjectFile from, ProjectFile.Entry closing)
+        {
+            int opened = path.FindIndex(step =>
+                PathComparer.Equals(Path.GetFullPath(step.From.Source.FileName), closing.Path));
+
+            List<(ProjectFile From, ProjectFile.Entry Reference)> circle =
+                opened < 0 ? [(from, closing)] : [.. path[opened..], (from, closing)];
+
+            StringBuilder sentence = new(circle[0].From.Name);
+
+            for (int step = 0; step < circle.Count; step++)
+            {
+                sentence.Append(step == 0 ? " references " : ", which references ")
+                        .Append(NameOf(circle[step].Reference.Path, byPath));
+            }
+
+            using DiagnosticBag.FileScope reporting = diagnostics.InFile(from.Source);
+
+            diagnostics.Report(
+                DiagnosticDescriptors.CircularProjectReference,
+                closing.Span,
+                sentence.ToString());
+        }
+    }
+
+    /// <summary>
+    /// What a project calls itself, for a message. The file name stands in where the project
+    /// could not be read, so a circle still reads as a sentence when part of it is missing.
+    /// </summary>
+    private static string NameOf(string path, IReadOnlyDictionary<string, ProjectFile> byPath) =>
+        byPath.TryGetValue(path, out ProjectFile? project)
+            ? project.Name
+            : Path.GetFileNameWithoutExtension(path);
 }

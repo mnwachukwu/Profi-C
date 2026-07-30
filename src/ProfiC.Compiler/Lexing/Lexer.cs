@@ -159,46 +159,9 @@ public sealed class Lexer
         }
     }
 
-    /// <summary>Advances past spaces and tabs only, leaving line breaks in place.</summary>
-    private void SkipInlineWhitespace()
-    {
-        while (!IsAtEnd() && (Current() == ' ' || Current() == '\t'))
-        {
-            _index++;
-        }
-    }
-
-    /// <summary>
-    /// <para>Returns true if the given word sits at the given position as a whole word.</para>
-    /// <para>Both edges are checked, which is what lets the word-delimited comment syntax
-    /// work without mistaking "commentary" for a comment.</para>
-    /// </summary>
-    private bool MatchesWordAt(int position, string word)
-    {
-        if (position < 0 || position + word.Length > _text.Length)
-        {
-            return false;
-        }
-
-        if (string.CompareOrdinal(_text, position, word, 0, word.Length) != 0)
-        {
-            return false;
-        }
-
-        if (position > 0 && IsIdentifierPart(_text[position - 1]))
-        {
-            return false;
-        }
-
-        int after = position + word.Length;
-        return after >= _text.Length || !IsIdentifierPart(_text[after]);
-    }
-
     /// <summary>
     /// <para>Skips a comment if one begins here, returning whether it did.</para>
-    /// <para><c>##</c> opens a block and <c>#</c> alone runs to the end of the line. Two marks
-    /// rather than a word, so that reading a comment means reading what it says rather than
-    /// first stepping over a keyword that carries none of the meaning.</para>
+    /// <para><c>##</c> opens a block and <c>#</c> alone runs to the end of the line.</para>
     /// </summary>
     private bool TrySkipComment()
     {

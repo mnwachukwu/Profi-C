@@ -687,6 +687,9 @@ public sealed partial class TypeChecker
         if (ResolveOverload(
                 construction, construction.Arguments, type.Name, constructors, arguments) is { } chosen)
         {
+            // A constructor is reached like any other member. One that is private is how a type
+            // says it makes its own instances, and nothing would say so if this were skipped.
+            RequireVisible(construction, chosen, type.Name);
             _model.Bind(construction, chosen);
         }
     }

@@ -48,7 +48,8 @@ CompilationUnit = { UsingDirective | ImportDirective }
 
 (* A using decides which names are reachable unqualified and brings in no
    file. An import decides which files are compiled and affects no name.
-   Neither does the other's job; see the language specification. *)
+   Neither does the other's job. Imports that form a circle are warned about,
+   and a using has no circle to form; see the language specification. *)
 UsingDirective      = "using" QualifiedName ";" ;
 ImportDirective     = "import" StringLiteral ";" ;
 
@@ -82,7 +83,10 @@ ModelMember    = FieldDecl | FunctionDecl | ModelDecl | StructureDecl
 
 (* ---- Modifiers ---------------------------------------------------------- *)
 
-Visibility     = "public" | "protected" ;
+(* At most one, and writing none is the narrowest reach rather than an
+   omission: a member with no word reaches its own type, and a type with no
+   word reaches its own project. "protected" is a member's word only. *)
+Visibility     = "public" | "protected" | "internal" ;
 Modifiers      = [ Visibility ] [ "global" ] [ "virtual" | "override" ] ;
 TypeModifiers  = [ Visibility ] [ "global" ] [ "sealed" | "abstract" ] ;
 

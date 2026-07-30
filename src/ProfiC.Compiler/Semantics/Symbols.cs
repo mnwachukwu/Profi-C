@@ -12,6 +12,13 @@ public abstract class Symbol(string name)
     /// <summary>Where it was declared. Null for a built-in, which no source declares.</summary>
     public SyntaxNode? Declaration { get; init; }
 
+    /// <summary>
+    /// The type this is a member of, or null when it is not one. Set as a member is recorded,
+    /// because whether a member can be reached is a question about where it was declared, and
+    /// a lookup that walked up a chain of models no longer knows where it stopped.
+    /// </summary>
+    public DeclaredTypeSymbol? DeclaringType { get; internal set; }
+
     /// <summary>A short description used in diagnostics, such as "model" or "local".</summary>
     public abstract string Kind { get; }
 
@@ -51,6 +58,20 @@ public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modif
     /// </summary>
     public SourceText? DeclaredIn { get; internal set; }
 
+    /// <summary>
+    /// <para>The project this was declared in, which is how far <c>internal</c> reaches.</para>
+    /// <para>Empty when nothing said otherwise, which is a compilation that no project file
+    /// described. Such a compilation is one project, so every <c>internal</c> in it reaches
+    /// every other — the rule does not change, only how many projects there are to have.</para>
+    /// </summary>
+    public string Project { get; internal set; } = string.Empty;
+
+    /// <summary>
+    /// How far this type can be seen. A type says nothing far more often than it says
+    /// <c>public</c>, so silence means the project rather than the world.
+    /// </summary>
+    public Visibility Visibility => Modifiers.OfType();
+
     /// <summary>Members declared directly on this type, keyed by name.</summary>
     public Dictionary<string, List<Symbol>> Members { get; } = new(StringComparer.Ordinal);
 
@@ -59,6 +80,8 @@ public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modif
     /// <summary>Records a member, allowing several to share a name so that overloads work.</summary>
     internal void AddMember(Symbol member)
     {
+        member.DeclaringType = this;
+
         if (!Members.TryGetValue(member.Name, out List<Symbol>? existing))
         {
             existing = [];
@@ -181,6 +204,9 @@ public sealed class FieldSymbol(
 
     public bool IsConstant => Modifiers.Has(DeclarationModifiers.Constant);
 
+    /// <summary>How far this field can be seen. Silence means the type that declares it.</summary>
+    public Visibility Visibility => Modifiers.OfMember();
+
     public override string Kind => IsConstant ? "constant" : "field";
 }
 
@@ -206,6 +232,9 @@ public sealed class FunctionSymbol(
     public bool IsVirtual => Modifiers.Has(DeclarationModifiers.Virtual);
 
     public bool IsOverride => Modifiers.Has(DeclarationModifiers.Override);
+
+    /// <summary>How far this function can be seen. Silence means the type that declares it.</summary>
+    public Visibility Visibility => Modifiers.OfMember();
 
     /// <summary>
     /// True when this is a constructor: its name matches its type and it declares no return

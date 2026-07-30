@@ -9,7 +9,7 @@ namespace ProfiC.Compiler.Lexing;
 /// </summary>
 public static class ReservedWords
 {
-    /// <summary>The 54 words that scan as keywords rather than identifiers.</summary>
+    /// <summary>The 56 words that scan as keywords rather than identifiers.</summary>
     public static readonly FrozenDictionary<string, TokenType> Keywords =
         new Dictionary<string, TokenType>(StringComparer.Ordinal)
         {
@@ -41,6 +41,7 @@ public static class ReservedWords
             ["import"] = TokenType.Import,
             ["in"] = TokenType.In,
             ["integer"] = TokenType.Integer,
+            ["internal"] = TokenType.Internal,
             ["is"] = TokenType.Is,
             ["let"] = TokenType.Let,
             ["model"] = TokenType.Model,

@@ -1,0 +1,52 @@
+##
+A book, and what a shelf can be asked about one.
+
+Nothing here knows there is a lending desk. That is the point of putting it in a project of
+its own: it can be built, read, and reused without the program that happens to use it today.
+
+Public, because Library is meant to use it. A type written with no visibility reaches its own
+project and no further, which is why Wording beside it stays inside Books however many
+projects reference this one.
+##
+
+public model Book
+
+    string title;
+    string author;
+    integer copies;
+
+    public function Book(string title, string author, integer copies)
+        this.title = title;
+        this.author = author;
+        this.copies = copies;
+    end function
+
+    public string function Title()
+        yield this.title;
+    end function
+
+    public string function Author()
+        yield this.author;
+    end function
+
+    public integer function Copies()
+        yield this.copies;
+    end function
+
+    public boolean function IsAvailable()
+        yield this.copies > 0;
+    end function
+
+    public function Lend()
+        if this.copies <= 0
+            throw new ArgumentException();
+        end if
+
+        this.copies = this.copies - 1;
+    end function
+
+    public string function Described()
+        yield Wording.Join(this.title, this.author);
+    end function
+
+end model

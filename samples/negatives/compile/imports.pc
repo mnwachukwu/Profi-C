@@ -4,9 +4,10 @@ Imports that name nothing.
 This program does not compile. An import names one file, relative to the file that wrote
 it, and the file has to be there and has to be Profi-C.
 
-An import that points at an absolute path is a warning rather than an error: it is correct
-on the machine that wrote it and nowhere else. That case is not shown here, because a
-warning is not what this folder records.
+Two import mistakes are warnings rather than errors, and neither is shown here, because a
+warning is not what this folder records. An absolute path is correct on the machine that
+wrote it and nowhere else. Imports that circle back build perfectly well — a compilation
+reads every file it gathers together — but leave a reader no file to open first.
 ##
 
 import "nowhere.pc";

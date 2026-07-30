@@ -289,6 +289,27 @@ public sealed partial class Interpreter
     }
 
     /// <summary>
+    /// <para>How instances of a type render, or null where the default stands.</para>
+    /// <para>Settled once per instance rather than at every print, and by the same walk a call
+    /// takes, so that <c>x.ToString()</c> and printing <c>x</c> can never reach two different
+    /// functions. Zero arguments, because a <c>ToString</c> taking any is a different function
+    /// that happens to share a name.</para>
+    /// </summary>
+    private Func<Instance, string>? RendererFor(DeclaredTypeSymbol type)
+    {
+        if (FindMethod(type, "ToString", arity: 0) is not { } declared
+            || BodyOf(declared) is not { } body)
+        {
+            return null;
+        }
+
+        return instance => Invoke(
+            new FunctionValue(body.Parameters, body.Body, null, _globals, instance),
+            [],
+            []) as string ?? string.Empty;
+    }
+
+    /// <summary>
     /// <para>Copies a structure wherever one is stored or passed.</para>
     /// <para>This is the whole of value semantics. Models are references and are never copied,
     /// which is why one method can serve both.</para>

@@ -9,27 +9,25 @@ A condensed reference and a full comparison to C#. For the normative definition 
 
 ## 1. Reserved words
 
-### 1.1 The 55 reserved words
+### 1.1 The 56 reserved words
 
 ```
 abstract     and          as           base         begin        boolean
 break        case         catch        character    constant     continue
 default      each         else         end          enumeration  extends
 false        finally      for          fraction     function     global
-if           import       in           integer      is           let
-model        namespace    new          not          or           override
-protected    public       real         sealed       step         string
-structure    switch       then         this         throw        to
-true         try          until        using        virtual      while
-yield
+if           import       in           integer      internal     is
+let          model        namespace    new          not          or
+override     protected    public       real         sealed       step
+string       structure    switch       then         this         throw
+to           true         try          until        using        virtual
+while        yield
 ```
 
 A name may take one back by writing `@` in front of it — `@end`, `@step` — which is the only
 place a name may begin with something other than a letter.
 
-### 1.2 Comments reserve nothing
-
-A comment is marked rather than named, so unlike almost every keyword decision here it costs a program no words at all.
+### 1.2 Comments
 
 ```
 # this is a line comment, running to end of line
@@ -49,7 +47,9 @@ A run of marks is a heading rather than an error, the extra ones being comment t
 
 `private`, `static`, `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`, `select`, `when`, `const`.
 
-Members are private by default, so `public` and `protected` opt out and `private` is unnecessary. `global` fills the role of `static`. There is no `null` at all. And note the spellings: `enumeration`, not `enum`; `constant`, not `const`.
+Members are private by default, so `protected`, `internal`, and `public` opt out and `private` is unnecessary. `global` fills the role of `static`. There is no `null` at all. And note the spellings: `enumeration`, not `enum`; `constant`, not `const`.
+
+**Types default to `internal`, exactly as in C#** — and for the same reason members default to private: a declaration with no word belongs to the smallest thing that could own it. A member's owner is its type; a type's owner is its project. A compilation nobody divided into projects is one project, so the default costs a single-file program nothing and starts to matter when one project references another.
 
 ---
 
@@ -129,6 +129,10 @@ The defaults differ, and the difference is forced rather than chosen:
 A structure cannot contain itself, so walking its fields terminates. A model can take part in
 a cycle, and while deep `==` solves that with bisimulation, no equivalent trick exists for
 printing — so models print their type name and an author who wants more overrides it.
+
+A declared `ToString` is what a value prints everywhere: written out, printed on its own,
+joined to a string with `+`, or inside a set. All of them dispatch on the runtime type, so
+printing and calling never disagree.
 
 `Model` also defines `Equals()`, likewise `virtual`.
 
@@ -285,6 +289,6 @@ specification.
 
 ## 7. Two details worth knowing
 
-**Warnings are few and each one names its fix.** Eight exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, an import naming an absolute path, and a `switch` leaving enumeration members unhandled. Every other diagnostic is an error. Warnings do not block compilation.
+**Warnings are few and each one names its fix.** Nine exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, an import naming an absolute path, imports that form a circle, and a `switch` leaving enumeration members unhandled. Every other diagnostic is an error. Warnings do not block compilation.
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.

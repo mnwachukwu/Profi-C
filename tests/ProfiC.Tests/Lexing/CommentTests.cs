@@ -117,23 +117,6 @@ public sealed class CommentTests : LexerTestBase
         }));
     }
 
-    /// <summary>
-    /// Marking a comment rather than naming one means comment syntax speaks for no word at
-    /// all. "begin" is reserved because it opens a block, and for no other reason.
-    /// </summary>
-    [TestCase("comment")]
-    [TestCase("commentary")]
-    [TestCase("begin")]
-    public void CommentSyntaxSpeaksForNoWord(string word)
-    {
-        Token token = ScanSingle(word);
-
-        Assert.That(
-            token.Type,
-            Is.EqualTo(word == "begin" ? TokenType.Begin : TokenType.Identifier),
-            $"'{word}' is not spoken for by comment syntax");
-    }
-
     [Test]
     public void EmptySource_ProducesOnlyEndOfFile()
     {

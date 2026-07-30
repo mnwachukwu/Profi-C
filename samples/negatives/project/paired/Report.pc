@@ -1,0 +1,7 @@
+model Report
+
+    public global string function Heading()
+        yield "Report";
+    end function
+
+end model

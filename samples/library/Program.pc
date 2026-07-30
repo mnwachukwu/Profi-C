@@ -1,0 +1,47 @@
+##
+The lending desk.
+
+Book comes from the Books project, which library.pcp references. It is written here exactly
+as though it had been declared beside this file — a reference decides what a build is made
+of, and changes nothing about how a type is named or used.
+##
+
+global model Program
+
+    function Main()
+        Book[] shelf =
+        {
+            new Book("The Hobbit", "Tolkien", 2),
+            new Book("Dune", "Herbert", 1),
+            new Book("A Wizard of Earthsea", "Le Guin", 0)
+        };
+
+        Console.WriteLine("On the shelf");
+
+        for each book in shelf
+            Console.WriteLine("  " + book.Described() + " - " + Program.Availability(book));
+        end for
+
+        Console.WriteLine("");
+        Program.Lend(shelf[1]);
+        Program.Lend(shelf[2]);
+    end function
+
+    string function Availability(Book book)
+        if book.IsAvailable()
+            yield book.Copies() + " on hand";
+        else
+            yield "all out";
+        end if
+    end function
+
+    function Lend(Book book)
+        try
+            book.Lend();
+            Console.WriteLine("Lent " + book.Title() + ", " + book.Copies() + " left");
+        catch ArgumentException e
+            Console.WriteLine("Cannot lend " + book.Title() + ": none on hand");
+        end try
+    end function
+
+end model

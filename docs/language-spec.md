@@ -30,7 +30,7 @@ This document is the normative one: where they disagree, this is right.
 |---|---|
 | 0. Overview | Identity, purpose, design principles, conformance |
 | 1. Lexical structure | Source files, comments, identifiers, literals, escapes |
-| 2. Tokens and reserved words | The 55 words, the operators, end of file |
+| 2. Tokens and reserved words | The 56 words, the operators, end of file |
 | 3. Types | Base types, suffixes, function types, values and references |
 | 4. Declarations | Variables, constants, fields, functions, visibility |
 | 5. Expressions | Precedence, `is` and `as`, the `if` expression, literals |
@@ -227,8 +227,7 @@ A single `#` cannot close a block; only a pair does. A `#` inside a string liter
 the scanner reaches a comment only where a token could begin. Reaching the end of the file
 inside a block comment is an error, reported at the opener.
 
-Comments produce no tokens, and **reserve no words**: `comment`, `begin` and `commentary` are
-all names a program may use.
+Comments produce no tokens.
 
 ### 1.4 Identifiers
 
@@ -305,7 +304,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 
 ### 2.1 Reserved words
 
-Profi-C has **55** reserved words. A name may take one back by writing `@` in front of it —
+Profi-C has **56** reserved words. A name may take one back by writing `@` in front of it —
 `@end`, `@step` — which is the only place a name may begin with something other than a letter.
 
 ```
@@ -313,12 +312,12 @@ abstract     and          as           base         begin        boolean
 break        case         catch        character    constant     continue
 default      each         else         end          enumeration  extends
 false        finally      for          fraction     function     global
-if           import       in           integer      is           let
-model        namespace    new          not          or           override
-protected    public       real         sealed       step         string
-structure    switch       then         this         throw        to
-true         try          until        using        virtual      while
-yield
+if           import       in           integer      internal     is
+let          model        namespace    new          not          or
+override     protected    public       real         sealed       step
+string       structure    switch       then         this         throw
+to           true         try          until        using        virtual
+while        yield
 ```
 
 These are every reserved word, and nothing is reserved outside the list. A comment is marked
@@ -523,10 +522,21 @@ Both are surprising, so the program says which it wants.
 **A character is not a small integer.** Treating `'A'` as 65 is a C habit that teaches the
 wrong thing about what a character is.
 
-**A value type never converts to `Model`.** That conversion is boxing, which the language does
-not have — so `Model m = 1;` is rejected rather than quietly allocating. Every type still
-*inherits* `Model`'s members, including `ToString` and `Equals`; inheriting them and
-converting to it are different things.
+**Every model converts to `Model`**, whether or not it wrote `extends Model`. The two spellings
+declare the same model, so writing the implicit thing out changes nothing:
+
+```
+model Thing
+end model
+
+Model held = new Thing();           either spelling of Thing reaches Model
+```
+
+**A value type never does.** That conversion is boxing, which the language does not have — so
+`Model m = 1;`, and the same with a structure or an enumeration member, is rejected rather than
+quietly allocating. Every type still *inherits* `Model`'s members, including `ToString` and
+`Equals`; inheriting them and converting to it are different things. `string` is a reference
+type and converts, needing no boxing to do it.
 
 **A set of squares is not a set of shapes.** If it were, a circle could be inserted into it
 through the wider name, and the squares would no longer all be squares.
@@ -616,15 +626,20 @@ A field is declared inside a model or structure, and is **private unless it says
 ```
 model Account
     integer balance;                    private
-    public string owner;                readable and writable from anywhere
-    protected integer limit;            and by anything extending Account
+    protected integer limit;            and anything extending Account
+    internal integer revision;          and anything in this project
+    public string owner;                and anywhere at all
     global integer opened;              one per program, not one per account
 end model
 ```
 
-There is no `private` keyword, because private is what you get by writing nothing. `public`
-and `protected` opt out of it. `global` is what other languages call `static`: the member
-belongs to the type rather than to an instance.
+There is no `private` keyword, because private is what you get by writing nothing. `protected`,
+`internal`, and `public` each widen that, and only one of them may be written on a declaration
+(`PC0219`). `global` is what other languages call `static`: the member belongs to the type
+rather than to an instance, and says nothing about who may reach it.
+
+Reaching a member from further away than it reaches is an error (`PC0339`), reported where the
+member is named. See §4.7 for what each word means and where a project comes from.
 
 ### 4.4 Functions
 
@@ -651,8 +666,8 @@ model Account
 end model
 ```
 
-Modifiers are `public`, `protected`, `global`, and `virtual` or `override`. §7.2 covers the
-last two. **A function that declares a result must reach a `yield` on every path** — `PC0404`
+Modifiers are `public`, `protected`, `internal`, `global`, and `virtual` or `override`. §7.2
+covers the last two. **A function that declares a result must reach a `yield` on every path** — `PC0404`
 — so a function cannot promise an integer and fall off the end without one. A constructor
 must leave every field assigned (`PC0402`).
 
@@ -683,6 +698,52 @@ Java run, and it is here for the same reason: an uninitialized read is a bug tha
 value hides rather than prevents.
 
 The same pass reports code nothing can reach, as a warning (`PC0403`).
+
+### 4.6 Visibility
+
+Four reaches, narrowest first. A declaration writes at most one of them.
+
+| Written | A member reaches | A type reaches |
+|---|---|---|
+| nothing | the type that declares it | the project that declares it |
+| `protected` | and anything extending that type | — |
+| `internal` | and anything in the same project | the project that declares it |
+| `public` | anywhere | anywhere |
+
+**The two defaults are one rule applied twice: a declaration with no word belongs to the
+smallest thing that could own it.** A member's owner is its type, so silence means private. A
+type's owner is its project, so silence means internal. Nothing has to be memorized separately
+— what is written down is always a widening of what silence already said.
+
+There is no `private` keyword: private is what writing nothing gets you. Writing `internal` on
+a type is legal and says what silence says, which is worth writing where a reader might wonder.
+
+`protected` may not be written on a type (`PC0220`). It means "and anything extending the type
+that declares this", which is a sentence about a member; a type has no declaring type, so the
+word has nothing to name.
+
+Reaching further than a declaration reaches is an error — `PC0339` for a member, `PC0221` for a
+type — reported where the name is written. A constructor is a member like any other, so a
+private one is how a type says it makes its own instances.
+
+**Where a project comes from.** A project is a `.pcp` file and the files it lists (§12.1). A
+compilation nobody divided is **one project**, so `internal` reaches everything in it and the
+rule costs a single-file program nothing. Projects only start to matter once one references
+another, which is exactly when a boundary is worth having: without `internal`, a project
+reference would be nothing but a shorter way to list somebody else's folders.
+
+```
+public model Book                       Library, which references Books, may use this
+    integer copies;                     Book alone
+    internal integer shelf;             anything in Books
+end model
+
+model Wording                           nothing outside Books can even name this
+end model
+```
+
+A file brought in by `import` (§12.1) belongs to the project of the file that imported it. No
+project listed it, and the file that asked for it is the only claim there is.
 
 ## 5. Expressions
 
@@ -981,6 +1042,43 @@ overriding, `override` does it, and both words are required — an override that
 Shape shape = new Square(3);
 Console.WriteLine(shape.Area());     9, from Square
 ```
+
+**The claim `override` makes is checked.** A function marked `override` must find one above it
+with the same name and the same parameter types, and that one must have been offered — marked
+`virtual`, or an `override` itself, since the word carries down a chain without every link
+repeating it. Four ways it can fail, and each is an error:
+
+| Written | Reported |
+|---|---|
+| `override` matching nothing above | `PC0222` |
+| `override` of a function that is not `virtual` | `PC0223` |
+| A function redeclaring one above without `override` | `PC0224` |
+| An `override` yielding something else | `PC0225` |
+
+An unchecked `override` fails quietly, which is why it is checked: a base function renamed, or
+a parameter type that drifted, leaves a function still marked `override` and now overriding
+nothing. It compiles, it runs, and every call through the base type reaches the old one.
+
+A function differing in **parameter types** is an overload rather than an override, and
+overloading across a base and a derived model is ordinary. `PC0222` is what tells the two apart
+when a type meant the second and wrote the first.
+
+**`ToString` and `Equals` are inherited from `Model`**, which every model extends whether or not
+it wrote `extends`, so both may be overridden with no base named:
+
+```
+model Tag
+    public override string function ToString()
+        yield "<" + this.label + ">";
+    end function
+end model
+```
+
+A declared `ToString` is what a value prints — written out, printed on its own, joined to a
+string with `+`, or sitting inside a set. All of them reach the same function, dispatched on
+the runtime type, so printing and calling can never disagree. Structures may override it as
+freely as models; a structure declaring none prints field by field, and a model declaring none
+prints its type name (§3.3 of the summary explains why the two defaults differ).
 
 ### 7.3 Structures
 
@@ -1678,10 +1776,45 @@ end project
 A `source` naming a folder takes every `.pc` directly inside it and does not descend, so a
 nested folder is named by its own `source` and what a project builds can be read off the file.
 Paths are relative to the project file and are written with forward slashes on every platform.
-A `comment` line, and any blank line, is ignored.
+Comments are marked as they are in a program — `#` to the end of a line, `##` opening a block —
+and a blank line is ignored.
 
 A project file is not Profi-C. It describes a build rather than a computation, nothing in it
-is compiled, and its vocabulary is only `project`, `source`, `comment`, and `end project`.
+is compiled, and its vocabulary is only `project`, `source`, `reference`, and `end project`.
+
+**A project names another project with `reference`.** The referenced project's types are then
+available, exactly as though they were declared in this one:
+
+```
+project Storefront
+    reference ../Core/Core.pcp
+    source Program.pc
+    source models
+end project
+```
+
+References are followed to closure, and a project reached more than one way is brought once —
+which is what makes a project shareable between several others. What a project references is
+built before the project itself, so a build reads in the order it depends. A reference is
+transitive: referencing a project also reaches what *it* references, matching .NET, so a shared
+project need be named only by whoever actually builds on it.
+
+A project made only of references is composition rather than emptiness, and builds what its
+references bring.
+
+**One file belongs to one project.** Two projects in a build listing the same file leave
+undecided which one it belongs to, and it is reported naming both. The fix is for the project
+that owns the file to keep it, and the other to reference that project.
+
+**Projects may not reference in a circle.** This is an error, where the same shape between
+files is only a warning, and the difference is what a project is. Files in a circle still all
+belong to one compilation, so nothing about reading them together is in question. A reference
+crosses from one build to another, and a build that has to exist before itself cannot be
+produced — which stays true, and becomes literal, the moment a project is something separately
+built. The circle is reported at the reference that closes it and read back as a sentence:
+`Ledger references Reports, which references Ledger`. A project referencing itself is the same
+rule with one project in it. Code that two projects both need belongs in a third that both
+reference.
 
 **A file names another file with `import`.**
 
@@ -1701,6 +1834,21 @@ it resolves only on the machine that wrote it.
 found, or what another file already imported, says nothing — it is one file, not two. A
 duplicate is two *different* files declaring the same type, which is reported where the second
 declaration is.
+
+**Imports that form a circle are warned about.** A warning rather than an error, because
+nothing about a circle is unbuildable: a compilation reads every file it gathers together, and
+reaching one twice adds nothing the first reach did not. What a circle costs is a reader, who
+has no file to open first — and one drawn across four files is a circle nobody meant to draw.
+The compiler reports it at the import that closes the circle and reads the circle back as a
+sentence: `A.pc imports B.pc, which imports A.pc`. A file importing itself is the same rule
+with one file in it.
+
+The fix is usually to write less. A circle can only ever be drawn across folders, because files
+beside one another are already compiled together and need no import between them — so mutually
+recursive types in one folder are written with nothing said. Across folders, a project file
+names every file in the build without one of them importing another.
+
+Contrast this with a circle between *projects*, which is an error: see above.
 
 `import` and `using` do different jobs and neither does the other's. **An import decides which
 files are compiled and affects no name; a using decides which names are reachable unqualified
@@ -1746,6 +1894,14 @@ file-scoped namespace or several block ones, but not both forms at once; `using`
 directives come above any namespace; and a nested namespace whose name repeats an enclosing
 one is legal but warned about, since `Shapes.Shapes.Circle` is more often a mistake than an
 intent.
+
+**A `using` cannot form a circle, and will not be made to.** Two namespaces whose types name
+each other are ordinary, and stay legal however the files are arranged. A namespace is a way of
+naming things rather than a thing that gets built: every file in a compilation is resolved
+together, so a `using` introduces no order for a circle to violate. This is exactly the
+difference §12.1 draws. An import decides what is compiled, and what is compiled has to be
+reachable from somewhere, so its circles matter; a using decides what is spelled short, and
+nothing is spelled first.
 
 
 
@@ -1818,6 +1974,13 @@ Warnings do not block compilation; everything else does.
 | `PC0216` | error | Cannot extend a built-in type |
 | `PC0217` | error | Type already declared |
 | `PC0218` | error | Main declares no result or an integer |
+| `PC0219` | error | Two visibilities on one declaration |
+| `PC0220` | error | A type cannot be protected |
+| `PC0221` | error | Type belongs to another project |
+| `PC0222` | error | Nothing to override |
+| `PC0223` | error | Overridden function is not virtual |
+| `PC0224` | error | This hides a function from the base |
+| `PC0225` | error | Override yields a different result |
 
 ### PC0300 to PC0399
 
@@ -1862,6 +2025,7 @@ Warnings do not block compilation; everything else does.
 | `PC0336` | error | Parameter needs a type |
 | `PC0337` | warning | Not every member is handled |
 | `PC0338` | error | This member is a value |
+| `PC0339` | error | Member cannot be reached from here |
 
 ### PC0400 to PC0499
 
@@ -1891,4 +2055,11 @@ Warnings do not block compilation; everything else does.
 | `PC0611` | error | Imported file not found |
 | `PC0612` | error | Import is not Profi-C |
 | `PC0613` | warning | Import names an absolute path |
+| `PC0614` | warning | Imports form a circle |
+| `PC0620` | error | Reference with no path |
+| `PC0621` | error | Referenced project not found |
+| `PC0622` | error | Reference is not a project |
+| `PC0623` | error | Project referenced more than once |
+| `PC0624` | error | Projects reference each other |
+| `PC0625` | error | Two projects claim one file |
 

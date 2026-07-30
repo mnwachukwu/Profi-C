@@ -11,13 +11,13 @@ namespace ProfiC.Tests.Lexing;
 [TestFixture]
 public sealed class ReservedWordTests : LexerTestBase
 {
-    /// <summary>The 55 reserved words, written out rather than derived from the table.</summary>
+    /// <summary>The 56 reserved words, written out rather than derived from the table.</summary>
     private static readonly string[] Expected =
     [
         "abstract", "and", "as", "base", "begin", "boolean", "break", "case", "catch",
         "character", "constant", "continue", "default", "each", "else", "end", "enumeration",
         "extends", "false", "finally", "for", "fraction", "function", "global", "if", "import", "in",
-        "integer", "is", "let", "model", "namespace", "new", "not", "or", "override",
+        "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or", "override",
         "protected", "public", "real", "sealed", "step", "string", "structure", "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
         "yield",
@@ -85,9 +85,9 @@ public sealed class ReservedWordTests : LexerTestBase
         Assert.That(ScanRaw("@ ").Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0010" }));
 
     [Test]
-    public void KeywordTable_ContainsExactlyFiftyFiveWords()
+    public void KeywordTable_ContainsExactlyFiftySixWords()
     {
-        Assert.That(ReservedWords.Count, Is.EqualTo(55));
+        Assert.That(ReservedWords.Count, Is.EqualTo(56));
     }
 
     [Test]
@@ -100,7 +100,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_MapsEachWordToADistinctTokenType()
     {
-        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(55));
+        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(56));
     }
 
     [Test]
@@ -146,17 +146,24 @@ public sealed class ReservedWordTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// The table is the whole list. Nothing else reserves a word, so a word it does not hold
+    /// is one a program may use, and <c>IsReserved</c> can only be asking the table.
+    /// </summary>
     [Test]
-    public void EveryReservedWordIsInTheKeywordTable()
+    public void IsReservedAgreesWithTheKeywordTable()
     {
-        // A comment is marked rather than named, so it reserves nothing: the table is the
-        // whole list, and a word absent from it is a word a program may use.
         Assert.Multiple(() =>
         {
-            Assert.That(ReservedWords.IsReserved("comment"), Is.False);
-            Assert.That(ReservedWords.IsReserved("commentary"), Is.False);
-            Assert.That(ReservedWords.IsReserved("model"), Is.True);
-            Assert.That(ReservedWords.IsReserved("begin"), Is.True, "begin still opens a block");
+            foreach (string word in Expected)
+            {
+                Assert.That(ReservedWords.IsReserved(word), Is.True, word);
+            }
+
+            foreach (string word in NotReserved)
+            {
+                Assert.That(ReservedWords.IsReserved(word), Is.False, word);
+            }
         });
     }
 

@@ -1,0 +1,5 @@
+overriding.pc(34,5): error PC0222: 'Describ' is marked 'override', but Shape declares no 'Describ' with these parameters. Check the name and the parameter types, or drop 'override' if this is a new function.
+overriding.pc(39,5): error PC0223: 'Name' overrides a function in Shape that is not marked 'virtual', so Shape did not offer it for overriding. Mark the one in Shape 'virtual'.
+overriding.pc(44,5): error PC0225: 'Area' yields integer, and the one it overrides in Shape yields real. An override yields what it overrides, since a caller holding a Shape reads the result as Shape declared it.
+overriding.pc(49,5): error PC0224: Shape already declares 'Describe' with these parameters. Write 'override' to replace it, or rename this one.
+overriding.pc(59,5): error PC0222: 'Nonsense' is marked 'override', but Model declares no 'Nonsense' with these parameters. Check the name and the parameter types, or drop 'override' if this is a new function.

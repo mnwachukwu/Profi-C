@@ -106,6 +106,7 @@ public sealed partial class Resolver
         // "Program.Describe(x)".
         if (_typesByName.TryGetValue(identifier.Name, out DeclaredTypeSymbol? type))
         {
+            RequireVisibleType(identifier, type);
             _model.Bind(identifier, type);
             return;
         }
@@ -207,6 +208,7 @@ public sealed partial class Resolver
 
         if (_typesByName.TryGetValue(construction.TypeName, out DeclaredTypeSymbol? type))
         {
+            RequireVisibleType(construction, type);
             _model.Bind(construction, type);
             _model.BindType(construction, type);
             return;

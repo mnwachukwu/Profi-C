@@ -21,22 +21,3 @@ CompilationUnit
           BinaryExpr '-'
             IdentifierExpr 'total'
             LiteralExpr 1 [Integer]
-    FunctionDecl 'Boundaries'
-      VarDeclStmt 'comment'
-        NamedTypeSyntax 'integer'
-        LiteralExpr 1 [Integer]
-      VarDeclStmt 'commentary'
-        NamedTypeSyntax 'integer'
-        LiteralExpr 2 [Integer]
-      VarDeclStmt 'beginning'
-        NamedTypeSyntax 'integer'
-        LiteralExpr 3 [Integer]
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'WriteLine'
-            IdentifierExpr 'Console'
-          BinaryExpr '+'
-            BinaryExpr '+'
-              IdentifierExpr 'comment'
-              IdentifierExpr 'commentary'
-            IdentifierExpr 'beginning'

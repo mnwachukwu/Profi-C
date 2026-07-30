@@ -36,6 +36,17 @@ public sealed partial class Resolver
     /// </summary>
     private SourceText? _currentSource;
 
+    /// <summary>
+    /// The project the file being collected from belongs to, which becomes the reach of every
+    /// <c>internal</c> declared in it. Empty when the driver named no projects, since a
+    /// compilation nobody divided is one project.
+    /// </summary>
+    private string _currentProject = string.Empty;
+
+    /// <summary>Which project each file belongs to, as the driver worked it out.</summary>
+    private IReadOnlyDictionary<SourceText, string> _projects =
+        new Dictionary<SourceText, string>();
+
     /// <summary>Types declared anywhere, by name, for lookup during the second pass.</summary>
     private readonly Dictionary<string, DeclaredTypeSymbol> _typesByName =
         new(StringComparer.Ordinal);
@@ -64,12 +75,18 @@ public sealed partial class Resolver
     public static SemanticModel Resolve(
         IReadOnlyList<CompilationUnit> units,
         DiagnosticBag diagnostics,
-        bool requireEntryPoint = false)
+        bool requireEntryPoint = false,
+        IReadOnlyDictionary<SourceText, string>? projects = null)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
         Resolver resolver = new(diagnostics);
+
+        if (projects is not null)
+        {
+            resolver._projects = projects;
+        }
 
         // Every file's declarations are collected before any body is bound, which is what lets
         // a file name a type another file declares without regard to the order they arrive in.
@@ -78,13 +95,20 @@ public sealed partial class Resolver
             using DiagnosticBag.FileScope reporting = diagnostics.InFile(unit.Source);
 
             resolver._currentSource = unit.Source;
+
+            resolver._currentProject = resolver._projects.TryGetValue(unit.Source, out string? named)
+                ? named
+                : string.Empty;
+
             resolver.CollectDeclarations(unit);
         }
 
         resolver._currentSource = null;
+        resolver._currentProject = string.Empty;
 
         resolver.LinkInheritance();
         resolver.SettleMemberSignatures();
+        resolver.CheckOverrides();
 
         if (units.Count > 0)
         {
@@ -202,6 +226,7 @@ public sealed partial class Resolver
 
                 if (_typesByName.TryGetValue(named.Name, out DeclaredTypeSymbol? declared))
                 {
+                    RequireVisibleType(named, declared);
                     return declared;
                 }
 
@@ -219,6 +244,38 @@ public sealed partial class Resolver
             default:
                 return ErrorType.Instance;
         }
+    }
+
+    /// <summary>
+    /// <para>Rejects a type named from outside the project that declares it.</para>
+    /// <para>Only <c>internal</c> can fail: a type is internal or public, and public is
+    /// everywhere. The project doing the naming is the one the enclosing type belongs to,
+    /// falling back to the file being collected from, which covers a name written before any
+    /// type has been entered.</para>
+    /// <para>Called from every place a type name is read — in a signature, as the receiver of
+    /// a global member, and after <c>new</c> — because a boundary that holds in one of the
+    /// three and not the others is not a boundary.</para>
+    /// </summary>
+    private void RequireVisibleType(SyntaxNode where, DeclaredTypeSymbol declared)
+    {
+        if (declared.Visibility == Visibility.Public)
+        {
+            return;
+        }
+
+        string here = _currentType?.Project ?? _currentProject;
+
+        if (string.Equals(here, declared.Project, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Report(
+            DiagnosticDescriptors.TypeIsNotVisible,
+            where,
+            declared.Name,
+            TypeChecker.ProjectName(declared.Project),
+            TypeChecker.ProjectName(here));
     }
 
     /// <summary>

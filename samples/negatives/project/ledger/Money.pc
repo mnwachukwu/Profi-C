@@ -1,0 +1,7 @@
+model Money
+
+    public global integer function Cents(integer dollars)
+        yield dollars * 100;
+    end function
+
+end model

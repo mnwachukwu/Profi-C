@@ -27,6 +27,16 @@ abstract model Shape
         yield this.name + " with area " + this.Area();
     end function
 
+    ##
+    Every model inherits ToString from Model, so overriding it needs no 'extends' and no
+    'virtual' written anywhere. This is what a shape prints as — written out, printed on its
+    own, joined to a string, or sitting in a set — and it dispatches on the runtime type, so
+    a Square held as a Shape still prints as a square.
+    ##
+    public override string function ToString()
+        yield this.Describe();
+    end function
+
 end model
 
 model Rectangle extends Shape
@@ -99,7 +109,9 @@ global model Program
         with — so a Square answers 25 even though nothing here mentions squares.
         ##
         for each shape in shapes
-            Console.WriteLine(shape.Describe());
+            # Printed directly rather than through Describe(): ToString is what a value
+            # prints as, and this model overrode it.
+            Console.WriteLine(shape);
         end for
 
         Console.WriteLine("");

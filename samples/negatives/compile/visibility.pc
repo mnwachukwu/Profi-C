@@ -1,0 +1,59 @@
+##
+Reaching further than a declaration reaches.
+
+This program does not compile. Four reaches exist, and a declaration that writes no word
+takes the narrowest one that makes sense for it: a member reaches the type that declares it,
+a type reaches the project that declares it. Every word written after that is a widening.
+
+The last two mistakes are about the words rather than the reach. Two visibilities say two
+things about one declaration, and 'protected' names a line of descent from a declaring type
+— which a type does not have.
+
+Crossing a project boundary is not shown here, because that takes a second project and this
+folder holds one program per file. samples/library shows it working.
+##
+
+model Vault
+
+    integer secret;
+    protected integer guarded;
+    internal integer shared;
+    public integer open;
+
+    function Vault()
+        this.secret = 1;
+        this.guarded = 2;
+        this.shared = 3;
+        this.open = 4;
+    end function
+
+    integer function Hidden()
+        yield this.secret;
+    end function
+
+end model
+
+# Two visibilities on one declaration, and 'protected' on a type.
+protected model Confused
+    public internal integer count;
+end model
+
+global model Program
+
+    function Main()
+        # The constructor is private, so this type makes its own instances and no one else can.
+        Vault v = new Vault();
+
+        # Private: the declaring type and nothing else.
+        Console.WriteLine(v.secret);
+        Console.WriteLine(v.Hidden());
+
+        # Protected: the declaring type and anything extending it. Program does neither.
+        Console.WriteLine(v.guarded);
+
+        # Internal and public both reach here, since this is all one project.
+        Console.WriteLine(v.shared);
+        Console.WriteLine(v.open);
+    end function
+
+end model
