@@ -13,11 +13,17 @@ namespace ProfiC.Compiler.Semantics;
 /// <c>HasValue</c> — which are found by the receiver's type rather than by a name and are not
 /// yet part of the catalog.
 /// </param>
+/// <param name="IsValue">
+/// True for a member that is a value rather than something to call — <c>Math.Pi</c>. Written
+/// without parentheses, and writing them is reported, which is the mirror of the diagnostic
+/// that reports a function named without them.
+/// </param>
 public sealed record BuiltInMember(
     string Name,
     TypeSymbol? ReturnType,
     IReadOnlyList<TypeSymbol?> ParameterTypes,
-    BuiltInId? Id = null);
+    BuiltInId? Id = null,
+    bool IsValue = false);
 
 /// <summary>
 /// <para>The members the language provides on types it owns.</para>

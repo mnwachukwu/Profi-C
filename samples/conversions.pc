@@ -97,6 +97,27 @@ global model Program
 
         Console.WriteLine("letters: " + letters);
         Console.WriteLine("word:    " + word + ", now " + letters.Count() + " letters");
+
+        comment begin
+            The two views converting into each other is not a rule about strings. An optional
+            travels wherever the value it holds would, so the optional forms convert too, and
+            one that holds nothing goes on holding nothing.
+
+            Nothing is unwrapped by this. Reaching a plain string from a string? still means
+            proving there is one.
+        end comment
+        string? spoken = "hello";
+        character[]? spelled = spoken;
+        Console.WriteLine("spelled: " + spelled.Or({'?'}).Count() + " letters");
+
+        string? unsaid = Program.NothingToSay();
+        character[]? unspelled = unsaid;
+        Console.WriteLine("nothing stays nothing: " + (not unspelled.HasValue()));
+    end function
+
+    string? function NothingToSay()
+        string? none;
+        yield none;
     end function
 
     comment begin

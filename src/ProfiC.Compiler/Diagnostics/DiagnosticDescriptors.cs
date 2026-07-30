@@ -608,8 +608,7 @@ public static class DiagnosticDescriptors
         + "fallback, or 'Value()' to insist.");
 
     /// <summary>
-    /// <para>The language provides no properties, so every member it provides is a function
-    /// and every use of one is a call.</para>
+    /// <para>A function the language provides, named without being called.</para>
     /// <para>A reader coming from a language with properties writes <c>xs.Count</c>, means
     /// the number, and would otherwise get something that is not one.</para>
     /// </summary>
@@ -617,6 +616,17 @@ public static class DiagnosticDescriptors
         "PC0330",
         "This member is a function",
         "'{0}' is a function, so it has to be called: write '{0}()'.");
+
+    /// <summary>
+    /// <para>A value the language provides, written as though it were a function.</para>
+    /// <para>The mirror of the diagnostic above, and it exists for the same reason: a reader
+    /// should never have to remember which of the two a name is, because whichever they guess
+    /// the compiler says so plainly.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BuiltInMemberIsNotCalled = Error(
+        "PC0338",
+        "This member is a value",
+        "'{0}' is a value rather than a function, so it is written without '()'.");
 
     /// <summary>
     /// <para>An instance member reached through the name of its type.</para>

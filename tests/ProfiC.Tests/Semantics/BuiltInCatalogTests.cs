@@ -34,8 +34,30 @@ public sealed class BuiltInCatalogTests
          "integer[] a = {1};\n        integer[] b = a;\n        Console.WriteLine(Reference.Equals(a, b))",
          "true\n"),
 
+        // Values, so written without parentheses. Compared against a rounding rather than
+        // printed, since the last digit of a real is not what this test is about.
+        (BuiltInId.MathPi, "Console.WriteLine(Math.Round(Math.Pi * 100.0))", "314\n"),
+        (BuiltInId.MathE, "Console.WriteLine(Math.Round(Math.E * 100.0))", "272\n"),
+
         (BuiltInId.MathSqrt, "Console.WriteLine(Math.Sqrt(16.0))", "4\n"),
+        (BuiltInId.MathCbrt, "Console.WriteLine(Math.Cbrt(-8.0))", "-2\n"),
+        (BuiltInId.MathRoot, "Console.WriteLine(Math.Root(32.0, 5.0))", "2\n"),
         (BuiltInId.MathPow, "Console.WriteLine(Math.Pow(2.0, 8.0))", "256\n"),
+        (BuiltInId.MathFactorial, "Console.WriteLine(Math.Factorial(20))", "2432902008176640000\n"),
+
+        // Log of one number is the natural logarithm, so the log of E is 1.
+        (BuiltInId.MathLog, "Console.WriteLine(Math.Log(Math.E))", "1\n"),
+        (BuiltInId.MathLogInBase, "Console.WriteLine(Math.Log(8.0, 2.0))", "3\n"),
+        (BuiltInId.MathLog10, "Console.WriteLine(Math.Log10(100.0))", "2\n"),
+        (BuiltInId.MathLog2, "Console.WriteLine(Math.Log2(8.0))", "3\n"),
+
+        (BuiltInId.MathSin, "Console.WriteLine(Math.Sin(0.0))", "0\n"),
+        (BuiltInId.MathCos, "Console.WriteLine(Math.Cos(0.0))", "1\n"),
+        (BuiltInId.MathTan, "Console.WriteLine(Math.Tan(0.0))", "0\n"),
+        (BuiltInId.MathAsin, "Console.WriteLine(Math.Asin(0.0))", "0\n"),
+        (BuiltInId.MathAcos, "Console.WriteLine(Math.Round(Math.Acos(0.0) * 2.0 / Math.Pi))", "1\n"),
+        (BuiltInId.MathAtan, "Console.WriteLine(Math.Atan(0.0))", "0\n"),
+        (BuiltInId.MathAtan2, "Console.WriteLine(Math.Atan2(0.0, 1.0))", "0\n"),
 
         // Each of these is written with an argument of exactly its own type, since that is
         // what picks it: an integer would widen into the real and fraction versions too.
@@ -112,6 +134,11 @@ public sealed class BuiltInCatalogTests
         [
             .. BuiltIns.Models.SelectMany(m => m.Members),
             .. BuiltIns.OnSet(set),
+
+            // A set of optionals answers four the others do not, since only there is there
+            // anything empty to drop, so both shapes are asked about.
+            .. BuiltIns.OnSet(new SetType(optional)),
+
             .. BuiltIns.OnString(),
             .. BuiltIns.OnOptional(optional),
             .. BuiltIns.OnFraction(),
@@ -270,6 +297,152 @@ public sealed class BuiltInCatalogTests
             """),
         Is.EqualTo("no key\n"));
 
+    /// <summary>Every form of a string's Trim family, and what each takes away.</summary>
+    [TestCase("\"  hi  \".Trim()", "hi")]
+    [TestCase("\"xxhixx\".Trim(\"x\")", "hi")]
+    [TestCase("\"xyhiyx\".Trim({'x', 'y'})", "hi")]
+    [TestCase("\"  hi  \".TrimStart()", "hi  ")]
+    [TestCase("\"xxhixx\".TrimStart(\"x\")", "hixx")]
+    [TestCase("\"xyhiyx\".TrimStart({'x', 'y'})", "hiyx")]
+    [TestCase("\"  hi  \".TrimEnd()", "  hi")]
+    [TestCase("\"xxhixx\".TrimEnd(\"x\")", "xxhi")]
+    [TestCase("\"xyhiyx\".TrimEnd({'x', 'y'})", "xyhi")]
+    public void AStringTrimsFromEitherEnd(string call, string expected) => Assert.That(
+        RunProgram($$"""
+            global model Program
+                function Main()
+                    Console.WriteLine("[" + {{call}} + "]");
+                end function
+            end model
+            """),
+        Is.EqualTo($"[{expected}]\n"));
+
+    /// <summary>
+    /// <para>A string answers Subset too, and gives back a string.</para>
+    /// <para>It differs from Substring in its second argument rather than in what it does:
+    /// one takes how many, the other where to stop. A run of a string is a string, the same
+    /// rule Subset follows on a set.</para>
+    /// </summary>
+    [TestCase("word.Substring(1, 3)", "ell")]
+    [TestCase("word.Subset(1, 4)", "ell")]
+    [TestCase("word.Subset(2)", "llo")]
+    [TestCase("word.Subset(0, 2) + word.Subset(2)", "hello")]
+    public void AStringAnswersSubsetAsWellAsSubstring(string call, string expected) =>
+        Assert.That(
+            RunProgram($$"""
+                global model Program
+                    function Main()
+                        string word = "hello";
+                        Console.WriteLine({{call}});
+                    end function
+                end model
+                """),
+            Is.EqualTo(expected + "\n"));
+
+    /// <summary>
+    /// <para>A run of a set, with the end exclusive.</para>
+    /// <para>Exclusive is what makes the two halves of a split add back up to the whole,
+    /// which the last row asks directly.</para>
+    /// </summary>
+    [TestCase("xs.Subset(2)", "{30, 40, 50}")]
+    [TestCase("xs.Subset(1, 3)", "{20, 30}")]
+    [TestCase("xs.Subset(0, 0)", "{}")]
+    [TestCase("xs.Subset(5)", "{}")]
+    [TestCase("xs.Subset(0, 2).Count() + xs.Subset(2).Count()", "5")]
+    public void ASubsetIsARunOfASet(string call, string expected) => Assert.That(
+        RunProgram($$"""
+            global model Program
+                function Main()
+                    integer[] xs = {10, 20, 30, 40, 50};
+                    Console.WriteLine({{call}});
+                end function
+            end model
+            """),
+        Is.EqualTo(expected + "\n"));
+
+    /// <summary>
+    /// <para>Dropping the empties out of a set of optionals.</para>
+    /// <para>The three that work on the ends leave an empty in the middle alone, so the set
+    /// stays a set of optionals. TrimAll takes every one, so nothing left can be absent and
+    /// the type says so — which is why the last row can hold the answer in an integer set.
+    /// </para>
+    /// </summary>
+    [TestCase("sparse.Trim().Count()", "3")]
+    [TestCase("sparse.TrimStart().Count()", "4")]
+    [TestCase("sparse.TrimEnd().Count()", "4")]
+    [TestCase("sparse.TrimAll()", "{1, 2}")]
+    public void ASetOfOptionalsDropsItsEmpties(string call, string expected) => Assert.That(
+        RunProgram($$"""
+            global model Program
+                function Main()
+                    integer? nothing;
+                    integer?[] sparse = {nothing, 1, nothing, 2, nothing};
+                    integer[] solid = sparse.TrimAll();
+                    Console.WriteLine({{call}});
+                end function
+            end model
+            """),
+        Is.EqualTo(expected + "\n"));
+
+    /// <summary>
+    /// <para>Nothing that yields a set changes one.</para>
+    /// <para>This is what makes <c>TrimAll</c> safe to give a narrower type than the set it
+    /// was asked of: it hands back a new set, so the promise that nothing in it is absent is
+    /// about that set alone and cannot be broken through the original. A member that changes
+    /// a set yields nothing instead, which is the same rule read from the other side.</para>
+    /// </summary>
+    [TestCase("original.Subset(1)")]
+    [TestCase("original.Subset(1, 2)")]
+    [TestCase("original.Trim()")]
+    [TestCase("original.TrimStart()")]
+    [TestCase("original.TrimEnd()")]
+    [TestCase("original.TrimAll()")]
+    public void AMemberThatYieldsASetLeavesTheOriginalAlone(string call) => Assert.That(
+        RunProgram($$"""
+            global model Program
+                function Main()
+                    integer? nothing;
+                    integer?[] original = {nothing, 1, nothing, 2, nothing};
+
+                    let copy = {{call}};
+                    copy.Clear();
+
+                    Console.WriteLine(original);
+                end function
+            end model
+            """),
+        Is.EqualTo("{empty, 1, empty, 2, empty}\n"),
+        $"{call} reached back into the set it was asked of");
+
+    /// <summary>
+    /// The copy is shallow, which is the depth the rest of the language uses: assigning a
+    /// model copies the reference, so a set copied out holds the very same models.
+    /// </summary>
+    [Test]
+    public void TheCopyIsShallow() => Assert.That(
+        RunProgram("""
+            model Tag
+                public string Name;
+
+                public function Tag(string name)
+                    this.Name = name;
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Tag[] tags = {new Tag("first"), new Tag("second")};
+                    Tag[] some = tags.Subset(0, 1);
+
+                    some[0].Name = "renamed";
+
+                    Console.WriteLine(tags[0].Name);
+                    Console.WriteLine(Reference.Equals(tags[0], some[0]));
+                end function
+            end model
+            """),
+        Is.EqualTo("renamed\ntrue\n"));
+
     /// <summary>
     /// What the rows above exercise. Listed rather than inferred so that adding a value member
     /// without a row makes the coverage test fail.
@@ -278,9 +451,15 @@ public sealed class BuiltInCatalogTests
     [
         BuiltInId.SetCount, BuiltInId.SetInsert, BuiltInId.SetInsertAt, BuiltInId.SetRemove,
         BuiltInId.SetRemoveAt, BuiltInId.SetContains, BuiltInId.SetIndexOf, BuiltInId.SetClear,
+        BuiltInId.SetSubsetFrom, BuiltInId.SetSubsetBetween,
+        BuiltInId.SetTrim, BuiltInId.SetTrimStart, BuiltInId.SetTrimEnd, BuiltInId.SetTrimAll,
         BuiltInId.StringCount, BuiltInId.StringContains, BuiltInId.StringIndexOf,
         BuiltInId.StringSubstring, BuiltInId.StringInsert, BuiltInId.StringInsertAt,
         BuiltInId.StringRemove, BuiltInId.StringRemoveAt, BuiltInId.StringToCharacters,
+        BuiltInId.StringSubsetFrom, BuiltInId.StringSubsetBetween,
+        BuiltInId.StringTrim, BuiltInId.StringTrimText, BuiltInId.StringTrimSet,
+        BuiltInId.StringTrimStart, BuiltInId.StringTrimStartText, BuiltInId.StringTrimStartSet,
+        BuiltInId.StringTrimEnd, BuiltInId.StringTrimEndText, BuiltInId.StringTrimEndSet,
         BuiltInId.OptionalHasValue, BuiltInId.OptionalOr, BuiltInId.OptionalValue,
         BuiltInId.FractionToReal, BuiltInId.RealToFraction, BuiltInId.EnumerationToInteger,
         BuiltInId.ExceptionMessage, BuiltInId.ModelToString, BuiltInId.ModelEquals,

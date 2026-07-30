@@ -276,11 +276,12 @@ public sealed partial class TypeChecker
             _ when ReferenceEquals(from, PrimitiveType.Fraction)
                    && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.FractionToReal,
 
-            _ when ReferenceEquals(from, PrimitiveType.String)
-                   && to is SetType => ConversionOperation.StringToCharacters,
+            // Written to see through an optional on both sides, since a string? reaching a
+            // character[]? has the same work to do on a value that is there and none at all
+            // on one that is not.
+            _ when IsText(from) && IsCharacters(to) => ConversionOperation.StringToCharacters,
 
-            _ when from is SetType
-                   && ReferenceEquals(to, PrimitiveType.String) => ConversionOperation.CharactersToString,
+            _ when IsCharacters(from) && IsText(to) => ConversionOperation.CharactersToString,
 
             // Reaching an ancestor changes nothing at run time, so it is not recorded.
             _ => null,
@@ -291,6 +292,17 @@ public sealed partial class TypeChecker
             _model.RecordConversion(node, needed, to);
         }
     }
+
+    /// <summary>A string, or an optional one.</summary>
+    private static bool IsText(TypeSymbol type) =>
+        ReferenceEquals(Underlying(type), PrimitiveType.String);
+
+    /// <summary>A set of characters, or an optional one.</summary>
+    private static bool IsCharacters(TypeSymbol type) =>
+        Underlying(type) is SetType set && ReferenceEquals(set.ElementType, PrimitiveType.Character);
+
+    private static TypeSymbol Underlying(TypeSymbol type) =>
+        type is OptionalType optional ? optional.UnderlyingType : type;
 
     private static string ExplicitConversionCall(TypeSymbol from, TypeSymbol to)
     {

@@ -196,6 +196,10 @@ public sealed partial class Interpreter
         ProfiCSet<object?> Set() => (ProfiCSet<object?>)target!;
         string Subject() => (string)target!;
 
+        char[] Characters(int index) => Argument(index) is ProfiCSet<object?> given
+            ? [.. given.OfType<char>()]
+            : [];
+
         return id switch
         {
             // ---- Reached through a model's name ------------------------------------------
@@ -213,8 +217,27 @@ public sealed partial class Interpreter
             BuiltInId.ReferenceEquals =>
                 new StrongBox<object?>(ReferenceEquals(Argument(0), Argument(1))),
 
+            BuiltInId.MathPi => new StrongBox<object?>(Math.PI),
+            BuiltInId.MathE => new StrongBox<object?>(Math.E),
+
             BuiltInId.MathSqrt => new StrongBox<object?>(Math.Sqrt(Real(0))),
+            BuiltInId.MathCbrt => new StrongBox<object?>(Math.Cbrt(Real(0))),
+            BuiltInId.MathRoot => new StrongBox<object?>(Root(Real(0), Real(1))),
             BuiltInId.MathPow => new StrongBox<object?>(Math.Pow(Real(0), Real(1))),
+            BuiltInId.MathFactorial => new StrongBox<object?>(Factorial(Integer(0))),
+
+            BuiltInId.MathLog => new StrongBox<object?>(Math.Log(Real(0))),
+            BuiltInId.MathLogInBase => new StrongBox<object?>(Math.Log(Real(0), Real(1))),
+            BuiltInId.MathLog10 => new StrongBox<object?>(Math.Log10(Real(0))),
+            BuiltInId.MathLog2 => new StrongBox<object?>(Math.Log2(Real(0))),
+
+            BuiltInId.MathSin => new StrongBox<object?>(Math.Sin(Real(0))),
+            BuiltInId.MathCos => new StrongBox<object?>(Math.Cos(Real(0))),
+            BuiltInId.MathTan => new StrongBox<object?>(Math.Tan(Real(0))),
+            BuiltInId.MathAsin => new StrongBox<object?>(Math.Asin(Real(0))),
+            BuiltInId.MathAcos => new StrongBox<object?>(Math.Acos(Real(0))),
+            BuiltInId.MathAtan => new StrongBox<object?>(Math.Atan(Real(0))),
+            BuiltInId.MathAtan2 => new StrongBox<object?>(Math.Atan2(Real(0), Real(1))),
 
             BuiltInId.MathAbsInteger => new StrongBox<object?>(Math.Abs(Integer(0))),
             BuiltInId.MathAbsReal => new StrongBox<object?>(Math.Abs(Real(0))),
@@ -263,12 +286,33 @@ public sealed partial class Interpreter
             BuiltInId.SetIndexOf => new StrongBox<object?>((long)Set().IndexOf(Argument(0))),
             BuiltInId.SetClear => Then(Set().Clear),
 
+            BuiltInId.SetSubsetFrom => new StrongBox<object?>(
+                Subset(Set(), (int)Integer(0), Set().Count)),
+            BuiltInId.SetSubsetBetween => new StrongBox<object?>(
+                Subset(Set(), (int)Integer(0), (int)Integer(1))),
+
+            // An element of a set of optionals is the value itself, or null for an empty one,
+            // so dropping the empties is dropping the nulls.
+            BuiltInId.SetTrim => new StrongBox<object?>(
+                new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: true, end: true))),
+            BuiltInId.SetTrimStart => new StrongBox<object?>(
+                new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: true, end: false))),
+            BuiltInId.SetTrimEnd => new StrongBox<object?>(
+                new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: false, end: true))),
+            BuiltInId.SetTrimAll => new StrongBox<object?>(
+                new ProfiCSet<object?>(Set().Where(element => element is not null))),
+
             BuiltInId.StringCount => new StrongBox<object?>((long)Subject().Length),
             BuiltInId.StringContains => new StrongBox<object?>(
                 Subject().Contains(Text(0), StringComparison.Ordinal)),
             BuiltInId.StringIndexOf => new StrongBox<object?>(
                 (long)Subject().IndexOf(Text(0), StringComparison.Ordinal)),
             BuiltInId.StringSubstring => new StrongBox<object?>(Substring(Subject(), arguments)),
+
+            BuiltInId.StringSubsetFrom => new StrongBox<object?>(
+                Subrun(Subject(), (int)Integer(0), Subject().Length)),
+            BuiltInId.StringSubsetBetween => new StrongBox<object?>(
+                Subrun(Subject(), (int)Integer(0), (int)Integer(1))),
             BuiltInId.StringInsert => new StrongBox<object?>(Subject() + Text(0)),
             BuiltInId.StringInsertAt => new StrongBox<object?>(
                 Subject().Insert((int)Integer(0), Text(1))),
@@ -278,6 +322,22 @@ public sealed partial class Interpreter
                 Subject().Remove((int)Integer(0), 1)),
             BuiltInId.StringToCharacters => new StrongBox<object?>(
                 new ProfiCSet<object?>(Subject().Select(c => (object?)c))),
+
+            BuiltInId.StringTrim => new StrongBox<object?>(Subject().Trim()),
+            BuiltInId.StringTrimText => new StrongBox<object?>(Subject().Trim(Text(0).ToCharArray())),
+            BuiltInId.StringTrimSet => new StrongBox<object?>(Subject().Trim(Characters(0))),
+
+            BuiltInId.StringTrimStart => new StrongBox<object?>(Subject().TrimStart()),
+            BuiltInId.StringTrimStartText =>
+                new StrongBox<object?>(Subject().TrimStart(Text(0).ToCharArray())),
+            BuiltInId.StringTrimStartSet =>
+                new StrongBox<object?>(Subject().TrimStart(Characters(0))),
+
+            BuiltInId.StringTrimEnd => new StrongBox<object?>(Subject().TrimEnd()),
+            BuiltInId.StringTrimEndText =>
+                new StrongBox<object?>(Subject().TrimEnd(Text(0).ToCharArray())),
+            BuiltInId.StringTrimEndSet =>
+                new StrongBox<object?>(Subject().TrimEnd(Characters(0))),
 
             // An optional is the value itself, or nothing at all, so absence is a null target
             // rather than a wrapper to look inside.
@@ -335,6 +395,114 @@ public sealed partial class Interpreter
     }
 
     private static string AsText(object? value) => ModelOperations.ToDisplayString(value);
+
+    /// <summary>A run of a string, with the end exclusive, as Subset has it on a set.</summary>
+    private static string Subrun(string text, int start, int end)
+    {
+        if (start < 0 || start > text.Length || end < start || end > text.Length)
+        {
+            throw new IndexOutOfRangeException(
+                $"Cannot take the run from {start} to {end} of a string of {text.Length}.");
+        }
+
+        return text[start..end];
+    }
+
+    /// <summary>
+    /// <para>A run of a set, copied out, with the end exclusive.</para>
+    /// <para>Both bounds are checked against the set rather than clamped to it, so asking for
+    /// a run that is not there says so instead of quietly handing back a shorter one.</para>
+    /// </summary>
+    private static ProfiCSet<object?> Subset(ProfiCSet<object?> source, int start, int end)
+    {
+        if (start < 0 || start > source.Count || end < start || end > source.Count)
+        {
+            throw new IndexOutOfRangeException(
+                $"Cannot take the run from {start} to {end} of a set of {source.Count} elements.");
+        }
+
+        return new ProfiCSet<object?>(source.Skip(start).Take(end - start));
+    }
+
+    /// <summary>
+    /// Drops the empty elements from one or both ends of a set of optionals, keeping
+    /// everything between the first and last that hold something.
+    /// </summary>
+    private static IEnumerable<object?> WithoutEmptyEnds(
+        ProfiCSet<object?> source,
+        bool start,
+        bool end)
+    {
+        int first = 0;
+        int last = source.Count - 1;
+
+        if (start)
+        {
+            while (first <= last && source[first] is null)
+            {
+                first++;
+            }
+        }
+
+        if (end)
+        {
+            while (last >= first && source[last] is null)
+            {
+                last--;
+            }
+        }
+
+        for (int i = first; i <= last; i++)
+        {
+            yield return source[i];
+        }
+    }
+
+    /// <summary>
+    /// <para>The nth root, which .NET spells only for n of 2 and 3.</para>
+    /// <para>A negative number has a real root when n is odd — the cube root of -8 is -2 —
+    /// and none at all when n is even, so the odd case is worked out from the magnitude and
+    /// the sign put back. Left to Pow it would be NaN, since a fractional power of a negative
+    /// is not a real number.</para>
+    /// </summary>
+    private static double Root(double value, double degree)
+    {
+        if (degree == 0)
+        {
+            throw new ProfiCRuntimeException("A root of degree zero is not a number.");
+        }
+
+        if (value >= 0)
+        {
+            return Math.Pow(value, 1.0 / degree);
+        }
+
+        bool odd = degree == Math.Floor(degree) && Math.Abs(degree % 2) == 1;
+
+        return odd ? -Math.Pow(-value, 1.0 / degree) : double.NaN;
+    }
+
+    /// <summary>
+    /// <para>Counts arrangements, so it counts in whole numbers.</para>
+    /// <para>Twenty is the largest whose answer an integer holds; the twenty-first overflows,
+    /// which is reported as an overflow rather than wrapping into a smaller wrong answer.</para>
+    /// </summary>
+    private static long Factorial(long n)
+    {
+        if (n < 0)
+        {
+            throw new ArgumentException("A factorial counts arrangements, so it needs a whole number that is not negative.");
+        }
+
+        long result = 1;
+
+        for (long i = 2; i <= n; i++)
+        {
+            result = checked(result * i);
+        }
+
+        return result;
+    }
 }
 
 /// <summary>

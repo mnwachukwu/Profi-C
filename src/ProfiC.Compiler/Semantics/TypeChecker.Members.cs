@@ -39,12 +39,8 @@ public sealed partial class TypeChecker
         // optional answers HasValue() without either being declared anywhere.
         if (FindBuiltIn(member.Receiver, receiver, member.MemberName) is { } builtIn)
         {
-            // Only an uncalled access reaches here; a call is handled by CheckMemberCall. Every
-            // member the language provides is a function, so this is always the missing "()".
-            Report(DiagnosticDescriptors.BuiltInMemberNeedsCall, member, member.MemberName);
-
-            _model.BindType(member, TypeOfBuiltIn(builtIn));
-            return TypeOfBuiltIn(builtIn);
+            // Only an uncalled access reaches here; a call is handled by CheckMemberCall.
+            return ReadUncalled(member, builtIn);
         }
 
         if (receiver is DeclaredTypeSymbol declared)
@@ -63,12 +59,34 @@ public sealed partial class TypeChecker
         return ErrorType.Instance;
     }
 
+    /// <summary>
+    /// <para>Reads a member of the language's own, named without being called.</para>
+    /// <para>A value is what it is; a function named this way is missing its parentheses, and
+    /// is reported rather than yielding the type it would have produced if called. Both give
+    /// that type back either way, so one mistake does not become several.</para>
+    /// </summary>
+    private TypeSymbol ReadUncalled(MemberExpr member, BuiltInMember builtIn)
+    {
+        if (builtIn.IsValue)
+        {
+            RecordBuiltIn(member, builtIn);
+        }
+        else
+        {
+            Report(DiagnosticDescriptors.BuiltInMemberNeedsCall, member, member.MemberName);
+        }
+
+        TypeSymbol type = TypeOfBuiltIn(builtIn);
+        _model.BindType(member, type);
+        return type;
+    }
+
     /// <summary>A member reached through a type name: a global member, or an enumeration's.</summary>
     private TypeSymbol CheckStaticMember(MemberExpr member, DeclaredTypeSymbol type)
     {
         if (BuiltInMembers.Find(type, member.MemberName) is { } builtIn)
         {
-            return TypeOfBuiltIn(builtIn);
+            return ReadUncalled(member, builtIn);
         }
 
         IReadOnlyList<Symbol> found = type is ModelSymbol model
@@ -362,10 +380,21 @@ public sealed partial class TypeChecker
             // An exact match settles it outright, before any widening is weighed, so that a
             // number keeps the type it was written as rather than the first one it fits.
             BuiltInMember chosenBuiltIn =
-                builtIns.FirstOrDefault(m => AcceptsExactly(m, arguments))
-                ?? builtIns.FirstOrDefault(m => Accepts(m, arguments))
-                ?? builtIns.FirstOrDefault(m => m.ParameterTypes.Count == arguments.Count)
+                builtIns.FirstOrDefault(m => !m.IsValue && AcceptsExactly(m, arguments))
+                ?? builtIns.FirstOrDefault(m => !m.IsValue && Accepts(m, arguments))
+                ?? builtIns.FirstOrDefault(m => !m.IsValue && m.ParameterTypes.Count == arguments.Count)
                 ?? builtIns[0];
+
+            // A value written with parentheses is the mirror of a function written without
+            // them, and is said the same way rather than being quietly called.
+            if (chosenBuiltIn.IsValue)
+            {
+                Report(DiagnosticDescriptors.BuiltInMemberIsNotCalled, member, member.MemberName);
+
+                TypeSymbol valueType = TypeOfBuiltIn(chosenBuiltIn);
+                _model.BindType(member, valueType);
+                return valueType;
+            }
 
             RecordBuiltIn(member, chosenBuiltIn);
             CheckArgumentsAgainst(call, member.MemberName, chosenBuiltIn.ParameterTypes, arguments);

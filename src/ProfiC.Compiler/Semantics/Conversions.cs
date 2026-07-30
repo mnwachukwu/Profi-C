@@ -51,6 +51,21 @@ public static class Conversions
             return ConversionKind.Implicit;
         }
 
+        // An optional reaches another optional wherever the values it holds would reach each
+        // other. Absence is carried across rather than looked inside, so a string? fits a
+        // character[]? and a Square? fits a Shape?, each staying absent if that is what it was.
+        //
+        // This does not soften the rule below. Nothing is unwrapped here: what comes out is
+        // still an optional, and getting a plain value out of one still means proving it holds
+        // something.
+        if (from is OptionalType fromOptional && to is OptionalType toOptional)
+        {
+            return Classify(fromOptional.UnderlyingType, toOptional.UnderlyingType)
+                       is ConversionKind.Identity or ConversionKind.Implicit
+                ? ConversionKind.Implicit
+                : ConversionKind.None;
+        }
+
         // Reading an optional as a plain value is never automatic; that is the whole point
         // of optionals being strict.
         if (from is OptionalType)

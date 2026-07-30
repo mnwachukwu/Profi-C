@@ -26,14 +26,34 @@
   Remove(10)     = true
   after removals = {40, 30, 20}
   after Clear()  = 0 left
+  Subset(2)      = {30, 40, 50}
+  Subset(1, 3)   = {20, 30}
+  the two halves = {10, 20} and {30, 40, 50}
+
+== a set of optionals ==
+  as written     = {empty, 1, empty, 2, empty}
+  TrimStart()    = {1, empty, 2, empty}
+  TrimEnd()      = {empty, 1, empty, 2}
+  Trim()         = {1, empty, 2}
+  TrimAll()      = {1, 2}, and needs no unwrapping
+  original still = {empty, 1, empty, 2, empty}
 
 == members of a string ==
   Count()            = 11
   Contains("gram")   = true
   IndexOf("gram")    = 3
   Substring(3, 4)    = gram
+  Subset(3, 7)       = gram
+  Subset(3)          = gramming
   Insert("!")        = programming!
   Remove("m")        = prograing
+  RemoveAt(0)        = rogramming
+  InsertAt(0, ">")   = >programming
+  Trim() on "  hi  " = [hi]
+  Trim("x")          = [hi]
+  Trim({'x', 'y'})   = [hi]
+  TrimStart()        = [hi  ]
+  TrimEnd()          = [  hi]
   one letter at a time: p r o g r a m m i n g 
 
 == members of an optional ==

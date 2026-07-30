@@ -15,8 +15,30 @@ public enum BuiltInId
 
     ReferenceEquals,
 
+    MathPi,
+    MathE,
+
     MathSqrt,
+    MathCbrt,
+    MathRoot,
     MathPow,
+    MathFactorial,
+
+    // .NET's names, and .NET's meanings with them: Log of one number is the natural
+    // logarithm. Spelling it any other way here would give a reader who moves to C# the same
+    // program and a different answer, which is the one outcome worth more than a nicer name.
+    MathLog,
+    MathLogInBase,
+    MathLog10,
+    MathLog2,
+
+    MathSin,
+    MathCos,
+    MathTan,
+    MathAsin,
+    MathAcos,
+    MathAtan,
+    MathAtan2,
 
     // One version per number the language has, since a fraction is a number like any other
     // and an answer that arrives as a real cannot be counted with. The name is shared; which
@@ -55,6 +77,14 @@ public enum BuiltInId
     SetContains,
     SetIndexOf,
     SetClear,
+    SetSubsetFrom,
+    SetSubsetBetween,
+
+    // Only on a set of optionals, since only there is there anything empty to drop.
+    SetTrim,
+    SetTrimStart,
+    SetTrimEnd,
+    SetTrimAll,
 
     StringCount,
     StringContains,
@@ -65,6 +95,19 @@ public enum BuiltInId
     StringRemove,
     StringRemoveAt,
     StringToCharacters,
+    StringSubsetFrom,
+    StringSubsetBetween,
+
+    // Three forms each: whitespace, the characters of a string, or the characters of a set.
+    StringTrim,
+    StringTrimText,
+    StringTrimSet,
+    StringTrimStart,
+    StringTrimStartText,
+    StringTrimStartSet,
+    StringTrimEnd,
+    StringTrimEndText,
+    StringTrimEndSet,
 
     OptionalHasValue,
     OptionalOr,
@@ -102,6 +145,10 @@ public static class BuiltIns
     private static BuiltInMember Member(
         BuiltInId id, string name, TypeSymbol? returns, params TypeSymbol?[] parameters) =>
         new(name, returns, parameters, id);
+
+    /// <summary>A member that is a value rather than something to call, such as Math.Pi.</summary>
+    private static BuiltInMember Value(BuiltInId id, string name, TypeSymbol type) =>
+        new(name, type, [], id, IsValue: true);
 
     /// <summary>
     /// <para>Models a program may name but never declare.</para>
@@ -142,11 +189,44 @@ public static class BuiltIns
         // so without it the order these are written in would decide what "Abs(-3)" means.
         new("Math", "Standard", MayBeExtended: false,
         [
-            // A root and a power are the two that genuinely leave the rationals: the square
-            // root of a fraction is usually irrational, so both answer in reals whatever they
-            // were given. The "^" operator is the exact form, and keeps a fraction base exact.
+            // Written without parentheses, since neither is something to do.
+            Value(BuiltInId.MathPi, "Pi", PrimitiveType.Real),
+            Value(BuiltInId.MathE, "E", PrimitiveType.Real),
+
+            // Roots and powers are the ones that genuinely leave the rationals: the square
+            // root of a fraction is usually irrational, so all of these answer in reals
+            // whatever they were given. The "^" operator is the exact form, and keeps a
+            // fraction base exact where the exponent is whole.
             Member(BuiltInId.MathSqrt, "Sqrt", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathCbrt, "Cbrt", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathRoot, "Root", PrimitiveType.Real,
+                   PrimitiveType.Real, PrimitiveType.Real),
             Member(BuiltInId.MathPow, "Pow", PrimitiveType.Real,
+                   PrimitiveType.Real, PrimitiveType.Real),
+
+            // Counting arrangements, so it counts: whole in, whole out. Past 20 the answer
+            // outgrows an integer and it throws, as any other overflow does.
+            Member(BuiltInId.MathFactorial, "Factorial", PrimitiveType.Integer,
+                   PrimitiveType.Integer),
+
+            // Log of one number is the NATURAL logarithm, which is what .NET, Java and C mean
+            // by the name. Log10 and Log2 are the other two .NET spells out.
+            Member(BuiltInId.MathLog, "Log", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathLogInBase, "Log", PrimitiveType.Real,
+                   PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathLog10, "Log10", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathLog2, "Log2", PrimitiveType.Real, PrimitiveType.Real),
+
+            // Angles are in radians, as everywhere else that has these. Abbreviated because
+            // they are borrowed rather than invented here, and every one of these names is
+            // what the mathematics is written as on paper.
+            Member(BuiltInId.MathSin, "Sin", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathCos, "Cos", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathTan, "Tan", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAsin, "Asin", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAcos, "Acos", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAtan, "Atan", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAtan2, "Atan2", PrimitiveType.Real,
                    PrimitiveType.Real, PrimitiveType.Real),
 
             // Measuring keeps the type it measured, so a distance between integers is one.
@@ -263,8 +343,36 @@ public static class BuiltIns
         Member(BuiltInId.SetContains, "Contains", PrimitiveType.Boolean, set.ElementType),
         Member(BuiltInId.SetIndexOf, "IndexOf", PrimitiveType.Integer, set.ElementType),
         Member(BuiltInId.SetClear, "Clear", null),
+
+        // A run of the set, copied out. The end is exclusive, so Subset(1, 3) is two
+        // elements — the same reading "until" has, and the one that makes
+        // Subset(0, n) + Subset(n, count) put the whole set back together.
+        Member(BuiltInId.SetSubsetFrom, "Subset", set, PrimitiveType.Integer),
+        Member(BuiltInId.SetSubsetBetween, "Subset", set,
+               PrimitiveType.Integer, PrimitiveType.Integer),
+
+        .. TrimmingEmpties(set),
         .. OnEveryType(),
     ];
+
+    /// <summary>
+    /// <para>The four ways to drop the empties out of a set of optionals, and nothing at all
+    /// for a set of anything else.</para>
+    /// <para><c>TrimAll</c> is the one that changes the type. Removing every empty leaves a
+    /// set where nothing can be absent, so it yields the underlying type and the caller stops
+    /// having to unwrap. The other three take from the ends only, so an empty in the middle
+    /// survives and the type has to keep saying so.</para>
+    /// </summary>
+    private static IReadOnlyList<BuiltInMember> TrimmingEmpties(SetType set) =>
+        set.ElementType is OptionalType present
+            ?
+            [
+                Member(BuiltInId.SetTrim, "Trim", set),
+                Member(BuiltInId.SetTrimStart, "TrimStart", set),
+                Member(BuiltInId.SetTrimEnd, "TrimEnd", set),
+                Member(BuiltInId.SetTrimAll, "TrimAll", new SetType(present.UnderlyingType)),
+            ]
+            : [];
 
     /// <summary>
     /// A string's members mirror a set's, so that the two read alike. It reports its length
@@ -278,12 +386,42 @@ public static class BuiltIns
         Member(BuiltInId.StringIndexOf, "IndexOf", PrimitiveType.Integer, PrimitiveType.String),
         Member(BuiltInId.StringSubstring, "Substring", PrimitiveType.String,
                PrimitiveType.Integer, PrimitiveType.Integer),
+
+        // A string answers Subset as a set does, since it is one when read that way. The two
+        // differ in their second argument rather than in what they do: Substring takes how
+        // many, Subset takes where to stop. Whichever number you have is the one to write.
+        //
+        // Both give back a string, because a run of a string is a string — the same rule
+        // Subset follows on a set, where a run of one is a set.
+        Member(BuiltInId.StringSubsetFrom, "Subset", PrimitiveType.String, PrimitiveType.Integer),
+        Member(BuiltInId.StringSubsetBetween, "Subset", PrimitiveType.String,
+               PrimitiveType.Integer, PrimitiveType.Integer),
         Member(BuiltInId.StringInsert, "Insert", PrimitiveType.String, PrimitiveType.String),
         Member(BuiltInId.StringInsertAt, "InsertAt", PrimitiveType.String,
                PrimitiveType.Integer, PrimitiveType.String),
         Member(BuiltInId.StringRemove, "Remove", PrimitiveType.String, PrimitiveType.String),
         Member(BuiltInId.StringRemoveAt, "RemoveAt", PrimitiveType.String, PrimitiveType.Integer),
         Member(BuiltInId.StringToCharacters, "ToCharacters", new SetType(PrimitiveType.Character)),
+
+        // Three forms each. Written with nothing, whitespace goes; written with a string,
+        // any of its characters go; written with a set, any in the set goes. The middle form
+        // is the one people reach for, and the set form is there because a set of characters
+        // is what you already have when the characters were worked out rather than typed.
+        Member(BuiltInId.StringTrim, "Trim", PrimitiveType.String),
+        Member(BuiltInId.StringTrimText, "Trim", PrimitiveType.String, PrimitiveType.String),
+        Member(BuiltInId.StringTrimSet, "Trim", PrimitiveType.String,
+               new SetType(PrimitiveType.Character)),
+
+        Member(BuiltInId.StringTrimStart, "TrimStart", PrimitiveType.String),
+        Member(BuiltInId.StringTrimStartText, "TrimStart", PrimitiveType.String, PrimitiveType.String),
+        Member(BuiltInId.StringTrimStartSet, "TrimStart", PrimitiveType.String,
+               new SetType(PrimitiveType.Character)),
+
+        Member(BuiltInId.StringTrimEnd, "TrimEnd", PrimitiveType.String),
+        Member(BuiltInId.StringTrimEndText, "TrimEnd", PrimitiveType.String, PrimitiveType.String),
+        Member(BuiltInId.StringTrimEndSet, "TrimEnd", PrimitiveType.String,
+               new SetType(PrimitiveType.Character)),
+
         .. OnEveryType(),
     ];
 

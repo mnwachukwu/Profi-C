@@ -1302,6 +1302,39 @@ public sealed class InterpreterTests
     public void RoundingFollowsTheRuleTaughtInSchool(string call, string expected) =>
         Assert.That(Print(call), Is.EqualTo(expected));
 
+    /// <summary>
+    /// <para>Converting an optional carries absence across rather than converting it.</para>
+    /// <para>The empty case is the one worth running: turning nothing into characters would
+    /// naturally produce an empty set, and an empty set is a different answer from no set at
+    /// all. Nothing here should be able to tell the two apart afterwards.</para>
+    /// </summary>
+    [Test]
+    public void ConvertingAnOptionalKeepsAbsenceAbsent() => Assert.That(
+        Lines(Run("""
+            global model Program
+                string? function Nothing()
+                    string? none;
+                    yield none;
+                end function
+
+                function Main()
+                    string? present = "hi";
+                    character[]? asLetters = present;
+                    Console.WriteLine(asLetters.HasValue());
+                    Console.WriteLine(asLetters.Value().Count());
+
+                    string? absent = Program.Nothing();
+                    character[]? stillAbsent = absent;
+                    Console.WriteLine(stillAbsent.HasValue());
+
+                    character[]? letters = {'a', 'b'};
+                    string? asText = letters;
+                    Console.WriteLine(asText.Or("?"));
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "true", "2", "false", "ab" }));
+
     /// <summary>A function of any shape is a Function, and answers to it while running.</summary>
     [Test]
     public void AFunctionOfAnyShapeIsHeldAsAFunction() => Assert.That(

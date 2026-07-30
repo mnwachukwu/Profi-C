@@ -15,6 +15,10 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
+          MemberExpr 'ShowSetsOfOptionals'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
           MemberExpr 'ShowStrings'
             IdentifierExpr 'Program'
       ExpressionStmt
@@ -323,6 +327,138 @@ CompilationUnit
                 MemberExpr 'Count'
                   IdentifierExpr 'values'
             LiteralExpr " left" [String]
+      VarDeclStmt 'row'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 10 [Integer]
+          LiteralExpr 20 [Integer]
+          LiteralExpr 30 [Integer]
+          LiteralExpr 40 [Integer]
+          LiteralExpr 50 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Subset(2)      = " [String]
+            CallExpr
+              MemberExpr 'Subset'
+                IdentifierExpr 'row'
+              LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Subset(1, 3)   = " [String]
+            CallExpr
+              MemberExpr 'Subset'
+                IdentifierExpr 'row'
+              LiteralExpr 1 [Integer]
+              LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  the two halves = " [String]
+                CallExpr
+                  MemberExpr 'Subset'
+                    IdentifierExpr 'row'
+                  LiteralExpr 0 [Integer]
+                  LiteralExpr 2 [Integer]
+              LiteralExpr " and " [String]
+            CallExpr
+              MemberExpr 'Subset'
+                IdentifierExpr 'row'
+              LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ShowSetsOfOptionals'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a set of optionals ==" [String]
+      VarDeclStmt 'nothing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'readings'
+        SetTypeSyntax
+          OptionalTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          IdentifierExpr 'nothing'
+          LiteralExpr 1 [Integer]
+          IdentifierExpr 'nothing'
+          LiteralExpr 2 [Integer]
+          IdentifierExpr 'nothing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  as written     = " [String]
+            IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  TrimStart()    = " [String]
+            CallExpr
+              MemberExpr 'TrimStart'
+                IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  TrimEnd()      = " [String]
+            CallExpr
+              MemberExpr 'TrimEnd'
+                IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Trim()         = " [String]
+            CallExpr
+              MemberExpr 'Trim'
+                IdentifierExpr 'readings'
+      VarDeclStmt 'certain'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'TrimAll'
+            IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  TrimAll()      = " [String]
+              IdentifierExpr 'certain'
+            LiteralExpr ", and needs no unwrapping" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Clear'
+            IdentifierExpr 'certain'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  original still = " [String]
+            IdentifierExpr 'readings'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -381,6 +517,27 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           BinaryExpr '+'
+            LiteralExpr "  Subset(3, 7)       = " [String]
+            CallExpr
+              MemberExpr 'Subset'
+                IdentifierExpr 'word'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Subset(3)          = " [String]
+            CallExpr
+              MemberExpr 'Subset'
+                IdentifierExpr 'word'
+              LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
             LiteralExpr "  Insert(\"!\")        = " [String]
             CallExpr
               MemberExpr 'Insert'
@@ -396,6 +553,86 @@ CompilationUnit
               MemberExpr 'Remove'
                 IdentifierExpr 'word'
               LiteralExpr "m" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  RemoveAt(0)        = " [String]
+            CallExpr
+              MemberExpr 'RemoveAt'
+                IdentifierExpr 'word'
+              LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  InsertAt(0, \">\")   = " [String]
+            CallExpr
+              MemberExpr 'InsertAt'
+                IdentifierExpr 'word'
+              LiteralExpr 0 [Integer]
+              LiteralExpr ">" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  Trim() on \"  hi  \" = [" [String]
+              CallExpr
+                MemberExpr 'Trim'
+                  LiteralExpr "  hi  " [String]
+            LiteralExpr "]" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  Trim(\"x\")          = [" [String]
+              CallExpr
+                MemberExpr 'Trim'
+                  LiteralExpr "xxhixx" [String]
+                LiteralExpr "x" [String]
+            LiteralExpr "]" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  Trim({'x', 'y'})   = [" [String]
+              CallExpr
+                MemberExpr 'Trim'
+                  LiteralExpr "xyhiyx" [String]
+                CollectionExpr
+                  LiteralExpr 'x' [Character]
+                  LiteralExpr 'y' [Character]
+            LiteralExpr "]" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  TrimStart()        = [" [String]
+              CallExpr
+                MemberExpr 'TrimStart'
+                  LiteralExpr "  hi  " [String]
+            LiteralExpr "]" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  TrimEnd()          = [" [String]
+              CallExpr
+                MemberExpr 'TrimEnd'
+                  LiteralExpr "  hi  " [String]
+            LiteralExpr "]" [String]
       VarDeclStmt 'letters'
         SetTypeSyntax
           NamedTypeSyntax 'character'

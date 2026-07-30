@@ -1,0 +1,592 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Constants'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'RootsAndPowers'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Logarithms'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Angles'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'MeasuringAndChoosing'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Rounding'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Counting'
+            IdentifierExpr 'Program'
+    FunctionDecl 'Constants'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== values ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Pi = " [String]
+            MemberExpr 'Pi'
+              IdentifierExpr 'Math'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  E  = " [String]
+            MemberExpr 'E'
+              IdentifierExpr 'Math'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a circle of radius 2 has area " [String]
+            BinaryExpr '*'
+              BinaryExpr '*'
+                MemberExpr 'Pi'
+                  IdentifierExpr 'Math'
+                LiteralExpr 2.0 [Real]
+              LiteralExpr 2.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'RootsAndPowers'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== roots and powers ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Sqrt(16)      = " [String]
+            CallExpr
+              MemberExpr 'Sqrt'
+                IdentifierExpr 'Math'
+              LiteralExpr 16.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Cbrt(27)      = " [String]
+            CallExpr
+              MemberExpr 'Cbrt'
+                IdentifierExpr 'Math'
+              LiteralExpr 27.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Cbrt(-8)      = " [String]
+            CallExpr
+              MemberExpr 'Cbrt'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 8.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Root(32, 5)   = " [String]
+            CallExpr
+              MemberExpr 'Root'
+                IdentifierExpr 'Math'
+              LiteralExpr 32.0 [Real]
+              LiteralExpr 5.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Root(-32, 5)  = " [String]
+            CallExpr
+              MemberExpr 'Root'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 32.0 [Real]
+              LiteralExpr 5.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Pow(2, 10)    = " [String]
+            CallExpr
+              MemberExpr 'Pow'
+                IdentifierExpr 'Math'
+              LiteralExpr 2.0 [Real]
+              LiteralExpr 10.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  2 ^ 10        = " [String]
+            BinaryExpr '^'
+              LiteralExpr 2 [Integer]
+              LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'Logarithms'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== logarithms ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Log(E)        = " [String]
+            CallExpr
+              MemberExpr 'Log'
+                IdentifierExpr 'Math'
+              MemberExpr 'E'
+                IdentifierExpr 'Math'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Log(100)      = " [String]
+            CallExpr
+              MemberExpr 'Log'
+                IdentifierExpr 'Math'
+              LiteralExpr 100.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Log10(100)    = " [String]
+            CallExpr
+              MemberExpr 'Log10'
+                IdentifierExpr 'Math'
+              LiteralExpr 100.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Log(100, 10)  = " [String]
+            CallExpr
+              MemberExpr 'Log'
+                IdentifierExpr 'Math'
+              LiteralExpr 100.0 [Real]
+              LiteralExpr 10.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Log2(1024)    = " [String]
+            CallExpr
+              MemberExpr 'Log2'
+                IdentifierExpr 'Math'
+              LiteralExpr 1024.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'Angles'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== angles ==" [String]
+      VarDeclStmt 'quarterTurn' [inferred]
+        BinaryExpr '/'
+          MemberExpr 'Pi'
+            IdentifierExpr 'Math'
+          LiteralExpr 2.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Sin(0)        = " [String]
+            CallExpr
+              MemberExpr 'Sin'
+                IdentifierExpr 'Math'
+              LiteralExpr 0.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Cos(0)        = " [String]
+            CallExpr
+              MemberExpr 'Cos'
+                IdentifierExpr 'Math'
+              LiteralExpr 0.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Tan(0)        = " [String]
+            CallExpr
+              MemberExpr 'Tan'
+                IdentifierExpr 'Math'
+              LiteralExpr 0.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Sin(Pi/2)     = " [String]
+            CallExpr
+              MemberExpr 'Sin'
+                IdentifierExpr 'Math'
+              IdentifierExpr 'quarterTurn'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Asin(1)       = " [String]
+            CallExpr
+              MemberExpr 'Asin'
+                IdentifierExpr 'Math'
+              LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Acos(1)       = " [String]
+            CallExpr
+              MemberExpr 'Acos'
+                IdentifierExpr 'Math'
+              LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Atan(1)       = " [String]
+            CallExpr
+              MemberExpr 'Atan'
+                IdentifierExpr 'Math'
+              LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Atan2(1, 1)   = " [String]
+            CallExpr
+              MemberExpr 'Atan2'
+                IdentifierExpr 'Math'
+              LiteralExpr 1.0 [Real]
+              LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Atan2(1, -1)  = " [String]
+            CallExpr
+              MemberExpr 'Atan2'
+                IdentifierExpr 'Math'
+              LiteralExpr 1.0 [Real]
+              UnaryExpr '-'
+                LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'MeasuringAndChoosing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== measuring and choosing ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Abs(-3)       = " [String]
+            CallExpr
+              MemberExpr 'Abs'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Abs(-3.5)     = " [String]
+            CallExpr
+              MemberExpr 'Abs'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 3.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Abs(-3|4)     = " [String]
+            CallExpr
+              MemberExpr 'Abs'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 3|4 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Min(3, 7)     = " [String]
+            CallExpr
+              MemberExpr 'Min'
+                IdentifierExpr 'Math'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Min(3.5, 7.5) = " [String]
+            CallExpr
+              MemberExpr 'Min'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.5 [Real]
+              LiteralExpr 7.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Min(1|3, 1|2) = " [String]
+            CallExpr
+              MemberExpr 'Min'
+                IdentifierExpr 'Math'
+              LiteralExpr 1|3 [Fraction]
+              LiteralExpr 1|2 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Max(3, 7)     = " [String]
+            CallExpr
+              MemberExpr 'Max'
+                IdentifierExpr 'Math'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Max(3.5, 7.5) = " [String]
+            CallExpr
+              MemberExpr 'Max'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.5 [Real]
+              LiteralExpr 7.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Max(1|3, 1|2) = " [String]
+            CallExpr
+              MemberExpr 'Max'
+                IdentifierExpr 'Math'
+              LiteralExpr 1|3 [Fraction]
+              LiteralExpr 1|2 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'Rounding'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== rounding ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Floor(3.7)    = " [String]
+            CallExpr
+              MemberExpr 'Floor'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.7 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Ceiling(3.2)  = " [String]
+            CallExpr
+              MemberExpr 'Ceiling'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.2 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Round(2.5)    = " [String]
+            CallExpr
+              MemberExpr 'Round'
+                IdentifierExpr 'Math'
+              LiteralExpr 2.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Round(-2.5)   = " [String]
+            CallExpr
+              MemberExpr 'Round'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 2.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Floor(-7|2)   = " [String]
+            CallExpr
+              MemberExpr 'Floor'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 7|2 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Ceiling(-7|2) = " [String]
+            CallExpr
+              MemberExpr 'Ceiling'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 7|2 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Round(5|2)    = " [String]
+            CallExpr
+              MemberExpr 'Round'
+                IdentifierExpr 'Math'
+              LiteralExpr 5|2 [Fraction]
+      VarDeclStmt 'names'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CollectionExpr
+          LiteralExpr "zero" [String]
+          LiteralExpr "one" [String]
+          LiteralExpr "two" [String]
+          LiteralExpr "three" [String]
+          LiteralExpr "four" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  names[Floor(3.7)] is " [String]
+            IndexExpr
+              IdentifierExpr 'names'
+              CallExpr
+                MemberExpr 'Floor'
+                  IdentifierExpr 'Math'
+                LiteralExpr 3.7 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'Counting'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== counting ==" [String]
+      ForStmt 'n' to
+        LiteralExpr 0 [Integer]
+        LiteralExpr 6 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                MemberExpr 'Factorial'
+                  IdentifierExpr 'Math'
+                IdentifierExpr 'n'
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Factorial(20) = " [String]
+            CallExpr
+              MemberExpr 'Factorial'
+                IdentifierExpr 'Math'
+              LiteralExpr 20 [Integer]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'Factorial'
+                IdentifierExpr 'Math'
+              LiteralExpr 21 [Integer]
+        CatchClause 'problem'
+          NamedTypeSyntax 'OverflowException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  Factorial(21) does not fit in an integer" [String]

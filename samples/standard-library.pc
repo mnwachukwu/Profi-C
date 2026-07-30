@@ -15,6 +15,7 @@ global model Program
         Program.ShowConsole();
         Program.ShowMath();
         Program.ShowSets();
+        Program.ShowSetsOfOptionals();
         Program.ShowStrings();
         Program.ShowOptionals();
         Program.ShowReference();
@@ -97,6 +98,47 @@ global model Program
 
         values.Clear();
         Console.WriteLine("  after Clear()  = " + values.Count() + " left");
+
+        comment begin
+            Subset copies a run out. The end is exclusive, which is the reading 'until' has
+            and the one that lets two halves of a split add back up to the whole.
+        end comment
+        integer[] row = {10, 20, 30, 40, 50};
+        Console.WriteLine("  Subset(2)      = " + row.Subset(2));
+        Console.WriteLine("  Subset(1, 3)   = " + row.Subset(1, 3));
+        Console.WriteLine("  the two halves = " + row.Subset(0, 2) + " and " + row.Subset(2));
+        Console.WriteLine("");
+    end function
+
+    comment begin
+        A set of optionals answers four more, because only there is there anything empty to
+        drop. Three of them work on the ends and leave an empty in the middle alone, so what
+        comes back is still a set of optionals. TrimAll takes every one, so nothing left can
+        be absent — and the type says so, which is why the result needs no unwrapping.
+
+        Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
+        safe: the promise that nothing is absent is about the set you were given, and since
+        the original is untouched and separate, nothing can put an empty into it afterwards.
+        Had it filtered in place, the promise would have been about a set someone else was
+        still holding.
+    end comment
+    function ShowSetsOfOptionals()
+        Console.WriteLine("== a set of optionals ==");
+
+        integer? nothing;
+        integer?[] readings = {nothing, 1, nothing, 2, nothing};
+
+        Console.WriteLine("  as written     = " + readings);
+        Console.WriteLine("  TrimStart()    = " + readings.TrimStart());
+        Console.WriteLine("  TrimEnd()      = " + readings.TrimEnd());
+        Console.WriteLine("  Trim()         = " + readings.Trim());
+
+        integer[] certain = readings.TrimAll();
+        Console.WriteLine("  TrimAll()      = " + certain + ", and needs no unwrapping");
+
+        comment Emptying the copy proves the original was never touched.
+        certain.Clear();
+        Console.WriteLine("  original still = " + readings);
         Console.WriteLine("");
     end function
 
@@ -111,9 +153,30 @@ global model Program
         Console.WriteLine("  Count()            = " + word.Count());
         Console.WriteLine("  Contains(\"gram\")   = " + word.Contains("gram"));
         Console.WriteLine("  IndexOf(\"gram\")    = " + word.IndexOf("gram"));
+        comment begin
+            Substring and Subset both cut a run out, and differ in the second number:
+            Substring takes how many, Subset takes where to stop. Whichever you have is the
+            one to write, and both give back a string.
+        end comment
         Console.WriteLine("  Substring(3, 4)    = " + word.Substring(3, 4));
+        Console.WriteLine("  Subset(3, 7)       = " + word.Subset(3, 7));
+        Console.WriteLine("  Subset(3)          = " + word.Subset(3));
         Console.WriteLine("  Insert(\"!\")        = " + word.Insert("!"));
         Console.WriteLine("  Remove(\"m\")        = " + word.Remove("m"));
+        Console.WriteLine("  RemoveAt(0)        = " + word.RemoveAt(0));
+        Console.WriteLine("  InsertAt(0, \">\")   = " + word.InsertAt(0, ">"));
+
+        comment begin
+            Each of the three trims takes from a different end, and each takes nothing (so
+            whitespace goes), a string (so any of its characters go), or a set of characters.
+            The last form is the one to reach for when the characters were worked out rather
+            than typed.
+        end comment
+        Console.WriteLine("  Trim() on \"  hi  \" = [" + "  hi  ".Trim() + "]");
+        Console.WriteLine("  Trim(\"x\")          = [" + "xxhixx".Trim("x") + "]");
+        Console.WriteLine("  Trim({'x', 'y'})   = [" + "xyhiyx".Trim({'x', 'y'}) + "]");
+        Console.WriteLine("  TrimStart()        = [" + "  hi  ".TrimStart() + "]");
+        Console.WriteLine("  TrimEnd()          = [" + "  hi  ".TrimEnd() + "]");
 
         comment A string can be read as its characters, and back again.
         character[] letters = word;

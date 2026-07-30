@@ -476,6 +476,7 @@ A conversion is **automatic** where no information is lost and no surprise is po
 | `integer` | an enumeration | written out | `n as Suit` |
 | any `T` | `T?` | automatic | |
 | `T?` | `T` | none — see §8 | |
+| `T?` | `U?` | wherever `T` reaches `U` | absence carried across |
 | a model | any ancestor of it | automatic | |
 | a model | any descendant of it | written out | `shape as Square`, yielding `Square?` |
 | a value type | `Model` | none | |
@@ -508,6 +509,19 @@ converting to it are different things.
 
 **A set of squares is not a set of shapes.** If it were, a circle could be inserted into it
 through the wider name, and the squares would no longer all be squares.
+
+**An optional travels wherever the value it holds would.** A `string?` fits a `character[]?`,
+a `Square?` fits a `Shape?`, and an `integer?` fits a `real?` — each staying absent if that is
+what it was:
+
+```
+string? word = "abc";
+character[]? letters = word;      converts, and an absent word stays absent
+```
+
+This softens nothing. Nothing is unwrapped: what comes out is still an optional, and getting
+a plain value out of one still means proving it holds something (§8). The rule is about which
+optional a value can be, not about whether it has to be checked.
 
 ### 3.6 Type identity
 
@@ -1308,6 +1322,39 @@ Inherited from `Model` by every type, values included. Calling one on a value do
 | `Contains(value)` | `boolean` |
 | `IndexOf(value)` | `integer`; -1 if absent |
 | `Clear()` | empties it |
+| `Subset(start)` | a copy of everything from `start` on |
+| `Subset(start, end)` | a copy of the run from `start` up to but not including `end` |
+
+`Subset`'s end is **exclusive**, the reading `until` has, which is what makes
+`xs.Subset(0, n)` and `xs.Subset(n)` add back up to the whole set.
+
+**Nothing that yields a set changes one.** `Subset` and the four in §3.2b hand back a new set;
+`Insert`, `InsertAt`, `RemoveAt` and `Clear` change the set and yield nothing, and `Remove`
+yields only whether it found something. So the two groups are told apart by their result, and
+a set you were given is never quietly the set someone else is holding.
+
+The copy is **shallow**, which is the depth the rest of the language uses: assigning a model
+copies the reference (§3.4), so a set copied out holds the very same models.
+
+### 3.2b Only on a set of optionals
+
+Four more appear when the element type is an optional, since only there is there anything
+empty to drop:
+
+| | |
+|---|---|
+| `TrimStart()`, `TrimEnd()`, `Trim()` | `T?[]`; drops empties from one or both ends |
+| `TrimAll()` | **`T[]`**; drops every empty, anywhere |
+
+`TrimAll` is the one that changes the type. Removing every empty leaves a set where nothing
+can be absent, so it yields the underlying type and the caller stops having to unwrap. The
+other three take from the ends only, so an empty in the middle survives and the type has to
+keep saying so.
+
+The narrower type is safe because the set is a **new one**. `TrimAll` promises that nothing in
+*what it hands back* is absent, and since the original is untouched and separate, nothing can
+put an empty into it afterwards. Had it filtered in place, the promise would have been about a
+set someone else was still holding, and the type would have been a lie waiting to happen.
 
 ### 11.3 On a string
 
@@ -1320,8 +1367,20 @@ Inherited from `Model` by every type, values included. Calling one on a value do
 | `Insert(text)`, `InsertAt(index, text)` | `string` |
 | `Remove(text)`, `RemoveAt(index)` | `string` |
 | `ToCharacters()` | `character[]` |
+| `Subset(start)`, `Subset(start, end)` | `string`; the run, with the end exclusive |
+| `Trim()`, `TrimStart()`, `TrimEnd()` | `string`; whitespace goes |
+| `Trim(text)`, and the same for the other two | `string`; any of that string's characters go |
+| `Trim(characters)`, and the same for the other two | `string`; any character in the set goes |
 
 A string never changes, so each of these returns a new one.
+
+The three trims each take nothing, a string, or a set of characters. The set form is the one
+to reach for when the characters were worked out rather than typed.
+
+**`Substring` and `Subset` both cut a run out, and differ in their second argument**:
+`Substring(start, length)` takes how many, `Subset(start, end)` takes where to stop. Whichever
+number you have to hand is the one to write. Both give back a `string`, because a run of a
+string is a string — the same rule `Subset` follows on a set, where a run of one is a set.
 
 ### 11.4 On a value of a particular type
 
@@ -1341,17 +1400,36 @@ A string never changes, so each of these returns a new one.
 | `Console.WriteLine(value)` | writes and ends the line |
 | `Console.Read()` | `string?`; absent at end of input |
 | `Reference.Equals(a, b)` | `boolean`; identity, which is what `==` deliberately is not |
-| `Math.Sqrt(x)` | `real` from a `real` |
+| `Math.Pi`, `Math.E` | `real`. **Values, so written without `()`** |
+| `Math.Sqrt(x)`, `Math.Cbrt(x)` | `real` from a `real` |
+| `Math.Root(x, degree)` | `real`; the roots with no name of their own |
 | `Math.Pow(base, exponent)` | `real`; `^` is the operator form |
+| `Math.Log(x)` | `real`. **The NATURAL logarithm** — see below |
+| `Math.Log(x, base)`, `Math.Log10(x)`, `Math.Log2(x)` | `real` |
+| `Math.Sin`, `Cos`, `Tan`, `Asin`, `Acos`, `Atan` | `real` from a `real`, in radians |
+| `Math.Atan2(y, x)` | `real`; takes the two sides, so it knows the quadrant |
 | `Math.Abs(x)` | the type it was given — `integer`, `real`, or `fraction` |
 | `Math.Min(a, b)`, `Math.Max(a, b)` | the type they were given |
 | `Math.Floor(x)`, `Math.Ceiling(x)`, `Math.Round(x)` | `integer`, from a `real` or a `fraction` |
+| `Math.Factorial(n)` | `integer`; overflows past 20 |
 | `Fraction.Create(numerator, denominator)` | `fraction` |
+| `Fraction.Create(whole)` | `fraction`; a whole number over one |
 
-**A root and a power leave the rationals**, so both answer in reals whatever they were given:
-the square root of a fraction is usually irrational. Everything else has a version for each
-number the language has, because an answer that arrives as a `real` cannot be counted with and
-a `fraction` that widens to one stops being exact.
+**`Math.Log` of one number is the natural logarithm** — log to base `e`, what mathematicians
+write as `ln`. That is what C#, Java and C all mean by the name, and Profi-C means it too, so
+a program moved between them gives the same answer. For base ten, write `Math.Log10(x)`, or
+`Math.Log(x, 10)`. This is the one place in the library where the obvious reading of a name
+is not the right one, and it is spelled this way because the alternative — agreeing with the
+guess and disagreeing with every other language — is worse.
+
+**A root, a power and a logarithm leave the rationals**, so all of them answer in reals
+whatever they were given: the square root of a fraction is usually irrational. Everything else
+has a version for each number the language has, because an answer that arrives as a `real`
+cannot be counted with and a `fraction` that widens to one stops being exact.
+
+**`Math.Pi` and `Math.E` are values, not functions.** Writing `Math.Pi()` is reported
+(`PC0338`), as is naming a function without calling it (`PC0330`) — the two diagnostics are a
+pair, so whichever a reader guesses, the compiler says which it is.
 
 **Rounding lands on a whole number**, so each of the three yields an `integer` and can be used
 as a count, an index, or a bound. Between them they are the three honest ways from a `real` to
@@ -1533,6 +1611,7 @@ directives come above any namespace; and a nested namespace whose name repeats a
 one is legal but warned about, since `Shapes.Shapes.Circle` is more often a mistake than an
 intent.
 
+
 ---
 
 ## Appendix A. Diagnostics
@@ -1643,6 +1722,8 @@ Warnings do not block compilation; everything else does.
 | `PC0334` | warning | This test is always true |
 | `PC0335` | error | Cannot cast to a value type |
 | `PC0336` | error | Parameter needs a type |
+| `PC0337` | warning | Not every member is handled |
+| `PC0338` | error | This member is a value |
 
 ### PC0400 to PC0499
 

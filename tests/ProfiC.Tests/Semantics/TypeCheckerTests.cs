@@ -119,6 +119,49 @@ public sealed class TypeCheckerTests
             """)), Is.Empty);
     }
 
+    /// <summary>
+    /// <para>An optional reaches another optional wherever the values would.</para>
+    /// <para>Absence is carried across rather than looked inside, so this settles what to do
+    /// with a <c>string?</c> where a <c>character[]?</c> is wanted without softening anything:
+    /// what comes out is still an optional.</para>
+    /// </summary>
+    [TestCase("        string? word = \"abc\";\n        character[]? letters = word;")]
+    [TestCase("        character[]? letters = {'a'};\n        string? word = letters;")]
+    [TestCase("        integer? count = 1;\n        real? measured = count;")]
+    public void AnOptionalConvertsWhereItsValueWould(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    /// <summary>The rule follows inheritance too, since that is a conversion like any other.</summary>
+    [Test]
+    public void AnOptionalChildReachesAnOptionalParent() =>
+        Assert.That(IdsOf(Check("""
+            model Shape
+            end model
+
+            model Square extends Shape
+            end model
+
+            global model Program
+                function Main()
+                    Square? square = new Square();
+                    Shape? shape = square;
+                    Console.WriteLine(shape.HasValue());
+                end function
+            end model
+            """)), Is.Empty);
+
+    /// <summary>
+    /// <para>And it softens nothing. Reaching a plain value still means proving there is one,
+    /// whatever the two types would do to each other.</para>
+    /// <para>This is the pairing worth pinning: the rule above says an optional travels, and
+    /// this says it never arrives unwrapped.</para>
+    /// </summary>
+    [TestCase("        string? word = \"abc\";\n        character[] letters = word;")]
+    [TestCase("        string? word = \"abc\";\n        string plain = word;")]
+    [TestCase("        integer? count = 1;\n        real measured = count;")]
+    public void AnOptionalStillDoesNotReachAPlainValue(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Does.Contain("PC0329"));
+
     [Test]
     public void AModelConvertsToItsAncestors()
     {

@@ -468,6 +468,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
 | [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
 | [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
+| [mathematics.pc](samples/mathematics.pc) | **Every member of `Math`.** Constants, roots, logarithms, angles, rounding, and why `Log` is the natural one |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |

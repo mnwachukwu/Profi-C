@@ -150,6 +150,60 @@ CompilationUnit
                 MemberExpr 'Count'
                   IdentifierExpr 'letters'
             LiteralExpr " letters" [String]
+      VarDeclStmt 'spoken'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+        LiteralExpr "hello" [String]
+      VarDeclStmt 'spelled'
+        OptionalTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'character'
+        IdentifierExpr 'spoken'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "spelled: " [String]
+              CallExpr
+                MemberExpr 'Count'
+                  CallExpr
+                    MemberExpr 'Or'
+                      IdentifierExpr 'spelled'
+                    CollectionExpr
+                      LiteralExpr '?' [Character]
+            LiteralExpr " letters" [String]
+      VarDeclStmt 'unsaid'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'NothingToSay'
+            IdentifierExpr 'Program'
+      VarDeclStmt 'unspelled'
+        OptionalTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'character'
+        IdentifierExpr 'unsaid'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "nothing stays nothing: " [String]
+            ParenthesizedExpr
+              UnaryExpr 'not'
+                CallExpr
+                  MemberExpr 'HasValue'
+                    IdentifierExpr 'unspelled'
+    FunctionDecl 'NothingToSay'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'string'
+      VarDeclStmt 'none'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+      YieldStmt
+        IdentifierExpr 'none'
     FunctionDecl 'UpAndDownTheFamily'
       VarDeclStmt 'shapes'
         SetTypeSyntax

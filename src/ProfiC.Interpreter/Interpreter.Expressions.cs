@@ -79,9 +79,16 @@ public sealed partial class Interpreter
             ConversionOperation.IntegerToFraction => Fraction.FromInteger(AsInteger(value)),
             ConversionOperation.FractionToReal => value is Fraction f ? f.ToReal() : value,
             ConversionOperation.WrapOptional => value,
-            ConversionOperation.StringToCharacters =>
-                new ProfiCSet<object?>(((string?)value ?? string.Empty).Select(c => (object?)c)),
-            ConversionOperation.CharactersToString => CharactersToString(value),
+
+            // Absence is carried across rather than converted. An optional holds nothing when
+            // it is empty, so there is nothing to turn into characters, and an empty set is a
+            // different answer from no set at all.
+            ConversionOperation.StringToCharacters => value is string text
+                ? new ProfiCSet<object?>(text.Select(c => (object?)c))
+                : null,
+
+            ConversionOperation.CharactersToString =>
+                value is ProfiCSet<object?> ? CharactersToString(value) : null,
             ConversionOperation.ToStringValue => ModelOperations.ToDisplayString(value),
             _ => value,
         };
@@ -471,6 +478,13 @@ public sealed partial class Interpreter
 
     private object? EvaluateMember(MemberExpr member, Environment scope, Instance? receiver)
     {
+        // A value the language provides, such as Math.Pi. Written without parentheses, so it
+        // arrives here rather than through a call, and the checker has already said which.
+        if (_model.GetBuiltIn(member) is { } constant)
+        {
+            return Perform(constant, target: null, []).Value;
+        }
+
         // A type name on the left reaches a global member.
         if (member.Receiver is IdentifierExpr name
             && _model.GetSymbol(name) is DeclaredTypeSymbol)
