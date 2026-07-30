@@ -187,37 +187,48 @@ no meaning, and no construct is terminated by a line break.
 
 ### 1.3 Comments
 
-Comments are delimited by words rather than by symbols.
-
-The word `comment` begins a **line comment**, which runs to the next line terminator.
+A comment is **marked, not named**. `#` runs to the end of the line:
 
 ```
-comment this runs to the end of the line
+# this runs to the end of the line
+let count = 1;      # and may end a line of code
 ```
 
-The word `comment` followed by `begin`, **on the same line**, opens a **block comment**,
-which ends at the next occurrence of `end` followed by `comment`.
+`##` opens a **block comment**, which ends at the next `##` — **and takes the rest of that
+line with it**:
 
 ```
-comment begin
+##
     as many lines as needed
-end comment
+##
 ```
 
-Both delimiters are matched only as whole words, so an identifier such as `commentary` is
-not a comment. Reaching the end of the file inside a block comment is an error, reported at
-the opener.
+That closing rule settles two things at once.
 
-Three consequences follow from comments being scanned as words:
+**Nesting is not an idea that can go wrong, because it is not an idea.** The first `##` after
+the opener closes the block, whatever was written between. A comment discussing comment syntax
+cannot half-close itself and spill its remainder into the program as code.
 
-- If `begin` does not appear on the same line as the `comment` that precedes it, the
-  construct is a line comment and `begin` is code.
-- Neither `end` nor `comment` alone closes a block comment. Only the two in sequence do.
-- The scanner does not read string literals while skipping a comment, so the closing pair
-  closes the block wherever it occurs, including inside quotation marks. **A block comment
-  cannot contain its own closing phrase.**
+**A comment is a line of its own, or the end of a line — never the middle of one.** Since the
+closer takes the rest of its line, nothing can follow one and still be code. This is a
+judgement about reading rather than a limitation: a comment interrupting an expression breaks
+the sentence the expression is trying to be.
 
-Comments produce no tokens.
+A run of marks is a heading rather than an error, since the extra ones are simply comment
+text:
+
+```
+#############################
+#  Everything below is ...   #
+#############################
+```
+
+A single `#` cannot close a block; only a pair does. A `#` inside a string literal is text, as
+the scanner reaches a comment only where a token could begin. Reaching the end of the file
+inside a block comment is an error, reported at the opener.
+
+Comments produce no tokens, and **reserve no words**: `comment`, `begin` and `commentary` are
+all names a program may use.
 
 ### 1.4 Identifiers
 
@@ -228,9 +239,8 @@ all identifiers.
 Identifiers are case-sensitive, so `Model` and `model` are different words — and since one of
 them is reserved, they are different *kinds* of word.
 
-An identifier may not be one of the reserved words in section 2, nor `comment`. Adjacency to
-an underscore is enough to make a word ordinary rather than reserved: `model_` and
-`comment_text` are identifiers.
+An identifier may not be one of the reserved words in section 2. Adjacency to an underscore is
+enough to make a word ordinary rather than reserved: `model_` and `models` are identifiers.
 
 **A reserved word may be used as a name by writing `@` before it**: `@end`, `@base`, `@to`.
 The mark is no part of the name — `@end` names `end` — and it is the only place an identifier
@@ -311,8 +321,8 @@ true         try          until        using        virtual      while
 yield
 ```
 
-`comment` is reserved in addition to these, but never produces a token: it is recognized
-before tokenizing and what follows it is skipped.
+These are every reserved word, and nothing is reserved outside the list. A comment is marked
+rather than named (§1.3), so it takes no word away from a program.
 
 Words a C# author might expect to be reserved and which are **not**: `private`, `static`,
 `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`,
@@ -1104,13 +1114,13 @@ on it is the `Temperature`'s:
 ```
 Temperature? reading = new Temperature(21.5);
 
-comment No guard, so this is still an optional: Value() unwraps it.
-let t = reading.Value();            comment t is a Temperature
+# No guard, so this is still an optional: Value() unwraps it.
+let t = reading.Value();            # t is a Temperature
 Console.WriteLine(t.Describe());
 
 if reading.HasValue()
-    comment Narrowed, so this is a Temperature: Value() is the model's.
-    let degrees = reading.Value();  comment degrees is a real
+    # Narrowed, so this is a Temperature: Value() is the model's.
+    let degrees = reading.Value();  # degrees is a real
     Console.WriteLine(reading.Describe());
 end if
 ```
@@ -1125,10 +1135,10 @@ nothing else, so the underlying type's members are unreachable until presence is
 ```
 Temperature? t = new Temperature(21.5);
 
-let unwrapped = t.Value();          comment the optional's Value; unwrapped is a Temperature
-Console.WriteLine(unwrapped.Value());   comment now the model's; 21.5
+let unwrapped = t.Value();          # the optional's Value; unwrapped is a Temperature
+Console.WriteLine(unwrapped.Value());   # now the model's; 21.5
 
-let d = t.Describe();               comment PC0306: a Temperature? has no member 'Describe'
+let d = t.Describe();               # PC0306: a Temperature? has no member 'Describe'
 ```
 
 The two names are in scope together only after narrowing, which is where the rule above
@@ -1201,9 +1211,9 @@ declared type, the element type of a set being built, the parameter of the funct
 called, and the result of the function doing the yielding.
 
 ```
-integer function(integer)[] steps = { (n) yield n + 1 };     comment element type
-Console.WriteLine(Program.Apply(numbers, (n) yield n * 2));  comment parameter
-yield (n) yield n + by;                                      comment result
+integer function(integer)[] steps = { (n) yield n + 1 };     # element type
+Console.WriteLine(Program.Apply(numbers, (n) yield n * 2));  # parameter
+yield (n) yield n + by;                                      # result
 ```
 
 An optional function type is a target like any other, since the lambda is wrapped on the way
@@ -1220,8 +1230,8 @@ The two rules meet with no gap and no overlap, which leaves exactly one place a 
 its own types — a `let`, where nothing on the left says anything:
 
 ```
-let halve = (integer n) yield n / 2;              comment nothing else says it, so this does
-integer function(integer) double = (n) yield n * 2;   comment the declared type says it
+let halve = (integer n) yield n / 2;              # nothing else says it, so this does
+integer function(integer) double = (n) yield n * 2;   # the declared type says it
 ```
 
 So a lambda always has exactly one spelling that says nothing twice and leaves nothing unsaid.
@@ -1656,7 +1666,7 @@ the others. The rule does not descend into subfolders.
 many folders as it names:
 
 ```
-comment A storefront, spread across folders.
+# A storefront, spread across folders.
 
 project Storefront
     source Program.pc

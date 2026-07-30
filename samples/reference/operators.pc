@@ -1,5 +1,5 @@
-comment Every operator and punctuation mark, with each two-character form written
-comment beside the one-character form it could be confused with.
+# Every operator and punctuation mark, with each two-character form written
+# beside the one-character form it could be confused with.
 
 global model Operators
 
@@ -13,8 +13,8 @@ global model Operators
     end function
 
     function Comparison(integer a, integer b)
-        comment Each pair puts the longer operator next to its shorter form, which is
-        comment where a mistake in longest-match scanning would show up first.
+        # Each pair puts the longer operator next to its shorter form, which is
+        # where a mistake in longest-match scanning would show up first.
         let lessOrEqual = a <= b;
         let less = a < b;
 
@@ -42,25 +42,25 @@ global model Operators
     end function
 
     function Punctuation(integer[] items, string text)
-        comment Parentheses, brackets, braces, comma, semicolon, and dot.
+        # Parentheses, brackets, braces, comma, semicolon, and dot.
         integer[] literal = {1, 2, 3};
         let indexed = items[0];
         let member = text.Count();
 
-        comment A call is punctuation too, but this one yields nothing, so there is no
-        comment result to give a name to.
+        # A call is punctuation too, but this one yields nothing, so there is no
+        # result to give a name to.
         Operators.Arithmetic(1, 2);
     end function
 
     function OptionalAndLambda()
-        comment The question mark is a type suffix; a lambda's body follows "yield".
+        # The question mark is a type suffix; a lambda's body follows "yield".
         integer? maybe;
         integer function(integer, integer) add = (a, b) yield a + b;
         let recovered = maybe.Or(0);
     end function
 
     function CaseLabels(integer code)
-        comment The colon appears only at the end of a case label.
+        # The colon appears only at the end of a case label.
         switch code
             case 1:
                 Console.WriteLine("one");
@@ -70,7 +70,7 @@ global model Operators
     end function
 
     function Fractions()
-        comment The pipe separates a fraction's numerator and denominator.
+        # The pipe separates a fraction's numerator and denominator.
         constant fraction ratio = 3|4;
     end function
 

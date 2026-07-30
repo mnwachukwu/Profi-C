@@ -1,4 +1,4 @@
-comment A storefront, spread across folders.
+# A storefront, spread across folders.
 
 project Storefront
     source Program.pc

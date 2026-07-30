@@ -1,10 +1,10 @@
-comment begin
-    FizzBuzz.
+##
+FizzBuzz.
 
-    The classic first exercise, and a fair look at Profi-C's control flow: a range loop that
-    reads as a sentence, an if/else-if chain with no parentheses around the conditions, and a
-    function that yields a string.
-end comment
+The classic first exercise, and a fair look at Profi-C's control flow: a range loop that
+reads as a sentence, an if/else-if chain with no parentheses around the conditions, and a
+function that yields a string.
+##
 
 global model Program
 
@@ -14,10 +14,10 @@ global model Program
         end for
     end function
 
-    comment begin
-        Divisibility by 15 has to be tested first. Testing it last would never be reached,
-        because 15 is divisible by 3 and the chain stops at the first branch that matches.
-    end comment
+    ##
+    Divisibility by 15 has to be tested first. Testing it last would never be reached,
+    because 15 is divisible by 3 and the chain stops at the first branch that matches.
+    ##
     string function Describe(integer n)
         if n % 15 == 0
             yield "FizzBuzz";

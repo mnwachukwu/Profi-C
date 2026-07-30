@@ -1,14 +1,14 @@
-comment begin
-    Exact arithmetic.
+##
+Exact arithmetic.
 
-    'fraction' is a first-class numeric type written with a vertical bar: 22|7 is
-    twenty-two sevenths, not a division that has already happened. Fractions are kept in
-    lowest terms and are never rounded, so a third really is a third.
+'fraction' is a first-class numeric type written with a vertical bar: 22|7 is
+twenty-two sevenths, not a division that has already happened. Fractions are kept in
+lowest terms and are never rounded, so a third really is a third.
 
-    This matters the first time a student is told that 0.1 + 0.2 is not 0.3. That is true of
-    'real', and this program shows it — but it is a fact about binary floating point, not
-    about arithmetic, and having both types available is what makes the difference visible.
-end comment
+This matters the first time a student is told that 0.1 + 0.2 is not 0.3. That is true of
+'real', and this program shows it — but it is a fact about binary floating point, not
+about arithmetic, and having both types available is what makes the difference visible.
+##
 
 global model Program
 
@@ -38,14 +38,14 @@ global model Program
         Console.WriteLine("(1|2) ^ 3  is " + (1|2) ^ 3);
         Console.WriteLine("(2|3) ^ 2  is " + (2|3) ^ 2);
 
-        comment begin
-            A negative power inverts, and inverting is where the two part company. One third
-            has no finite binary expansion, so a real can only get close to it; the fraction
-            is the number itself.
+        ##
+        A negative power inverts, and inverting is where the two part company. One third
+        has no finite binary expansion, so a real can only get close to it; the fraction
+        is the number itself.
 
-            Note that one eighth would prove nothing here — it is a power of two, so a real
-            holds it exactly. The gap only shows on a denominator that is not.
-        end comment
+        Note that one eighth would prove nothing here — it is a power of two, so a real
+        holds it exactly. The gap only shows on a denominator that is not.
+        ##
         Console.WriteLine("(3|1) ^ -1 is " + (3|1) ^ -1);
         Console.WriteLine("as a real:    " + 3.0 ^ -1.0);
 
@@ -56,15 +56,15 @@ global model Program
         Console.WriteLine("3 + 1|2 is         " + (whole + 1|2));
     end function
 
-    comment begin
-        The sum of 1|1 through 1|n. Every partial sum is exact, so the answer is the true
-        rational value rather than the nearest number a real could hold.
+    ##
+    The sum of 1|1 through 1|n. Every partial sum is exact, so the answer is the true
+    rational value rather than the nearest number a real could hold.
 
-        Note 1|1 / i rather than 1|i. A fraction literal is written with numerals on both
-        sides — it is one token, the way 3.14 is — so a fraction built from a variable is
-        built by dividing. The division is exact, because both sides are fractions once the
-        integer widens.
-    end comment
+    Note 1|1 / i rather than 1|i. A fraction literal is written with numerals on both
+    sides — it is one token, the way 3.14 is — so a fraction built from a variable is
+    built by dividing. The division is exact, because both sides are fractions once the
+    integer widens.
+    ##
     fraction function Harmonic(integer n)
         fraction total = 0;
 

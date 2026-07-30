@@ -196,65 +196,66 @@ public sealed class Lexer
 
     /// <summary>
     /// <para>Skips a comment if one begins here, returning whether it did.</para>
-    /// <para>"comment begin" opens a block closed by "end comment"; "comment" followed by
-    /// anything else runs to the end of the line.</para>
+    /// <para><c>##</c> opens a block and <c>#</c> alone runs to the end of the line. Two marks
+    /// rather than a word, so that reading a comment means reading what it says rather than
+    /// first stepping over a keyword that carries none of the meaning.</para>
     /// </summary>
     private bool TrySkipComment()
     {
-        if (!MatchesWordAt(_index, ReservedWords.Comment))
+        if (Current() != '#')
         {
             return false;
         }
 
-        int start = _index;
-        _index += ReservedWords.Comment.Length;
-
-        // The block opener must sit on the same line as the word that introduces it.
-        SkipInlineWhitespace();
-
-        if (MatchesWordAt(_index, "begin"))
+        if (Peek() == '#')
         {
-            _index += "begin".Length;
-            SkipBlockComment(start);
+            SkipBlockComment(_index);
             return true;
         }
 
-        while (!IsAtEnd() && Current() != '\n')
-        {
-            _index++;
-        }
-
+        SkipToEndOfLine();
         return true;
     }
 
-    /// <summary>Consumes a block comment body up to and including its "end comment" closer.</summary>
+    /// <summary>
+    /// <para>Consumes a block comment: everything from its opening <c>##</c> to the end of the
+    /// line carrying the next one.</para>
+    /// <para>Taking the whole closing line is what removes nesting as an idea rather than as a
+    /// rule. There is no depth to count, so a block cannot be half-closed by something written
+    /// inside it, and a run of marks — <c>########</c> above and below — is a heading rather
+    /// than a syntax error.</para>
+    /// <para>It also settles where a comment may sit: since the closer takes the rest of its
+    /// line with it, nothing can follow one and still be code. A comment is a line of its own
+    /// or the end of a line, never a parenthesis in the middle of one.</para>
+    /// </summary>
     private void SkipBlockComment(int start)
     {
+        // Past the opening pair, so that the very next mark can close it and "## ##" is an
+        // empty comment rather than one that never ends.
+        _index += 2;
+
         while (!IsAtEnd())
         {
-            if (MatchesWordAt(_index, "end"))
+            if (Current() == '#' && Peek() == '#')
             {
-                int probe = _index + "end".Length;
-
-                while (probe < _text.Length && char.IsWhiteSpace(_text[probe]))
-                {
-                    probe++;
-                }
-
-                if (MatchesWordAt(probe, ReservedWords.Comment))
-                {
-                    _index = probe + ReservedWords.Comment.Length;
-                    return;
-                }
+                _index += 2;
+                SkipToEndOfLine();
+                return;
             }
 
             _index++;
         }
 
         // Point at the opener rather than at end of file; that is where the fix goes.
-        _diagnostics.Report(
-            DiagnosticDescriptors.UnterminatedBlockComment,
-            SpanOf(start, ReservedWords.Comment.Length));
+        _diagnostics.Report(DiagnosticDescriptors.UnterminatedBlockComment, SpanOf(start, 2));
+    }
+
+    private void SkipToEndOfLine()
+    {
+        while (!IsAtEnd() && Current() != '\n')
+        {
+            _index++;
+        }
     }
 
     /// <summary>

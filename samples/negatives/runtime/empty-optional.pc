@@ -1,10 +1,10 @@
-comment begin
-    Insisting on an optional that turned out to be empty.
+##
+Insisting on an optional that turned out to be empty.
 
-    This program compiles. 'Value()' is the way to read an optional without proving presence
-    first — it insists, and throws when there is nothing there. 'HasValue()' and 'Or(...)'
-    are the two ways to ask instead of insist.
-end comment
+This program compiles. 'Value()' is the way to read an optional without proving presence
+first — it insists, and throws when there is nothing there. 'HasValue()' and 'Or(...)'
+are the two ways to ask instead of insist.
+##
 
 global model Program
 
@@ -13,7 +13,7 @@ global model Program
 
         Console.WriteLine("8 is at " + Program.IndexOf(scores, 8).Value());
 
-        comment 40 is not in the set, so this one insists on nothing.
+        # 40 is not in the set, so this one insists on nothing.
         Console.WriteLine("40 is at " + Program.IndexOf(scores, 40).Value());
     end function
 

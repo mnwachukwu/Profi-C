@@ -1,9 +1,9 @@
-comment begin
-    A shelf of books.
+##
+A shelf of books.
 
-    Shared code as well, and it names Book freely. Files in a folder are compiled together, so
-    neither has to be declared before the other.
-end comment
+Shared code as well, and it names Book freely. Files in a folder are compiled together, so
+neither has to be declared before the other.
+##
 
 model Shelf
 
@@ -25,7 +25,7 @@ model Shelf
         yield this.books[index].Describe();
     end function
 
-    comment The earliest book on the shelf, or nothing when the shelf is empty.
+    # The earliest book on the shelf, or nothing when the shelf is empty.
     Book? function Oldest()
         Book? found;
 

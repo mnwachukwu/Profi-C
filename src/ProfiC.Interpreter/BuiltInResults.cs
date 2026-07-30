@@ -9,7 +9,8 @@ namespace ProfiC.Interpreter;
 /// word. Nothing until now compared it against what the back end actually produced, and the
 /// disagreement is invisible from inside a program: a member declared to yield an integer that
 /// hands back a real prints the same characters and passes every recorded output. It only goes
-/// wrong later, somewhere else, where the value is used as a count or an index.</para>
+/// wrong later, somewhere else, where the value is used as a count or an index. Rounding is
+/// the case to picture: an answer meant to index a set is useless as a real.</para>
 /// <para>Held apart from the switch that produces the values so that adding a member means
 /// adding one arm rather than two, and so that this reads as one rule rather than as a hundred
 /// assertions.</para>

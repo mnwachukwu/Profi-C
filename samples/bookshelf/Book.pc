@@ -1,9 +1,9 @@
-comment begin
-    A book.
+##
+A book.
 
-    This file declares no Program, so it is shared code: every program in this folder sees it
-    without saying anything to arrange that.
-end comment
+This file declares no Program, so it is shared code: every program in this folder sees it
+without saying anything to arrange that.
+##
 
 model Book
 

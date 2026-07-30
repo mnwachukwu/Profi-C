@@ -61,7 +61,7 @@ public sealed class PositionTests : LexerTestBase
     [Test]
     public void PositionAfterAMultiLineBlockComment_IsCorrect()
     {
-        List<Token> tokens = ScanWithoutEof("comment begin\n\n\nend comment\nlet");
+        List<Token> tokens = ScanWithoutEof("##\n\n\n##\nlet");
 
         Assert.Multiple(() =>
         {

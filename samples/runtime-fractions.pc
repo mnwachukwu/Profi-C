@@ -1,25 +1,25 @@
-comment begin
-    Fractions built while the program runs.
+##
+Fractions built while the program runs.
 
-    A fraction literal like 3|4 is fixed when the program is written — both numerals are
-    there in the source. Fraction.Create(n, d) builds one from values worked out at run
-    time, which is what you need the moment the numbers come from a loop, a calculation,
-    or the person using the program.
+A fraction literal like 3|4 is fixed when the program is written — both numerals are
+there in the source. Fraction.Create(n, d) builds one from values worked out at run
+time, which is what you need the moment the numbers come from a loop, a calculation,
+or the person using the program.
 
-    What comes back is an ordinary fraction. It reduces, it carries its sign in the
-    numerator, and every operator works on it.
-end comment
+What comes back is an ordinary fraction. It reduces, it carries its sign in the
+numerator, and every operator works on it.
+##
 
 global model Program
 
     function Main()
         Console.WriteLine("== a table of unit fractions ==");
 
-        comment begin
-            Given one number, Create reads it as a whole one — the same as writing a
-            denominator of 1. It is worth having only where nothing says a fraction is
-            wanted: 'let counted = 3;' holds an integer, while Create(3) holds 3|1.
-        end comment
+        ##
+        Given one number, Create reads it as a whole one — the same as writing a
+        denominator of 1. It is worth having only where nothing says a fraction is
+        wanted: 'let counted = 3;' holds an integer, while Create(3) holds 3|1.
+        ##
         for d = 2 to 6
             let piece = Fraction.Create(1, d);
             Console.WriteLine("  1 over " + d + " is " + piece
@@ -31,8 +31,8 @@ global model Program
         Console.WriteLine("  Fraction.Create(6, 8)   is " + Fraction.Create(6, 8));
         Console.WriteLine("  Fraction.Create(-3, -9) is " + Fraction.Create(-3, -9));
 
-        comment The sign always ends up on the numerator, so two spellings of the same
-        comment number really are the same number.
+        # The sign always ends up on the numerator, so two spellings of the same
+        # number really are the same number.
         Console.WriteLine("  Fraction.Create(5, -10) is " + Fraction.Create(5, -10));
         Console.WriteLine("  and equals -1|2?           " + (Fraction.Create(5, -10) == -1|2));
 
@@ -44,10 +44,10 @@ global model Program
         Console.WriteLine("");
         Console.WriteLine("== a denominator of zero ==");
 
-        comment begin
-            Written as a literal, this is refused before the program ever runs — the same
-            way 1 / 0 is. Only a value the compiler cannot see reaches this point.
-        end comment
+        ##
+        Written as a literal, this is refused before the program ever runs — the same
+        way 1 / 0 is. Only a value the compiler cannot see reaches this point.
+        ##
         integer denominator = 0;
 
         try
@@ -57,10 +57,10 @@ global model Program
         end try
     end function
 
-    comment begin
-        The sum of 1|1 through 1|n, exactly. Each term needs a denominator that only exists
-        once the loop is running, so this cannot be written with literals at all.
-    end comment
+    ##
+    The sum of 1|1 through 1|n, exactly. Each term needs a denominator that only exists
+    once the loop is running, so this cannot be written with literals at all.
+    ##
     fraction function Harmonic(integer n)
         fraction total = 0;
 

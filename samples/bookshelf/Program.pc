@@ -1,11 +1,11 @@
-comment begin
-    A program in three files.
+##
+A program in three files.
 
-    This file declares Program, so it is the program. Running it compiles Book.pc and Shelf.pc
-    alongside, because they are in this folder and declare no Program of their own.
+This file declares Program, so it is the program. Running it compiles Book.pc and Shelf.pc
+alongside, because they are in this folder and declare no Program of their own.
 
-        pc run samples/bookshelf/Program.pc
-end comment
+    pc run samples/bookshelf/Program.pc
+##
 
 global model Program
 

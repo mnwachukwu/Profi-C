@@ -1,14 +1,14 @@
-comment begin
-    Choosing among fixed alternatives.
+##
+Choosing among fixed alternatives.
 
-    A switch compares one value against constant labels. Labels may be grouped, and a group
-    runs only its own statements — there is no falling through from one group into the next,
-    so nothing has to be written to prevent it.
+A switch compares one value against constant labels. Labels may be grouped, and a group
+runs only its own statements — there is no falling through from one group into the next,
+so nothing has to be written to prevent it.
 
-    Over an enumeration, a switch that leaves members out and writes no 'default' is warned
-    about, naming the ones with no case. That is what makes adding a member safe: every switch
-    that has to change says so, where it has to change.
-end comment
+Over an enumeration, a switch that leaves members out and writes no 'default' is warned
+about, naming the ones with no case. That is what makes adding a member safe: every switch
+that has to change says so, where it has to change.
+##
 
 enumeration Suit
     Hearts, Diamonds, Clubs, Spades
@@ -28,11 +28,11 @@ global model Program
         Program.SwitchingOnOtherThings();
     end function
 
-    comment ---- One case per member --------------------------------------------------------
+    # ---- One case per member --------------------------------------------------------
 
-    comment begin
-        Every member has a case, so nothing is left unhandled and the compiler says nothing.
-    end comment
+    ##
+    Every member has a case, so nothing is left unhandled and the compiler says nothing.
+    ##
     string function NameOf(Suit suit)
         switch suit
             case Suit.Hearts:
@@ -45,7 +45,7 @@ global model Program
                 yield "spades";
         end switch
 
-        comment Reached only if a suit exists that no case named, which none does.
+        # Reached only if a suit exists that no case named, which none does.
         yield "unknown";
     end function
 
@@ -59,12 +59,12 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment ---- Grouping labels ------------------------------------------------------------
+    # ---- Grouping labels ------------------------------------------------------------
 
-    comment begin
-        Several labels may share one group. This is the case other languages need 'break' for;
-        here a group simply ends where the next label begins.
-    end comment
+    ##
+    Several labels may share one group. This is the case other languages need 'break' for;
+    here a group simply ends where the next label begins.
+    ##
     string function ColorOf(Suit suit)
         switch suit
             case Suit.Hearts:
@@ -83,12 +83,12 @@ global model Program
         Console.WriteLine("spades is " + Program.ColorOf(Suit.Spades));
     end function
 
-    comment ---- Letting a default cover the rest ---------------------------------------------
+    # ---- Letting a default cover the rest ---------------------------------------------
 
-    comment begin
-        Thirteen ranks and only three of them are worth naming, so a default handles the rest.
-        Writing one says "everything else is covered", which is why it silences the warning.
-    end comment
+    ##
+    Thirteen ranks and only three of them are worth naming, so a default handles the rest.
+    Writing one says "everything else is covered", which is why it silences the warning.
+    ##
     integer function ValueOf(Rank rank)
         switch rank
             case Rank.Jack:
@@ -113,13 +113,13 @@ global model Program
         Console.WriteLine("hand is worth " + total);
     end function
 
-    comment ---- What else a switch can examine ------------------------------------------------
+    # ---- What else a switch can examine ------------------------------------------------
 
-    comment begin
-        Integers, characters, strings, and booleans may all be switched on. A real or a
-        fraction may not: two of those can be equal without being the same numeral, and a case
-        label is a comparison the reader has to be able to trust.
-    end comment
+    ##
+    Integers, characters, strings, and booleans may all be switched on. A real or a
+    fraction may not: two of those can be equal without being the same numeral, and a case
+    label is a comparison the reader has to be able to trust.
+    ##
     function SwitchingOnOtherThings()
         string command = "deal";
 

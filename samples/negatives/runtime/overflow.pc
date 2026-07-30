@@ -1,11 +1,11 @@
-comment begin
-    A number too large to hold.
+##
+A number too large to hold.
 
-    This program compiles. Integer arithmetic is checked, so a result that will not fit stops
-    the program rather than wrapping round to a wrong answer that looks plausible.
+This program compiles. Integer arithmetic is checked, so a result that will not fit stops
+the program rather than wrapping round to a wrong answer that looks plausible.
 
-    20 factorial is the largest that fits in an integer. 21 factorial is not.
-end comment
+20 factorial is the largest that fits in an integer. 21 factorial is not.
+##
 
 global model Program
 

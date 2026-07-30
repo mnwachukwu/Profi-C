@@ -1,10 +1,10 @@
-comment begin
-    Reading an optional without proving there is anything in it.
+##
+Reading an optional without proving there is anything in it.
 
-    This program does not compile. An optional cannot be read as a plain value, and the
-    members of what it holds are out of reach until presence is proven — which is what the
-    language has instead of null.
-end comment
+This program does not compile. An optional cannot be read as a plain value, and the
+members of what it holds are out of reach until presence is proven — which is what the
+language has instead of null.
+##
 
 model Account
     public integer balance;
@@ -19,16 +19,16 @@ global model Program
         integer? maybe;
         Account? found;
 
-        comment Reading it as a plain value. The message names all three ways in.
+        # Reading it as a plain value. The message names all three ways in.
         integer total = maybe;
 
-        comment Reaching a member of what it holds, without narrowing first.
+        # Reaching a member of what it holds, without narrowing first.
         Console.WriteLine(found.Describe());
 
-        comment Arithmetic on one, likewise.
+        # Arithmetic on one, likewise.
         Console.WriteLine(maybe + 1);
 
-        comment Narrowing proves the first one only; the second is still an optional.
+        # Narrowing proves the first one only; the second is still an optional.
         if maybe.HasValue()
             Console.WriteLine(found.balance);
         end if

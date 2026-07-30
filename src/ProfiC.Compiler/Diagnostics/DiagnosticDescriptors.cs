@@ -50,7 +50,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor UnterminatedBlockComment = Error(
         "PC0005",
         "Unterminated block comment",
-        "Unterminated block comment; expected 'end comment'.");
+        "Unterminated block comment; expected '##'.");
 
     /// <summary>
     /// Reported for operators a C# author reaches for that Profi-C does not have. Naming the
@@ -88,7 +88,7 @@ public static class DiagnosticDescriptors
         "Nothing to escape",
         "'@' marks a reserved word being used as a name, so a name must follow it.");
 
-    // ---- Syntax, PC0100 to PC0113 -----------------------------------------------------
+    // ---- Syntax, PC0100 to PC0199 -----------------------------------------------------
 
     public static readonly DiagnosticDescriptor UnexpectedToken = Error(
         "PC0100",
@@ -137,11 +137,28 @@ public static class DiagnosticDescriptors
     /// <para>A warning rather than an error, since the type written is the one that was going
     /// to be used either way and nothing about the program is in doubt.</para>
     /// </summary>
+
     public static readonly DiagnosticDescriptor ParameterTypeAlreadyKnown = Warning(
         "PC0115",
         "This parameter's type is already known",
         "The surrounding code already says what '{0}' holds, so writing its type says it "
         + "twice. Leave the type out.");
+
+    /// <summary>
+    /// <para><c>Function(string)</c>, written where a function type was meant.</para>
+    /// <para>Reached by meeting <c>Function</c> as the root every function type descends from
+    /// and taking it for the way one is spelled. The two really are different words: the root
+    /// holds a function without saying what shape it is, and the lowercase form says the
+    /// shape.</para>
+    /// <para>Its own message rather than the wreckage of reading it as a call, which is what
+    /// it looks like to a parser and which reports on everything except the mistake.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor FunctionTypeIsLowercase = Error(
+        "PC0116",
+        "A function type is spelled in lowercase",
+        "'Function' is the type every function descends from and takes no parentheses. For a "
+        + "function of a particular shape write 'function(...)', with a result before it if it "
+        + "has one, as in 'integer function(string)'.");
 
     /// <summary>
     /// The diagnostic qualified <c>end</c> exists to produce. Naming both the closer written

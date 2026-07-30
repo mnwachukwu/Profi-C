@@ -603,9 +603,9 @@ public sealed partial class TypeChecker
     /// <summary>
     /// <para>Chooses the constructor a <c>new</c> runs, and checks what it was given against
     /// what that constructor takes.</para>
-    /// <para>A type declaring none takes nothing, so only an empty <c>new</c> fits it. Leaving
-    /// this unchecked let any arguments at all be written and dropped, which reached as far as
-    /// a string sitting in a field declared to hold an integer.</para>
+    /// <para>A type declaring none takes nothing, so only an empty <c>new</c> fits it.
+    /// Unchecked, any arguments at all would be written and dropped, which reaches as far as a
+    /// string sitting in a field declared to hold an integer.</para>
     /// </summary>
     private void CheckConstructorArguments(
         NewExpr construction,

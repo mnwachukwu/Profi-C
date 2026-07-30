@@ -20,7 +20,7 @@ public sealed class RecoveryTests : LexerTestBase
     [Test]
     public void UnrecognizedCharacter_IsReportedAndSkipped()
     {
-        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("let # x");
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("let $ x");
 
         Assert.Multiple(() =>
         {
@@ -35,9 +35,9 @@ public sealed class RecoveryTests : LexerTestBase
     [Test]
     public void SeveralUnrecognizedCharacters_AreAllReportedInOnePass()
     {
-        // '@' is deliberately absent: it is recognized now, as the mark that lets a reserved
-        // word be a name.
-        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("# & $ ~");
+        // '@' is deliberately absent, being the mark that lets a reserved word be a name, and
+        // so is '#', which opens a comment.
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("& $ ~ `");
 
         Assert.Multiple(() =>
         {
@@ -98,7 +98,7 @@ public sealed class RecoveryTests : LexerTestBase
     [Test]
     public void UnterminatedBlockComment_IsReportedAtItsOpener()
     {
-        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("let\ncomment begin\nnever closed");
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("let\n##\nnever closed");
 
         Assert.Multiple(() =>
         {
@@ -365,7 +365,7 @@ public sealed class RecoveryTests : LexerTestBase
     {
         (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw(
             """
-            let a = #;
+            let a = $;
             let b = 'xy';
             let c = "unclosed
             let d = a && b;
@@ -387,7 +387,7 @@ public sealed class RecoveryTests : LexerTestBase
     [Test]
     public void DiagnosticBag_StopsCollectingAtItsCapAndSaysSo()
     {
-        (_, DiagnosticBag diagnostics) = ScanRaw(new string('#', DiagnosticBag.MaximumDiagnostics + 50));
+        (_, DiagnosticBag diagnostics) = ScanRaw(new string('$', DiagnosticBag.MaximumDiagnostics + 50));
 
         Assert.Multiple(() =>
         {
@@ -405,8 +405,8 @@ public sealed class RecoveryTests : LexerTestBase
     {
         string[] hostile =
         [
-            "'", "\"", "\\", "comment begin", "'\\", "\"\\", "\\u", "'\\u12",
-            "#$%^&", "\u0000", "let \"", "comment begin \"end",
+            "'", "\"", "\\", "##", "'\\", "\"\\", "\\u", "'\\u12",
+            "$%^&", "\u0000", "let \"", "## unclosed",
         ];
 
         foreach (string source in hostile)

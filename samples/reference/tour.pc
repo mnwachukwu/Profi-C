@@ -1,16 +1,16 @@
-comment begin
-    A tour of Profi-C.
+##
+A tour of Profi-C.
 
-    Every construct in the grammar appears here at least once. The file is meant to be
-    read, and to be scanned by the compiler as a test that nothing in the grammar is
-    unreachable.
-end comment
+Every construct in the grammar appears here at least once. The file is meant to be
+read, and to be scanned by the compiler as a test that nothing in the grammar is
+unreachable.
+##
 
 using Standard;
 
 namespace Tour
 
-    comment ---- Enumerations ----------------------------------------------------------
+    # ---- Enumerations ----------------------------------------------------------
 
     public enumeration Color
         Red,
@@ -18,7 +18,7 @@ namespace Tour
         Blue,
     end enumeration
 
-    comment ---- Structures, which are values rather than references -------------------
+    # ---- Structures, which are values rather than references -------------------
 
     public structure Pair
         public integer Left;
@@ -30,7 +30,7 @@ namespace Tour
         end function
     end structure
 
-    comment ---- A model with inheritance ------------------------------------------------
+    # ---- A model with inheritance ------------------------------------------------
 
     public abstract model Shape
         protected string name;
@@ -58,9 +58,9 @@ namespace Tour
             yield base.Describe();
         end function
 
-        comment A nested model, which holds no reference to the model it sits inside.
-        comment One that needs its enclosing instance takes it as a constructor argument,
-        comment exactly as a C# nested class does.
+        # A nested model, which holds no reference to the model it sits inside.
+        # One that needs its enclosing instance takes it as a constructor argument,
+        # exactly as a C# nested class does.
         public model Corner
             Shape owner;
 
@@ -74,7 +74,7 @@ namespace Tour
         end model
     end model
 
-    comment ---- Every statement and expression form ---------------------------------
+    # ---- Every statement and expression form ---------------------------------
 
     global model Tour
 
@@ -83,13 +83,13 @@ namespace Tour
 
         function Statements(integer input, string text, Shape shape)
 
-            comment Declarations, inferred and explicit.
+            # Declarations, inferred and explicit.
             let inferred = 1;
             integer explicitly = 2;
             integer uninitialized;
             constant character Marker = 'x';
 
-            comment Every type form.
+            # Every type form.
             integer[] numbers = {1, 2, 3};
             Shape? maybeShape;
             Shape?[] optionalShapes = {};
@@ -98,13 +98,13 @@ namespace Tour
             integer function(integer, integer)? maybeComparator;
             function(string)[] handlers = {};
 
-            comment An anonymous block introduces a scope and closes with a bare end.
+            # An anonymous block introduces a scope and closes with a bare end.
             begin
                 integer scratch = 0;
                 scratch = scratch + 1;
             end
 
-            comment Branching. An else-if chain closes once.
+            # Branching. An else-if chain closes once.
             if input > Tour.Limit
                 explicitly = 1;
             else if input == Tour.Limit
@@ -113,10 +113,10 @@ namespace Tour
                 explicitly = 3;
             end if
 
-            comment The conditional expression, which fills the role of a ternary.
+            # The conditional expression, which fills the role of a ternary.
             let label = if input > 0 then "positive" else "other";
 
-            comment Loops. "to" is inclusive, "until" is exclusive.
+            # Loops. "to" is inclusive, "until" is exclusive.
             for i = 1 to 10
                 explicitly = explicitly + i;
             end for
@@ -141,7 +141,7 @@ namespace Tour
                 end if
             end while
 
-            comment Multi-way branching. No fallthrough, so no break is needed.
+            # Multi-way branching. No fallthrough, so no break is needed.
             switch input
                 case 1:
                     Console.WriteLine("one");
@@ -152,7 +152,7 @@ namespace Tour
                     Console.WriteLine("something else");
             end switch
 
-            comment Exceptions.
+            # Exceptions.
             try
                 throw new ArgumentException();
             catch ArgumentException problem
@@ -161,45 +161,45 @@ namespace Tour
                 Console.WriteLine("always runs");
             end try
 
-            comment Type tests and casts. "as" yields an optional.
+            # Type tests and casts. "as" yields an optional.
             let isSquare = shape is Square;
             let asSquare = shape as Square;
 
-            comment Optionals are read only once presence is proven.
+            # Optionals are read only once presence is proven.
             if maybeShape.HasValue()
                 let unwrapped = maybeShape.Value();
             end if
 
             let fallback = maybeShape.Or(shape);
 
-            comment Both lambda forms. The type being assigned to says what the parameters
-            comment hold, so both leave them out.
+            # Both lambda forms. The type being assigned to says what the parameters
+            # hold, so both leave them out.
             comparator = function(a, b)
                 yield a - b;
             end function;
 
             maybeComparator = (a, b) yield a - b;
 
-            comment A "let" says nothing about what it holds, so this one writes its own.
+            # A "let" says nothing about what it holds, so this one writes its own.
             let flipped = (integer n) yield -n;
 
-            comment A function nested in a function body, capturing its locals. Functions
-            comment may be declared here; types may not, since a type introduced by a
-            comment statement would entangle name resolution with statement order.
+            # A function nested in a function body, capturing its locals. Functions
+            # may be declared here; types may not, since a type introduced by a
+            # statement would entangle name resolution with statement order.
             integer function Doubled()
                 yield explicitly * 2;
             end function
 
-            comment Construction, indexing, member access, and calls. A structure is
-            comment constructed the same way a model is; what differs is that the result
-            comment is a value, and cannot be stored in a Model variable until v3.
+            # Construction, indexing, member access, and calls. A structure is
+            # constructed the same way a model is; what differs is that the result
+            # is a value, and cannot be stored in a Model variable until v3.
             let square = new Square(2.0);
             let pair = new Pair(3, 4);
             let first = numbers[0];
             let described = square.Describe();
             let total = numbers.Count();
 
-            comment Every operator, across all nine precedence levels.
+            # Every operator, across all nine precedence levels.
             let arithmetic = 1 + 2 - 3 * 4 / 5 % 6;
             let negated = -arithmetic;
             let compared = 1 < 2 and 3 > 2 or not (4 <= 5) and 6 >= 7;
@@ -207,12 +207,12 @@ namespace Tour
             let mixed = 22|7;
             let flag = true and false;
 
-            comment Enumerations convert in both directions.
+            # Enumerations convert in both directions.
             let color = Color.Green;
             let ordinal = color.ToInteger();
             let recovered = 10 as Color;
 
-            comment Printing. Write leaves the cursor in place; WriteLine ends the line.
+            # Printing. Write leaves the cursor in place; WriteLine ends the line.
             Console.Write("no newline after this");
             Console.WriteLine();
             Console.WriteLine(explicitly);
@@ -222,7 +222,7 @@ namespace Tour
             Console.WriteLine(mixed);
             Console.WriteLine(shape);
 
-            comment A non-string operand converts implicitly when joined to a string.
+            # A non-string operand converts implicitly when joined to a string.
             Console.WriteLine("the answer is " + explicitly);
 
             yield;

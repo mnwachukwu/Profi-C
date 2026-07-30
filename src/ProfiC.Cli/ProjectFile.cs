@@ -85,20 +85,22 @@ public sealed class ProjectFile
             string line = lines[number].Trim();
 
             // Both of the language's comment forms, so that a project file is annotated the
-            // same way the programs it builds are.
+            // same way the programs it builds are. A block closes on the line carrying the
+            // next pair of marks, which is what makes a run of them a heading here too.
             if (inBlockComment)
             {
-                inBlockComment = line != "end comment";
+                inBlockComment = !line.Contains("##", StringComparison.Ordinal);
                 continue;
             }
 
-            if (line is "comment begin")
+            if (line.StartsWith("##", StringComparison.Ordinal))
             {
-                inBlockComment = true;
+                // One that closes on its own line leaves nothing open.
+                inBlockComment = line.IndexOf("##", 2, StringComparison.Ordinal) < 0;
                 continue;
             }
 
-            if (line.Length == 0 || line.StartsWith("comment", StringComparison.Ordinal))
+            if (line.Length == 0 || line.StartsWith("#", StringComparison.Ordinal))
             {
                 continue;
             }

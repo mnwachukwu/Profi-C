@@ -9,14 +9,6 @@ namespace ProfiC.Compiler.Lexing;
 /// </summary>
 public static class ReservedWords
 {
-    /// <summary>
-    /// <para>The word that begins a comment.</para>
-    /// <para>It is absent from <see cref="Keywords"/> because it never produces a token: the
-    /// scanner tests for it before tokenizing and skips what follows. It is nonetheless
-    /// reserved in practice, since the word can never be read as an identifier.</para>
-    /// </summary>
-    public const string Comment = "comment";
-
     /// <summary>The 54 words that scan as keywords rather than identifiers.</summary>
     public static readonly FrozenDictionary<string, TokenType> Keywords =
         new Dictionary<string, TokenType>(StringComparer.Ordinal)
@@ -78,10 +70,13 @@ public static class ReservedWords
             ["yield"] = TokenType.Yield,
         }.ToFrozenDictionary(StringComparer.Ordinal);
 
-    /// <summary>The number of reserved words, excluding <see cref="Comment"/>.</summary>
+    /// <summary>The number of reserved words.</summary>
     public static int Count => Keywords.Count;
 
-    /// <summary>True if the word cannot be used as an identifier.</summary>
-    public static bool IsReserved(string word) =>
-        Keywords.ContainsKey(word) || string.Equals(word, Comment, StringComparison.Ordinal);
+    /// <summary>
+    /// <para>True if the word cannot be used as an identifier.</para>
+    /// <para>Every reserved word is in the table above, and none is reserved outside it. A
+    /// comment is marked rather than named, so it takes no word away from a program.</para>
+    /// </summary>
+    public static bool IsReserved(string word) => Keywords.ContainsKey(word);
 }

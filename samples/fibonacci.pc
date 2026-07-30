@@ -1,14 +1,14 @@
-comment begin
-    The Fibonacci sequence, computed two ways.
+##
+The Fibonacci sequence, computed two ways.
 
-    Both functions produce the same answers, and the difference between them is the point.
-    The recursive one mirrors the definition exactly and is the easier of the two to read.
-    The iterative one keeps two numbers and walks forward.
+Both functions produce the same answers, and the difference between them is the point.
+The recursive one mirrors the definition exactly and is the easier of the two to read.
+The iterative one keeps two numbers and walks forward.
 
-    The recursive version recomputes the same values over and over: asking for Fibonacci(30)
-    calls Fibonacci(28) twice, Fibonacci(27) three times, and so on. Try raising the limit and
-    watch where it stops being instant.
-end comment
+The recursive version recomputes the same values over and over: asking for Fibonacci(30)
+calls Fibonacci(28) twice, Fibonacci(27) three times, and so on. Try raising the limit and
+watch where it stops being instant.
+##
 
 global model Program
 
@@ -23,7 +23,7 @@ global model Program
         end for
     end function
 
-    comment The definition, written out. Every recursion needs a case that does not recur.
+    # The definition, written out. Every recursion needs a case that does not recur.
     integer function Recursive(integer n)
         if n < 2
             yield n;
@@ -32,7 +32,7 @@ global model Program
         yield Program.Recursive(n - 1) + Program.Recursive(n - 2);
     end function
 
-    comment The same sequence, carrying only the two numbers it actually needs.
+    # The same sequence, carrying only the two numbers it actually needs.
     integer function Iterative(integer n)
         integer previous = 0;
         integer current = 1;
@@ -46,7 +46,7 @@ global model Program
         yield previous;
     end function
 
-    comment A number followed by enough spaces to line the columns up.
+    # A number followed by enough spaces to line the columns up.
     string function Pad(integer value)
         let text = "" + value;
         string padded = text;

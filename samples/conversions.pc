@@ -1,12 +1,12 @@
-comment begin
-    Getting from one type to another.
+##
+Getting from one type to another.
 
-    Profi-C converts on its own only where nothing is lost and nothing would surprise you.
-    Everywhere else it asks, and the asking is a member call you can read.
+Profi-C converts on its own only where nothing is lost and nothing would surprise you.
+Everywhere else it asks, and the asking is a member call you can read.
 
-    The rule to carry away: if a conversion could lose information or change what a value
-    means, you write it down.
-end comment
+The rule to carry away: if a conversion could lose information or change what a value
+means, you write it down.
+##
 
 enumeration Suit
     Clubs,
@@ -59,10 +59,10 @@ global model Program
         Program.Enumerations();
     end function
 
-    comment begin
-        An integer becomes a real or a fraction on its own. Both hold every integer exactly,
-        so there is nothing to lose and nothing to decide.
-    end comment
+    ##
+    An integer becomes a real or a fraction on its own. Both hold every integer exactly,
+    so there is nothing to lose and nothing to decide.
+    ##
     function Widening()
         real r = 7;
         fraction f = 7;
@@ -70,13 +70,13 @@ global model Program
         Console.WriteLine("7 as a real is " + r + ", as a fraction " + f);
     end function
 
-    comment begin
-        A fraction and a real never convert on their own, in either direction.
+    ##
+    A fraction and a real never convert on their own, in either direction.
 
-        One third as a real is 0.33333333333333331, and one tenth as a fraction is
-        3602879701896397 over 36028797018963968. Both are surprising enough that the program
-        should say which it wants.
-    end comment
+    One third as a real is 0.33333333333333331, and one tenth as a fraction is
+    3602879701896397 over 36028797018963968. Both are surprising enough that the program
+    should say which it wants.
+    ##
     function AskingForIt()
         fraction third = 1|3;
         real tenth = 0.1;
@@ -84,11 +84,11 @@ global model Program
         Console.WriteLine("a third as a real is " + third.ToReal());
         Console.WriteLine("a tenth as a fraction is " + tenth.ToFraction());
 
-        comment Every type answers ToString(), which is what '+' uses to join one to a string.
+        # Every type answers ToString(), which is what '+' uses to join one to a string.
         Console.WriteLine("and as text: " + third.ToString() + " " + tenth.ToString());
     end function
 
-    comment A string and a set of characters are two views of the same thing.
+    # A string and a set of characters are two views of the same thing.
     function StringsAndCharacters()
         character[] letters = "cast";
         string word = letters;
@@ -98,14 +98,14 @@ global model Program
         Console.WriteLine("letters: " + letters);
         Console.WriteLine("word:    " + word + ", now " + letters.Count() + " letters");
 
-        comment begin
-            The two views converting into each other is not a rule about strings. An optional
-            travels wherever the value it holds would, so the optional forms convert too, and
-            one that holds nothing goes on holding nothing.
+        ##
+        The two views converting into each other is not a rule about strings. An optional
+        travels wherever the value it holds would, so the optional forms convert too, and
+        one that holds nothing goes on holding nothing.
 
-            Nothing is unwrapped by this. Reaching a plain string from a string? still means
-            proving there is one.
-        end comment
+        Nothing is unwrapped by this. Reaching a plain string from a string? still means
+        proving there is one.
+        ##
         string? spoken = "hello";
         character[]? spelled = spoken;
         Console.WriteLine("spelled: " + spelled.Or({'?'}).Count() + " letters");
@@ -120,13 +120,13 @@ global model Program
         yield none;
     end function
 
-    comment begin
-        A model becomes any of its ancestors on its own, because every circle is a shape.
+    ##
+    A model becomes any of its ancestors on its own, because every circle is a shape.
 
-        Going the other way is a question rather than a fact, so it is asked: 'is' tests, and
-        'as' tries. A cast yields an optional, so a shape that is not a circle gives nothing
-        back rather than failing.
-    end comment
+    Going the other way is a question rather than a fact, so it is asked: 'is' tests, and
+    'as' tries. A cast yields an optional, so a shape that is not a circle gives nothing
+    back rather than failing.
+    ##
     function UpAndDownTheFamily()
         Shape[] shapes = {new Circle(2.0), new Square(), new Circle(0.5)};
 
@@ -143,10 +143,10 @@ global model Program
         end for
     end function
 
-    comment begin
-        An enumeration member tells you its ordinal, and an ordinal can be asked back for a
-        member. That direction is a cast because a number need not name one.
-    end comment
+    ##
+    An enumeration member tells you its ordinal, and an ordinal can be asked back for a
+    member. That direction is a cast because a number need not name one.
+    ##
     function Enumerations()
         Suit s = Suit.Hearts;
 

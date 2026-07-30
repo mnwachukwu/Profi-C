@@ -1,14 +1,14 @@
-comment begin
-    Leaving a loop early, and skipping a turn.
+##
+Leaving a loop early, and skipping a turn.
 
-    'break' leaves the innermost loop it is inside. 'continue' abandons the rest of this turn
-    and goes on to the next one. Both are ways of saying "I am done here" without arranging the
-    condition to say it for you.
+'break' leaves the innermost loop it is inside. 'continue' abandons the rest of this turn
+and goes on to the next one. Both are ways of saying "I am done here" without arranging the
+condition to say it for you.
 
-    Neither is necessary — every loop below could be written with a flag and a longer
-    condition — but that arrangement is harder to read than the sentence it replaces, and the
-    flag is one more thing to keep true.
-end comment
+Neither is necessary — every loop below could be written with a flag and a longer
+condition — but that arrangement is harder to read than the sentence it replaces, and the
+flag is one more thing to keep true.
+##
 
 global model Program
 
@@ -19,15 +19,15 @@ global model Program
         Program.BreakingOutOfTheInnerLoop();
     end function
 
-    comment ---- Stopping once the answer is known -----------------------------------------
+    # ---- Stopping once the answer is known -----------------------------------------
 
-    comment begin
-        Once the first even number is found there is nothing left to learn, so the loop stops
-        rather than walking the rest of the set to no purpose.
+    ##
+    Once the first even number is found there is nothing left to learn, so the loop stops
+    rather than walking the rest of the set to no purpose.
 
-        The result is an optional because the set may hold no even number at all. That is the
-        honest answer, and it is why nothing here has to invent a -1 to mean "not found".
-    end comment
+    The result is an optional because the set may hold no even number at all. That is the
+    honest answer, and it is why nothing here has to invent a -1 to mean "not found".
+    ##
     integer? function FirstEven(integer[] values)
         integer? found;
 
@@ -49,12 +49,12 @@ global model Program
         Console.WriteLine("none found: " + none.HasValue());
     end function
 
-    comment ---- Skipping the turns that do not count ----------------------------------------
+    # ---- Skipping the turns that do not count ----------------------------------------
 
-    comment begin
-        A refund is recorded as a negative amount and is not part of the day's takings. The
-        'continue' says so once, at the top, instead of wrapping the rest of the body in an if.
-    end comment
+    ##
+    A refund is recorded as a negative amount and is not part of the day's takings. The
+    'continue' says so once, at the top, instead of wrapping the rest of the body in an if.
+    ##
     integer function TakingsFrom(integer[] amounts)
         integer total = 0;
 
@@ -73,24 +73,24 @@ global model Program
         Console.WriteLine("takings: " + Program.TakingsFrom({40, -15, 60, 25, -10}));
     end function
 
-    comment ---- Both in one loop -------------------------------------------------------------
+    # ---- Both in one loop -------------------------------------------------------------
 
-    comment begin
-        A range loop works the same way. 'continue' still moves the counter on, so this cannot
-        loop forever the way a hand-written 'while' with a misplaced continue can.
-    end comment
+    ##
+    A range loop works the same way. 'continue' still moves the counter on, so this cannot
+    loop forever the way a hand-written 'while' with a misplaced continue can.
+    ##
     function BothAtOnce()
         integer counted = 0;
 
         for i = 1 to 20
-            comment Odd numbers are not what we are counting.
+            # Odd numbers are not what we are counting.
             if i % 2 == 1
                 continue;
             end if
 
             counted = counted + 1;
 
-            comment Four is enough.
+            # Four is enough.
             if counted == 4
                 Console.WriteLine("stopped at " + i);
                 break;
@@ -98,12 +98,12 @@ global model Program
         end for
     end function
 
-    comment ---- Which loop a break leaves ---------------------------------------------------
+    # ---- Which loop a break leaves ---------------------------------------------------
 
-    comment begin
-        A break leaves the innermost loop and no more. The outer loop below runs every one of
-        its turns; only the inner one is cut short each time.
-    end comment
+    ##
+    A break leaves the innermost loop and no more. The outer loop below runs every one of
+    its turns; only the inner one is cut short each time.
+    ##
     function BreakingOutOfTheInnerLoop()
         for row = 1 to 3
             string line = "";

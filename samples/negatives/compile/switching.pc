@@ -1,10 +1,10 @@
-comment begin
-    Switches that do not hold together.
+##
+Switches that do not hold together.
 
-    This program does not compile, except for the last switch, which is a warning: it runs and
-    does something defensible, but a member added to Suit tomorrow would fall through it
-    silently, and that is the thing worth being told about.
-end comment
+This program does not compile, except for the last switch, which is a warning: it runs and
+does something defensible, but a member added to Suit tomorrow would fall through it
+silently, and that is the thing worth being told about.
+##
 
 enumeration Suit
     Hearts, Diamonds, Clubs, Spades
@@ -17,19 +17,19 @@ global model Program
         real measured = 1.5;
         integer notConstant = 3;
 
-        comment Equality on a real is not something a case label can be trusted to answer.
+        # Equality on a real is not something a case label can be trusted to answer.
         switch measured
             case 1.5:
                 Console.WriteLine("one and a half");
         end switch
 
-        comment A label is a constant, fixed when the program is written.
+        # A label is a constant, fixed when the program is written.
         switch code
             case notConstant:
                 Console.WriteLine("three");
         end switch
 
-        comment One value cannot be handled twice; the second case could never run.
+        # One value cannot be handled twice; the second case could never run.
         switch code
             case 1:
                 Console.WriteLine("one");
@@ -37,13 +37,13 @@ global model Program
                 Console.WriteLine("one again");
         end switch
 
-        comment A label has to be something the value could be.
+        # A label has to be something the value could be.
         switch suit
             case "hearts":
                 Console.WriteLine("hearts");
         end switch
 
-        comment Two members have no case and there is no default. This one is a warning.
+        # Two members have no case and there is no default. This one is a warning.
         switch suit
             case Suit.Hearts:
             case Suit.Diamonds:

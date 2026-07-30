@@ -27,22 +27,23 @@ yield
 A name may take one back by writing `@` in front of it — `@end`, `@step` — which is the only
 place a name may begin with something other than a letter.
 
-### 1.2 Reserved outside the keyword table (1)
+### 1.2 Comments reserve nothing
 
-`comment` does not appear in the `Keywords` dictionary, but it is reserved in practice: the scanner tests for it before tokenizing, so the word always starts a comment and can never be an identifier.
+A comment is marked rather than named, so unlike almost every keyword decision here it costs a program no words at all.
 
 ```
-comment this is a line comment, running to end of line
+# this is a line comment, running to end of line
+let count = 1;      # and may end a line of code
 
-comment begin
+##
     this is a block comment,
     spanning as many lines as needed
-end comment
+##
 ```
 
-The scanner consumes `comment`, then looks ahead on the same line for `begin`. Finding it opens a block comment closed by `end comment`; anything else makes it a line comment terminating at the newline. An unclosed block comment is a scan error.
+`##` closes at the next `##` **and takes the rest of that line with it**. Two things follow. Comments do not nest, and cannot: the first pair after the opener closes the block whatever was written between, so a comment about comments cannot half-close itself. And a comment is a line of its own or the end of a line, never the middle of one — since the closer eats its line, nothing can follow one and still be code.
 
-Note the asymmetry: the opener is `comment begin` and the closer is `end comment`, reversed rather than repeated.
+A run of marks is a heading rather than an error, the extra ones being comment text. A single `#` cannot close a block. An unclosed block is a scan error, reported at the opener.
 
 ### 1.3 Not reserved
 

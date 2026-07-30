@@ -172,7 +172,7 @@ public sealed partial class Interpreter
     /// Nothing else compares the two, and the mistake is invisible from a program: a member
     /// declared to yield an integer that hands back a real prints the same characters, passes
     /// every recorded output, and only goes wrong somewhere far away where the value is used
-    /// as a count. That is the shape of a bug already met once, in Floor and Ceiling.</para>
+    /// as a count.</para>
     /// </summary>
     private StrongBox<object?> Perform(BuiltInId id, object? target, List<object?> arguments)
     {

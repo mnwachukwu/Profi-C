@@ -1258,10 +1258,9 @@ public sealed class InterpreterTests
 
     /// <summary>
     /// <para>An overloaded name reached through a type runs the version the checker chose.</para>
-    /// <para>The back end used to find one by name, which picked whichever was written first
-    /// in the catalog — so every <c>Math.Abs</c> ran the version taking integers, and a real
-    /// arriving at it read as zero. The checker had already decided correctly; nothing was
-    /// asking it.</para>
+    /// <para>Finding one by name instead would pick whichever was written first in the
+    /// catalog, so every <c>Math.Abs</c> would run the version taking integers and a real
+    /// arriving at it would read as zero. The checker has already decided; this asks it.</para>
     /// </summary>
     [TestCase("Math.Abs(-3)", "3")]
     [TestCase("Math.Abs(-3.5)", "3.5")]
@@ -1305,9 +1304,8 @@ public sealed class InterpreterTests
     /// <summary>
     /// <para>A root of an exact power is exact, on every machine.</para>
     /// <para>Roots are not required to be correctly rounded and the platforms disagree: the
-    /// cube root of 27 came back as 3 from the Windows C runtime and as 3.0000000000000004
-    /// from glibc, which is how this was found — the same sample printed two different things
-    /// and the recorded output could only hold one.</para>
+    /// cube root of 27 is 3 from the Windows C runtime and 3.0000000000000004 from glibc, so
+    /// a program printing one would print two different things depending on where it ran.</para>
     /// <para>The whole number is used wherever raising it by the degree gives the value back,
     /// so these are not merely tidier: they are the better answer, and the same one anywhere.
     /// </para>

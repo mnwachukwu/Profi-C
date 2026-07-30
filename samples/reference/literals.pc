@@ -1,27 +1,27 @@
-comment Every literal form Profi-C can write.
+# Every literal form Profi-C can write.
 
 global model Literals
 
-    comment ---- Integers ----------------------------------------------------------------
+    # ---- Integers ----------------------------------------------------------------
 
     constant integer Zero = 0;
     constant integer Small = 7;
     constant integer Padded = 007;
     constant integer Large = 2147483647;
 
-    comment ---- Reals, which need digits on both sides of the point --------------------
+    # ---- Reals, which need digits on both sides of the point --------------------
 
     constant real Half = 0.5;
     constant real Pi = 3.14159;
     constant real Whole = 1.0;
 
-    comment ---- Fractions, which are exact rationals ---------------------------------
+    # ---- Fractions, which are exact rationals ---------------------------------
 
     constant fraction Third = 1|3;
     constant fraction Sixth = 1|6;
     constant fraction Approximation = 22|7;
 
-    comment ---- Characters, including every escape ----------------------------------
+    # ---- Characters, including every escape ----------------------------------
 
     constant character Letter = 'A';
     constant character Digit = '7';
@@ -35,7 +35,7 @@ global model Literals
     constant character DoubleQuote = '\"';
     constant character Unicode = 'é';
 
-    comment ---- Strings ------------------------------------------------------------------
+    # ---- Strings ------------------------------------------------------------------
 
     constant string Empty = "";
     constant string Word = "Profi-C";
@@ -44,12 +44,12 @@ global model Literals
     constant string Escaped = "a newline \n a tab \t a backslash \\ a quote \"";
     constant string Accented = "café";
 
-    comment ---- Booleans ---------------------------------------------------------------
+    # ---- Booleans ---------------------------------------------------------------
 
     constant boolean Yes = true;
     constant boolean No = false;
 
-    comment ---- Sets, whose literals use braces ------------------------------------
+    # ---- Sets, whose literals use braces ------------------------------------
 
     function Sets()
         integer[] numbers = {1, 2, 3};

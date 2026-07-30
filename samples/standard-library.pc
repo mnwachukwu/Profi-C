@@ -1,13 +1,13 @@
-comment begin
-    What the language gives you without declaring anything.
+##
+What the language gives you without declaring anything.
 
-    Four models are always in scope — Console, Math, Reference, and Fraction — and every
-    value carries members of its own. Nothing here is imported or installed; these are part
-    of the language rather than a library you add.
+Four models are always in scope — Console, Math, Reference, and Fraction — and every
+value carries members of its own. Nothing here is imported or installed; these are part
+of the language rather than a library you add.
 
-    This is v1's whole standard library. Random, DateTime, and file access are named in the
-    specification but are not built yet.
-end comment
+This is v1's whole standard library. Random, DateTime, and file access are named in the
+specification but are not built yet.
+##
 
 global model Program
 
@@ -24,18 +24,18 @@ global model Program
         Program.ShowReference();
     end function
 
-    comment Console is how a program says anything at all.
+    # Console is how a program says anything at all.
     function ShowConsole()
         Console.WriteLine("== Console ==");
 
-        comment Write does not end the line; WriteLine does. That is the only difference,
-        comment and it matches C# exactly.
+        # Write does not end the line; WriteLine does. That is the only difference,
+        # and it matches C# exactly.
         Console.Write("  built ");
         Console.Write("one ");
         Console.Write("piece ");
         Console.WriteLine("at a time.");
 
-        comment Both take a value of any type and render it themselves.
+        # Both take a value of any type and render it themselves.
         Console.WriteLine("  a fraction: " + 3|4);
         Console.WriteLine("  a boolean:  " + true);
         Console.WriteLine("");
@@ -44,18 +44,18 @@ global model Program
     function ShowMath()
         Console.WriteLine("== Math ==");
 
-        comment begin
-            A root and a power are the two that leave the rationals behind, so both answer in
-            reals whatever they were given.
-        end comment
+        ##
+        A root and a power are the two that leave the rationals behind, so both answer in
+        reals whatever they were given.
+        ##
         Console.WriteLine("  Sqrt(16.0)     = " + Math.Sqrt(16.0));
         Console.WriteLine("  Pow(2.0, 8.0)  = " + Math.Pow(2.0, 8.0));
 
-        comment begin
-            Everything else has a version for each number the language has, and measuring or
-            choosing keeps the type it was given. So an integer in gives an integer back, and
-            a fraction stays exact.
-        end comment
+        ##
+        Everything else has a version for each number the language has, and measuring or
+        choosing keeps the type it was given. So an integer in gives an integer back, and
+        a fraction stays exact.
+        ##
         Console.WriteLine("  Abs(-3)        = " + Math.Abs(-3));
         Console.WriteLine("  Abs(-3.5)      = " + Math.Abs(-3.5));
         Console.WriteLine("  Abs(-3|4)      = " + Math.Abs(-3|4));
@@ -64,24 +64,24 @@ global model Program
         Console.WriteLine("  Min(1|3, 1|2)  = " + Math.Min(1|3, 1|2));
         Console.WriteLine("  Max(3.5, 7.5)  = " + Math.Max(3.5, 7.5));
 
-        comment begin
-            Rounding lands on a whole number, so each of these yields an integer and can be
-            used as a count or an index. Between them they are the three honest ways to get
-            from a real to an integer, which is why there is no single 'ToInteger' that would
-            have to pick one of the three silently.
-        end comment
+        ##
+        Rounding lands on a whole number, so each of these yields an integer and can be
+        used as a count or an index. Between them they are the three honest ways to get
+        from a real to an integer, which is why there is no single 'ToInteger' that would
+        have to pick one of the three silently.
+        ##
         Console.WriteLine("  Floor(3.7)     = " + Math.Floor(3.7));
         Console.WriteLine("  Ceiling(3.2)   = " + Math.Ceiling(3.2));
         Console.WriteLine("  Round(2.5)     = " + Math.Round(2.5));
         Console.WriteLine("  Floor(-7|2)    = " + Math.Floor(-7|2));
 
-        comment '^' raises to a power too, and reads more like arithmetic. Pow is there for
-        comment when a call reads better than an operator.
+        # '^' raises to a power too, and reads more like arithmetic. Pow is there for
+        # when a call reads better than an operator.
         Console.WriteLine("  2.0 ^ 8.0      = " + 2.0 ^ 8.0);
         Console.WriteLine("");
     end function
 
-    comment A set's members are on the set itself rather than on some helper model.
+    # A set's members are on the set itself rather than on some helper model.
     function ShowSets()
         Console.WriteLine("== members of a set ==");
         integer[] values = {40, 10, 30};
@@ -102,10 +102,10 @@ global model Program
         values.Clear();
         Console.WriteLine("  after Clear()  = " + values.Count() + " left");
 
-        comment begin
-            Subset copies a run out. The end is exclusive, which is the reading 'until' has
-            and the one that lets two halves of a split add back up to the whole.
-        end comment
+        ##
+        Subset copies a run out. The end is exclusive, which is the reading 'until' has
+        and the one that lets two halves of a split add back up to the whole.
+        ##
         integer[] row = {10, 20, 30, 40, 50};
         Console.WriteLine("  Subset(2)      = " + row.Subset(2));
         Console.WriteLine("  Subset(1, 3)   = " + row.Subset(1, 3));
@@ -113,18 +113,18 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment begin
-        A set of optionals answers four more, because only there is there anything empty to
-        drop. Three of them work on the ends and leave an empty in the middle alone, so what
-        comes back is still a set of optionals. TrimAll takes every one, so nothing left can
-        be absent — and the type says so, which is why the result needs no unwrapping.
+    ##
+    A set of optionals answers four more, because only there is there anything empty to
+    drop. Three of them work on the ends and leave an empty in the middle alone, so what
+    comes back is still a set of optionals. TrimAll takes every one, so nothing left can
+    be absent — and the type says so, which is why the result needs no unwrapping.
 
-        Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
-        safe: the promise that nothing is absent is about the set you were given, and since
-        the original is untouched and separate, nothing can put an empty into it afterwards.
-        Had it filtered in place, the promise would have been about a set someone else was
-        still holding.
-    end comment
+    Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
+    safe: the promise that nothing is absent is about the set you were given, and since
+    the original is untouched and separate, nothing can put an empty into it afterwards.
+    Had it filtered in place, the promise would have been about a set someone else was
+    still holding.
+    ##
     function ShowSetsOfOptionals()
         Console.WriteLine("== a set of optionals ==");
 
@@ -139,16 +139,16 @@ global model Program
         integer[] certain = readings.TrimAll();
         Console.WriteLine("  TrimAll()      = " + certain + ", and needs no unwrapping");
 
-        comment Emptying the copy proves the original was never touched.
+        # Emptying the copy proves the original was never touched.
         certain.Clear();
         Console.WriteLine("  original still = " + readings);
         Console.WriteLine("");
     end function
 
-    comment begin
-        A string answers the same questions a set does, on purpose: Count() rather than
-        Length, so there is one name for the idea rather than two.
-    end comment
+    ##
+    A string answers the same questions a set does, on purpose: Count() rather than
+    Length, so there is one name for the idea rather than two.
+    ##
     function ShowStrings()
         Console.WriteLine("== members of a string ==");
         let word = "programming";
@@ -156,11 +156,11 @@ global model Program
         Console.WriteLine("  Count()            = " + word.Count());
         Console.WriteLine("  Contains(\"gram\")   = " + word.Contains("gram"));
         Console.WriteLine("  IndexOf(\"gram\")    = " + word.IndexOf("gram"));
-        comment begin
-            Substring and Subset both cut a run out, and differ in the second number:
-            Substring takes how many, Subset takes where to stop. Whichever you have is the
-            one to write, and both give back a string.
-        end comment
+        ##
+        Substring and Subset both cut a run out, and differ in the second number:
+        Substring takes how many, Subset takes where to stop. Whichever you have is the
+        one to write, and both give back a string.
+        ##
         Console.WriteLine("  Substring(3, 4)    = " + word.Substring(3, 4));
         Console.WriteLine("  Subset(3, 7)       = " + word.Subset(3, 7));
         Console.WriteLine("  Subset(3)          = " + word.Subset(3));
@@ -169,19 +169,19 @@ global model Program
         Console.WriteLine("  RemoveAt(0)        = " + word.RemoveAt(0));
         Console.WriteLine("  InsertAt(0, \">\")   = " + word.InsertAt(0, ">"));
 
-        comment begin
-            Each of the three trims takes from a different end, and each takes nothing (so
-            whitespace goes), a string (so any of its characters go), or a set of characters.
-            The last form is the one to reach for when the characters were worked out rather
-            than typed.
-        end comment
+        ##
+        Each of the three trims takes from a different end, and each takes nothing (so
+        whitespace goes), a string (so any of its characters go), or a set of characters.
+        The last form is the one to reach for when the characters were worked out rather
+        than typed.
+        ##
         Console.WriteLine("  Trim() on \"  hi  \" = [" + "  hi  ".Trim() + "]");
         Console.WriteLine("  Trim(\"x\")          = [" + "xxhixx".Trim("x") + "]");
         Console.WriteLine("  Trim({'x', 'y'})   = [" + "xyhiyx".Trim({'x', 'y'}) + "]");
         Console.WriteLine("  TrimStart()        = [" + "  hi  ".TrimStart() + "]");
         Console.WriteLine("  TrimEnd()          = [" + "  hi  ".TrimEnd() + "]");
 
-        comment A string can be read as its characters, and back again.
+        # A string can be read as its characters, and back again.
         character[] letters = word;
         Console.Write("  one letter at a time: ");
 
@@ -194,7 +194,7 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment The three members that make an optional safe to read.
+    # The three members that make an optional safe to read.
     function ShowOptionals()
         Console.WriteLine("== members of an optional ==");
 
@@ -206,7 +206,7 @@ global model Program
         Console.WriteLine("  missing.Or(0)      = " + missing.Or(0));
         Console.WriteLine("  present.Value()    = " + present.Value());
 
-        comment Reading an empty one is an error rather than a wrong answer.
+        # Reading an empty one is an error rather than a wrong answer.
         try
             Console.WriteLine(missing.Value());
         catch EmptyOptionalException problem
@@ -216,20 +216,20 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment begin
-        '==' compares what two values are, member by member. Reference.Equals asks the
-        different question of whether they are the same object. Most languages give the
-        second meaning to '==' and make you remember it; here you have to ask for it.
-    end comment
-    comment begin
-        Chance, in two shapes. A generator a program holds disturbs nothing of anyone else's,
-        and seeding one makes two runs agree — which is what makes a program that uses chance
-        testable. The same questions asked through the name draw from one the language keeps,
-        which is what most programs want and cannot be seeded, exactly as in C#.
+    ##
+    '==' compares what two values are, member by member. Reference.Equals asks the
+    different question of whether they are the same object. Most languages give the
+    second meaning to '==' and make you remember it; here you have to ask for it.
+    ##
+    ##
+    Chance, in two shapes. A generator a program holds disturbs nothing of anyone else's,
+    and seeding one makes two runs agree — which is what makes a program that uses chance
+    testable. The same questions asked through the name draw from one the language keeps,
+    which is what most programs want and cannot be seeded, exactly as in C#.
 
-        Next excludes its upper bound, so a die is Next(1, 7). Everyone reads that wrong once;
-        reading it the other way here would mean reading it wrong a second time later.
-    end comment
+    Next excludes its upper bound, so a die is Next(1, 7). Everyone reads that wrong once;
+    reading it the other way here would mean reading it wrong a second time later.
+    ##
     function ShowRandom()
         Console.WriteLine("== Random ==");
 
@@ -251,8 +251,8 @@ global model Program
 
         Console.WriteLine("");
 
-        comment Drawn from the shared one, so the answers differ every run and only the
-        comment shape of them can be shown.
+        # Drawn from the shared one, so the answers differ every run and only the
+        # shape of them can be shown.
         Console.WriteLine("  Random.Next() is whole and not negative: " + (Random.Next() >= 0));
         Console.WriteLine("  Random.Next(5) is below five:            " + (Random.Next(5) < 5));
         Console.WriteLine("  Random.NextDouble() is below one:        "
@@ -260,11 +260,11 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment begin
-        A moment in time, and what .NET reads as a property is read as one here: no
-        parentheses on Year, Month or DayOfWeek. A moment never changes, so adding to one
-        yields another, as adding to a string does.
-    end comment
+    ##
+    A moment in time, and what .NET reads as a property is read as one here: no
+    parentheses on Year, Month or DayOfWeek. A moment never changes, so adding to one
+    yields another, as adding to a string does.
+    ##
     function ShowDateTime()
         Console.WriteLine("== DateTime ==");
 
@@ -286,35 +286,35 @@ global model Program
         Console.WriteLine("  AddMonths(2)       = " + landing.AddMonths(2));
         Console.WriteLine("  landing unchanged  = " + landing);
 
-        comment Ordering without operators, which is how .NET spells it too.
+        # Ordering without operators, which is how .NET spells it too.
         Console.WriteLine("  liftoff came first = " + (liftoff.CompareTo(landing) < 0));
 
-        comment Now and Today are values rather than functions, and differ every run, so only
-        comment what is true of them whenever they are asked is shown.
+        # Now and Today are values rather than functions, and differ every run, so only
+        # what is true of them whenever they are asked is shown.
         Console.WriteLine("  Today has no time  = " + (DateTime.Today.Hour == 0));
         Console.WriteLine("");
     end function
 
-    comment begin
-        Three types sit beside a moment, and what tells them apart is what each leaves out. A
-        span is how long something lasted, with no when. A date is a day with no time of day —
-        a birthday is one, since it is the same day whatever hour it is. A time is a reading on
-        a clock with no day, which is what opening hours are.
+    ##
+    Three types sit beside a moment, and what tells them apart is what each leaves out. A
+    span is how long something lasted, with no when. A date is a day with no time of day —
+    a birthday is one, since it is the same day whatever hour it is. A time is a reading on
+    a clock with no day, which is what opening hours are.
 
-        A time is not a span, though both are written with colons: a span may run past a day
-        and may run backwards, while a clock always sits between midnight and the next one.
-    end comment
+    A time is not a span, though both are written with colons: a span may run past a day
+    and may run backwards, while a clock always sits between midnight and the next one.
+    ##
     function ShowSpansAndParts()
         Console.WriteLine("== TimeSpan, Date and Time ==");
 
         DateTime liftoff = new DateTime(1969, 7, 16, 13, 32, 0);
         DateTime landing = new DateTime(1969, 7, 20, 20, 17, 40);
 
-        comment What subtracting one moment from another leaves behind.
+        # What subtracting one moment from another leaves behind.
         TimeSpan mission = landing.Subtract(liftoff);
         Console.WriteLine("  the mission took   = " + mission);
 
-        comment Parts against totals: how you say it, against how you measure it.
+        # Parts against totals: how you say it, against how you measure it.
         Console.WriteLine("  its days part      = " + mission.Days);
         Console.WriteLine("  its hours part     = " + mission.Hours);
         Console.WriteLine("  in hours altogether= " + Math.Round(mission.TotalHours));
@@ -322,7 +322,7 @@ global model Program
         Console.WriteLine("  liftoff plus it    = " + liftoff.Add(mission));
         Console.WriteLine("  ninety minutes     = " + TimeSpan.FromMinutes(90.0));
 
-        comment A span may run backwards, and says so.
+        # A span may run backwards, and says so.
         Console.WriteLine("  half minus a whole = "
                           + TimeSpan.FromMinutes(30.0).Subtract(TimeSpan.FromHours(1.0)));
 
@@ -333,10 +333,10 @@ global model Program
         Console.WriteLine("  its day of week    = " + birthday.DayOfWeek + " (Sunday is 0)");
         Console.WriteLine("  a time             = " + opening);
 
-        comment A clock wraps round midnight rather than running past it.
+        # A clock wraps round midnight rather than running past it.
         Console.WriteLine("  eight hours later  = " + new Time(17, 30).AddHours(8.0));
 
-        comment The two together make a moment, and a moment comes apart into them.
+        # The two together make a moment, and a moment comes apart into them.
         Console.WriteLine("  that day at nine   = " + birthday.ToDateTime(opening));
         Console.WriteLine("  landing's date     = " + Date.FromDateTime(landing));
         Console.WriteLine("  landing's time     = " + Time.FromDateTime(landing));
@@ -354,7 +354,7 @@ global model Program
         Console.WriteLine("  Reference.Equals(a, b)  = " + Reference.Equals(a, b));
         Console.WriteLine("  Reference.Equals(a, c)  = " + Reference.Equals(a, c));
 
-        comment Which matters, because c and a are one set under two names.
+        # Which matters, because c and a are one set under two names.
         c.Insert(4);
         Console.WriteLine("  after c.Insert(4), a is " + Program.Render(a));
         Console.WriteLine("");

@@ -1,17 +1,17 @@
-comment begin
-    Habits from other languages, and what Profi-C says about each.
+##
+Habits from other languages, and what Profi-C says about each.
 
-    This program does not compile. Every line below is a spelling a C#, Java, or Python
-    author reaches for without thinking, and each one is named rather than left to produce a
-    confusing parse error further down the file.
-end comment
+This program does not compile. Every line below is a spelling a C#, Java, or Python
+author reaches for without thinking, and each one is named rather than left to produce a
+confusing parse error further down the file.
+##
 
 global model Program
     function Main()
         integer count = 1;
         boolean ready = true;
 
-        comment '&&' and '||' are symbols; Profi-C spells them as words.
+        # '&&' and '||' are symbols; Profi-C spells them as words.
         if ready && count > 0
             Console.WriteLine("both");
         end if
@@ -20,26 +20,26 @@ global model Program
             Console.WriteLine("either");
         end if
 
-        comment '!' likewise.
+        # '!' likewise.
         if !ready
             Console.WriteLine("negated");
         end if
 
-        comment There is no compound assignment and no increment.
+        # There is no compound assignment and no increment.
         count += 5;
         count++;
 
-        comment Python raises to a power with '**'; Profi-C uses '^'.
+        # Python raises to a power with '**'; Profi-C uses '^'.
         Console.WriteLine(2 ** 8);
 
-        comment A lambda's body follows 'yield', not an arrow.
+        # A lambda's body follows 'yield', not an arrow.
         integer function(integer) twice = (integer n) => n * 2;
         integer function(integer) thrice = (integer n) -> n * 3;
 
-        comment Leaving a type out asks the surrounding code, and 'let' has nothing to say.
+        # Leaving a type out asks the surrounding code, and 'let' has nothing to say.
         let unknown = (n) yield n + 1;
 
-        comment A range loop's counter carries no type.
+        # A range loop's counter carries no type.
         for integer i = 1 to 3
             Console.WriteLine(i);
         end for

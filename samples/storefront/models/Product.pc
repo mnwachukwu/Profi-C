@@ -1,9 +1,9 @@
-comment begin
-    Something for sale.
+##
+Something for sale.
 
-    This folder is reached only because storefront.pcp names it. A source file compiles with
-    the folder it sits in; a project reaches as many folders as it lists.
-end comment
+This folder is reached only because storefront.pcp names it. A source file compiles with
+the folder it sits in; a project reaches as many folders as it lists.
+##
 
 model Product
 

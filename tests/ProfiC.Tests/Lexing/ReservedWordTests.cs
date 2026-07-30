@@ -147,14 +147,16 @@ public sealed class ReservedWordTests : LexerTestBase
     }
 
     [Test]
-    public void Comment_IsReservedWithoutAppearingInTheKeywordTable()
+    public void EveryReservedWordIsInTheKeywordTable()
     {
+        // A comment is marked rather than named, so it reserves nothing: the table is the
+        // whole list, and a word absent from it is a word a program may use.
         Assert.Multiple(() =>
         {
-            Assert.That(ReservedWords.Keywords.ContainsKey("comment"), Is.False);
-            Assert.That(ReservedWords.IsReserved("comment"), Is.True);
-            Assert.That(ReservedWords.IsReserved("model"), Is.True);
+            Assert.That(ReservedWords.IsReserved("comment"), Is.False);
             Assert.That(ReservedWords.IsReserved("commentary"), Is.False);
+            Assert.That(ReservedWords.IsReserved("model"), Is.True);
+            Assert.That(ReservedWords.IsReserved("begin"), Is.True, "begin still opens a block");
         });
     }
 

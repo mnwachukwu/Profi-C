@@ -26,8 +26,8 @@ convenience. A few consequences you can see immediately:
 - **`and`, `or`, `not`** instead of `&&`, `||`, `!`.
 - **Fractions are exact.** `22|7` is a rational literal, so `1|3 + 1|6` is exactly `1|2` —
   no floating-point drift.
-- **Comments are words.** `comment` opens a line comment; `comment begin` opens a block
-  closed by `end comment`.
+- **Comments are marked and reserve nothing.** `#` runs to the end of a line; `##` opens a
+  block closed by the next `##`, which takes the rest of its line with it.
 
 Profi-C is deliberately full-featured rather than minimal. It has single inheritance with
 virtual dispatch, structures with value semantics, exceptions, optionals, exact rational
@@ -36,9 +36,9 @@ arithmetic, first-class functions with closures, and compile-time definite assig
 ## A taste
 
 ```
-comment begin
+##
     Profi-C at a glance.
-end comment
+##
 
 namespace Examples;
 
@@ -129,10 +129,10 @@ An optional is written with a trailing `?`. You cannot read one without proving 
 ```
 model Greeter
     global function Greet(string? nickname)
-        comment Or supplies a fallback, and does not evaluate it unless it is needed
+        # Or supplies a fallback, and does not evaluate it unless it is needed
         Console.WriteLine(nickname.Or("Hello, stranger"));
 
-        comment HasValue narrows the optional inside the guarded block
+        # HasValue narrows the optional inside the guarded block
         if nickname.HasValue()
             Console.WriteLine(nickname.Value());
         end if
@@ -359,7 +359,7 @@ a using decides which names are reachable.** Pick by scale — one file, an impo
 related types, a namespace; a whole build across folders, a project file:
 
 ```
-comment A storefront, spread across folders.
+# A storefront, spread across folders.
 
 project Storefront
     source Program.pc

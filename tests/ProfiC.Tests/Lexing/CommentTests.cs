@@ -4,8 +4,12 @@ using ProfiC.Compiler.Lexing;
 namespace ProfiC.Tests.Lexing;
 
 /// <summary>
-/// Profi-C's comments are delimited by words rather than symbols, which is unusual enough
-/// that the edges around the words themselves need pinning down.
+/// <para>A comment is marked rather than named: <c>#</c> runs to the end of the line and
+/// <c>##</c> opens a block closed by the next pair.</para>
+/// <para>The block's closer takes the rest of its own line with it, which is what settles two
+/// questions at once — there is no depth to count, so nesting is not an idea that can go
+/// wrong; and nothing can follow a closer and still be code, so a comment is a line of its own
+/// or the end of a line and never sits in the middle of one.</para>
 /// </summary>
 [TestFixture]
 public sealed class CommentTests : LexerTestBase
@@ -13,7 +17,7 @@ public sealed class CommentTests : LexerTestBase
     [Test]
     public void LineComment_RunsToEndOfLine()
     {
-        List<Token> tokens = ScanWithoutEof("comment ignored entirely\nlet");
+        List<Token> tokens = ScanWithoutEof("# ignored entirely\nlet");
 
         Assert.That(tokens, Has.Count.EqualTo(1));
         Assert.That(tokens[0].Type, Is.EqualTo(TokenType.Let));
@@ -22,7 +26,7 @@ public sealed class CommentTests : LexerTestBase
     [Test]
     public void LineComment_MayTrailCode()
     {
-        List<Token> tokens = ScanWithoutEof("let x = 1;   comment trailing\nlet");
+        List<Token> tokens = ScanWithoutEof("let x = 1;   # trailing\nlet");
 
         Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
         {
@@ -34,97 +38,100 @@ public sealed class CommentTests : LexerTestBase
     [Test]
     public void LineComment_AtEndOfFileWithNoNewline_IsFine()
     {
-        Assert.That(ScanWithoutEof("let comment trailing"), Has.Count.EqualTo(1));
+        Assert.That(ScanWithoutEof("let # trailing"), Has.Count.EqualTo(1));
     }
 
     [Test]
     public void BlockComment_SpansLines()
     {
-        List<Token> tokens = ScanWithoutEof("comment begin\n  many\n  lines\nend comment\nlet");
+        List<Token> tokens = ScanWithoutEof("##\n  many\n  lines\n##\nlet");
 
         Assert.That(tokens, Has.Count.EqualTo(1));
         Assert.That(tokens[0].Type, Is.EqualTo(TokenType.Let));
     }
 
+    /// <summary>
+    /// The closer takes the rest of its line, so the "let" beside it is part of the comment
+    /// rather than code. This is the rule that keeps a comment out of the middle of a line.
+    /// </summary>
     [Test]
-    public void BlockComment_MayOpenAndCloseOnOneLine()
+    public void BlockCloser_TakesTheRestOfItsLine()
     {
-        Assert.That(ScanWithoutEof("comment begin inline end comment let"), Has.Count.EqualTo(1));
+        List<Token> tokens = ScanWithoutEof("## inline ## let\nlet");
+
+        Assert.That(tokens, Has.Count.EqualTo(1), "only the 'let' on the next line survives");
+        Assert.That(tokens[0].Type, Is.EqualTo(TokenType.Let));
     }
 
+    /// <summary>
+    /// <para>Nesting is not a thing that can go wrong, because it is not a thing.</para>
+    /// <para>The first pair after the opener closes the block, whatever was written between,
+    /// so a comment discussing comment syntax cannot half-close itself and spill its remainder
+    /// into the program as code.</para>
+    /// </summary>
     [Test]
-    public void BlockComment_ContainingTheWordEnd_IsNotClosedByIt()
+    public void BlockComment_IsClosedByTheFirstPair_WhateverIsInside()
     {
-        List<Token> tokens = ScanWithoutEof("comment begin\n  the word end alone\nend comment\nlet");
+        List<Token> tokens = ScanWithoutEof("##\n  a ## inside\n let");
+
+        Assert.That(tokens, Has.Count.EqualTo(1), "the inner pair closed it, taking its line");
+        Assert.That(tokens[0].Type, Is.EqualTo(TokenType.Let));
+    }
+
+    /// <summary>A run of marks is a heading, since the extra ones are simply comment text.</summary>
+    [Test]
+    public void ARunOfMarks_IsAHeadingRatherThanAnError()
+    {
+        List<Token> tokens = ScanWithoutEof("#########\n#  title  #\n#########\nlet");
 
         Assert.That(tokens, Has.Count.EqualTo(1));
         Assert.That(tokens[0].Type, Is.EqualTo(TokenType.Let));
     }
 
+    /// <summary>A single mark cannot close a block; only a pair does.</summary>
     [Test]
-    public void BlockComment_ContainingTheWordComment_IsNotClosedByIt()
+    public void ASingleMark_DoesNotCloseABlock()
     {
-        List<Token> tokens = ScanWithoutEof("comment begin\n  the word comment alone\nend comment\nlet");
-
-        Assert.That(tokens, Has.Count.EqualTo(1));
-        Assert.That(tokens[0].Type, Is.EqualTo(TokenType.Let));
-    }
-
-    [Test]
-    public void BlockComment_ClosesOnTheTwoWordsEvenInsideQuotes()
-    {
-        // The scanner does not read quotes while skipping a comment, so the closing phrase
-        // always closes the block, wherever it appears. A block comment therefore cannot
-        // contain its own closer, not even quoted.
-        //
-        // The evidence is in which diagnostic appears. The block ends at the quoted closer,
-        // leaving the trailing quote stranded, so the report is an unterminated string. Had
-        // the quotes protected the closer, the block would have run to the end of input and
-        // reported an unterminated block comment instead.
-        (List<Token> tokens, DiagnosticBag diagnostics) =
-            ScanRaw("comment begin \"end comment\"\nlet");
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw("##\n # not a closer\nlet");
 
         Assert.Multiple(() =>
         {
-            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0002" }));
-            Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
-            {
-                TokenType.StringLiteral, TokenType.Let, TokenType.EndOfFile,
-            }));
+            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0005" }));
+            Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[] { TokenType.EndOfFile }));
         });
     }
 
+    /// <summary>
+    /// A mark inside a string is text. The scanner reaches a comment only where a token could
+    /// begin, and a string literal is consumed whole.
+    /// </summary>
     [Test]
-    public void BlockCloser_ToleratesWhitespaceBetweenItsWords()
+    public void AMarkInsideAString_IsText()
     {
-        Assert.That(ScanWithoutEof("comment begin body end\n\n  comment let"), Has.Count.EqualTo(1));
+        List<Token> tokens = ScanWithoutEof("let s = \"# not a comment\";");
+
+        Assert.That(tokens.Select(t => t.Type), Is.EqualTo(new[]
+        {
+            TokenType.Let, TokenType.Identifier, TokenType.Equal,
+            TokenType.StringLiteral, TokenType.Semicolon,
+        }));
     }
 
-    [Test]
-    public void WordsBeginningWithComment_AreOrdinaryIdentifiers()
+    /// <summary>
+    /// Marking a comment rather than naming one means comment syntax speaks for no word at
+    /// all. "begin" is reserved because it opens a block, and for no other reason.
+    /// </summary>
+    [TestCase("comment")]
+    [TestCase("commentary")]
+    [TestCase("begin")]
+    public void CommentSyntaxSpeaksForNoWord(string word)
     {
-        Token token = ScanSingle("commentary");
+        Token token = ScanSingle(word);
 
-        Assert.That(token.Type, Is.EqualTo(TokenType.Identifier));
-        Assert.That(token.Lexeme, Is.EqualTo("commentary"));
-    }
-
-    [Test]
-    public void CommentAfterAnIdentifierCharacter_IsNotAComment()
-    {
-        // "xcomment" is one identifier; the comment word needs a boundary on both sides.
-        Token token = ScanSingle("xcomment");
-        Assert.That(token.Type, Is.EqualTo(TokenType.Identifier));
-    }
-
-    [Test]
-    public void CommentBegin_RequiresBeginOnTheSameLine()
-    {
-        // "begin" on the next line makes this a line comment, so "begin" is then code.
-        List<Token> tokens = ScanWithoutEof("comment\nbegin\nend");
-
-        Assert.That(tokens.Select(t => t.Type),
-                    Is.EqualTo(new[] { TokenType.Begin, TokenType.End }));
+        Assert.That(
+            token.Type,
+            Is.EqualTo(word == "begin" ? TokenType.Begin : TokenType.Identifier),
+            $"'{word}' is not spoken for by comment syntax");
     }
 
     [Test]
@@ -139,7 +146,7 @@ public sealed class CommentTests : LexerTestBase
     [Test]
     public void SourceOfOnlyCommentsAndWhitespace_ProducesOnlyEndOfFile()
     {
-        List<Token> tokens = Scan("  \n\t comment nothing here\n comment begin x end comment  \n");
+        List<Token> tokens = Scan("  \n\t # nothing here\n ## x ##  \n");
 
         Assert.That(tokens, Has.Count.EqualTo(1));
         Assert.That(tokens[0].Type, Is.EqualTo(TokenType.EndOfFile));

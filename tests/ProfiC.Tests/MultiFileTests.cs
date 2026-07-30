@@ -527,7 +527,7 @@ public sealed class MultiFileTests : LexerTestBase
         Write("src/Helper.pc", SharedModel);
         Write("Program.pc", ProgramCalling("Helper.Twice(21)"));
         string project = Write("thing.pcp", """
-            comment A project across two folders.
+            # A project across two folders.
 
             project Thing
                 source Program.pc

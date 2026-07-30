@@ -1,13 +1,13 @@
-comment begin
-    Binary search, and what to do when the answer is "it is not there".
+##
+Binary search, and what to do when the answer is "it is not there".
 
-    In most languages this function returns -1 for a miss, and every caller is trusted to
-    remember. Forgetting compiles fine and goes wrong later, somewhere else.
+In most languages this function returns -1 for a miss, and every caller is trusted to
+remember. Forgetting compiles fine and goes wrong later, somewhere else.
 
-    Profi-C has no null and no sentinel to reach for. The function yields 'integer?', so a
-    caller cannot read the index at all until it has proved there is one. The check is not
-    good manners here — it is the only way to get at the value.
-end comment
+Profi-C has no null and no sentinel to reach for. The function yields 'integer?', so a
+caller cannot read the index at all until it has proved there is one. The check is not
+good manners here — it is the only way to get at the value.
+##
 
 global model Program
 
@@ -23,10 +23,10 @@ global model Program
     function Report(integer[] sorted, integer wanted)
         integer? found = Program.IndexOf(sorted, wanted);
 
-        comment begin
-            HasValue narrows 'found' for the rest of this block, so it reads as a plain
-            integer inside the guard. Outside it, the same name will not add to a string.
-        end comment
+        ##
+        HasValue narrows 'found' for the rest of this block, so it reads as a plain
+        integer inside the guard. Outside it, the same name will not add to a string.
+        ##
         if found.HasValue()
             Console.WriteLine(wanted + " is at index " + found);
         else
@@ -34,10 +34,10 @@ global model Program
         end if
     end function
 
-    comment begin
-        Halve the range each time: look at the middle, and throw away the half the answer
-        cannot be in. Ten values take at most four looks, and a thousand take at most ten.
-    end comment
+    ##
+    Halve the range each time: look at the middle, and throw away the half the answer
+    cannot be in. Ten values take at most four looks, and a thousand take at most ten.
+    ##
     integer? function IndexOf(integer[] sorted, integer wanted)
         integer low = 0;
         integer high = sorted.Count() - 1;
@@ -54,7 +54,7 @@ global model Program
             end if
         end while
 
-        comment The range closed without finding it, so there is no index to give back.
+        # The range closed without finding it, so there is no index to give back.
         integer? missing;
         yield missing;
     end function

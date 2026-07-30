@@ -102,6 +102,16 @@ public sealed partial class Parser
             _ => token.Type.Text() ?? token.Lexeme,
         };
 
+        // "Function(string)" is the shape someone writes reaching for a function type, having
+        // met Function as the root and taken it for the way one is spelled. It is read as the
+        // type they meant, so the declaration around it goes on to be checked normally and
+        // the one thing wrong with it is said once.
+        if (name == "Function" && Check(TokenType.LeftParen))
+        {
+            _diagnostics.Report(DiagnosticDescriptors.FunctionTypeIsLowercase, token.Span);
+            return new FunctionTypeSyntax(SpanFrom(token), returnType: null, ParseTypeList());
+        }
+
         return new NamedTypeSyntax(token.Span, name);
     }
 
@@ -111,6 +121,17 @@ public sealed partial class Parser
     private FunctionTypeSyntax ParseFunctionType(Token start, TypeSyntax? returnType)
     {
         Expect(TokenType.Function);
+
+        // Read before the span is taken: the span runs to the last token consumed, and an
+        // argument written inline would be measured before the parameters were read.
+        List<TypeSyntax> parameters = ParseTypeList();
+
+        return new FunctionTypeSyntax(SpanFrom(start), returnType, parameters);
+    }
+
+    /// <summary>The parenthesized types a function type takes, which may be none.</summary>
+    private List<TypeSyntax> ParseTypeList()
+    {
         Expect(TokenType.LeftParen);
 
         List<TypeSyntax> parameters = [];
@@ -126,6 +147,6 @@ public sealed partial class Parser
 
         Expect(TokenType.RightParen);
 
-        return new FunctionTypeSyntax(SpanFrom(start), returnType, parameters);
+        return parameters;
     }
 }

@@ -1,9 +1,9 @@
-comment begin
-    Taking money off, in exact fractions.
+##
+Taking money off, in exact fractions.
 
-    A percentage written as a real would drift; a fraction takes a third off a price and means
-    exactly a third.
-end comment
+A percentage written as a real would drift; a fraction takes a third off a price and means
+exactly a third.
+##
 
 model Discount
 
@@ -19,12 +19,12 @@ model Discount
         yield this.label;
     end function
 
-    comment begin
-        What is left of a price after this discount.
+    ##
+    What is left of a price after this discount.
 
-        The arithmetic is exact: a quarter off 2499 is exactly 7497|4 pence, and only the last
-        step asks for the real that a price is usually shown as.
-    end comment
+    The arithmetic is exact: a quarter off 2499 is exactly 7497|4 pence, and only the last
+    step asks for the real that a price is usually shown as.
+    ##
     public real function Apply(integer pence)
         fraction kept = 1 - this.share;
         yield (pence * kept).ToReal();

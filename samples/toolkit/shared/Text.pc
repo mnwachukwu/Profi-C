@@ -1,9 +1,9 @@
-comment begin
-    Shared text helpers, in a folder of their own.
+##
+Shared text helpers, in a folder of their own.
 
-    This file is not beside the program that uses it, so the folder rule cannot find it. The
-    program names it with an import.
-end comment
+This file is not beside the program that uses it, so the folder rule cannot find it. The
+program names it with an import.
+##
 
 model Text
 

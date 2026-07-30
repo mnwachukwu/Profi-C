@@ -1,10 +1,10 @@
-comment begin
-    Blocks closed with the wrong word.
+##
+Blocks closed with the wrong word.
 
-    This program does not compile. Every block says what it closes, and the compiler checks
-    the qualifier — so a mismatched closer names both the word written and the construct it
-    fails to match, rather than reporting a missing brace somewhere near the end of the file.
-end comment
+This program does not compile. Every block says what it closes, and the compiler checks
+the qualifier — so a mismatched closer names both the word written and the construct it
+fails to match, rather than reporting a missing brace somewhere near the end of the file.
+##
 
 global model Program
     function Main()

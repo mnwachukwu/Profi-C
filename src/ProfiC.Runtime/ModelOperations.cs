@@ -43,9 +43,9 @@ public static class ModelOperations
             : moment.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
 
         // The "c" form, which .NET defines as culture-invariant rather than merely rendering
-        // it that way. It shows days only when there are some, keeps the sign, and keeps a
-        // fraction of a second where there is one — a hand-written pattern dropped the sign,
-        // so a span of minus half an hour read as half an hour.
+        // it that way. It shows days only when there are some, keeps a fraction of a second
+        // where there is one, and keeps the sign — which a hand-written pattern does not, and
+        // a span of minus half an hour that reads as half an hour is worse than a verbose one.
         TimeSpan length => length.ToString("c", CultureInfo.InvariantCulture),
 
         // Year first and hours in twenty-four, for the same reason a moment is: the order is

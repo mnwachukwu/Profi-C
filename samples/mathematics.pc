@@ -1,14 +1,14 @@
-comment begin
-    Everything Math provides.
+##
+Everything Math provides.
 
-    Two of these are values rather than functions, so they are written without parentheses.
-    The rest are called. Whichever you guess, the compiler says which it is.
+Two of these are values rather than functions, so they are written without parentheses.
+The rest are called. Whichever you guess, the compiler says which it is.
 
-    Roots, powers and logarithms all answer in reals, because those are the operations that
-    leave the rationals behind: the square root of a fraction is usually irrational, and so is
-    the logarithm of almost anything. Measuring, choosing and rounding do not, so each of those
-    has a version for every number the language has.
-end comment
+Roots, powers and logarithms all answer in reals, because those are the operations that
+leave the rationals behind: the square root of a fraction is usually irrational, and so is
+the logarithm of almost anything. Measuring, choosing and rounding do not, so each of those
+has a version for every number the language has.
+##
 
 global model Program
 
@@ -22,50 +22,50 @@ global model Program
         Program.Counting();
     end function
 
-    comment ---- The two values -------------------------------------------------------------
+    # ---- The two values -------------------------------------------------------------
 
     function Constants()
         Console.WriteLine("== values ==");
         Console.WriteLine("  Pi = " + Math.Pi);
         Console.WriteLine("  E  = " + Math.E);
 
-        comment Neither is a function, so neither is called. Writing Math.Pi() is reported.
+        # Neither is a function, so neither is called. Writing Math.Pi() is reported.
         Console.WriteLine("  a circle of radius 2 has area "
                           + Program.ToFourPlaces(Math.Pi * 2.0 * 2.0));
         Console.WriteLine("");
     end function
 
-    comment ---- Roots and powers -----------------------------------------------------------
+    # ---- Roots and powers -----------------------------------------------------------
 
     function RootsAndPowers()
         Console.WriteLine("== roots and powers ==");
         Console.WriteLine("  Sqrt(16)      = " + Math.Sqrt(16.0));
         Console.WriteLine("  Cbrt(27)      = " + Math.Cbrt(27.0));
 
-        comment A cube root reaches below zero, where a square root cannot.
+        # A cube root reaches below zero, where a square root cannot.
         Console.WriteLine("  Cbrt(-8)      = " + Math.Cbrt(-8.0));
 
-        comment Root takes the degree, so it covers the ones with no name of their own.
+        # Root takes the degree, so it covers the ones with no name of their own.
         Console.WriteLine("  Root(32, 5)   = " + Math.Root(32.0, 5.0));
         Console.WriteLine("  Root(-32, 5)  = " + Math.Root(-32.0, 5.0));
 
         Console.WriteLine("  Pow(2, 10)    = " + Math.Pow(2.0, 10.0));
 
-        comment '^' is the operator form, and it keeps a whole answer whole.
+        # '^' is the operator form, and it keeps a whole answer whole.
         Console.WriteLine("  2 ^ 10        = " + 2 ^ 10);
         Console.WriteLine("");
     end function
 
-    comment ---- Logarithms -----------------------------------------------------------------
+    # ---- Logarithms -----------------------------------------------------------------
 
-    comment begin
-        Careful here, and the care is worth spelling out. Log of ONE number is the NATURAL
-        logarithm — log to base E, what mathematicians write as ln. That is what C#, Java and C
-        all mean by the name, and Profi-C means it too, so a program moved between them gives
-        the same answer.
+    ##
+    Careful here, and the care is worth spelling out. Log of ONE number is the NATURAL
+    logarithm — log to base E, what mathematicians write as ln. That is what C#, Java and C
+    all mean by the name, and Profi-C means it too, so a program moved between them gives
+    the same answer.
 
-        For base ten, write Log10, or Log with the base as a second argument.
-    end comment
+    For base ten, write Log10, or Log with the base as a second argument.
+    ##
     function Logarithms()
         Console.WriteLine("== logarithms ==");
         Console.WriteLine("  Log(E)        = " + Math.Log(Math.E));
@@ -76,28 +76,28 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment begin
-        Shown to four places rather than in full.
+    ##
+    Shown to four places rather than in full.
 
-        A root, a logarithm and an angle are worked out by the machine's own arithmetic
-        library, and those are allowed to differ in the last bit from one computer to the
-        next — the answer is right either way, but the final digit is not something a program
-        should be written to depend on. Rounding first says which digits are being claimed.
+    A root, a logarithm and an angle are worked out by the machine's own arithmetic
+    library, and those are allowed to differ in the last bit from one computer to the
+    next — the answer is right either way, but the final digit is not something a program
+    should be written to depend on. Rounding first says which digits are being claimed.
 
-        Where an exact answer exists it is given exactly, so the lines above that print a
-        whole number really do print one everywhere.
-    end comment
+    Where an exact answer exists it is given exactly, so the lines above that print a
+    whole number really do print one everywhere.
+    ##
     real function ToFourPlaces(real value)
         yield Math.Round(value * 10000.0) / 10000.0;
     end function
 
-    comment ---- Angles ---------------------------------------------------------------------
+    # ---- Angles ---------------------------------------------------------------------
 
-    comment begin
-        Angles are in radians, as they are everywhere else that has these. A half turn is Pi.
-        The names are the abbreviations the mathematics is written with, kept as they are
-        because they are borrowed rather than invented here.
-    end comment
+    ##
+    Angles are in radians, as they are everywhere else that has these. A half turn is Pi.
+    The names are the abbreviations the mathematics is written with, kept as they are
+    because they are borrowed rather than invented here.
+    ##
     function Angles()
         Console.WriteLine("== angles ==");
 
@@ -108,23 +108,23 @@ global model Program
         Console.WriteLine("  Tan(0)        = " + Math.Tan(0.0));
         Console.WriteLine("  Sin(Pi/2)     = " + Math.Sin(quarterTurn));
 
-        comment The inverses, each undoing its own. Asin(1) is a quarter turn, so it is Pi/2.
+        # The inverses, each undoing its own. Asin(1) is a quarter turn, so it is Pi/2.
         Console.WriteLine("  Asin(1)       = " + Program.ToFourPlaces(Math.Asin(1.0)));
         Console.WriteLine("  Acos(1)       = " + Math.Acos(1.0));
         Console.WriteLine("  Atan(1)       = " + Program.ToFourPlaces(Math.Atan(1.0)));
 
-        comment Atan2 takes the two sides rather than their ratio, so it knows the quadrant.
+        # Atan2 takes the two sides rather than their ratio, so it knows the quadrant.
         Console.WriteLine("  Atan2(1, 1)   = " + Program.ToFourPlaces(Math.Atan2(1.0, 1.0)));
         Console.WriteLine("  Atan2(1, -1)  = " + Program.ToFourPlaces(Math.Atan2(1.0, -1.0)));
         Console.WriteLine("");
     end function
 
-    comment ---- Measuring and choosing -----------------------------------------------------
+    # ---- Measuring and choosing -----------------------------------------------------
 
-    comment begin
-        These keep the type they were given, so a distance between whole numbers is whole and a
-        fraction stays exact. That is what lets the answer be counted with afterwards.
-    end comment
+    ##
+    These keep the type they were given, so a distance between whole numbers is whole and a
+    fraction stays exact. That is what lets the answer be counted with afterwards.
+    ##
     function MeasuringAndChoosing()
         Console.WriteLine("== measuring and choosing ==");
         Console.WriteLine("  Abs(-3)       = " + Math.Abs(-3));
@@ -141,16 +141,16 @@ global model Program
         Console.WriteLine("");
     end function
 
-    comment ---- Rounding -------------------------------------------------------------------
+    # ---- Rounding -------------------------------------------------------------------
 
-    comment begin
-        Each of these lands on a whole number, so each yields an integer and can be used as a
-        count or an index. Between them they are the three honest ways from a real to an
-        integer, which is why there is no single conversion that would have to pick one of the
-        three without being asked.
+    ##
+    Each of these lands on a whole number, so each yields an integer and can be used as a
+    count or an index. Between them they are the three honest ways from a real to an
+    integer, which is why there is no single conversion that would have to pick one of the
+    three without being asked.
 
-        A half goes away from zero, the rule taught in school.
-    end comment
+    A half goes away from zero, the rule taught in school.
+    ##
     function Rounding()
         Console.WriteLine("== rounding ==");
         Console.WriteLine("  Floor(3.7)    = " + Math.Floor(3.7));
@@ -158,18 +158,18 @@ global model Program
         Console.WriteLine("  Round(2.5)    = " + Math.Round(2.5));
         Console.WriteLine("  Round(-2.5)   = " + Math.Round(-2.5));
 
-        comment Below zero, flooring goes down rather than toward zero.
+        # Below zero, flooring goes down rather than toward zero.
         Console.WriteLine("  Floor(-7|2)   = " + Math.Floor(-7|2));
         Console.WriteLine("  Ceiling(-7|2) = " + Math.Ceiling(-7|2));
         Console.WriteLine("  Round(5|2)    = " + Math.Round(5|2));
 
-        comment The answer is an integer, so it indexes.
+        # The answer is an integer, so it indexes.
         string[] names = {"zero", "one", "two", "three", "four"};
         Console.WriteLine("  names[Floor(3.7)] is " + names[Math.Floor(3.7)]);
         Console.WriteLine("");
     end function
 
-    comment ---- Counting -------------------------------------------------------------------
+    # ---- Counting -------------------------------------------------------------------
 
     function Counting()
         Console.WriteLine("== counting ==");
@@ -180,8 +180,8 @@ global model Program
 
         Console.WriteLine("");
 
-        comment Twenty is the largest a whole number holds. The next one overflows, and says
-        comment so rather than wrapping into a smaller wrong answer.
+        # Twenty is the largest a whole number holds. The next one overflows, and says
+        # so rather than wrapping into a smaller wrong answer.
         Console.WriteLine("  Factorial(20) = " + Math.Factorial(20));
 
         try
