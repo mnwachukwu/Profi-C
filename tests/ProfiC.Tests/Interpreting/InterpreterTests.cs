@@ -1303,6 +1303,37 @@ public sealed class InterpreterTests
         Assert.That(Print(call), Is.EqualTo(expected));
 
     /// <summary>
+    /// <para>A root of an exact power is exact, on every machine.</para>
+    /// <para>Roots are not required to be correctly rounded and the platforms disagree: the
+    /// cube root of 27 came back as 3 from the Windows C runtime and as 3.0000000000000004
+    /// from glibc, which is how this was found — the same sample printed two different things
+    /// and the recorded output could only hold one.</para>
+    /// <para>The whole number is used wherever raising it by the degree gives the value back,
+    /// so these are not merely tidier: they are the better answer, and the same one anywhere.
+    /// </para>
+    /// </summary>
+    [TestCase("Math.Cbrt(27.0)", "3")]
+    [TestCase("Math.Cbrt(8.0)", "2")]
+    [TestCase("Math.Cbrt(-8.0)", "-2")]
+    [TestCase("Math.Cbrt(1000000.0)", "100")]
+    [TestCase("Math.Root(32.0, 5.0)", "2")]
+    [TestCase("Math.Root(-32.0, 5.0)", "-2")]
+    [TestCase("Math.Root(81.0, 4.0)", "3")]
+    [TestCase("Math.Root(16.0, 2.0)", "4")]
+    public void ARootOfAnExactPowerIsExact(string call, string expected) =>
+        Assert.That(Print(call), Is.EqualTo(expected));
+
+    /// <summary>
+    /// And it corrects nothing it should not: where no whole root exists the answer is left
+    /// as it was worked out, rather than being rounded to something near it.
+    /// </summary>
+    [TestCase("Math.Cbrt(28.0)")]
+    [TestCase("Math.Cbrt(2.0)")]
+    [TestCase("Math.Root(10.0, 2.0)")]
+    public void ARootWithNoWholeAnswerIsLeftAlone(string call) =>
+        Assert.That(Print(call), Does.Contain("."));
+
+    /// <summary>
     /// <para>Converting an optional carries absence across rather than converting it.</para>
     /// <para>The empty case is the one worth running: turning nothing into characters would
     /// naturally produce an empty set, and an empty set is a different answer from no set at

@@ -221,7 +221,7 @@ public sealed partial class Interpreter
             BuiltInId.MathE => new StrongBox<object?>(Math.E),
 
             BuiltInId.MathSqrt => new StrongBox<object?>(Math.Sqrt(Real(0))),
-            BuiltInId.MathCbrt => new StrongBox<object?>(Math.Cbrt(Real(0))),
+            BuiltInId.MathCbrt => new StrongBox<object?>(Exactly(Math.Cbrt(Real(0)), Real(0), 3)),
             BuiltInId.MathRoot => new StrongBox<object?>(Root(Real(0), Real(1))),
             BuiltInId.MathPow => new StrongBox<object?>(Math.Pow(Real(0), Real(1))),
             BuiltInId.MathFactorial => new StrongBox<object?>(Factorial(Integer(0))),
@@ -474,12 +474,44 @@ public sealed partial class Interpreter
 
         if (value >= 0)
         {
-            return Math.Pow(value, 1.0 / degree);
+            return Exactly(Math.Pow(value, 1.0 / degree), value, degree);
         }
 
         bool odd = degree == Math.Floor(degree) && Math.Abs(degree % 2) == 1;
 
-        return odd ? -Math.Pow(-value, 1.0 / degree) : double.NaN;
+        return odd
+            ? Exactly(-Math.Pow(-value, 1.0 / degree), value, degree)
+            : double.NaN;
+    }
+
+    /// <summary>
+    /// <para>Corrects a root to the whole number it should be, where there is one.</para>
+    /// <para>Roots are not required to be correctly rounded and the platforms disagree: the
+    /// cube root of 27 comes back as 3 from one C runtime and as 3.0000000000000004 from
+    /// another. Where raising the nearest whole number by the degree gives the value back
+    /// exactly, that whole number <em>is</em> a root of it, and the drift is simply a worse
+    /// answer than the type can hold.</para>
+    /// <para>So this is more accurate rather than a fudge, and it is what lets a program
+    /// print the same thing wherever it is run. Only a whole degree within reach is
+    /// considered, and the check is a multiplication rather than another call to Pow, so
+    /// nothing here rests on the library that produced the drift.</para>
+    /// </summary>
+    private static double Exactly(double approximate, double value, double degree)
+    {
+        if (degree < 1 || degree > 64 || degree != Math.Floor(degree))
+        {
+            return approximate;
+        }
+
+        double whole = Math.Round(approximate);
+        double raised = 1;
+
+        for (int i = 0; i < degree; i++)
+        {
+            raised *= whole;
+        }
+
+        return raised == value ? whole : approximate;
     }
 
     /// <summary>

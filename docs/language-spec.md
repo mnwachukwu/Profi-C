@@ -1427,6 +1427,25 @@ whatever they were given: the square root of a fraction is usually irrational. E
 has a version for each number the language has, because an answer that arrives as a `real`
 cannot be counted with and a `fraction` that widens to one stops being exact.
 
+### 11.5a How far a real answer can be trusted
+
+`Sqrt` is required by IEEE 754 to be correctly rounded, so it gives the same answer on every
+machine. **The rest of the transcendental members are not, and may differ in the last bit
+between one machine and another.** That is true of C, C#, Java and Python alike: each defers
+to the arithmetic library the platform ships, and those libraries are permitted to disagree by
+a fraction of an ulp.
+
+Two guarantees are made against that:
+
+**A root of an exact power is exact.** `Math.Cbrt(27.0)` is `3`, and `Math.Root(32.0, 5.0)` is
+`2`, on every machine. Where raising the nearest whole number by the degree gives the value
+back exactly, that whole number *is* a root of it, so it is used — which is a better answer as
+well as the same one everywhere.
+
+**Nothing else is corrected.** `Math.Cbrt(28.0)` is left as the library worked it out. A
+program that needs a real answer to be identical across machines should round it to as many
+places as it means to claim, which is what saying "to four places" amounts to.
+
 **`Math.Pi` and `Math.E` are values, not functions.** Writing `Math.Pi()` is reported
 (`PC0338`), as is naming a function without calling it (`PC0330`) — the two diagnostics are a
 pair, so whichever a reader guesses, the compiler says which it is.

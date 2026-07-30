@@ -1,7 +1,7 @@
 == values ==
   Pi = 3.141592653589793
   E  = 2.718281828459045
-  a circle of radius 2 has area 12.566370614359172
+  a circle of radius 2 has area 12.5664
 
 == roots and powers ==
   Sqrt(16)      = 4
@@ -14,7 +14,7 @@
 
 == logarithms ==
   Log(E)        = 1
-  Log(100)      = 4.605170185988092
+  Log(100)      = 4.6052
   Log10(100)    = 2
   Log(100, 10)  = 2
   Log2(1024)    = 10
@@ -24,11 +24,11 @@
   Cos(0)        = 1
   Tan(0)        = 0
   Sin(Pi/2)     = 1
-  Asin(1)       = 1.5707963267948966
+  Asin(1)       = 1.5708
   Acos(1)       = 0
-  Atan(1)       = 0.7853981633974483
-  Atan2(1, 1)   = 0.7853981633974483
-  Atan2(1, -1)  = 2.356194490192345
+  Atan(1)       = 0.7854
+  Atan2(1, 1)   = 0.7854
+  Atan2(1, -1)  = 2.3562
 
 == measuring and choosing ==
   Abs(-3)       = 3

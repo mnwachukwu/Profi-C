@@ -57,12 +57,15 @@ CompilationUnit
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "  a circle of radius 2 has area " [String]
-            BinaryExpr '*'
+            CallExpr
+              MemberExpr 'ToFourPlaces'
+                IdentifierExpr 'Program'
               BinaryExpr '*'
-                MemberExpr 'Pi'
-                  IdentifierExpr 'Math'
+                BinaryExpr '*'
+                  MemberExpr 'Pi'
+                    IdentifierExpr 'Math'
+                  LiteralExpr 2.0 [Real]
                 LiteralExpr 2.0 [Real]
-              LiteralExpr 2.0 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -177,9 +180,12 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "  Log(100)      = " [String]
             CallExpr
-              MemberExpr 'Log'
-                IdentifierExpr 'Math'
-              LiteralExpr 100.0 [Real]
+              MemberExpr 'ToFourPlaces'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Log'
+                  IdentifierExpr 'Math'
+                LiteralExpr 100.0 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -216,6 +222,19 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           LiteralExpr "" [String]
+    FunctionDecl 'ToFourPlaces'
+      NamedTypeSyntax 'real'
+      ParameterDecl 'value'
+        NamedTypeSyntax 'real'
+      YieldStmt
+        BinaryExpr '/'
+          CallExpr
+            MemberExpr 'Round'
+              IdentifierExpr 'Math'
+            BinaryExpr '*'
+              IdentifierExpr 'value'
+              LiteralExpr 10000.0 [Real]
+          LiteralExpr 10000.0 [Real]
     FunctionDecl 'Angles'
       ExpressionStmt
         CallExpr
@@ -274,9 +293,12 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "  Asin(1)       = " [String]
             CallExpr
-              MemberExpr 'Asin'
-                IdentifierExpr 'Math'
-              LiteralExpr 1.0 [Real]
+              MemberExpr 'ToFourPlaces'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Asin'
+                  IdentifierExpr 'Math'
+                LiteralExpr 1.0 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -294,9 +316,12 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "  Atan(1)       = " [String]
             CallExpr
-              MemberExpr 'Atan'
-                IdentifierExpr 'Math'
-              LiteralExpr 1.0 [Real]
+              MemberExpr 'ToFourPlaces'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Atan'
+                  IdentifierExpr 'Math'
+                LiteralExpr 1.0 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -304,10 +329,13 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "  Atan2(1, 1)   = " [String]
             CallExpr
-              MemberExpr 'Atan2'
-                IdentifierExpr 'Math'
-              LiteralExpr 1.0 [Real]
-              LiteralExpr 1.0 [Real]
+              MemberExpr 'ToFourPlaces'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Atan2'
+                  IdentifierExpr 'Math'
+                LiteralExpr 1.0 [Real]
+                LiteralExpr 1.0 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -315,11 +343,14 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "  Atan2(1, -1)  = " [String]
             CallExpr
-              MemberExpr 'Atan2'
-                IdentifierExpr 'Math'
-              LiteralExpr 1.0 [Real]
-              UnaryExpr '-'
+              MemberExpr 'ToFourPlaces'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Atan2'
+                  IdentifierExpr 'Math'
                 LiteralExpr 1.0 [Real]
+                UnaryExpr '-'
+                  LiteralExpr 1.0 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

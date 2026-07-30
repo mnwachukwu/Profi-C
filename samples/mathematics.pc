@@ -30,7 +30,8 @@ global model Program
         Console.WriteLine("  E  = " + Math.E);
 
         comment Neither is a function, so neither is called. Writing Math.Pi() is reported.
-        Console.WriteLine("  a circle of radius 2 has area " + Math.Pi * 2.0 * 2.0);
+        Console.WriteLine("  a circle of radius 2 has area "
+                          + Program.ToFourPlaces(Math.Pi * 2.0 * 2.0));
         Console.WriteLine("");
     end function
 
@@ -68,11 +69,26 @@ global model Program
     function Logarithms()
         Console.WriteLine("== logarithms ==");
         Console.WriteLine("  Log(E)        = " + Math.Log(Math.E));
-        Console.WriteLine("  Log(100)      = " + Math.Log(100.0));
+        Console.WriteLine("  Log(100)      = " + Program.ToFourPlaces(Math.Log(100.0)));
         Console.WriteLine("  Log10(100)    = " + Math.Log10(100.0));
         Console.WriteLine("  Log(100, 10)  = " + Math.Log(100.0, 10.0));
         Console.WriteLine("  Log2(1024)    = " + Math.Log2(1024.0));
         Console.WriteLine("");
+    end function
+
+    comment begin
+        Shown to four places rather than in full.
+
+        A root, a logarithm and an angle are worked out by the machine's own arithmetic
+        library, and those are allowed to differ in the last bit from one computer to the
+        next — the answer is right either way, but the final digit is not something a program
+        should be written to depend on. Rounding first says which digits are being claimed.
+
+        Where an exact answer exists it is given exactly, so the lines above that print a
+        whole number really do print one everywhere.
+    end comment
+    real function ToFourPlaces(real value)
+        yield Math.Round(value * 10000.0) / 10000.0;
     end function
 
     comment ---- Angles ---------------------------------------------------------------------
@@ -92,14 +108,14 @@ global model Program
         Console.WriteLine("  Tan(0)        = " + Math.Tan(0.0));
         Console.WriteLine("  Sin(Pi/2)     = " + Math.Sin(quarterTurn));
 
-        comment The inverses, each undoing its own.
-        Console.WriteLine("  Asin(1)       = " + Math.Asin(1.0));
+        comment The inverses, each undoing its own. Asin(1) is a quarter turn, so it is Pi/2.
+        Console.WriteLine("  Asin(1)       = " + Program.ToFourPlaces(Math.Asin(1.0)));
         Console.WriteLine("  Acos(1)       = " + Math.Acos(1.0));
-        Console.WriteLine("  Atan(1)       = " + Math.Atan(1.0));
+        Console.WriteLine("  Atan(1)       = " + Program.ToFourPlaces(Math.Atan(1.0)));
 
         comment Atan2 takes the two sides rather than their ratio, so it knows the quadrant.
-        Console.WriteLine("  Atan2(1, 1)   = " + Math.Atan2(1.0, 1.0));
-        Console.WriteLine("  Atan2(1, -1)  = " + Math.Atan2(1.0, -1.0));
+        Console.WriteLine("  Atan2(1, 1)   = " + Program.ToFourPlaces(Math.Atan2(1.0, 1.0)));
+        Console.WriteLine("  Atan2(1, -1)  = " + Program.ToFourPlaces(Math.Atan2(1.0, -1.0)));
         Console.WriteLine("");
     end function
 
