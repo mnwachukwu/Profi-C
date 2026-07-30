@@ -1,0 +1,316 @@
+CompilationUnit
+  StructureDecl 'Point'
+    FieldDecl 'X' [public]
+      NamedTypeSyntax 'integer'
+    FieldDecl 'Y' [public]
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Point' [public]
+      ParameterDecl 'x'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'y'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'X'
+          ThisExpr
+        IdentifierExpr 'x'
+      AssignmentStmt
+        MemberExpr 'Y'
+          ThisExpr
+        IdentifierExpr 'y'
+    FunctionDecl 'ManhattanFrom' [public]
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'other'
+        NamedTypeSyntax 'Point'
+      YieldStmt
+        BinaryExpr '+'
+          CallExpr
+            MemberExpr 'Abs'
+              IdentifierExpr 'Math'
+            BinaryExpr '-'
+              MemberExpr 'X'
+                ThisExpr
+              MemberExpr 'X'
+                IdentifierExpr 'other'
+          CallExpr
+            MemberExpr 'Abs'
+              IdentifierExpr 'Math'
+            BinaryExpr '-'
+              MemberExpr 'Y'
+                ThisExpr
+              MemberExpr 'Y'
+                IdentifierExpr 'other'
+  ModelDecl 'Marker'
+    FieldDecl 'Label' [public]
+      NamedTypeSyntax 'string'
+    FunctionDecl 'Marker' [public]
+      ParameterDecl 'label'
+        NamedTypeSyntax 'string'
+      AssignmentStmt
+        MemberExpr 'Label'
+          ThisExpr
+        IdentifierExpr 'label'
+  StructureDecl 'Pin'
+    FieldDecl 'Where' [public]
+      NamedTypeSyntax 'Point'
+    FieldDecl 'Tag' [public]
+      NamedTypeSyntax 'Marker'
+    FunctionDecl 'Pin' [public]
+      ParameterDecl 'where'
+        NamedTypeSyntax 'Point'
+      ParameterDecl 'tag'
+        NamedTypeSyntax 'Marker'
+      AssignmentStmt
+        MemberExpr 'Where'
+          ThisExpr
+        IdentifierExpr 'where'
+      AssignmentStmt
+        MemberExpr 'Tag'
+          ThisExpr
+        IdentifierExpr 'tag'
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'CopyingAStructure'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'CopyingAModel'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhenAStructureHoldsAModel'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Equality'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'PassingThemToFunctions'
+            IdentifierExpr 'Program'
+    FunctionDecl 'CopyingAStructure'
+      VarDeclStmt 'a'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+      VarDeclStmt 'b'
+        NamedTypeSyntax 'Point'
+        IdentifierExpr 'a'
+      AssignmentStmt
+        MemberExpr 'X'
+          IdentifierExpr 'b'
+        LiteralExpr 99 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "a.X is " [String]
+                MemberExpr 'X'
+                  IdentifierExpr 'a'
+              LiteralExpr ", b.X is " [String]
+            MemberExpr 'X'
+              IdentifierExpr 'b'
+    FunctionDecl 'CopyingAModel'
+      VarDeclStmt 'first'
+        NamedTypeSyntax 'Marker'
+        NewExpr 'Marker'
+          LiteralExpr "start" [String]
+      VarDeclStmt 'second'
+        NamedTypeSyntax 'Marker'
+        IdentifierExpr 'first'
+      AssignmentStmt
+        MemberExpr 'Label'
+          IdentifierExpr 'second'
+        LiteralExpr "moved" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "first is " [String]
+                MemberExpr 'Label'
+                  IdentifierExpr 'first'
+              LiteralExpr ", second is " [String]
+            MemberExpr 'Label'
+              IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "same object: " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'first'
+              IdentifierExpr 'second'
+    FunctionDecl 'WhenAStructureHoldsAModel'
+      VarDeclStmt 'original'
+        NamedTypeSyntax 'Pin'
+        NewExpr 'Pin'
+          NewExpr 'Point'
+            LiteralExpr 0 [Integer]
+            LiteralExpr 0 [Integer]
+          NewExpr 'Marker'
+            LiteralExpr "home" [String]
+      VarDeclStmt 'copy'
+        NamedTypeSyntax 'Pin'
+        IdentifierExpr 'original'
+      AssignmentStmt
+        MemberExpr 'X'
+          MemberExpr 'Where'
+            IdentifierExpr 'copy'
+        LiteralExpr 5 [Integer]
+      AssignmentStmt
+        MemberExpr 'Label'
+          MemberExpr 'Tag'
+            IdentifierExpr 'copy'
+        LiteralExpr "renamed" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "original point: " [String]
+                MemberExpr 'X'
+                  MemberExpr 'Where'
+                    IdentifierExpr 'original'
+              LiteralExpr ", copy point: " [String]
+            MemberExpr 'X'
+              MemberExpr 'Where'
+                IdentifierExpr 'copy'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "original tag:   " [String]
+            MemberExpr 'Label'
+              MemberExpr 'Tag'
+                IdentifierExpr 'original'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "one marker:     " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              MemberExpr 'Tag'
+                IdentifierExpr 'original'
+              MemberExpr 'Tag'
+                IdentifierExpr 'copy'
+    FunctionDecl 'Equality'
+      VarDeclStmt 'here'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 3 [Integer]
+          LiteralExpr 4 [Integer]
+      VarDeclStmt 'there'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 3 [Integer]
+          LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "points equal:   " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'here'
+                IdentifierExpr 'there'
+      VarDeclStmt 'one'
+        NamedTypeSyntax 'Marker'
+        NewExpr 'Marker'
+          LiteralExpr "x" [String]
+      VarDeclStmt 'other'
+        NamedTypeSyntax 'Marker'
+        NewExpr 'Marker'
+          LiteralExpr "x" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "markers equal:  " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'one'
+                IdentifierExpr 'other'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "same object:    " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'one'
+              IdentifierExpr 'other'
+    FunctionDecl 'MoveIt'
+      ParameterDecl 'point'
+        NamedTypeSyntax 'Point'
+      ParameterDecl 'marker'
+        NamedTypeSyntax 'Marker'
+      AssignmentStmt
+        MemberExpr 'X'
+          IdentifierExpr 'point'
+        LiteralExpr 100 [Integer]
+      AssignmentStmt
+        MemberExpr 'Label'
+          IdentifierExpr 'marker'
+        LiteralExpr "changed" [String]
+    FunctionDecl 'PassingThemToFunctions'
+      VarDeclStmt 'point'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 1 [Integer]
+          LiteralExpr 1 [Integer]
+      VarDeclStmt 'marker'
+        NamedTypeSyntax 'Marker'
+        NewExpr 'Marker'
+          LiteralExpr "before" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'MoveIt'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'point'
+          IdentifierExpr 'marker'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "point kept " [String]
+                MemberExpr 'X'
+                  IdentifierExpr 'point'
+              LiteralExpr ", marker became " [String]
+            MemberExpr 'Label'
+              IdentifierExpr 'marker'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "distance:   " [String]
+            CallExpr
+              MemberExpr 'ManhattanFrom'
+                IdentifierExpr 'point'
+              NewExpr 'Point'
+                LiteralExpr 4 [Integer]
+                LiteralExpr 5 [Integer]

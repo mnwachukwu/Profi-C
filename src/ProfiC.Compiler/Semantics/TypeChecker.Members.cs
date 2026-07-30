@@ -194,7 +194,20 @@ public sealed partial class TypeChecker
     /// True when a built-in version could take these arguments. A null parameter type accepts
     /// anything, which is how a member that takes a value of any kind is described.
     /// </summary>
-    private static bool Accepts(BuiltInMember member, List<TypeSymbol> arguments)
+    private static bool Accepts(BuiltInMember member, List<TypeSymbol> arguments) =>
+        Matches(member, arguments, exactly: false);
+
+    /// <summary>
+    /// <para>True when a built-in version takes these arguments with no conversion at all.</para>
+    /// <para>Preferred over one that merely accepts them, for the same reason a declared
+    /// function's overloads are: an integer widens to both a real and a fraction, so
+    /// <c>Math.Abs(-3)</c> fits three versions and only one of them is what was written.
+    /// Without this the order they happen to be listed in would decide.</para>
+    /// </summary>
+    private static bool AcceptsExactly(BuiltInMember member, List<TypeSymbol> arguments) =>
+        Matches(member, arguments, exactly: true);
+
+    private static bool Matches(BuiltInMember member, List<TypeSymbol> arguments, bool exactly)
     {
         if (member.ParameterTypes.Count != arguments.Count)
         {
@@ -203,8 +216,16 @@ public sealed partial class TypeChecker
 
         for (int i = 0; i < arguments.Count; i++)
         {
-            if (member.ParameterTypes[i] is { } expected
-                && !Conversions.IsAssignable(arguments[i], expected))
+            if (member.ParameterTypes[i] is not { } expected)
+            {
+                continue;
+            }
+
+            bool fits = exactly
+                ? Conversions.Classify(arguments[i], expected) == ConversionKind.Identity
+                : Conversions.IsAssignable(arguments[i], expected);
+
+            if (!fits)
             {
                 return false;
             }
@@ -337,8 +358,12 @@ public sealed partial class TypeChecker
             // Pick by argument type, not merely by count. It matters for an optional's
             // "Or": given another optional the chain stays optional, and given a plain value
             // it ends with a definite one, and the two differ only in what they accept.
+            //
+            // An exact match settles it outright, before any widening is weighed, so that a
+            // number keeps the type it was written as rather than the first one it fits.
             BuiltInMember chosenBuiltIn =
-                builtIns.FirstOrDefault(m => Accepts(m, arguments))
+                builtIns.FirstOrDefault(m => AcceptsExactly(m, arguments))
+                ?? builtIns.FirstOrDefault(m => Accepts(m, arguments))
                 ?? builtIns.FirstOrDefault(m => m.ParameterTypes.Count == arguments.Count)
                 ?? builtIns[0];
 

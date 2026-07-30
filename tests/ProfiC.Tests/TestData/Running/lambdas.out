@@ -13,3 +13,5 @@ twice of 6:       12
 1 2 3 
 tripled: {3, 6, 9}
 counting: 11 12 13
+held: 3
+still the same one: true

@@ -1,0 +1,144 @@
+comment begin
+    Values and references, and what changes when you copy one.
+
+    A structure is a value: assigning one copies it, and the copy has nothing to do with the
+    original afterwards. A model is a reference: assigning one copies the reference, and both
+    names then reach the same object.
+
+    That is the whole difference, and every surprising thing below follows from it.
+end comment
+
+structure Point
+    public integer X;
+    public integer Y;
+
+    public function Point(integer x, integer y)
+        this.X = x;
+        this.Y = y;
+    end function
+
+    comment begin
+        Measuring keeps the type it measured, so the distance between two whole coordinates
+        is a whole number and can be counted with.
+    end comment
+    public integer function ManhattanFrom(Point other)
+        yield Math.Abs(this.X - other.X) + Math.Abs(this.Y - other.Y);
+    end function
+end structure
+
+model Marker
+    public string Label;
+
+    public function Marker(string label)
+        this.Label = label;
+    end function
+end model
+
+comment begin
+    A structure may hold a model, and this is the case worth stopping over: copying the
+    structure copies the reference, not the model. Both copies then see one marker.
+end comment
+structure Pin
+    public Point Where;
+    public Marker Tag;
+
+    public function Pin(Point where, Marker tag)
+        this.Where = where;
+        this.Tag = tag;
+    end function
+end structure
+
+global model Program
+
+    function Main()
+        Program.CopyingAStructure();
+        Program.CopyingAModel();
+        Program.WhenAStructureHoldsAModel();
+        Program.Equality();
+        Program.PassingThemToFunctions();
+    end function
+
+    comment ---- A structure copies ------------------------------------------------------
+
+    function CopyingAStructure()
+        Point a = new Point(1, 2);
+        Point b = a;
+
+        b.X = 99;
+
+        Console.WriteLine("a.X is " + a.X + ", b.X is " + b.X);
+    end function
+
+    comment ---- A model does not ---------------------------------------------------------
+
+    function CopyingAModel()
+        Marker first = new Marker("start");
+        Marker second = first;
+
+        second.Label = "moved";
+
+        Console.WriteLine("first is " + first.Label + ", second is " + second.Label);
+        Console.WriteLine("same object: " + Reference.Equals(first, second));
+    end function
+
+    comment ---- A structure holding a model ------------------------------------------------
+
+    comment begin
+        Copying the pin copies the point, because a point is a value. It copies the reference
+        to the marker, because a marker is not. So moving the copy leaves the original where it
+        was, while renaming the marker is seen through both.
+    end comment
+    function WhenAStructureHoldsAModel()
+        Pin original = new Pin(new Point(0, 0), new Marker("home"));
+        Pin copy = original;
+
+        copy.Where.X = 5;
+        copy.Tag.Label = "renamed";
+
+        Console.WriteLine("original point: " + original.Where.X + ", copy point: " + copy.Where.X);
+        Console.WriteLine("original tag:   " + original.Tag.Label);
+        Console.WriteLine("one marker:     " + Reference.Equals(original.Tag, copy.Tag));
+    end function
+
+    comment ---- What equality means for each -------------------------------------------------
+
+    comment begin
+        '==' compares values, all the way down, for both kinds. Two separately built points are
+        equal because nothing distinguishes them, and so are two separately built markers.
+        Reference.Equals asks the other question, and only a reference can answer it.
+    end comment
+    function Equality()
+        Point here = new Point(3, 4);
+        Point there = new Point(3, 4);
+
+        Console.WriteLine("points equal:   " + (here == there));
+
+        Marker one = new Marker("x");
+        Marker other = new Marker("x");
+
+        Console.WriteLine("markers equal:  " + (one == other));
+        Console.WriteLine("same object:    " + Reference.Equals(one, other));
+    end function
+
+    comment ---- Across a function call ----------------------------------------------------
+
+    comment begin
+        An argument is assigned to a parameter, so the same rule applies at the boundary: a
+        structure arrives as a copy and a model arrives as the same object.
+    end comment
+    function MoveIt(Point point, Marker marker)
+        point.X = 100;
+        marker.Label = "changed";
+    end function
+
+    function PassingThemToFunctions()
+        Point point = new Point(1, 1);
+        Marker marker = new Marker("before");
+
+        Program.MoveIt(point, marker);
+
+        Console.WriteLine("point kept " + point.X + ", marker became " + marker.Label);
+        Console.WriteLine("distance:   " + point.ManhattanFrom(new Point(4, 5)));
+    end function
+
+end model

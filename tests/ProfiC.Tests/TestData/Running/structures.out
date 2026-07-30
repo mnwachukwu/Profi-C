@@ -1,0 +1,11 @@
+a.X is 1, b.X is 99
+first is moved, second is moved
+same object: true
+original point: 0, copy point: 5
+original tag:   renamed
+one marker:     true
+points equal:   true
+markers equal:  true
+same object:    false
+point kept 1, marker became changed
+distance:   7

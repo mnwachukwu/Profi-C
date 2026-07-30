@@ -201,14 +201,17 @@ public sealed partial class TypeChecker
     // ---- Conversions ------------------------------------------------------------------------
 
     /// <summary>
-    /// Requires that a value fit where it is being used, reporting if it does not. A
-    /// conversion that exists but must be written gets its own message naming the call.
+    /// <para>Requires that a value fit where it is being used, reporting if it does not. A
+    /// conversion that exists but must be written gets its own message naming the call.</para>
+    /// <para>False means it did not fit and has been reported, which lets a caller holding
+    /// several of these stop before saying something further that rests on all of them
+    /// having landed.</para>
     /// </summary>
-    private void RequireAssignable(TypeSymbol from, TypeSymbol to, SyntaxNode node)
+    private bool RequireAssignable(TypeSymbol from, TypeSymbol to, SyntaxNode node)
     {
         if (from.IsError || to.IsError)
         {
-            return;
+            return true;
         }
 
         // A call that yields nothing has no result to convert, so naming its type would
@@ -216,17 +219,17 @@ public sealed partial class TypeChecker
         if (ReferenceEquals(from, PrimitiveType.Void))
         {
             Report(DiagnosticDescriptors.ValueExpected, node);
-            return;
+            return false;
         }
 
         switch (Conversions.Classify(from, to))
         {
             case ConversionKind.Identity:
-                return;
+                return true;
 
             case ConversionKind.Implicit:
                 RecordConversion(node, from, to);
-                return;
+                return true;
 
             case ConversionKind.Explicit:
                 Report(
@@ -235,7 +238,7 @@ public sealed partial class TypeChecker
                     from.WithArticleCapitalized(),
                     to.WithArticle(),
                     ExplicitConversionCall(from, to));
-                return;
+                return false;
 
             default:
                 // Reading an optional where a plain value is wanted has its own message,
@@ -244,11 +247,11 @@ public sealed partial class TypeChecker
                     && Conversions.IsAssignable(optional.UnderlyingType, to))
                 {
                     Report(DiagnosticDescriptors.OptionalMustBeUnwrapped, node, from.WithArticle());
-                    return;
+                    return false;
                 }
 
                 Report(DiagnosticDescriptors.CannotConvert, node, from.WithArticle(), to.WithArticle());
-                return;
+                return false;
         }
     }
 

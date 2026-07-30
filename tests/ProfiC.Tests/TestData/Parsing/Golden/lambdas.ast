@@ -25,6 +25,10 @@ CompilationUnit
         CallExpr
           MemberExpr 'NamingOneThatAlreadyExists'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'HoldingAnyFunctionAtAll'
+            IdentifierExpr 'Program'
     FunctionDecl 'WritingThemDown'
       VarDeclStmt 'increment'
         FunctionTypeSyntax
@@ -412,6 +416,55 @@ CompilationUnit
             CallExpr
               MemberExpr 'Next'
                 IdentifierExpr 'counter'
+    FunctionDecl 'HoldingAnyFunctionAtAll'
+      VarDeclStmt 'assorted'
+        SetTypeSyntax
+          NamedTypeSyntax 'Function'
+        CollectionExpr
+          LambdaExpr inline
+            ParameterDecl 'n'
+              NamedTypeSyntax 'integer'
+            BinaryExpr '+'
+              IdentifierExpr 'n'
+              LiteralExpr 1 [Integer]
+          MemberExpr 'Triple'
+            IdentifierExpr 'Program'
+          LambdaExpr inline
+            ParameterDecl 'what'
+              NamedTypeSyntax 'string'
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "* " [String]
+                IdentifierExpr 'what'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "held: " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'assorted'
+      VarDeclStmt 'asModel'
+        NamedTypeSyntax 'Model'
+        IndexExpr
+          IdentifierExpr 'assorted'
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "still the same one: " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'asModel'
+              IndexExpr
+                IdentifierExpr 'assorted'
+                LiteralExpr 0 [Integer]
   ModelDecl 'Counter'
     FieldDecl 'count'
       NamedTypeSyntax 'integer'

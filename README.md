@@ -461,12 +461,15 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [fibonacci.pc](samples/fibonacci.pc) | The same sequence written recursively and iteratively, side by side |
 | [primes.pc](samples/primes.pc) | The Sieve of Eratosthenes; sets used as a workspace |
 | [sorting.pc](samples/sorting.pc) | Insertion sort, and why `and` short-circuiting matters |
+| [scanning.pc](samples/scanning.pc) | `break` and `continue`, and which loop a `break` leaves |
+| [card-table.pc](samples/card-table.pc) | **`switch`.** Grouped labels, `default`, and the warning for a member left unhandled |
+| [structures.pc](samples/structures.pc) | **Values against references.** What copying changes, and what a structure holding a model shares |
 | [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
 | [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
 | [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
-| [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, and what they remember |
+| [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
 `samples/reference/` holds four files that are not programs and declare no entry point:
@@ -505,6 +508,7 @@ Programs the compiler rejects:
 | [types.pc](samples/negatives/compile/types.pc) | Types that do not mix, and a division by a literal zero |
 | [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
 | [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |
+| [switching.pc](samples/negatives/compile/switching.pc) | A switch on a real, a label that is not constant, one value handled twice, and a member left unhandled |
 | [results.pc](samples/negatives/compile/results.pc) | A function that never reaches the result it promises, and a call that yields nothing used as a value |
 | [imports.pc](samples/negatives/compile/imports.pc) | Imports naming a file that is not there, and one that is not Profi-C |
 

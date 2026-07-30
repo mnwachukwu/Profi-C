@@ -333,6 +333,14 @@ public sealed partial class Interpreter
             ? model.SelfAndAncestors().Contains(targetModel)
             : ReferenceEquals(instance.Type, target),
 
+        // An exception the language provides is a real .NET exception rather than an Instance,
+        // so its inheritance is the runtime's rather than a chain of symbols. The two catalogs
+        // are one list, which is what makes the name written here and the object in hand
+        // answerable against each other at all.
+        Exception thrown => target is ModelSymbol targetException
+                            && BuiltInExceptions.Resolve(targetException.Name) is { } runtimeType
+                            && runtimeType.IsInstanceOfType(thrown),
+
         // An enumeration member carries the name of the enumeration it came from, since a
         // value crossing into the runtime keeps no symbol.
         EnumValue member => target is EnumerationSymbol enumeration

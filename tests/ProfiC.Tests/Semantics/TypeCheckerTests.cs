@@ -380,6 +380,129 @@ public sealed class TypeCheckerTests
             """)), Is.EqualTo(new[] { "PC0326" }));
     }
 
+    /// <summary>
+    /// <para>An enumeration switch that leaves members out and writes no default is warned
+    /// about, naming the ones with no case.</para>
+    /// <para>This is what makes adding a member safe: every switch that has to change says so,
+    /// at the place it has to change.</para>
+    /// </summary>
+    [Test]
+    public void ASwitchLeavingEnumerationMembersOutIsReported()
+    {
+        DiagnosticBag diagnostics = CheckSuit("""
+                    switch s
+                        case Suit.Hearts:
+                            yield;
+                    end switch
+            """);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0337" }));
+            Assert.That(diagnostics.Single().Severity, Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(diagnostics.Single().Message, Does.Contain("Clubs and Spades"));
+        });
+    }
+
+    /// <summary>One left out reads as one, not as a list of one.</summary>
+    [Test]
+    public void OneMemberLeftOutIsNamedInTheSingular() =>
+        Assert.That(
+            CheckSuit("""
+                    switch s
+                        case Suit.Hearts:
+                        case Suit.Clubs:
+                        case Suit.Spades:
+                            yield;
+                    end switch
+            """).Single().Message,
+            Does.Contain("Diamonds has no case"));
+
+    /// <summary>
+    /// A default handles the rest, and saying so is the whole point of writing one. Handling
+    /// every member reaches the same silence by the other route.
+    /// </summary>
+    [TestCase("""
+                    switch s
+                        case Suit.Hearts:
+                            yield;
+                        default:
+                            yield;
+                    end switch
+            """)]
+    [TestCase("""
+                    switch s
+                        case Suit.Hearts:
+                        case Suit.Diamonds:
+                        case Suit.Clubs:
+                        case Suit.Spades:
+                            yield;
+                    end switch
+            """)]
+    public void ASwitchThatCoversEverythingIsSilent(string body) =>
+        Assert.That(IdsOf(CheckSuit(body)), Is.Empty);
+
+    /// <summary>
+    /// Two members may name one value, and a case for either handles both — so the check
+    /// compares what a member carries rather than what it is called.
+    /// </summary>
+    [Test]
+    public void MembersSharingAValueAreHandledTogether() =>
+        Assert.That(
+            IdsOf(Check("""
+                enumeration Level
+                    Low = 1,
+                    Bottom = 1,
+                    High = 2
+                end enumeration
+
+                global model Program
+                    function Main()
+                        Level level = Level.Low;
+                        switch level
+                            case Level.Low:
+                            case Level.High:
+                                Console.WriteLine("known");
+                        end switch
+                    end function
+                end model
+                """)),
+            Is.Empty);
+
+    /// <summary>
+    /// A label that did not land leaves nothing to judge exhaustiveness from, so the switch is
+    /// not also reported as incomplete. The label has been named once; a second message about
+    /// the switch as a whole would point at the same mistake from further away.
+    /// </summary>
+    [TestCase("""
+                    switch s
+                        case "hearts":
+                            yield;
+                    end switch
+            """)]
+    [TestCase("""
+                    integer notConstant = 1;
+                    switch s
+                        case notConstant:
+                            yield;
+                    end switch
+            """)]
+    public void ALabelThatDidNotLandSuppressesTheExhaustivenessWarning(string body) =>
+        Assert.That(IdsOf(CheckSuit(body)), Does.Not.Contain("PC0337"));
+
+    private static DiagnosticBag CheckSuit(string body) => Check($$"""
+        enumeration Suit
+            Hearts, Diamonds, Clubs, Spades
+        end enumeration
+
+        global model Program
+            function Main()
+                Suit s = Suit.Hearts;
+        {{body}}
+            end function
+        end model
+        """);
+
     // ---- Loops --------------------------------------------------------------------------------------
 
     [Test]
@@ -1207,6 +1330,65 @@ public sealed class TypeCheckerTests
                 end model
                 """)),
             Is.Not.Empty);
+
+    // ---- Function, the root of every function type -------------------------------------------
+
+    /// <summary>
+    /// <para>Every function fits <c>Function</c>, whatever it takes and yields — which is what
+    /// lets one be held without its signature being named.</para>
+    /// <para>The set case is the one worth having: a set holds one type, so before this there
+    /// was no way to keep functions of different shapes together at all.</para>
+    /// </summary>
+    [TestCase("        Function f = (integer n) yield n + 1;")]
+    [TestCase("        Function f = (string s) yield Console.WriteLine(s);")]
+    [TestCase("        Function f = function(integer n) yield n; end function;")]
+    [TestCase("        Function[] fs = { (integer n) yield n, (string s) yield s };")]
+    public void EveryFunctionFitsTheBareFunctionType(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+
+    /// <summary>A Function is a Model, as every reference type is.</summary>
+    [Test]
+    public void AFunctionIsAModel() =>
+        Assert.That(
+            IdsOf(CheckBody("""
+                    Function f = (integer n) yield n + 1;
+                    Model m = f;
+            """)),
+            Is.Empty);
+
+    /// <summary>
+    /// Nothing but a function reaches it. Without this the name would read as "anything",
+    /// which is what Model already means.
+    /// </summary>
+    [TestCase("        Function f = 1;")]
+    [TestCase("        Function f = \"text\";")]
+    [TestCase("        Function f = {1, 2};")]
+    public void NothingElseReachesFunction(string body) =>
+        Assert.That(IdsOf(CheckBody(body)), Does.Contain("PC0300"));
+
+    /// <summary>
+    /// It says nothing about what the parameters hold, so a lambda written into one has
+    /// nothing to take a type from and writes its own.
+    /// </summary>
+    [Test]
+    public void ABareParameterNameHasNothingToTakeFromAFunction() =>
+        Assert.That(
+            IdsOf(CheckBody("        Function f = (n) yield n + 1;")),
+            Does.Contain("PC0336"));
+
+    /// <summary>A program may not declare it, and may not extend it either.</summary>
+    [TestCase("model Function\nend model")]
+    [TestCase("model Mine extends Function\nend model")]
+    public void FunctionCannotBeDeclaredOrExtended(string declaration) =>
+        Assert.That(IdsOf(Check($$"""
+            {{declaration}}
+
+            global model Program
+                function Main()
+                    Console.WriteLine("x");
+                end function
+            end model
+            """)), Is.Not.Empty);
 
     // ---- Constructing ------------------------------------------------------------------------
 

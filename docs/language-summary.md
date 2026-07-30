@@ -281,6 +281,6 @@ specification.
 
 ## 7. Two details worth knowing
 
-**Warnings are few and each one names its fix.** Seven exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, and an import naming an absolute path. Every other diagnostic is an error. Warnings do not block compilation.
+**Warnings are few and each one names its fix.** Eight exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, an import naming an absolute path, and a `switch` leaving enumeration members unhandled. Every other diagnostic is an error. Warnings do not block compilation.
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.

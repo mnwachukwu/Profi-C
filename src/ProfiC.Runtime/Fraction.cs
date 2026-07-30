@@ -177,6 +177,48 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
     /// <summary>Negates a fraction.</summary>
     public static Fraction Negate(Fraction value) => -value;
 
+    // ---- Measuring and rounding ------------------------------------------------------------
+
+    /// <summary>
+    /// The distance from zero. Normalization keeps the sign on the numerator, so this is the
+    /// numerator's own magnitude and nothing has to be reduced again.
+    /// </summary>
+    public static Fraction Abs(Fraction value) =>
+        value.Numerator < 0 ? -value : value;
+
+    /// <summary>
+    /// <para>The greatest whole number no larger than this one.</para>
+    /// <para>Division in C# truncates toward zero, which is not what flooring means below
+    /// zero: -7|2 truncates to -3 and floors to -4. The negative case is worked out from the
+    /// remainder rather than by converting to a real, so the answer stays exact.</para>
+    /// </summary>
+    public static long Floor(Fraction value)
+    {
+        long quotient = value.Numerator / value.Denominator;
+
+        return value.Numerator < 0 && quotient * value.Denominator != value.Numerator
+            ? quotient - 1
+            : quotient;
+    }
+
+    /// <summary>The least whole number no smaller than this one.</summary>
+    public static long Ceiling(Fraction value) => -Floor(-value);
+
+    /// <summary>
+    /// <para>The nearest whole number, with a half going away from zero.</para>
+    /// <para>That is the rule taught in school: 2.5 rounds to 3 and -2.5 to -3. .NET rounds a
+    /// half to the even neighbor by default, which is better for statistics and worse for
+    /// everyone learning, so this says which it wants rather than taking the default.</para>
+    /// </summary>
+    public static long Round(Fraction value)
+    {
+        Fraction half = new(1, 2);
+
+        return value.Numerator < 0
+            ? Ceiling(value - half)
+            : Floor(value + half);
+    }
+
     // ---- Conversions --------------------------------------------------------------------
 
     /// <summary>

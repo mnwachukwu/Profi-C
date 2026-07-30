@@ -1227,6 +1227,108 @@ public sealed class InterpreterTests
     }
 
     /// <summary>
+    /// <para>An exception the language provides answers <c>is</c> and <c>as</c> against what
+    /// it actually is.</para>
+    /// <para>One of these is a real .NET exception at run time rather than an instance of a
+    /// declared model, so its inheritance is the runtime's. Before the runtime was asked, every
+    /// such test came back false: an <c>ArgumentException</c> held in an <c>Exception</c>
+    /// denied being an <c>ArgumentException</c>.</para>
+    /// </summary>
+    [Test]
+    public void ABuiltInExceptionAnswersToWhatItIs() => Assert.That(
+        Lines(Run("""
+            global model Program
+                function Main()
+                    Exception widened = new ArgumentException("bad");
+
+                    Console.WriteLine(widened is ArgumentException);
+                    Console.WriteLine(widened is OverflowException);
+                    Console.WriteLine((widened as ArgumentException).HasValue());
+                    Console.WriteLine((widened as OverflowException).HasValue());
+
+                    try
+                        throw new FormatException("nope");
+                    catch Exception caught
+                        Console.WriteLine(caught is FormatException);
+                    end try
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "true", "false", "true", "false", "true" }));
+
+    /// <summary>
+    /// <para>An overloaded name reached through a type runs the version the checker chose.</para>
+    /// <para>The back end used to find one by name, which picked whichever was written first
+    /// in the catalog — so every <c>Math.Abs</c> ran the version taking integers, and a real
+    /// arriving at it read as zero. The checker had already decided correctly; nothing was
+    /// asking it.</para>
+    /// </summary>
+    [TestCase("Math.Abs(-3)", "3")]
+    [TestCase("Math.Abs(-3.5)", "3.5")]
+    [TestCase("Math.Abs(-3|4)", "3|4")]
+    [TestCase("Math.Min(3, 7)", "3")]
+    [TestCase("Math.Min(3.5, 7.5)", "3.5")]
+    [TestCase("Math.Min(1|3, 1|2)", "1|3")]
+    [TestCase("Math.Max(1|3, 1|2)", "1|2")]
+    public void AnOverloadedBuiltInRunsTheVersionTheCheckerChose(string call, string expected) =>
+        Assert.That(Print(call), Is.EqualTo(expected));
+
+    /// <summary>
+    /// Rounding lands on an integer, so the answer can be counted with. A real that happens to
+    /// be whole prints the same either way, so these are asked where it is used as an index —
+    /// which only compiles if it really is an integer.
+    /// </summary>
+    [Test]
+    public void RoundingYieldsAnIntegerRatherThanAWholeReal() => Assert.That(
+        Lines(RunBody("""
+                string[] names = {"zero", "one", "two", "three", "four"};
+
+                Console.WriteLine(names[Math.Floor(3.7)]);
+                Console.WriteLine(names[Math.Ceiling(3.2)]);
+                Console.WriteLine(names[Math.Round(2.5)]);
+                Console.WriteLine(names[Math.Floor(9|2)]);
+        """)),
+        Is.EqualTo(new[] { "three", "four", "three", "four" }));
+
+    /// <summary>
+    /// A half goes away from zero and a floor goes down, which are the two answers a naive
+    /// implementation gets wrong: .NET rounds a half to even, and integer division truncates.
+    /// </summary>
+    [TestCase("Math.Round(2.5)", "3")]
+    [TestCase("Math.Round(3.5)", "4")]
+    [TestCase("Math.Round(-2.5)", "-3")]
+    [TestCase("Math.Floor(-7|2)", "-4")]
+    [TestCase("Math.Ceiling(-7|2)", "-3")]
+    public void RoundingFollowsTheRuleTaughtInSchool(string call, string expected) =>
+        Assert.That(Print(call), Is.EqualTo(expected));
+
+    /// <summary>A function of any shape is a Function, and answers to it while running.</summary>
+    [Test]
+    public void AFunctionOfAnyShapeIsHeldAsAFunction() => Assert.That(
+        Lines(Run("""
+            global model Program
+                integer function Twice(integer n)
+                    yield n * 2;
+                end function
+
+                function Main()
+                    Function[] all =
+                    {
+                        (integer n) yield n + 1,
+                        Program.Twice,
+                        (string s) yield Console.WriteLine(s)
+                    };
+
+                    Console.WriteLine(all.Count());
+
+                    Model held = all[0];
+                    Console.WriteLine(Reference.Equals(held, all[0]));
+                end function
+            end model
+            """)),
+        Is.EqualTo(new[] { "3", "true" }));
+
+    /// <summary>
     /// <para>An ordinal names a member, or names none.</para>
     /// <para>This is the one cast that gives back a different value rather than the same one
     /// seen as another type, and the only reason a cast to an enumeration is optional: a

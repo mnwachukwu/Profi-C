@@ -91,12 +91,78 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           BinaryExpr '+'
+            LiteralExpr "  Pow(2.0, 8.0)  = " [String]
+            CallExpr
+              MemberExpr 'Pow'
+                IdentifierExpr 'Math'
+              LiteralExpr 2.0 [Real]
+              LiteralExpr 8.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Abs(-3)        = " [String]
+            CallExpr
+              MemberExpr 'Abs'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
             LiteralExpr "  Abs(-3.5)      = " [String]
             CallExpr
               MemberExpr 'Abs'
                 IdentifierExpr 'Math'
               UnaryExpr '-'
                 LiteralExpr 3.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Abs(-3|4)      = " [String]
+            CallExpr
+              MemberExpr 'Abs'
+                IdentifierExpr 'Math'
+              UnaryExpr '-'
+                LiteralExpr 3|4 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Min(3, 7)      = " [String]
+            CallExpr
+              MemberExpr 'Min'
+                IdentifierExpr 'Math'
+              LiteralExpr 3 [Integer]
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Min(1|3, 1|2)  = " [String]
+            CallExpr
+              MemberExpr 'Min'
+                IdentifierExpr 'Math'
+              LiteralExpr 1|3 [Fraction]
+              LiteralExpr 1|2 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Max(3.5, 7.5)  = " [String]
+            CallExpr
+              MemberExpr 'Max'
+                IdentifierExpr 'Math'
+              LiteralExpr 3.5 [Real]
+              LiteralExpr 7.5 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -122,34 +188,22 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           BinaryExpr '+'
-            LiteralExpr "  Pow(2.0, 8.0)  = " [String]
+            LiteralExpr "  Round(2.5)     = " [String]
             CallExpr
-              MemberExpr 'Pow'
+              MemberExpr 'Round'
                 IdentifierExpr 'Math'
-              LiteralExpr 2.0 [Real]
-              LiteralExpr 8.0 [Real]
+              LiteralExpr 2.5 [Real]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           BinaryExpr '+'
-            LiteralExpr "  Min(3, 7)      = " [String]
+            LiteralExpr "  Floor(-7|2)    = " [String]
             CallExpr
-              MemberExpr 'Min'
+              MemberExpr 'Floor'
                 IdentifierExpr 'Math'
-              LiteralExpr 3 [Integer]
-              LiteralExpr 7 [Integer]
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'WriteLine'
-            IdentifierExpr 'Console'
-          BinaryExpr '+'
-            LiteralExpr "  Max(3, 7)      = " [String]
-            CallExpr
-              MemberExpr 'Max'
-                IdentifierExpr 'Math'
-              LiteralExpr 3 [Integer]
-              LiteralExpr 7 [Integer]
+              UnaryExpr '-'
+                LiteralExpr 7|2 [Fraction]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

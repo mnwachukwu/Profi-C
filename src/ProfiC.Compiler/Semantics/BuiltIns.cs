@@ -16,14 +16,34 @@ public enum BuiltInId
     ReferenceEquals,
 
     MathSqrt,
-    MathAbs,
-    MathFloor,
-    MathCeiling,
     MathPow,
-    MathMin,
-    MathMax,
+
+    // One version per number the language has, since a fraction is a number like any other
+    // and an answer that arrives as a real cannot be counted with. The name is shared; which
+    // version runs is settled by the argument, and the identifier says which was chosen.
+    MathAbsInteger,
+    MathAbsReal,
+    MathAbsFraction,
+
+    // Rounding lands on a whole number, which is the point of asking. Each is the honest
+    // spelling of a conversion to integer, and naming three of them is what saves the
+    // language from a "ToInteger" that has to pick one silently.
+    MathFloorReal,
+    MathFloorFraction,
+    MathCeilingReal,
+    MathCeilingFraction,
+    MathRoundReal,
+    MathRoundFraction,
+
+    MathMinInteger,
+    MathMinReal,
+    MathMinFraction,
+    MathMaxInteger,
+    MathMaxReal,
+    MathMaxFraction,
 
     FractionCreate,
+    FractionCreateWhole,
 
     // ---- Members of a value, found by the receiver's type ----------------------------------
 
@@ -93,6 +113,11 @@ public static class BuiltIns
     [
         new("Model", "Standard", MayBeExtended: true, []),
 
+        // Every function type descends from this one, so a function may be held without its
+        // signature being named. It may not be extended: a program adding a child to it would
+        // be declaring something that is a function without being any particular function.
+        new("Function", "Standard", MayBeExtended: false, []),
+
         new("Exception", "Standard", MayBeExtended: true, []),
 
         new("Console", "Standard", MayBeExtended: false,
@@ -109,20 +134,49 @@ public static class BuiltIns
             Member(BuiltInId.ReferenceEquals, "Equals", PrimitiveType.Boolean, [null, null]),
         ]),
 
+        // Every version taking a number is written for each number the language has. A
+        // fraction is a number like any other, and an answer that arrives as a real cannot be
+        // counted with, so one version per type is what keeps either from being a dead end.
+        //
+        // The exact-match rule picks among them: an integer widens to both real and fraction,
+        // so without it the order these are written in would decide what "Abs(-3)" means.
         new("Math", "Standard", MayBeExtended: false,
         [
+            // A root and a power are the two that genuinely leave the rationals: the square
+            // root of a fraction is usually irrational, so both answer in reals whatever they
+            // were given. The "^" operator is the exact form, and keeps a fraction base exact.
             Member(BuiltInId.MathSqrt, "Sqrt", PrimitiveType.Real, PrimitiveType.Real),
-            Member(BuiltInId.MathAbs, "Abs", PrimitiveType.Real, PrimitiveType.Real),
-            Member(BuiltInId.MathFloor, "Floor", PrimitiveType.Real, PrimitiveType.Real),
-            Member(BuiltInId.MathCeiling, "Ceiling", PrimitiveType.Real, PrimitiveType.Real),
             Member(BuiltInId.MathPow, "Pow", PrimitiveType.Real,
                    PrimitiveType.Real, PrimitiveType.Real),
 
-            // Min and Max count rather than measure, so they work on integers.
-            Member(BuiltInId.MathMin, "Min", PrimitiveType.Integer,
+            // Measuring keeps the type it measured, so a distance between integers is one.
+            Member(BuiltInId.MathAbsInteger, "Abs", PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.MathAbsReal, "Abs", PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathAbsFraction, "Abs", PrimitiveType.Fraction, PrimitiveType.Fraction),
+
+            // Rounding lands on a whole number. Returning a real would leave the answer
+            // unusable as a count, an index, or a bound — which is most of what it is for.
+            Member(BuiltInId.MathFloorReal, "Floor", PrimitiveType.Integer, PrimitiveType.Real),
+            Member(BuiltInId.MathFloorFraction, "Floor", PrimitiveType.Integer, PrimitiveType.Fraction),
+            Member(BuiltInId.MathCeilingReal, "Ceiling", PrimitiveType.Integer, PrimitiveType.Real),
+            Member(BuiltInId.MathCeilingFraction, "Ceiling", PrimitiveType.Integer, PrimitiveType.Fraction),
+            Member(BuiltInId.MathRoundReal, "Round", PrimitiveType.Integer, PrimitiveType.Real),
+            Member(BuiltInId.MathRoundFraction, "Round", PrimitiveType.Integer, PrimitiveType.Fraction),
+
+            // Choosing between two values gives back one of them, so the answer is whatever
+            // they both were.
+            Member(BuiltInId.MathMinInteger, "Min", PrimitiveType.Integer,
                    PrimitiveType.Integer, PrimitiveType.Integer),
-            Member(BuiltInId.MathMax, "Max", PrimitiveType.Integer,
+            Member(BuiltInId.MathMinReal, "Min", PrimitiveType.Real,
+                   PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathMinFraction, "Min", PrimitiveType.Fraction,
+                   PrimitiveType.Fraction, PrimitiveType.Fraction),
+            Member(BuiltInId.MathMaxInteger, "Max", PrimitiveType.Integer,
                    PrimitiveType.Integer, PrimitiveType.Integer),
+            Member(BuiltInId.MathMaxReal, "Max", PrimitiveType.Real,
+                   PrimitiveType.Real, PrimitiveType.Real),
+            Member(BuiltInId.MathMaxFraction, "Max", PrimitiveType.Fraction,
+                   PrimitiveType.Fraction, PrimitiveType.Fraction),
         ]),
 
         // "fraction" is the type and a reserved word; "Fraction" is the model beside it,
@@ -131,6 +185,12 @@ public static class BuiltIns
         [
             Member(BuiltInId.FractionCreate, "Create", PrimitiveType.Fraction,
                    PrimitiveType.Integer, PrimitiveType.Integer),
+
+            // A whole number over one. An integer already widens to a fraction wherever one is
+            // wanted, so this earns its place only where nothing says a fraction is wanted:
+            // "let f = 3;" holds an integer, and "let f = Fraction.Create(3);" holds 3|1.
+            Member(BuiltInId.FractionCreateWhole, "Create", PrimitiveType.Fraction,
+                   PrimitiveType.Integer),
         ]),
 
         // Named, so a program may not declare them, and carrying no members.

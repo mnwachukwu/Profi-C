@@ -1,0 +1,123 @@
+comment begin
+    Leaving a loop early, and skipping a turn.
+
+    'break' leaves the innermost loop it is inside. 'continue' abandons the rest of this turn
+    and goes on to the next one. Both are ways of saying "I am done here" without arranging the
+    condition to say it for you.
+
+    Neither is necessary — every loop below could be written with a flag and a longer
+    condition — but that arrangement is harder to read than the sentence it replaces, and the
+    flag is one more thing to keep true.
+end comment
+
+global model Program
+
+    function Main()
+        Program.StoppingAtTheFirstMatch();
+        Program.SkippingWhatDoesNotCount();
+        Program.BothAtOnce();
+        Program.BreakingOutOfTheInnerLoop();
+    end function
+
+    comment ---- Stopping once the answer is known -----------------------------------------
+
+    comment begin
+        Once the first even number is found there is nothing left to learn, so the loop stops
+        rather than walking the rest of the set to no purpose.
+
+        The result is an optional because the set may hold no even number at all. That is the
+        honest answer, and it is why nothing here has to invent a -1 to mean "not found".
+    end comment
+    integer? function FirstEven(integer[] values)
+        integer? found;
+
+        for each value in values
+            if value % 2 == 0
+                found = value;
+                break;
+            end if
+        end for
+
+        yield found;
+    end function
+
+    function StoppingAtTheFirstMatch()
+        integer? even = Program.FirstEven({7, 3, 12, 5, 8});
+        Console.WriteLine("first even: " + even.Or(0));
+
+        integer? none = Program.FirstEven({7, 3, 5});
+        Console.WriteLine("none found: " + none.HasValue());
+    end function
+
+    comment ---- Skipping the turns that do not count ----------------------------------------
+
+    comment begin
+        A refund is recorded as a negative amount and is not part of the day's takings. The
+        'continue' says so once, at the top, instead of wrapping the rest of the body in an if.
+    end comment
+    integer function TakingsFrom(integer[] amounts)
+        integer total = 0;
+
+        for each amount in amounts
+            if amount < 0
+                continue;
+            end if
+
+            total = total + amount;
+        end for
+
+        yield total;
+    end function
+
+    function SkippingWhatDoesNotCount()
+        Console.WriteLine("takings: " + Program.TakingsFrom({40, -15, 60, 25, -10}));
+    end function
+
+    comment ---- Both in one loop -------------------------------------------------------------
+
+    comment begin
+        A range loop works the same way. 'continue' still moves the counter on, so this cannot
+        loop forever the way a hand-written 'while' with a misplaced continue can.
+    end comment
+    function BothAtOnce()
+        integer counted = 0;
+
+        for i = 1 to 20
+            comment Odd numbers are not what we are counting.
+            if i % 2 == 1
+                continue;
+            end if
+
+            counted = counted + 1;
+
+            comment Four is enough.
+            if counted == 4
+                Console.WriteLine("stopped at " + i);
+                break;
+            end if
+        end for
+    end function
+
+    comment ---- Which loop a break leaves ---------------------------------------------------
+
+    comment begin
+        A break leaves the innermost loop and no more. The outer loop below runs every one of
+        its turns; only the inner one is cut short each time.
+    end comment
+    function BreakingOutOfTheInnerLoop()
+        for row = 1 to 3
+            string line = "";
+
+            for column = 1 to 5
+                if column > row
+                    break;
+                end if
+
+                line = line + column + " ";
+            end for
+
+            Console.WriteLine("row " + row + ": " + line);
+        end for
+    end function
+
+end model

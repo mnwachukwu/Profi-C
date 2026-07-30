@@ -1,0 +1,146 @@
+comment begin
+    Choosing among fixed alternatives.
+
+    A switch compares one value against constant labels. Labels may be grouped, and a group
+    runs only its own statements — there is no falling through from one group into the next,
+    so nothing has to be written to prevent it.
+
+    Over an enumeration, a switch that leaves members out and writes no 'default' is warned
+    about, naming the ones with no case. That is what makes adding a member safe: every switch
+    that has to change says so, where it has to change.
+end comment
+
+enumeration Suit
+    Hearts, Diamonds, Clubs, Spades
+end enumeration
+
+enumeration Rank
+    Two = 2, Three, Four, Five, Six, Seven, Eight, Nine, Ten,
+    Jack, Queen, King, Ace
+end enumeration
+
+global model Program
+
+    function Main()
+        Program.NamingEachOne();
+        Program.GroupingLabels();
+        Program.LeavingTheRestToDefault();
+        Program.SwitchingOnOtherThings();
+    end function
+
+    comment ---- One case per member --------------------------------------------------------
+
+    comment begin
+        Every member has a case, so nothing is left unhandled and the compiler says nothing.
+    end comment
+    string function NameOf(Suit suit)
+        switch suit
+            case Suit.Hearts:
+                yield "hearts";
+            case Suit.Diamonds:
+                yield "diamonds";
+            case Suit.Clubs:
+                yield "clubs";
+            case Suit.Spades:
+                yield "spades";
+        end switch
+
+        comment Reached only if a suit exists that no case named, which none does.
+        yield "unknown";
+    end function
+
+    function NamingEachOne()
+        Suit[] suits = {Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades};
+
+        for each suit in suits
+            Console.Write(Program.NameOf(suit) + " ");
+        end for
+
+        Console.WriteLine("");
+    end function
+
+    comment ---- Grouping labels ------------------------------------------------------------
+
+    comment begin
+        Several labels may share one group. This is the case other languages need 'break' for;
+        here a group simply ends where the next label begins.
+    end comment
+    string function ColorOf(Suit suit)
+        switch suit
+            case Suit.Hearts:
+            case Suit.Diamonds:
+                yield "red";
+            case Suit.Clubs:
+            case Suit.Spades:
+                yield "black";
+        end switch
+
+        yield "unknown";
+    end function
+
+    function GroupingLabels()
+        Console.WriteLine("hearts is " + Program.ColorOf(Suit.Hearts));
+        Console.WriteLine("spades is " + Program.ColorOf(Suit.Spades));
+    end function
+
+    comment ---- Letting a default cover the rest ---------------------------------------------
+
+    comment begin
+        Thirteen ranks and only three of them are worth naming, so a default handles the rest.
+        Writing one says "everything else is covered", which is why it silences the warning.
+    end comment
+    integer function ValueOf(Rank rank)
+        switch rank
+            case Rank.Jack:
+            case Rank.Queen:
+            case Rank.King:
+                yield 10;
+            case Rank.Ace:
+                yield 11;
+            default:
+                yield rank.ToInteger();
+        end switch
+    end function
+
+    function LeavingTheRestToDefault()
+        Rank[] hand = {Rank.Ace, Rank.King, Rank.Seven};
+        integer total = 0;
+
+        for each rank in hand
+            total = total + Program.ValueOf(rank);
+        end for
+
+        Console.WriteLine("hand is worth " + total);
+    end function
+
+    comment ---- What else a switch can examine ------------------------------------------------
+
+    comment begin
+        Integers, characters, strings, and booleans may all be switched on. A real or a
+        fraction may not: two of those can be equal without being the same numeral, and a case
+        label is a comparison the reader has to be able to trust.
+    end comment
+    function SwitchingOnOtherThings()
+        string command = "deal";
+
+        switch command
+            case "deal":
+                Console.WriteLine("dealing");
+            case "fold":
+                Console.WriteLine("folding");
+            default:
+                Console.WriteLine("unknown command");
+        end switch
+
+        character grade = 'B';
+
+        switch grade
+            case 'A':
+            case 'B':
+                Console.WriteLine("passing");
+            default:
+                Console.WriteLine("not passing");
+        end switch
+    end function
+
+end model

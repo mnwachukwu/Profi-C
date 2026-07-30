@@ -39,15 +39,37 @@ global model Program
 
     function ShowMath()
         Console.WriteLine("== Math ==");
+
+        comment begin
+            A root and a power are the two that leave the rationals behind, so both answer in
+            reals whatever they were given.
+        end comment
         Console.WriteLine("  Sqrt(16.0)     = " + Math.Sqrt(16.0));
-        Console.WriteLine("  Abs(-3.5)      = " + Math.Abs(-3.5));
-        Console.WriteLine("  Floor(3.7)     = " + Math.Floor(3.7));
-        Console.WriteLine("  Ceiling(3.2)   = " + Math.Ceiling(3.2));
         Console.WriteLine("  Pow(2.0, 8.0)  = " + Math.Pow(2.0, 8.0));
 
-        comment Min and Max work on integers; the rest of Math works on reals.
+        comment begin
+            Everything else has a version for each number the language has, and measuring or
+            choosing keeps the type it was given. So an integer in gives an integer back, and
+            a fraction stays exact.
+        end comment
+        Console.WriteLine("  Abs(-3)        = " + Math.Abs(-3));
+        Console.WriteLine("  Abs(-3.5)      = " + Math.Abs(-3.5));
+        Console.WriteLine("  Abs(-3|4)      = " + Math.Abs(-3|4));
+
         Console.WriteLine("  Min(3, 7)      = " + Math.Min(3, 7));
-        Console.WriteLine("  Max(3, 7)      = " + Math.Max(3, 7));
+        Console.WriteLine("  Min(1|3, 1|2)  = " + Math.Min(1|3, 1|2));
+        Console.WriteLine("  Max(3.5, 7.5)  = " + Math.Max(3.5, 7.5));
+
+        comment begin
+            Rounding lands on a whole number, so each of these yields an integer and can be
+            used as a count or an index. Between them they are the three honest ways to get
+            from a real to an integer, which is why there is no single 'ToInteger' that would
+            have to pick one of the three silently.
+        end comment
+        Console.WriteLine("  Floor(3.7)     = " + Math.Floor(3.7));
+        Console.WriteLine("  Ceiling(3.2)   = " + Math.Ceiling(3.2));
+        Console.WriteLine("  Round(2.5)     = " + Math.Round(2.5));
+        Console.WriteLine("  Floor(-7|2)    = " + Math.Floor(-7|2));
 
         comment '^' raises to a power too, and reads more like arithmetic. Pow is there for
         comment when a call reads better than an operator.

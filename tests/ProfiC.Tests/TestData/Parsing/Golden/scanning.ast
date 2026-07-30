@@ -1,0 +1,188 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'StoppingAtTheFirstMatch'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'SkippingWhatDoesNotCount'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'BothAtOnce'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'BreakingOutOfTheInnerLoop'
+            IdentifierExpr 'Program'
+    FunctionDecl 'FirstEven'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'found'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      ForEachStmt 'value'
+        IdentifierExpr 'values'
+        IfStmt
+          BinaryExpr '=='
+            BinaryExpr '%'
+              IdentifierExpr 'value'
+              LiteralExpr 2 [Integer]
+            LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'found'
+            IdentifierExpr 'value'
+          BreakStmt
+      YieldStmt
+        IdentifierExpr 'found'
+    FunctionDecl 'StoppingAtTheFirstMatch'
+      VarDeclStmt 'even'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'FirstEven'
+            IdentifierExpr 'Program'
+          CollectionExpr
+            LiteralExpr 7 [Integer]
+            LiteralExpr 3 [Integer]
+            LiteralExpr 12 [Integer]
+            LiteralExpr 5 [Integer]
+            LiteralExpr 8 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "first even: " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'even'
+              LiteralExpr 0 [Integer]
+      VarDeclStmt 'none'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'FirstEven'
+            IdentifierExpr 'Program'
+          CollectionExpr
+            LiteralExpr 7 [Integer]
+            LiteralExpr 3 [Integer]
+            LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "none found: " [String]
+            CallExpr
+              MemberExpr 'HasValue'
+                IdentifierExpr 'none'
+    FunctionDecl 'TakingsFrom'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'amounts'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      ForEachStmt 'amount'
+        IdentifierExpr 'amounts'
+        IfStmt
+          BinaryExpr '<'
+            IdentifierExpr 'amount'
+            LiteralExpr 0 [Integer]
+          ContinueStmt
+        AssignmentStmt
+          IdentifierExpr 'total'
+          BinaryExpr '+'
+            IdentifierExpr 'total'
+            IdentifierExpr 'amount'
+      YieldStmt
+        IdentifierExpr 'total'
+    FunctionDecl 'SkippingWhatDoesNotCount'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "takings: " [String]
+            CallExpr
+              MemberExpr 'TakingsFrom'
+                IdentifierExpr 'Program'
+              CollectionExpr
+                LiteralExpr 40 [Integer]
+                UnaryExpr '-'
+                  LiteralExpr 15 [Integer]
+                LiteralExpr 60 [Integer]
+                LiteralExpr 25 [Integer]
+                UnaryExpr '-'
+                  LiteralExpr 10 [Integer]
+    FunctionDecl 'BothAtOnce'
+      VarDeclStmt 'counted'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 20 [Integer]
+        IfStmt
+          BinaryExpr '=='
+            BinaryExpr '%'
+              IdentifierExpr 'i'
+              LiteralExpr 2 [Integer]
+            LiteralExpr 1 [Integer]
+          ContinueStmt
+        AssignmentStmt
+          IdentifierExpr 'counted'
+          BinaryExpr '+'
+            IdentifierExpr 'counted'
+            LiteralExpr 1 [Integer]
+        IfStmt
+          BinaryExpr '=='
+            IdentifierExpr 'counted'
+            LiteralExpr 4 [Integer]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "stopped at " [String]
+                IdentifierExpr 'i'
+          BreakStmt
+    FunctionDecl 'BreakingOutOfTheInnerLoop'
+      ForStmt 'row' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 3 [Integer]
+        VarDeclStmt 'line'
+          NamedTypeSyntax 'string'
+          LiteralExpr "" [String]
+        ForStmt 'column' to
+          LiteralExpr 1 [Integer]
+          LiteralExpr 5 [Integer]
+          IfStmt
+            BinaryExpr '>'
+              IdentifierExpr 'column'
+              IdentifierExpr 'row'
+            BreakStmt
+          AssignmentStmt
+            IdentifierExpr 'line'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                IdentifierExpr 'line'
+                IdentifierExpr 'column'
+              LiteralExpr " " [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  LiteralExpr "row " [String]
+                  IdentifierExpr 'row'
+                LiteralExpr ": " [String]
+              IdentifierExpr 'line'

@@ -1,0 +1,240 @@
+CompilationUnit
+  EnumerationDecl 'Suit'
+    EnumMemberDecl 'Hearts'
+    EnumMemberDecl 'Diamonds'
+    EnumMemberDecl 'Clubs'
+    EnumMemberDecl 'Spades'
+  EnumerationDecl 'Rank'
+    EnumMemberDecl 'Two'
+      LiteralExpr 2 [Integer]
+    EnumMemberDecl 'Three'
+    EnumMemberDecl 'Four'
+    EnumMemberDecl 'Five'
+    EnumMemberDecl 'Six'
+    EnumMemberDecl 'Seven'
+    EnumMemberDecl 'Eight'
+    EnumMemberDecl 'Nine'
+    EnumMemberDecl 'Ten'
+    EnumMemberDecl 'Jack'
+    EnumMemberDecl 'Queen'
+    EnumMemberDecl 'King'
+    EnumMemberDecl 'Ace'
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'NamingEachOne'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'GroupingLabels'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'LeavingTheRestToDefault'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'SwitchingOnOtherThings'
+            IdentifierExpr 'Program'
+    FunctionDecl 'NameOf'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'suit'
+        NamedTypeSyntax 'Suit'
+      SwitchStmt
+        IdentifierExpr 'suit'
+        CaseGroup
+          MemberExpr 'Hearts'
+            IdentifierExpr 'Suit'
+          YieldStmt
+            LiteralExpr "hearts" [String]
+        CaseGroup
+          MemberExpr 'Diamonds'
+            IdentifierExpr 'Suit'
+          YieldStmt
+            LiteralExpr "diamonds" [String]
+        CaseGroup
+          MemberExpr 'Clubs'
+            IdentifierExpr 'Suit'
+          YieldStmt
+            LiteralExpr "clubs" [String]
+        CaseGroup
+          MemberExpr 'Spades'
+            IdentifierExpr 'Suit'
+          YieldStmt
+            LiteralExpr "spades" [String]
+      YieldStmt
+        LiteralExpr "unknown" [String]
+    FunctionDecl 'NamingEachOne'
+      VarDeclStmt 'suits'
+        SetTypeSyntax
+          NamedTypeSyntax 'Suit'
+        CollectionExpr
+          MemberExpr 'Hearts'
+            IdentifierExpr 'Suit'
+          MemberExpr 'Diamonds'
+            IdentifierExpr 'Suit'
+          MemberExpr 'Clubs'
+            IdentifierExpr 'Suit'
+          MemberExpr 'Spades'
+            IdentifierExpr 'Suit'
+      ForEachStmt 'suit'
+        IdentifierExpr 'suits'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                MemberExpr 'NameOf'
+                  IdentifierExpr 'Program'
+                IdentifierExpr 'suit'
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "" [String]
+    FunctionDecl 'ColorOf'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'suit'
+        NamedTypeSyntax 'Suit'
+      SwitchStmt
+        IdentifierExpr 'suit'
+        CaseGroup
+          MemberExpr 'Hearts'
+            IdentifierExpr 'Suit'
+          MemberExpr 'Diamonds'
+            IdentifierExpr 'Suit'
+          YieldStmt
+            LiteralExpr "red" [String]
+        CaseGroup
+          MemberExpr 'Clubs'
+            IdentifierExpr 'Suit'
+          MemberExpr 'Spades'
+            IdentifierExpr 'Suit'
+          YieldStmt
+            LiteralExpr "black" [String]
+      YieldStmt
+        LiteralExpr "unknown" [String]
+    FunctionDecl 'GroupingLabels'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "hearts is " [String]
+            CallExpr
+              MemberExpr 'ColorOf'
+                IdentifierExpr 'Program'
+              MemberExpr 'Hearts'
+                IdentifierExpr 'Suit'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "spades is " [String]
+            CallExpr
+              MemberExpr 'ColorOf'
+                IdentifierExpr 'Program'
+              MemberExpr 'Spades'
+                IdentifierExpr 'Suit'
+    FunctionDecl 'ValueOf'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'rank'
+        NamedTypeSyntax 'Rank'
+      SwitchStmt
+        IdentifierExpr 'rank'
+        CaseGroup
+          MemberExpr 'Jack'
+            IdentifierExpr 'Rank'
+          MemberExpr 'Queen'
+            IdentifierExpr 'Rank'
+          MemberExpr 'King'
+            IdentifierExpr 'Rank'
+          YieldStmt
+            LiteralExpr 10 [Integer]
+        CaseGroup
+          MemberExpr 'Ace'
+            IdentifierExpr 'Rank'
+          YieldStmt
+            LiteralExpr 11 [Integer]
+        YieldStmt
+          CallExpr
+            MemberExpr 'ToInteger'
+              IdentifierExpr 'rank'
+    FunctionDecl 'LeavingTheRestToDefault'
+      VarDeclStmt 'hand'
+        SetTypeSyntax
+          NamedTypeSyntax 'Rank'
+        CollectionExpr
+          MemberExpr 'Ace'
+            IdentifierExpr 'Rank'
+          MemberExpr 'King'
+            IdentifierExpr 'Rank'
+          MemberExpr 'Seven'
+            IdentifierExpr 'Rank'
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      ForEachStmt 'rank'
+        IdentifierExpr 'hand'
+        AssignmentStmt
+          IdentifierExpr 'total'
+          BinaryExpr '+'
+            IdentifierExpr 'total'
+            CallExpr
+              MemberExpr 'ValueOf'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'rank'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "hand is worth " [String]
+            IdentifierExpr 'total'
+    FunctionDecl 'SwitchingOnOtherThings'
+      VarDeclStmt 'command'
+        NamedTypeSyntax 'string'
+        LiteralExpr "deal" [String]
+      SwitchStmt
+        IdentifierExpr 'command'
+        CaseGroup
+          LiteralExpr "deal" [String]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "dealing" [String]
+        CaseGroup
+          LiteralExpr "fold" [String]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "folding" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "unknown command" [String]
+      VarDeclStmt 'grade'
+        NamedTypeSyntax 'character'
+        LiteralExpr 'B' [Character]
+      SwitchStmt
+        IdentifierExpr 'grade'
+        CaseGroup
+          LiteralExpr 'A' [Character]
+          LiteralExpr 'B' [Character]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "passing" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "not passing" [String]

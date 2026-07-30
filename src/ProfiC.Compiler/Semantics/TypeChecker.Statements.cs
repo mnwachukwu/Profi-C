@@ -252,12 +252,22 @@ public sealed partial class TypeChecker
 
         HashSet<object> seen = [];
 
+        // A label that did not land leaves "seen" short of what was written, so what is
+        // missing cannot be worked out from it. Recorded rather than reported again: the label
+        // has already been named, and a second message about the switch as a whole would point
+        // at the same mistake from further away.
+        bool everyLabelLanded = true;
+
         foreach (CaseGroup group in switchStmt.Cases)
         {
             foreach (Expression label in group.Labels)
             {
                 TypeSymbol labelType = CheckExpression(label);
-                RequireAssignable(labelType, subject, label);
+
+                if (!RequireAssignable(labelType, subject, label))
+                {
+                    everyLabelLanded = false;
+                }
 
                 object? value = ConstantFolder.TryFold(label, _model);
 
@@ -268,6 +278,7 @@ public sealed partial class TypeChecker
                         Report(DiagnosticDescriptors.CaseLabelNotConstant, label);
                     }
 
+                    everyLabelLanded = false;
                     continue;
                 }
 
@@ -283,6 +294,49 @@ public sealed partial class TypeChecker
         if (switchStmt.DefaultBody is not null)
         {
             CheckStatements(switchStmt.DefaultBody);
+            return;
+        }
+
+        if (!everyLabelLanded)
+        {
+            return;
+        }
+
+        RequireEveryMemberHandled(switchStmt, subject, seen);
+    }
+
+    /// <summary>
+    /// <para>Reports an enumeration switch that leaves members unhandled and writes no
+    /// default.</para>
+    /// <para>Members are compared by the value each carries rather than by name, because two
+    /// members may name one value and a case for either handles both.</para>
+    /// </summary>
+    private void RequireEveryMemberHandled(
+        SwitchStmt switchStmt,
+        TypeSymbol subject,
+        HashSet<object> handled)
+    {
+        if (subject is not EnumerationSymbol enumeration)
+        {
+            return;
+        }
+
+        List<string> unhandled =
+            [.. enumeration.Members.Values
+                .SelectMany(members => members)
+                .OfType<EnumMemberSymbol>()
+                .OrderBy(member => member.Value)
+                .Where(member => !handled.Contains(member.Value))
+                .Select(member => member.Name)];
+
+        if (unhandled.Count > 0)
+        {
+            Report(
+                DiagnosticDescriptors.SwitchNotExhaustive,
+                switchStmt.Subject,
+                enumeration.Name,
+                Wording.List(unhandled),
+                unhandled.Count == 1 ? "has" : "have");
         }
     }
 

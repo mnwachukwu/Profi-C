@@ -15,10 +15,15 @@ global model Program
     function Main()
         Console.WriteLine("== a table of unit fractions ==");
 
+        comment begin
+            Given one number, Create reads it as a whole one — the same as writing a
+            denominator of 1. It is worth having only where nothing says a fraction is
+            wanted: 'let counted = 3;' holds an integer, while Create(3) holds 3|1.
+        end comment
         for d = 2 to 6
             let piece = Fraction.Create(1, d);
             Console.WriteLine("  1 over " + d + " is " + piece
-                              + ", and " + d + " of them make " + piece * Fraction.Create(d, 1));
+                              + ", and " + d + " of them make " + piece * Fraction.Create(d));
         end for
 
         Console.WriteLine("");

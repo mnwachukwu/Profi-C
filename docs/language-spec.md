@@ -429,6 +429,23 @@ Omitting the result means the function yields nothing. A type that yields nothin
 whose result is some "void type" are not two ideas here — there is only the first, and
 nothing names the second.
 
+**`Function` is the root of them all.** Every function type descends from it, so a function
+may be held without its signature being named:
+
+```
+Function held = (integer n) yield n + 1;
+Function[] all = { held, Program.Twice, (string s) yield Console.WriteLine(s) };
+```
+
+The set is what it is for: a set holds one type, so without a root there is no way to keep
+functions of different shapes together. `Function` sits between `Model` and each concrete
+signature — a `Function` is a `Model`, and nothing that is not a function reaches it.
+
+It says nothing about what the parameters hold, so a lambda written into one has nothing to
+take a type from and writes its own (§9.2). It cannot be called, since calling needs a
+signature, and it cannot be extended: a child of it would be a function without being any
+particular function.
+
 ### 3.4 Values and references
 
 `integer`, `real`, `fraction`, `character`, `boolean`, every structure, and every enumeration
@@ -453,6 +470,7 @@ A conversion is **automatic** where no information is lost and no surprise is po
 | `integer` | `real` | automatic | |
 | `fraction` | `real` | written out | `f.ToReal()` |
 | `real` | `fraction` | written out | `r.ToFraction()` |
+| `real` or `fraction` | `integer` | written out | `Math.Floor(x)`, `Math.Ceiling(x)`, `Math.Round(x)` |
 | `character` | `integer` | none | |
 | an enumeration | `integer` | written out | `member.ToInteger()` |
 | `integer` | an enumeration | written out | `n as Suit` |
@@ -816,9 +834,14 @@ end switch
 A label must be a constant (`PC0325`) and no two may be the same (`PC0326`). The value being
 switched on must be one a case can name (`PC0315`).
 
-**A `switch` that omits some of an enumeration's members is not currently reported.** The
-intent is that it should warn, so that adding a member tells you every place that has to
-change; nothing enforces it today.
+**A `switch` over an enumeration that leaves members out and writes no `default` is a
+warning** (`PC0337`), naming the ones with no case. This is what makes adding a member to an
+enumeration safe: every switch that has to change says so, at the place it has to change,
+rather than the new member falling quietly through all of them.
+
+Writing a `default` silences it, because a default handles the rest and saying so is the
+point of writing one. Members are compared by the value each carries rather than by name, so
+two members naming one value are handled together.
 
 ### 6.3 Looping
 
@@ -1254,10 +1277,12 @@ the language: the alternative teaches people to write `catch` clauses that swall
 
 ## 11. The standard library
 
-The library is small and is reached without importing anything. Nine names belong to the
-language and no program may declare one: `Model`, `Exception`, `Console`, `Reference`,
-`Math`, `Fraction`, `Random`, `DateTime`, and `Program`. Of these only `Exception` may be
-extended; `Program` must be declared, exactly once (§12).
+The library is small and is reached without importing anything. Ten names belong to the
+language and no program may declare one: `Model`, `Function`, `Exception`, `Console`,
+`Reference`, `Math`, `Fraction`, `Random`, `DateTime`, and `Program`. Of these only
+`Exception` may be extended; `Program` must be declared, exactly once (§12).
+
+`Model` and `Function` are the two roots (§3.3, §3.4) rather than things to call.
 
 `Random` and `DateTime` are named but carry no members yet. They are reserved so that adding
 them later cannot collide with a program that used the name.
@@ -1316,10 +1341,25 @@ A string never changes, so each of these returns a new one.
 | `Console.WriteLine(value)` | writes and ends the line |
 | `Console.Read()` | `string?`; absent at end of input |
 | `Reference.Equals(a, b)` | `boolean`; identity, which is what `==` deliberately is not |
-| `Math.Sqrt`, `Abs`, `Floor`, `Ceiling` | `real` from a `real` |
+| `Math.Sqrt(x)` | `real` from a `real` |
 | `Math.Pow(base, exponent)` | `real`; `^` is the operator form |
-| `Math.Min(a, b)`, `Math.Max(a, b)` | `integer`; these count rather than measure |
+| `Math.Abs(x)` | the type it was given — `integer`, `real`, or `fraction` |
+| `Math.Min(a, b)`, `Math.Max(a, b)` | the type they were given |
+| `Math.Floor(x)`, `Math.Ceiling(x)`, `Math.Round(x)` | `integer`, from a `real` or a `fraction` |
 | `Fraction.Create(numerator, denominator)` | `fraction` |
+
+**A root and a power leave the rationals**, so both answer in reals whatever they were given:
+the square root of a fraction is usually irrational. Everything else has a version for each
+number the language has, because an answer that arrives as a `real` cannot be counted with and
+a `fraction` that widens to one stops being exact.
+
+**Rounding lands on a whole number**, so each of the three yields an `integer` and can be used
+as a count, an index, or a bound. Between them they are the three honest ways from a `real` to
+an `integer`, which is why no single `ToInteger` exists: it would have to pick one of the three
+silently, and which one is the question being asked.
+
+A half goes **away from zero** — `Math.Round(2.5)` is `3` — the rule taught in school, rather
+than .NET's default of rounding to the even neighbor.
 
 `Console.Write` and `Console.WriteLine` take a value of **any** type, and behave as in C#:
 only the second ends the line. Neither is an overload set; both are known to the compiler,
@@ -1331,6 +1371,11 @@ is the only way to make one from values that exist only while it runs. The resul
 ordinary fraction — reduced, with its sign carried on the numerator. A denominator of zero is
 rejected while compiling where it can be seen, exactly as `1 / 0` is, and throws
 `DivideByZeroException` where it cannot.
+
+Given one integer, `Fraction.Create(n)` reads it as a whole number over one. An integer
+already widens to a fraction wherever one is wanted, so this earns its place only where
+nothing says a fraction is wanted: `let f = 3;` holds an integer, and
+`let f = Fraction.Create(3);` holds `3|1`.
 
 Note the two spellings: `fraction` is the type and a reserved word; `Fraction` is the model
 beside it, holding what a fraction needs that is not a member of one.

@@ -35,14 +35,30 @@ public sealed class BuiltInCatalogTests
          "true\n"),
 
         (BuiltInId.MathSqrt, "Console.WriteLine(Math.Sqrt(16.0))", "4\n"),
-        (BuiltInId.MathAbs, "Console.WriteLine(Math.Abs(-3.5))", "3.5\n"),
-        (BuiltInId.MathFloor, "Console.WriteLine(Math.Floor(3.7))", "3\n"),
-        (BuiltInId.MathCeiling, "Console.WriteLine(Math.Ceiling(3.2))", "4\n"),
         (BuiltInId.MathPow, "Console.WriteLine(Math.Pow(2.0, 8.0))", "256\n"),
-        (BuiltInId.MathMin, "Console.WriteLine(Math.Min(3, 7))", "3\n"),
-        (BuiltInId.MathMax, "Console.WriteLine(Math.Max(3, 7))", "7\n"),
+
+        // Each of these is written with an argument of exactly its own type, since that is
+        // what picks it: an integer would widen into the real and fraction versions too.
+        (BuiltInId.MathAbsInteger, "Console.WriteLine(Math.Abs(-3))", "3\n"),
+        (BuiltInId.MathAbsReal, "Console.WriteLine(Math.Abs(-3.5))", "3.5\n"),
+        (BuiltInId.MathAbsFraction, "Console.WriteLine(Math.Abs(-3|4))", "3|4\n"),
+
+        (BuiltInId.MathFloorReal, "Console.WriteLine(Math.Floor(3.7))", "3\n"),
+        (BuiltInId.MathFloorFraction, "Console.WriteLine(Math.Floor(7|2))", "3\n"),
+        (BuiltInId.MathCeilingReal, "Console.WriteLine(Math.Ceiling(3.2))", "4\n"),
+        (BuiltInId.MathCeilingFraction, "Console.WriteLine(Math.Ceiling(7|2))", "4\n"),
+        (BuiltInId.MathRoundReal, "Console.WriteLine(Math.Round(2.5))", "3\n"),
+        (BuiltInId.MathRoundFraction, "Console.WriteLine(Math.Round(5|2))", "3\n"),
+
+        (BuiltInId.MathMinInteger, "Console.WriteLine(Math.Min(3, 7))", "3\n"),
+        (BuiltInId.MathMinReal, "Console.WriteLine(Math.Min(3.5, 7.5))", "3.5\n"),
+        (BuiltInId.MathMinFraction, "Console.WriteLine(Math.Min(1|3, 1|2))", "1|3\n"),
+        (BuiltInId.MathMaxInteger, "Console.WriteLine(Math.Max(3, 7))", "7\n"),
+        (BuiltInId.MathMaxReal, "Console.WriteLine(Math.Max(3.5, 7.5))", "7.5\n"),
+        (BuiltInId.MathMaxFraction, "Console.WriteLine(Math.Max(1|3, 1|2))", "1|2\n"),
 
         (BuiltInId.FractionCreate, "Console.WriteLine(Fraction.Create(6, 8))", "3|4\n"),
+        (BuiltInId.FractionCreateWhole, "Console.WriteLine(Fraction.Create(3))", "3|1\n"),
     ];
 
     private static string Run(string body) => RunProgram(

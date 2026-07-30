@@ -39,7 +39,6 @@ CompilationUnit
                   MemberExpr 'Create'
                     IdentifierExpr 'Fraction'
                   IdentifierExpr 'd'
-                  LiteralExpr 1 [Integer]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

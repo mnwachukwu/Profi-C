@@ -82,6 +82,14 @@ public static class Conversions
                 : ConversionKind.None;
         }
 
+        // Every function is a Function, whatever it takes and yields. This is what lets one be
+        // held without its signature being named, and it is the only thing Function is for:
+        // nothing else reaches it, and a Function reaches no signature back without a cast.
+        if (to is ModelSymbol { Name: "Function" })
+        {
+            return from is FunctionType ? ConversionKind.Implicit : ConversionKind.None;
+        }
+
         // Every type inherits Model's members, but a value type never converts to Model:
         // that conversion is boxing, which the language does not have.
         if (to is ModelSymbol { Name: "Model" })

@@ -242,6 +242,14 @@ public sealed partial class Resolver
             model.BaseType = BuiltInModel("Exception");
         }
 
+        // Everything else the language names is a Model, which is what the word means. Said
+        // here as well as in Conversions, because a model reaching an ancestor is answered by
+        // walking the chain and a built-in with no chain would never reach anything.
+        else if (name != "Model")
+        {
+            model.BaseType = BuiltInModel("Model");
+        }
+
         return model;
     }
 }

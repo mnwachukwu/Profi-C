@@ -19,6 +19,7 @@ global model Program
         Program.HandingThemBack();
         Program.Remembering();
         Program.NamingOneThatAlreadyExists();
+        Program.HoldingAnyFunctionAtAll();
     end function
 
     comment ---- The two ways to write one ------------------------------------------------
@@ -186,6 +187,32 @@ global model Program
         integer function() advance = counter.Next;
 
         Console.WriteLine("counting: " + advance() + " " + advance() + " " + counter.Next());
+    end function
+
+    comment ---- Holding one without naming its shape ---------------------------------------
+
+    comment begin
+        'Function' is the type every function type descends from, so it holds one whatever it
+        takes and yields. A set holds one type, which is why a root is needed at all: without
+        it there is no way to keep functions of different shapes together.
+
+        It says nothing about what the parameters hold, so a lambda written into one writes its
+        own types — the same rule as everywhere else, reaching the same answer. And it cannot be
+        called, because calling needs a signature and this is the type that has none.
+    end comment
+    function HoldingAnyFunctionAtAll()
+        Function[] assorted =
+        {
+            (integer n) yield n + 1,
+            Program.Triple,
+            (string what) yield Console.WriteLine("* " + what)
+        };
+
+        Console.WriteLine("held: " + assorted.Count());
+
+        comment Every reference type is a Model, and a Function is a reference type.
+        Model asModel = assorted[0];
+        Console.WriteLine("still the same one: " + Reference.Equals(asModel, assorted[0]));
     end function
 
 end model

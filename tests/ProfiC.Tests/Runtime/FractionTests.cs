@@ -197,6 +197,51 @@ public sealed class FractionTests
         Assert.Throws<OverflowException>(() => _ = Fraction.FromReal(value));
     }
 
+    // ---- Measuring and rounding -----------------------------------------------------------
+
+    [TestCase(3, 4, "3|4")]
+    [TestCase(-3, 4, "3|4")]
+    [TestCase(3, -4, "3|4")]
+    [TestCase(0, 5, "0|1")]
+    public void AbsIsTheDistanceFromZero(long n, long d, string expected) =>
+        Assert.That(Fraction.Abs(new Fraction(n, d)).ToString(), Is.EqualTo(expected));
+
+    /// <summary>
+    /// <para>Flooring goes down, which below zero is not the same as truncating toward it.</para>
+    /// <para>-7|2 is -3.5: it truncates to -3 and floors to -4. C# division truncates, so the
+    /// negative case is the one that would be wrong if the remainder were not consulted.</para>
+    /// </summary>
+    [TestCase(7, 2, 3L)]
+    [TestCase(-7, 2, -4L)]
+    [TestCase(8, 2, 4L)]
+    [TestCase(-8, 2, -4L)]
+    [TestCase(1, 3, 0L)]
+    [TestCase(-1, 3, -1L)]
+    public void FloorGoesDown(long n, long d, long expected) =>
+        Assert.That(Fraction.Floor(new Fraction(n, d)), Is.EqualTo(expected));
+
+    [TestCase(7, 2, 4L)]
+    [TestCase(-7, 2, -3L)]
+    [TestCase(8, 2, 4L)]
+    [TestCase(1, 3, 1L)]
+    [TestCase(-1, 3, 0L)]
+    public void CeilingGoesUp(long n, long d, long expected) =>
+        Assert.That(Fraction.Ceiling(new Fraction(n, d)), Is.EqualTo(expected));
+
+    /// <summary>
+    /// A half goes away from zero, the rule taught in school, rather than to the even
+    /// neighbor as .NET does by default. 5|2 is 2.5 and rounds to 3, not to 2.
+    /// </summary>
+    [TestCase(5, 2, 3L)]
+    [TestCase(-5, 2, -3L)]
+    [TestCase(3, 2, 2L)]
+    [TestCase(-3, 2, -2L)]
+    [TestCase(7, 3, 2L)]
+    [TestCase(1, 3, 0L)]
+    [TestCase(4, 1, 4L)]
+    public void RoundTakesAHalfAwayFromZero(long n, long d, long expected) =>
+        Assert.That(Fraction.Round(new Fraction(n, d)), Is.EqualTo(expected));
+
     // ---- Raising to a power -------------------------------------------------------------
 
     [TestCase(1, 2, 3L, "1|8")]

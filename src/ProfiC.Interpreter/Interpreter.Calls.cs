@@ -43,11 +43,14 @@ public sealed partial class Interpreter
 
         // A type name on the left: either a built-in like Console, or a global function.
         if (member.Receiver is IdentifierExpr name
-            && _model.GetSymbol(name) is DeclaredTypeSymbol declaringType)
+            && _model.GetSymbol(name) is DeclaredTypeSymbol)
         {
-            if (BuiltInCall(declaringType.Name, member.MemberName, arguments) is { } handled)
+            // Which version of an overloaded name this is was settled while checking, weighing
+            // what the arguments actually are. Looking it up again by name would find the
+            // first one written, so Math.Abs on a real would run the version taking integers.
+            if (_model.GetBuiltIn(member) is { } onType)
             {
-                return handled.Value;
+                return Perform(onType, target: null, arguments).Value;
             }
 
             if (_model.GetSymbol(member) is FunctionSymbol callee
@@ -163,21 +166,6 @@ public sealed partial class Interpreter
     // ---- The members the language provides -------------------------------------------------------
 
     /// <summary>
-    /// <para>Members of the built-in models reached through a type name.</para>
-    /// <para>Returns null when the name is not one of these, so the caller can carry on
-    /// looking. A wrapped result is used rather than a bare one because several of these
-    /// legitimately produce nothing.</para>
-    /// </summary>
-    private StrongBox<object?>? BuiltInCall(string typeName, string member, List<object?> arguments)
-    {
-        // The catalog decides whether this is a built-in at all, and which one. Nothing here
-        // repeats a name, so there is no second list to keep in step with the first.
-        return BuiltIns.Find(typeName, member)?.Id is { } id
-            ? Perform(id, target: null, arguments)
-            : null;
-    }
-
-    /// <summary>
     /// <para>Carries out a built-in call.</para>
     /// <para>A switch expression over the whole enumeration with no fallback arm, so that a
     /// member in the catalog with no implementation here is a build error rather than a call
@@ -195,6 +183,15 @@ public sealed partial class Interpreter
         double Real(int index) => Argument(index) is double d ? d : 0;
         long Integer(int index) => AsInteger(Argument(index));
         string Text(int index) => AsText(Argument(index));
+
+        // An integer widens to a fraction on the way in, and the widening is recorded on the
+        // argument rather than carried out here, so one that arrives whole is converted.
+        Fraction Ratio(int index) => Argument(index) switch
+        {
+            Fraction fraction => fraction,
+            long whole => Fraction.FromInteger(whole),
+            _ => Fraction.Zero,
+        };
 
         ProfiCSet<object?> Set() => (ProfiCSet<object?>)target!;
         string Subject() => (string)target!;
@@ -217,15 +214,43 @@ public sealed partial class Interpreter
                 new StrongBox<object?>(ReferenceEquals(Argument(0), Argument(1))),
 
             BuiltInId.MathSqrt => new StrongBox<object?>(Math.Sqrt(Real(0))),
-            BuiltInId.MathAbs => new StrongBox<object?>(Math.Abs(Real(0))),
-            BuiltInId.MathFloor => new StrongBox<object?>(Math.Floor(Real(0))),
-            BuiltInId.MathCeiling => new StrongBox<object?>(Math.Ceiling(Real(0))),
             BuiltInId.MathPow => new StrongBox<object?>(Math.Pow(Real(0), Real(1))),
-            BuiltInId.MathMin => new StrongBox<object?>(Math.Min(Integer(0), Integer(1))),
-            BuiltInId.MathMax => new StrongBox<object?>(Math.Max(Integer(0), Integer(1))),
+
+            BuiltInId.MathAbsInteger => new StrongBox<object?>(Math.Abs(Integer(0))),
+            BuiltInId.MathAbsReal => new StrongBox<object?>(Math.Abs(Real(0))),
+            BuiltInId.MathAbsFraction => new StrongBox<object?>(Fraction.Abs(Ratio(0))),
+
+            // Each rounding lands on a whole number, so each yields an integer rather than a
+            // real that happens to have nothing after the point.
+            BuiltInId.MathFloorReal =>
+                new StrongBox<object?>((long)Math.Floor(Real(0))),
+            BuiltInId.MathFloorFraction =>
+                new StrongBox<object?>(Fraction.Floor(Ratio(0))),
+            BuiltInId.MathCeilingReal =>
+                new StrongBox<object?>((long)Math.Ceiling(Real(0))),
+            BuiltInId.MathCeilingFraction =>
+                new StrongBox<object?>(Fraction.Ceiling(Ratio(0))),
+
+            // A half goes away from zero, the rule taught in school. .NET rounds a half to the
+            // even neighbor by default, so this says which it wants rather than taking it.
+            BuiltInId.MathRoundReal =>
+                new StrongBox<object?>((long)Math.Round(Real(0), MidpointRounding.AwayFromZero)),
+            BuiltInId.MathRoundFraction =>
+                new StrongBox<object?>(Fraction.Round(Ratio(0))),
+
+            BuiltInId.MathMinInteger => new StrongBox<object?>(Math.Min(Integer(0), Integer(1))),
+            BuiltInId.MathMinReal => new StrongBox<object?>(Math.Min(Real(0), Real(1))),
+            BuiltInId.MathMinFraction =>
+                new StrongBox<object?>(Ratio(0) <= Ratio(1) ? Ratio(0) : Ratio(1)),
+            BuiltInId.MathMaxInteger => new StrongBox<object?>(Math.Max(Integer(0), Integer(1))),
+            BuiltInId.MathMaxReal => new StrongBox<object?>(Math.Max(Real(0), Real(1))),
+            BuiltInId.MathMaxFraction =>
+                new StrongBox<object?>(Ratio(0) >= Ratio(1) ? Ratio(0) : Ratio(1)),
 
             BuiltInId.FractionCreate =>
                 new StrongBox<object?>(new Fraction(Integer(0), Integer(1))),
+            BuiltInId.FractionCreateWhole =>
+                new StrongBox<object?>(Fraction.FromInteger(Integer(0))),
 
             // ---- Reached through a value --------------------------------------------------
 

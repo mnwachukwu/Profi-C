@@ -580,6 +580,22 @@ public static class DiagnosticDescriptors
         "Parameter needs a type",
         "Nothing here says what '{0}' holds. Write its type, as in '(integer {0})'.");
 
+    /// <summary>
+    /// <para>A switch over an enumeration that handles some of its members and has no
+    /// default.</para>
+    /// <para>This is what makes adding a member to an enumeration safe. Every switch that has
+    /// to change says so, at the place it has to change, rather than the new member falling
+    /// quietly through every one of them.</para>
+    /// <para>Silent where a default is written, because a default handles the rest and saying
+    /// so is the whole point of writing one. A warning rather than an error, since the switch
+    /// runs and does something defensible either way.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor SwitchNotExhaustive = Warning(
+        "PC0337",
+        "Not every member is handled",
+        "This switch does not handle every {0}: {1} {2} no case. Add one for each, or a "
+        + "'default' for everything else.");
+
     public static readonly DiagnosticDescriptor CannotInstantiate = Error(
         "PC0328",
         "Cannot be instantiated",

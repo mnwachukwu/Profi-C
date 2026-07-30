@@ -20,4 +20,17 @@ public static class Wording
         1 => $"1 {singular}",
         _ => $"{amount} {plural ?? singular + "s"}",
     };
+
+    /// <summary>
+    /// <para>A run of names as a reader would say them: <c>Hearts</c>, <c>Hearts and
+    /// Spades</c>, <c>Hearts, Spades and Clubs</c>.</para>
+    /// <para>A diagnostic that lists things is read aloud like any other sentence, and a bare
+    /// comma-separated run reads as output rather than as English.</para>
+    /// </summary>
+    public static string List(IReadOnlyList<string> items) => items.Count switch
+    {
+        0 => string.Empty,
+        1 => items[0],
+        _ => string.Join(", ", items.Take(items.Count - 1)) + " and " + items[^1],
+    };
 }
