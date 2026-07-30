@@ -139,7 +139,9 @@ public sealed partial class Interpreter
 
     private object? RunBaseConstructor(CallExpr call, Environment scope, Instance? receiver)
     {
-        if (receiver?.Type is not ModelSymbol { BaseType: { } parent })
+        // Whose constructor this 'base' was written in, not what the instance turned out to
+        // be. A three-deep chain asking the instance would find the same parent three times.
+        if (receiver is null || _constructing is not ModelSymbol { BaseType: { } parent })
         {
             return null;
         }
@@ -149,7 +151,7 @@ public sealed partial class Interpreter
         if (FindConstructor(parent, arguments.Count) is { } constructor
             && BodyOf(constructor) is { } body)
         {
-            RunConstructor(body, receiver, arguments);
+            RunConstructor(body, receiver, arguments, parent);
             return null;
         }
 

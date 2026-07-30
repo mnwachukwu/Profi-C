@@ -49,6 +49,77 @@ public sealed class InterpreterTests
         return output.ToString().ReplaceLineEndings("\n");
     }
 
+    // ---- Constructing up a chain --------------------------------------------------------
+
+    /// <summary>
+    /// <para>A declared exception extending a declared exception, which is two <c>base(...)</c>
+    /// calls in a row.</para>
+    /// <para>Each one means the parent of the type whose constructor wrote it. Read off the
+    /// instance instead, it would mean the parent of what is being made — the same answer at
+    /// every level — and the second call would run the constructor that made it, forever. One
+    /// level worked, so nothing caught this until a sample wanted two.</para>
+    /// </summary>
+    [Test]
+    public void ConstructionWalksUpADeclaredChain() => Assert.That(
+        Run("""
+            model TooBig extends Exception
+                public function TooBig(string message)
+                    base(message);
+                end function
+            end model
+
+            model WayTooBig extends TooBig
+                public function WayTooBig(string message)
+                    base(message);
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    try
+                        throw new WayTooBig("far too big");
+                    catch TooBig problem
+                        Console.WriteLine("caught: " + problem.Message());
+                    end try
+                end function
+            end model
+            """),
+        Is.EqualTo("caught: far too big\n"));
+
+    /// <summary>The same for ordinary models, where the fields each level sets must all stick.</summary>
+    [Test]
+    public void EachConstructorInAChainRunsOnce() => Assert.That(
+        Run("""
+            model Root
+                public string Trail;
+
+                public function Root()
+                    this.Trail = "root";
+                end function
+            end model
+
+            model Middle extends Root
+                public function Middle()
+                    base();
+                    this.Trail = this.Trail + " middle";
+                end function
+            end model
+
+            model Leaf extends Middle
+                public function Leaf()
+                    base();
+                    this.Trail = this.Trail + " leaf";
+                end function
+            end model
+
+            global model Program
+                function Main()
+                    Console.WriteLine(new Leaf().Trail);
+                end function
+            end model
+            """),
+        Is.EqualTo("root middle leaf\n"));
+
     // ---- Reading what somebody typed --------------------------------------------------
 
     /// <summary>

@@ -184,6 +184,119 @@ public sealed class MultiFileTests : LexerTestBase
         Assert.That(output.ToString().ReplaceLineEndings("\n"), Is.EqualTo("42\n"));
     }
 
+    // ---- Which program a project starts at ------------------------------------------------
+
+    /// <summary>
+    /// <para>Two <c>Program</c>s in different namespaces are two types, not one name used
+    /// twice, so nothing collides and the project must say which one begins.</para>
+    /// <para>This became reachable when namespaces began to scope. Before that a second
+    /// <c>Program</c> was caught as a duplicate name; afterwards nothing caught it, and the
+    /// compilation ran whichever file happened to be listed first.</para>
+    /// </summary>
+    private void WriteTwoPrograms()
+    {
+        Write("Tools.pc",
+            "namespace Tools;\n\nglobal model Program\n    function Main()\n"
+            + "        Console.WriteLine(\"tools\");\n    end function\nend model\n");
+
+        Write("App.pc",
+            "namespace App;\n\nglobal model Program\n    function Main()\n"
+            + "        Console.WriteLine(\"app\");\n    end function\nend model\n");
+    }
+
+    /// <summary>Compiles a project and returns what it printed, or the ids of what stopped it.</summary>
+    private static (string Output, IReadOnlyList<string> Ids) BuildAndRun(string project)
+    {
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Compilation compilation = SourceDiscovery.Gather(project, diagnostics)!;
+
+        SemanticModel model = Resolver.Resolve(
+            compilation.Units, diagnostics, requireEntryPoint: true,
+            compilation.Projects, compilation.EntryPoint);
+
+        TypeChecker.Check(compilation.Units, model, diagnostics);
+        DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+
+        string[] ids = [.. diagnostics.Sorted().Select(d => d.Descriptor.Id)];
+
+        if (diagnostics.HasErrors)
+        {
+            return (string.Empty, ids);
+        }
+
+        StringWriter output = new();
+        ProfiC.Interpreter.Interpreter.Run(
+            Lowering.Lower(compilation.Units, model), model, output, TextReader.Null);
+
+        return (output.ToString().ReplaceLineEndings("\n"), ids);
+    }
+
+    [Test]
+    public void TwoProgramsWithNoEntryAreAmbiguous()
+    {
+        WriteTwoPrograms();
+
+        string project = WriteProject("both.pcp", "    source Tools.pc\n    source App.pc\n");
+
+        Assert.That(BuildAndRun(project).Ids, Does.Contain("PC0234"));
+    }
+
+    /// <summary>
+    /// And the answer does not depend on the order the sources were listed, which is the whole
+    /// reason the compiler must not choose for itself.
+    /// </summary>
+    [TestCase("    entry Tools.Program\n    source Tools.pc\n    source App.pc\n", "tools\n")]
+    [TestCase("    entry Tools.Program\n    source App.pc\n    source Tools.pc\n", "tools\n")]
+    [TestCase("    entry App.Program\n    source Tools.pc\n    source App.pc\n", "app\n")]
+    [TestCase("    entry App.Program\n    source App.pc\n    source Tools.pc\n", "app\n")]
+    public void AnEntryDecidesWhichProgramBegins(string body, string expected)
+    {
+        WriteTwoPrograms();
+
+        Assert.That(BuildAndRun(WriteProject("both.pcp", body)).Output, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void AnEntryNamingNoProgramIsRejected()
+    {
+        WriteTwoPrograms();
+
+        string project = WriteProject("both.pcp",
+            "    entry Nowhere.Program\n    source Tools.pc\n    source App.pc\n");
+
+        Assert.That(BuildAndRun(project).Ids, Does.Contain("PC0235"));
+    }
+
+    /// <summary>Where there is nothing to choose between, saying so decides nothing.</summary>
+    [Test]
+    public void AnEntryWhereOnlyOneProgramExistsIsWarnedAbout()
+    {
+        WriteTwoPrograms();
+
+        string project = WriteProject("one.pcp", "    entry Tools.Program\n    source Tools.pc\n");
+
+        (string output, IReadOnlyList<string> ids) = BuildAndRun(project);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ids, Does.Contain("PC0236"));
+            Assert.That(output, Is.EqualTo("tools\n"), "and it still runs");
+        });
+    }
+
+    [TestCase("    entry\n    source Tools.pc\n", "PC0626", TestName = "an entry naming nothing")]
+    [TestCase("    entry Tools.Program\n    entry App.Program\n    source Tools.pc\n",
+              "PC0627", TestName = "two entries")]
+    public void AnEntryLineIsCheckedForShape(string body, string expected)
+    {
+        WriteTwoPrograms();
+
+        DiagnosticBag diagnostics = new();
+        SourceDiscovery.Gather(WriteProject("bad.pcp", body), diagnostics);
+
+        Assert.That(diagnostics.Select(d => d.Descriptor.Id), Does.Contain(expected));
+    }
+
     /// <summary>
     /// Two files each declaring Program cannot be one compilation. The folder rule keeps them
     /// apart, and a project that lists both is told plainly.

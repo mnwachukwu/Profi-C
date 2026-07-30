@@ -50,6 +50,14 @@ public sealed partial class Interpreter
     /// <summary>The lowered initializer of each field, for the same reason as <see cref="_bodies"/>.</summary>
     private readonly Dictionary<FieldSymbol, Expression> _initializers = [];
 
+    /// <summary>
+    /// <para>The type whose constructor body is running, or null outside one.</para>
+    /// <para>What <c>base(...)</c> means by "the parent". Kept here rather than read off the
+    /// instance because the instance holds the type it was made as at every level of the
+    /// chain, so asking it would send a two-deep hierarchy round in circles.</para>
+    /// </summary>
+    private DeclaredTypeSymbol? _constructing;
+
     /// <summary>How deep the call stack is, so that runaway recursion fails cleanly.</summary>
     private int _depth;
 

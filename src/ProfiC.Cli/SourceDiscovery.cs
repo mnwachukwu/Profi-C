@@ -43,10 +43,17 @@ public static class SourceDiscovery
     /// an <c>internal</c> declared in it reaches. A file missing from it belongs to the one
     /// unnamed project every compilation has, which is what a build nobody divided is.</para>
     /// </summary>
+    /// <summary>
+    /// <para><see cref="EntryPoint"/> is the <c>Program</c> the build begins at, where the
+    /// project named one. Null for a folder, which is one program by construction, and for a
+    /// project that did not say — right where its sources declare one, reported where they
+    /// declare several.</para>
+    /// </summary>
     public sealed record Compilation(
         string Label,
         IReadOnlyList<CompilationUnit> Units,
-        IReadOnlyDictionary<SourceText, string> Projects);
+        IReadOnlyDictionary<SourceText, string> Projects,
+        string? EntryPoint = null);
 
     /// <summary>A file a command was pointed at, and which of the two kinds it is.</summary>
     public readonly record struct FileTarget(string Path, bool IsProject);
@@ -514,7 +521,10 @@ public static class SourceDiscovery
             }
         }
 
-        return new Compilation(root.Name, units, projects);
+        // The named project's own entry, not one a reference wrote: a referenced project is
+        // being built into this one, and what it would have started at had it been built alone
+        // is not this build's business.
+        return new Compilation(root.Name, units, projects, root.EntryPoint);
     }
 
     /// <summary>

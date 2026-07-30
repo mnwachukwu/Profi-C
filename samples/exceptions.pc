@@ -1,0 +1,280 @@
+##
+    When something goes wrong.
+
+    An exception is for the case a function cannot answer: not "the answer is nothing", which
+    is an optional, but "there is no answer and I cannot go on". Telling those two apart is
+    most of using exceptions well, and the last section here is about exactly that.
+
+    Everything else is small. A program declares an exception by extending one, throws it,
+    and catches it by naming it or any of its ancestors.
+##
+
+# ---- Declaring some ------------------------------------------------------------------
+
+##
+    Extending Exception is all it takes. The constructor passes a message up with base(...),
+    which is what Message() gives back later — Exception declares nothing else a program can
+    see, so the message is the one thing every exception carries.
+##
+model KitchenProblem extends Exception
+    public function KitchenProblem(string message)
+        base(message);
+    end function
+end model
+
+##
+    Exceptions form a hierarchy like any other model, and it is worth one: a caller who cares
+    which thing went wrong names the exact one, and a caller who only cares that something did
+    names the parent. Neither has to know about the other.
+##
+model OutOfIngredient extends KitchenProblem
+    public string Ingredient;
+
+    public function OutOfIngredient(string ingredient)
+        base("no " + ingredient + " left");
+        this.Ingredient = ingredient;
+    end function
+end model
+
+model OvenBroken extends KitchenProblem
+    public function OvenBroken()
+        base("the oven will not light");
+    end function
+end model
+
+global model Program
+
+    function Main()
+        Program.ThrowingAndCatching();
+        Program.CatchingByAncestor();
+        Program.WhichClauseWins();
+        Program.FinallyRunsEitherWay();
+        Program.PassingItOn();
+        Program.TheOnesTheLanguageRaises();
+        Program.WhenNotToThrow();
+    end function
+
+    # ---- The shape of it ----------------------------------------------------------------
+
+    function Bake(string ingredient)
+        if ingredient == "flour"
+            throw new OutOfIngredient("flour");
+        end if
+
+        Console.WriteLine("  baked with {{ingredient}}");
+    end function
+
+    function ThrowingAndCatching()
+        Console.WriteLine("== throwing and catching ==");
+
+        try
+            Program.Bake("sugar");
+            Program.Bake("flour");
+            Console.WriteLine("  never reached");
+        catch OutOfIngredient problem
+            Console.WriteLine("  {{problem.Message()}}");
+
+            # A declared exception may carry whatever it likes besides the message.
+            Console.WriteLine("  the missing one was {{problem.Ingredient}}");
+        end try
+    end function
+
+    # ---- Catching a parent --------------------------------------------------------------
+
+    ##
+        A catch takes the type it names and anything descending from it, so one clause handles
+        a whole family. 'catch Exception' takes every exception there is, declared or not.
+    ##
+    function CatchingByAncestor()
+        Console.WriteLine("== catching a parent ==");
+
+        try
+            throw new OvenBroken();
+        catch KitchenProblem problem
+            Console.WriteLine("  something in the kitchen: {{problem.Message()}}");
+        end try
+
+        try
+            throw new OutOfIngredient("eggs");
+        catch Exception problem
+            Console.WriteLine("  something, anything: {{problem.Message()}}");
+        end try
+    end function
+
+    # ---- Several clauses ------------------------------------------------------------------
+
+    ##
+        The first clause that matches wins, so the particular ones go above the general ones.
+        Written the other way round, a 'catch Exception' at the top would take everything and
+        nothing below it could ever run.
+    ##
+    function WhichClauseWins()
+        Console.WriteLine("== which clause wins ==");
+
+        Program.Attempt(new OutOfIngredient("butter"));
+        Program.Attempt(new OvenBroken());
+        Program.Attempt(new Exception("something else entirely"));
+    end function
+
+    function Attempt(Exception what)
+        try
+            throw what;
+        catch OutOfIngredient problem
+            Console.WriteLine("  shopping: {{problem.Ingredient}}");
+        catch KitchenProblem problem
+            Console.WriteLine("  kitchen:  {{problem.Message()}}");
+        catch Exception problem
+            Console.WriteLine("  other:    {{problem.Message()}}");
+        end try
+    end function
+
+    # ---- finally ----------------------------------------------------------------------------
+
+    ##
+        Runs whichever way the block was left: off the end, through a catch, or on the way out
+        of a throw nothing here caught. It is where the things that must happen anyway go.
+    ##
+    function FinallyRunsEitherWay()
+        Console.WriteLine("== finally ==");
+
+        try
+            Console.WriteLine("  nothing wrong");
+        finally
+            Console.WriteLine("  and the kitchen is tidied");
+        end try
+
+        try
+            throw new OvenBroken();
+        catch KitchenProblem problem
+            Console.WriteLine("  caught it");
+        finally
+            Console.WriteLine("  and the kitchen is tidied again");
+        end try
+    end function
+
+    # ---- Handing it further up --------------------------------------------------------------
+
+    ##
+        A catch that cannot really deal with the problem can say so by throwing again. There is
+        no bare 'throw': the one that was caught is a value with a name, so it is thrown the way
+        anything is thrown.
+
+        Catching something only to hide it is the mistake this exists to avoid.
+    ##
+    function PassingItOn()
+        Console.WriteLine("== handing it on ==");
+
+        try
+            Program.NoteAndRethrow();
+        catch KitchenProblem problem
+            Console.WriteLine("  the caller dealt with it: {{problem.Message()}}");
+        end try
+    end function
+
+    function NoteAndRethrow()
+        try
+            throw new OutOfIngredient("salt");
+        catch OutOfIngredient problem
+            Console.WriteLine("  noted, but this is not mine to fix");
+            throw problem;
+        end try
+    end function
+
+    # ---- The ones the language raises ---------------------------------------------------------
+
+    ##
+        A program does not throw all of these itself; the language raises them when something
+        goes wrong that it could not see while compiling. Each is caught the same way.
+
+        A function never declares what it may throw, and nothing forces a caller to handle it.
+        That is deliberate: the alternative teaches people to write a catch that swallows.
+    ##
+    function TheOnesTheLanguageRaises()
+        Console.WriteLine("== the ones the language raises ==");
+
+        integer[] three = {1, 2, 3};
+        integer zero = 0;
+        integer? nothing;
+
+        integer count = 5;
+
+        Program.Show(function() let a = 1 / zero; end function);
+        Program.Show(function() let b = three[7]; end function);
+        Program.Show(function() let c = nothing.Value(); end function);
+        Program.Show(function() let d = 2147483647 * 2147483647 * 4; end function);
+        Program.Show(function() let e = count.Format("Q9"); end function);
+    end function
+
+    ##
+        Runs something and says which exception came out, if any.
+
+        The parameter is written 'function()' rather than 'Function'. Function is the root
+        every function type descends from — it says a value is a function without saying what
+        shape, and a shape is exactly what calling one needs.
+    ##
+    function Show(function() attempt)
+        try
+            attempt();
+            Console.WriteLine("  nothing went wrong");
+        catch DivideByZeroException problem
+            Console.WriteLine("  divided by zero");
+        catch IndexOutOfRangeException problem
+            Console.WriteLine("  reached past the end");
+        catch EmptyOptionalException problem
+            Console.WriteLine("  read an empty optional");
+        catch OverflowException problem
+            Console.WriteLine("  too big to hold");
+        catch FormatException problem
+            Console.WriteLine("  a pattern that means nothing");
+        end try
+    end function
+
+    # ---- When not to throw ------------------------------------------------------------------
+
+    ##
+        The question worth asking every time: is this an answer, or the absence of one?
+
+        Looking for something and not finding it is an answer, and an optional says it. A
+        caller then has to deal with the empty case before it can read the value, which is the
+        checking a catch would have made optional.
+
+        Throwing is for the case where there is no answer to give and going on would be worse
+        than stopping.
+    ##
+    function WhenNotToThrow()
+        Console.WriteLine("== an answer, or the absence of one ==");
+
+        string[] shelf = {"flour", "sugar"};
+
+        # Not finding it is ordinary, so this yields nothing rather than throwing.
+        Console.WriteLine("  looking for sugar: {{Program.Find(shelf, "sugar").Or("not there")}}");
+        Console.WriteLine("  looking for salt:  {{Program.Find(shelf, "salt").Or("not there")}}");
+
+        # Being asked for a negative amount is not an answer at all.
+        try
+            Program.Weigh(-1);
+        catch ArgumentException problem
+            Console.WriteLine("  {{problem.Message()}}");
+        end try
+    end function
+
+    string? function Find(string[] shelf, string what)
+        for each item in shelf
+            if item == what
+                yield item;
+            end if
+        end for
+
+        string? missing;
+        yield missing;
+    end function
+
+    function Weigh(integer grams)
+        if grams < 0
+            throw new ArgumentException("cannot weigh " + grams + " grams");
+        end if
+
+        Console.WriteLine("  weighed {{grams}}g");
+    end function
+
+end model

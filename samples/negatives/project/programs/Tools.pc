@@ -1,0 +1,7 @@
+namespace Tools;
+
+global model Program
+    function Main()
+        Console.WriteLine("the tools");
+    end function
+end model

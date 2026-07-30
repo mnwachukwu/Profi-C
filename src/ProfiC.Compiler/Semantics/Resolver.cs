@@ -47,6 +47,12 @@ public sealed partial class Resolver
     private IReadOnlyDictionary<SourceText, string> _projects =
         new Dictionary<SourceText, string>();
 
+    /// <summary>
+    /// Which <c>Program</c> the build begins at, as the project file named it, or null where
+    /// nothing said. Only an answer where the sources declare exactly one.
+    /// </summary>
+    private string? _entryPoint;
+
 
     /// <summary>The model whose member is being resolved, for <c>this</c> and <c>base</c>.</summary>
     private ModelSymbol? _currentModel;
@@ -68,12 +74,18 @@ public sealed partial class Resolver
     /// declares no <c>Program</c> is perfectly well-formed — it simply is not a whole program.
     /// Demanding an entry point belongs to building an executable, not to checking a file.
     /// The rules <em>about</em> a <c>Program</c> that is present are checked either way.</para>
+    /// <para><paramref name="entryPoint"/> is the <c>Program</c> the build begins at, written
+    /// as the project file wrote it. Null when nothing said, which is an answer only where the
+    /// sources declare exactly one — with several, the compiler must be told rather than
+    /// choose, since choosing would make the result depend on the order files were listed.
+    /// </para>
     /// </summary>
     public static SemanticModel Resolve(
         IReadOnlyList<CompilationUnit> units,
         DiagnosticBag diagnostics,
         bool requireEntryPoint = false,
-        IReadOnlyDictionary<SourceText, string>? projects = null)
+        IReadOnlyDictionary<SourceText, string>? projects = null,
+        string? entryPoint = null)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(diagnostics);
@@ -84,6 +96,8 @@ public sealed partial class Resolver
         {
             resolver._projects = projects;
         }
+
+        resolver._entryPoint = entryPoint;
 
         // Every file's declarations are collected before any body is bound, which is what lets
         // a file name a type another file declares without regard to the order they arrive in.

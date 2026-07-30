@@ -35,12 +35,14 @@ public sealed class ProjectFile
         string name,
         SourceText source,
         IReadOnlyList<Entry> sourceFiles,
-        IReadOnlyList<Entry> references)
+        IReadOnlyList<Entry> references,
+        string? entryPoint)
     {
         Name = name;
         Source = source;
         SourceFiles = sourceFiles;
         References = references;
+        EntryPoint = entryPoint;
     }
 
     /// <summary>
@@ -66,6 +68,19 @@ public sealed class ProjectFile
 
     /// <summary>Every project this one references, in the order it listed them.</summary>
     public IReadOnlyList<Entry> References { get; }
+
+    /// <summary>
+    /// <para>The <c>Program</c> the build begins at, or null where the project did not say.
+    /// </para>
+    /// <para>Needed only where the sources declare more than one, which namespaces made
+    /// possible: <c>Tools.Program</c> and <c>App.Program</c> are two types, not a name used
+    /// twice. Saying nothing is right for the ordinary project that has one.</para>
+    /// <para>It belongs here rather than on the command line because an assembly holds one
+    /// entry point in its metadata, so the choice is made when the thing is built however it
+    /// is spelled — and on the command line it would be something to remember, repeat, and
+    /// teach to whatever runs the build.</para>
+    /// </summary>
+    public string? EntryPoint { get; }
 
     /// <summary>
     /// Reads a project file, or returns null if it could not be read. Anything wrong is
@@ -100,6 +115,7 @@ public sealed class ProjectFile
         string? name = null;
         bool closed = false;
         bool sawEntry = false;
+        string? entryPoint = null;
         List<Entry> files = [];
         List<Entry> references = [];
         HashSet<string> seen = new(SourceDiscovery.PathComparer);
@@ -177,6 +193,27 @@ public sealed class ProjectFile
                     AddReference(rest, folder, span, references, referenced, diagnostics);
                     break;
 
+                // Which Program begins. Only checked for shape here — whether it names one of
+                // the sources' programs is a question about the compilation, and is answered
+                // once every file has been read.
+                case "entry" when name is not null:
+                    sawEntry = true;
+
+                    if (rest.Length == 0)
+                    {
+                        diagnostics.Report(DiagnosticDescriptors.ProjectEntryMissingName, span);
+                        break;
+                    }
+
+                    if (entryPoint is not null)
+                    {
+                        diagnostics.Report(DiagnosticDescriptors.ProjectEntryRepeated, span);
+                        break;
+                    }
+
+                    entryPoint = rest;
+                    break;
+
                 default:
                     if (name is null)
                     {
@@ -218,7 +255,7 @@ public sealed class ProjectFile
 
         return (files.Count == 0 && references.Count == 0) || diagnostics.Count != reportedBefore
             ? null
-            : new ProjectFile(name, source, files, references);
+            : new ProjectFile(name, source, files, references, entryPoint);
     }
 
     /// <summary>

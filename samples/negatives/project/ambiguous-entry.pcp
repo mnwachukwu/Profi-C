@@ -1,0 +1,21 @@
+##
+    A project holding two programs and saying nothing about which one begins.
+
+    These two are not the same name: one is Tools.Program and the other is App.Program, so
+    nothing collides and both are perfectly good types. What is missing is the answer to a
+    question the compiler must not answer for itself.
+
+    It must not, because an assembly holds one entry point in its metadata. The choice is made
+    when the thing is built, however it is spelled — and if the compiler picked, it would have
+    to pick by the order the sources happen to be listed, which would make a build's behaviour
+    depend on the order of its own file list. Swapping two lines here would change which
+    program ran, and nothing would say so.
+
+    The fix is one line: 'entry Tools.Program', or 'entry App.Program'. Written where there is
+    only one program to begin with, that line decides nothing and is warned about instead.
+##
+
+project AmbiguousEntry
+    source programs/Tools.pc
+    source programs/App.pc
+end project

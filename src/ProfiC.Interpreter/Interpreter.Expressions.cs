@@ -407,7 +407,7 @@ public sealed partial class Interpreter
         if (FindConstructor(type, arguments.Count) is { } constructor
             && BodyOf(constructor) is { } body)
         {
-            RunConstructor(body, instance, arguments);
+            RunConstructor(body, instance, arguments, type);
         }
 
         return instance;
@@ -444,16 +444,34 @@ public sealed partial class Interpreter
             .OfType<FunctionSymbol>()
             .FirstOrDefault(f => f.IsConstructor && f.Parameters.Count == arity);
 
+    /// <summary>
+    /// <para>Runs one constructor body, remembering whose it is.</para>
+    /// <para><paramref name="declaring"/> is what <c>base(...)</c> inside the body means by
+    /// "the parent". It cannot be read off the instance: the instance keeps the type it was
+    /// made as the whole way up the chain, so a body asking the instance for its parent gets
+    /// the same answer at every level and calls the same constructor forever.</para>
+    /// </summary>
     private void RunConstructor(
         FunctionDecl constructor,
         Instance instance,
-        IReadOnlyList<object?> arguments)
+        IReadOnlyList<object?> arguments,
+        DeclaredTypeSymbol declaring)
     {
-        Invoke(
-            new FunctionValue(
-                constructor.Parameters, constructor.Body, expressionBody: null, _globals, instance),
-            [],
-            arguments);
+        DeclaredTypeSymbol? outer = _constructing;
+        _constructing = declaring;
+
+        try
+        {
+            Invoke(
+                new FunctionValue(
+                    constructor.Parameters, constructor.Body, expressionBody: null, _globals, instance),
+                [],
+                arguments);
+        }
+        finally
+        {
+            _constructing = outer;
+        }
     }
 
     /// <summary>Constructs one of the exceptions the language provides.</summary>

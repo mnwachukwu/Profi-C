@@ -1,0 +1,7 @@
+namespace App;
+
+global model Program
+    function Main()
+        Console.WriteLine("the app");
+    end function
+end model

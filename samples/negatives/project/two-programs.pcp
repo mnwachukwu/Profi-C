@@ -1,11 +1,16 @@
 ##
-    A project that lists two programs.
+    A project that lists two programs, both in the same place.
 
-    Program is declared once in a compilation, because it is the name the entry point lives
-    in. Two files each declaring one cannot be built together, and the second is named.
+    Neither file writes a namespace, so both Programs are the same name, and two types cannot
+    share one. That is what is reported here, and it has nothing to do with entry points: the
+    same error would come of two models called Shape.
 
-    The folder rule never runs into this, since it takes only the program that was named and
-    the shared code beside it. A project has to be told.
+    Two Programs in different namespaces are two different types and are allowed. Something
+    must then say which one begins, and the project says it with an 'entry' line — see
+    ambiguous-entry.pcp beside this one.
+
+    The folder rule never runs into either case, since it takes only the program that was named
+    and the shared code beside it. A project has to be told.
 ##
 
 project TwoPrograms

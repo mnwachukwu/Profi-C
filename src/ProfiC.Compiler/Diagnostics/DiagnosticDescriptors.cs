@@ -614,6 +614,37 @@ public static class DiagnosticDescriptors
         "'{0}' is already declared {1}. Two types cannot share a name, whether they are "
         + "written in one file or across several. Rename one of them.");
 
+    /// <summary>
+    /// <para>Several <c>Program</c>s and nothing saying which one begins.</para>
+    /// <para>Reachable only since namespaces began to scope: before that a second
+    /// <c>Program</c> was a second type of a name already taken and was reported as one. Once
+    /// <c>Tools.Program</c> and <c>App.Program</c> stopped colliding, nothing was left to
+    /// report, and which one ran came down to the order the sources were listed in.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor EntryPointAmbiguous = Error(
+        "PC0234",
+        "Which program starts?",
+        "These sources declare more than one Program: {0}. Write 'entry {1}' in the project "
+        + "file to say which one begins.");
+
+    /// <summary>
+    /// An <c>entry</c> naming something that is not among the compilation's programs — most
+    /// often a misspelling, or a name that moved when its namespace did.
+    /// </summary>
+    public static readonly DiagnosticDescriptor EntryPointNotFound = Error(
+        "PC0235",
+        "No such program",
+        "'{0}' is not a Program among these sources. {1}");
+
+    /// <summary>
+    /// An <c>entry</c> written where there is nothing to choose between. Harmless, and worth
+    /// saying because it reads as though a choice were being made.
+    /// </summary>
+    public static readonly DiagnosticDescriptor EntryPointUnnecessary = Warning(
+        "PC0236",
+        "This 'entry' decides nothing",
+        "Only '{0}' declares a Program, so it begins whether or not this line is here.");
+
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(
@@ -1024,6 +1055,21 @@ public static class DiagnosticDescriptors
         "PC0610",
         "Project builds nothing",
         "This project lists no source, so there is nothing to build.");
+
+    public static readonly DiagnosticDescriptor ProjectEntryMissingName = Error(
+        "PC0626",
+        "Nothing named to start at",
+        "'entry' says which Program begins, so a name must follow it, as in "
+        + "'entry Tools.Program'.");
+
+    /// <summary>
+    /// One build makes one thing and starts in one place, so a second <c>entry</c> is either a
+    /// leftover or a disagreement. Either way the project has to say which it means.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ProjectEntryRepeated = Error(
+        "PC0627",
+        "More than one 'entry'",
+        "A project starts in one place, so it names one 'entry'.");
 
     // ---- Imports, PC0611 to PC0619 -------------------------------------------------------
 

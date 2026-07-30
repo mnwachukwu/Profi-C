@@ -234,7 +234,12 @@ public static class Program
             return null;
         }
 
-        SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, requireEntryPoint, compilation.Projects);
+        SemanticModel model = Resolver.Resolve(
+            compilation.Units,
+            diagnostics,
+            requireEntryPoint,
+            compilation.Projects,
+            compilation.EntryPoint);
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
 

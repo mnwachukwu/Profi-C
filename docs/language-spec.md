@@ -7,13 +7,7 @@ that the specification never describes more than the compiler does.
 
 ### How this document relates to the compiler
 
-Everything described here is implemented and runs, with two exceptions, each marked where it
-appears:
-
-- **Namespaces** parse but do not scope. A type declared inside one is reached without
-  qualification, exactly as though the namespace were not written. See §12.3.
-- **`using`** parses and is otherwise ignored, because there is nothing yet for it to make
-  reachable. `import`, which does a different job, works. See §12.1.
+Everything described here is implemented and runs.
 
 Profi-C currently runs on a tree-walking interpreter (`pc run`). A CIL back end is planned
 and does not exist; nothing in this document depends on which of the two executes a program,
@@ -26,24 +20,99 @@ the compiler, which parses by hand-written recursive descent.
 [language-summary.md](language-summary.md) is the short tour for someone arriving from C#.
 This document is the normative one: where they disagree, this is right.
 
-| Section | Covers |
-|---|---|
-| 0. Overview | Identity, purpose, design principles, conformance |
-| 1. Lexical structure | Source files, comments, identifiers, literals, escapes |
-| 2. Tokens and reserved words | The 56 words, the operators, end of file |
-| 3. Types | Base types, suffixes, function types, values and references |
-| 4. Declarations | Variables, constants, fields, functions, visibility |
-| 5. Expressions | Precedence, `is` and `as`, the `if` expression, literals |
-| 6. Statements | Blocks, the qualified `end`, both loops, `switch` |
-| 7. Models, structures, enumerations | Inheritance, dispatch, value semantics, equality |
-| 8. Optionals | `HasValue`, `Or`, `Value`, and narrowing |
-| 9. Functions and closures | Function types, lambdas, capture |
-| 10. Exceptions | `try`, `catch`, `finally`, `throw`, the built-in hierarchy |
-| 11. The standard library | The built-in models and what they provide |
-| 12. Execution and entry point | Compilations, `Program.Main`, namespaces |
-| A. Diagnostics | Every identifier the compiler reports |
-
 ---
+
+## Contents
+
+- [0. Overview](#0-overview) — identity, purpose, design principles, conformance
+  - [0.1 Identity](#01-identity)
+  - [0.2 Purpose](#02-purpose)
+  - [0.3 Design principles](#03-design-principles)
+  - [0.4 Relationship to C#](#04-relationship-to-c)
+  - [0.5 Conformance and terminology](#05-conformance-and-terminology)
+  - [0.6 Versioning](#06-versioning)
+- [1. Lexical structure](#1-lexical-structure) — source files, comments, identifiers, literals, escapes
+  - [1.1 Source files](#11-source-files)
+  - [1.2 Whitespace](#12-whitespace)
+  - [1.3 Comments](#13-comments)
+  - [1.4 Identifiers](#14-identifiers)
+  - [1.5 Literals](#15-literals)
+  - [1.5a Interpolated strings](#15a-interpolated-strings)
+  - [1.6 Escape sequences](#16-escape-sequences)
+- [2. Tokens and reserved words](#2-tokens-and-reserved-words) — the 56 words, the operators, end of file
+  - [2.1 Reserved words](#21-reserved-words)
+  - [2.2 Operators and punctuation](#22-operators-and-punctuation)
+  - [2.3 End of file](#23-end-of-file)
+  - [2.4 Recovery](#24-recovery)
+- [3. Types](#3-types) — base types, suffixes, function types, values and references
+  - [3.1 The base types](#31-the-base-types)
+  - [3.2 The two suffixes](#32-the-two-suffixes)
+  - [3.3 Function types](#33-function-types)
+  - [3.4 Values and references](#34-values-and-references)
+  - [3.5 Conversions](#35-conversions)
+  - [3.6 Type identity](#36-type-identity)
+- [4. Declarations](#4-declarations) — variables, constants, fields, functions, visibility
+  - [4.1 Variables](#41-variables)
+  - [4.2 Constants](#42-constants)
+  - [4.3 Fields](#43-fields)
+  - [4.4 Functions](#44-functions)
+  - [4.5 Definite assignment](#45-definite-assignment)
+  - [4.6 Visibility](#46-visibility)
+- [5. Expressions](#5-expressions) — precedence, `is` and `as`, the `if` expression, literals
+  - [5.1 Precedence](#51-precedence)
+  - [5.2 Operators](#52-operators)
+  - [5.3 Raising to a power](#53-raising-to-a-power)
+  - [5.4 Collection literals](#54-collection-literals)
+  - [5.5 `is` and `as`](#55-is-and-as)
+  - [5.6 The `if` expression](#56-the-if-expression)
+  - [5.7 Other primary expressions](#57-other-primary-expressions)
+- [6. Statements](#6-statements) — blocks, the qualified `end`, both loops, `switch`
+  - [6.1 Blocks and the qualified `end`](#61-blocks-and-the-qualified-end)
+  - [6.2 Choosing](#62-choosing)
+  - [6.3 Looping](#63-looping)
+  - [6.4 Other statements](#64-other-statements)
+- [7. Models, structures, and enumerations](#7-models-structures-and-enumerations) — inheritance, dispatch, value semantics, equality
+  - [7.1 Models](#71-models)
+  - [7.2 Virtual dispatch](#72-virtual-dispatch)
+  - [7.3 Structures](#73-structures)
+  - [7.4 Equality](#74-equality)
+  - [7.5 Enumerations](#75-enumerations)
+  - [7.6 Nesting](#76-nesting)
+- [8. Optionals](#8-optionals) — `HasValue`, `Or`, `Value`, and narrowing
+  - [8.1 The three members](#81-the-three-members)
+  - [8.2 Narrowing](#82-narrowing)
+  - [8.3 Narrowing settles which member is meant](#83-narrowing-settles-which-member-is-meant)
+- [9. Functions and closures](#9-functions-and-closures) — function types, lambdas, capture
+  - [9.1 Writing a function as a value](#91-writing-a-function-as-a-value)
+  - [9.2 Where a lambda's parameter types go](#92-where-a-lambdas-parameter-types-go)
+- [10. Exceptions](#10-exceptions) — `try`, `catch`, `finally`, `throw`, the built-in hierarchy
+  - [10.1 The built-in hierarchy](#101-the-built-in-hierarchy)
+  - [10.2 Throwing and catching](#102-throwing-and-catching)
+  - [10.3 Declaring an exception](#103-declaring-an-exception)
+- [11. The standard library](#11-the-standard-library) — the built-in models and what they provide
+  - [11.1 On every type](#111-on-every-type)
+  - [11.2 On a set](#112-on-a-set)
+  - [3.2b Only on a set of optionals](#32b-only-on-a-set-of-optionals)
+  - [11.3 On a string](#113-on-a-string)
+  - [11.4 On a value of a particular type](#114-on-a-value-of-a-particular-type)
+  - [11.5 The standard models](#115-the-standard-models)
+  - [11.5b Chance](#115b-chance)
+  - [11.5c Moments](#115c-moments)
+  - [11.5d Spans, days, and times of day](#115d-spans-days-and-times-of-day)
+  - [11.5e Files and folders](#115e-files-and-folders)
+  - [11.5a How far a real answer can be trusted](#115a-how-far-a-real-answer-can-be-trusted)
+  - [11.6 How a value prints](#116-how-a-value-prints)
+- [12. Execution and entry point](#12-execution-and-entry-point) — compilations, which `Program` starts, namespaces
+  - [12.1 What a compilation is made of](#121-what-a-compilation-is-made-of)
+  - [12.2 A name belongs to one type](#122-a-name-belongs-to-one-type)
+  - [12.3 Namespaces](#123-namespaces)
+- [Appendix A. Diagnostics](#appendix-a-diagnostics) — every identifier the compiler reports
+  - [PC0000 to PC0099](#pc0000-to-pc0099)
+  - [PC0100 to PC0199](#pc0100-to-pc0199)
+  - [PC0200 to PC0299](#pc0200-to-pc0299)
+  - [PC0300 to PC0399](#pc0300-to-pc0399)
+  - [PC0400 to PC0499](#pc0400-to-pc0499)
+  - [PC0600 to PC0699](#pc0600-to-pc0699)
 
 ## 0. Overview
 
@@ -326,7 +395,7 @@ through `Format` itself.
 concatenation it looks like: each hole becomes `ToString()`, or `Format(pattern)` where one was
 named, and the pieces are joined with `+`.
 
-A block string does **not** interpolate, per §1.5.
+A block string does **not** interpolate, per [§1.5](#15-literals).
 
 ### 1.6 Escape sequences
 
@@ -346,7 +415,7 @@ Character and string literals may contain these escapes, and no others:
 | `\u####` | the character with the given four-digit hexadecimal code |
 
 A brace is already ordinary text and needs no escape; `\{` exists only so that a literal pair
-can be written without opening a hole (§1.5a).
+can be written without opening a hole ([§1.5a](#15a-interpolated-strings)).
 
 An escape outside this set is an error, as is a `\u` not followed by four hexadecimal digits.
 An escape counts as one character for the purpose of the character-literal rule above.
@@ -376,7 +445,7 @@ while        yield
 ```
 
 These are every reserved word, and nothing is reserved outside the list. A comment is marked
-rather than named (§1.3), so it takes no word away from a program.
+rather than named ([§1.3](#13-comments)), so it takes no word away from a program.
 
 Words a C# author might expect to be reserved and which are **not**: `private`, `static`,
 `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`,
@@ -481,10 +550,10 @@ so the one written last is the outermost.
 
 A **set** is Profi-C's one collection. It is ordered, indexed from zero, grows as you insert,
 and holds one type. There is no array/list distinction to learn: `integer[] scores = {};`
-then `scores.Insert(60);`. §11 lists its members.
+then `scores.Insert(60);`. [§11](#11-the-standard-library) lists its members.
 
 An **optional** is how a value may be absent. There is no `null`; a `Node` always holds a
-node, and `Node?` is the type that may not. §8 gives the rules.
+node, and `Node?` is the type that may not. [§8](#8-optionals) gives the rules.
 
 ### 3.3 Function types
 
@@ -517,7 +586,7 @@ functions of different shapes together. `Function` sits between `Model` and each
 signature — a `Function` is a `Model`, and nothing that is not a function reaches it.
 
 It says nothing about what the parameters hold, so a lambda written into one has nothing to
-take a type from and writes its own (§9.2). It cannot be called, since calling needs a
+take a type from and writes its own ([§9.2](#92-where-a-lambdas-parameter-types-go)). It cannot be called, since calling needs a
 signature, and it cannot be extended: a child of it would be a function without being any
 particular function.
 
@@ -532,7 +601,7 @@ for it — every operation that appears to modify a string returns a new one.
 
 A structure holding a model copies the reference, not the model, so two copies of the
 structure see the same model. This is the one place the split is worth stopping over, and it
-is why §4.2's `constant` does not yet accept a structure that can reach a model.
+is why [§4.2](#42-constants)'s `constant` does not yet accept a structure that can reach a model.
 
 ### 3.5 Conversions
 
@@ -550,7 +619,7 @@ A conversion is **automatic** where no information is lost and no surprise is po
 | an enumeration | `integer` | written out | `member.ToInteger()` |
 | `integer` | an enumeration | written out | `n as Suit` |
 | any `T` | `T?` | automatic | |
-| `T?` | `T` | none — see §8 | |
+| `T?` | `T` | none — see [§8](#8-optionals) | |
 | `T?` | `U?` | wherever `T` reaches `U` | absence carried across |
 | a model | any ancestor of it | automatic | |
 | a model | any descendant of it | written out | `shape as Square`, yielding `Square?` |
@@ -606,7 +675,7 @@ character[]? letters = word;      converts, and an absent word stays absent
 ```
 
 This softens nothing. Nothing is unwrapped: what comes out is still an optional, and getting
-a plain value out of one still means proving it holds something (§8). The rule is about which
+a plain value out of one still means proving it holds something ([§8](#8-optionals)). The rule is about which
 optional a value can be, not about whether it has to be checked.
 
 ### 3.6 Type identity
@@ -648,7 +717,7 @@ let name = "Ada";           the value on the right says what it holds
 ```
 
 `let` requires an initializer, because there is nothing else for it to learn from. A written
-type does not: a variable may be declared and assigned later, and §4.5 says what the compiler
+type does not: a variable may be declared and assigned later, and [§4.5](#45-definite-assignment) says what the compiler
 demands in return.
 
 A `let` is not a different kind of variable. It is the same variable with its type worked out
@@ -694,7 +763,7 @@ There is no `private` keyword, because private is what you get by writing nothin
 rather than to an instance, and says nothing about who may reach it.
 
 Reaching a member from further away than it reaches is an error (`PC0339`), reported where the
-member is named. See §4.7 for what each word means and where a project comes from.
+member is named. See [§4.6](#46-visibility) for what each word means and where a project comes from.
 
 ### 4.4 Functions
 
@@ -721,7 +790,7 @@ model Account
 end model
 ```
 
-Modifiers are `public`, `protected`, `internal`, `global`, and `virtual` or `override`. §7.2
+Modifiers are `public`, `protected`, `internal`, `global`, and `virtual` or `override`. [§7.2](#72-virtual-dispatch)
 covers the last two. **A function that declares a result must reach a `yield` on every path** — `PC0404`
 — so a function cannot promise an integer and fall off the end without one. A constructor
 must leave every field assigned (`PC0402`).
@@ -781,7 +850,7 @@ Reaching further than a declaration reaches is an error — `PC0339` for a membe
 type — reported where the name is written. A constructor is a member like any other, so a
 private one is how a type says it makes its own instances.
 
-**Where a project comes from.** A project is a `.pcp` file and the files it lists (§12.1). A
+**Where a project comes from.** A project is a `.pcp` file and the files it lists ([§12.1](#121-what-a-compilation-is-made-of)). A
 compilation nobody divided is **one project**, so `internal` reaches everything in it and the
 rule costs a single-file program nothing. Projects only start to matter once one references
 another, which is exactly when a boundary is worth having: without `internal`, a project
@@ -797,7 +866,7 @@ model Wording                           nothing outside Books can even name this
 end model
 ```
 
-A file brought in by `import` (§12.1) belongs to the project of the file that imported it. No
+A file brought in by `import` ([§12.1](#121-what-a-compilation-is-made-of)) belongs to the project of the file that imported it. No
 project listed it, and the file that asked for it is the only claim there is.
 
 ## 5. Expressions
@@ -925,7 +994,7 @@ is spelled with the same three words the statement uses.
 ### 5.7 Other primary expressions
 
 `this` is the current instance; `base` reaches the parent's members. `new T(...)` constructs.
-A lambda is written as §9 describes. Parentheses group.
+A lambda is written as [§9](#9-functions-and-closures) describes. Parentheses group.
 
 **Assignment is a statement, not an expression.** `if x = 5` cannot be written at all, which
 removes the whole family of bugs where `=` was typed for `==`.
@@ -1029,7 +1098,7 @@ outside one.
 which is what a function yielding nothing does. There is no `return`: producing a value and
 ending are the same act, and one word says it.
 
-`throw` raises an exception, and `try` handles one — §10 covers both.
+`throw` raises an exception, and `try` handles one — [§10](#10-exceptions) covers both.
 
 An **expression statement** is a call or an assignment followed by `;`. Assignment is a
 statement rather than an expression, so `if x = 5` cannot be written.
@@ -1133,7 +1202,7 @@ A declared `ToString` is what a value prints — written out, printed on its own
 string with `+`, or sitting inside a set. All of them reach the same function, dispatched on
 the runtime type, so printing and calling can never disagree. Structures may override it as
 freely as models; a structure declaring none prints field by field, and a model declaring none
-prints its type name (§3.3 of the summary explains why the two defaults differ).
+prints its type name ([§3.3](#33-function-types) of the summary explains why the two defaults differ).
 
 ### 7.3 Structures
 
@@ -1156,7 +1225,7 @@ directly or through another structure, since a value that contained itself would
 size.
 
 A structure holding a model copies the *reference*. Two copies of the structure then see one
-model, which is the case §3.4 flags and the reason `constant` does not accept such a
+model, which is the case [§3.4](#34-values-and-references) flags and the reason `constant` does not accept such a
 structure.
 
 ### 7.4 Equality
@@ -1203,7 +1272,7 @@ An enumeration converts to `integer` with `ToInteger()`, and an integer converts
 
 A model, structure, or enumeration may be declared inside a model or structure. A nested type
 holds no reference to the type it sits inside; it is a type declared in that scope, not an
-inner instance. Types may not be declared inside a function body — see §4.4.
+inner instance. Types may not be declared inside a function body — see [§4.4](#44-functions).
 
 ## 8. Optionals
 
@@ -1299,7 +1368,7 @@ applies.
 
 ## 9. Functions and closures
 
-**A function is a value.** It has a type (§3.3), and it can be stored in a variable, held in
+**A function is a value.** It has a type ([§3.3](#33-function-types)), and it can be stored in a variable, held in
 a set, passed to another function, and handed back from one.
 
 A function that already has a name is already a value and needs no lambda around it:
@@ -1413,7 +1482,7 @@ Eight exception types, and every one descends from `Exception`:
 | `FormatException` | Text that could not be read as what was wanted |
 | `ArgumentException` | An argument a function will not accept |
 | `OverflowException` | A result too large for the type to hold |
-| `IOException` | Anything going wrong with a file except its not being there, which is an absent optional instead (§11.5e) |
+| `IOException` | Anything going wrong with a file except its not being there, which is an absent optional instead ([§11.5e](#115e-files-and-folders)) |
 
 Every one carries a `Message()`. A name the language can raise is a name a program can catch:
 the two come from one list, so nothing can be thrown that cannot be named.
@@ -1443,7 +1512,7 @@ throw new ArgumentException("balance cannot be negative");
 ```
 
 **A throw ends a path**, so a function whose every path either yields or throws satisfies
-§4.5's rule without a yield after the throw.
+[§4.5](#45-definite-assignment)'s rule without a yield after the throw.
 
 ### 10.3 Declaring an exception
 
@@ -1457,8 +1526,8 @@ model InsufficientFunds extends Exception
 end model
 ```
 
-Extending is not redeclaring: the eight names above cannot be declared, but they can be
-extended, and a declared exception is caught by a `catch` naming any of its ancestors.
+Extending is not redeclaring: the names above cannot be declared, but they can be extended, and
+a declared exception is caught by a `catch` naming any of its ancestors.
 
 **There are no checked exceptions.** A function does not declare what it may throw, and
 nothing forces a caller to handle it. That choice follows the same reasoning as the rest of
@@ -1492,7 +1561,7 @@ let a program add types that then read as the language's own, and `Standard.X` c
 meaning "the language gives you this" if nothing else may write there.
 
 `Program` is not part of `Standard`. It is a name reserved for something a program *provides*
-rather than something the language does, and must be declared exactly once (§12).
+rather than something the language does, and must be declared exactly once ([§12](#12-execution-and-entry-point)).
 
 **Four of them hold no values** — `Console`, `Math`, `Reference`, and `Fraction`. They are
 names to reach members through, and naming one where a value's type belongs is an error
@@ -1511,7 +1580,7 @@ ever fill.
 `Model` and `Function` are **not** in that set: neither can be constructed, and both hold
 values all the same, since every model converts to one and every function to the other.
 
-`Model` and `Function` are the two roots (§3.3, §3.4) rather than things to call.
+`Model` and `Function` are the two roots ([§3.3](#33-function-types), [§3.4](#34-values-and-references)) rather than things to call.
 
 **`Random`, `DateTime`, `TimeSpan`, `Date` and `Time` are the ones a program may construct.**
 Every other name here is reached through the name itself; writing `new Math()` is reported
@@ -1560,20 +1629,20 @@ answer. Putting those back together therefore returns every element, though in t
 were divided rather than the order they started in.
 
 Membership everywhere here — `Contains`, `IndexOf`, `Intersect`, `Except`, `Distinct` — is the
-same deep comparison `==` makes (§11.1), so all of them agree about what counts as the same
+same deep comparison `==` makes ([§11.1](#111-on-every-type)), so all of them agree about what counts as the same
 value.
 
 `Join` reads on the set rather than on a string, because the thing being joined is the
-collection; it is the counterpart of `Split` on a string (§11.3). Any set answers it, not only
+collection; it is the counterpart of `Split` on a string ([§11.3](#113-on-a-string)). Any set answers it, not only
 a set of strings: each element is written the way it would be written on its own.
 
-**Nothing that yields a set changes one.** `Subset` and the four in §3.2b hand back a new set;
+**Nothing that yields a set changes one.** `Subset` and the four in [§3.2b](#32b-only-on-a-set-of-optionals) hand back a new set;
 `Insert`, `InsertAt`, `RemoveAt` and `Clear` change the set and yield nothing, and `Remove`
 yields only whether it found something. So the two groups are told apart by their result, and
 a set you were given is never quietly the set someone else is holding.
 
 The copy is **shallow**, which is the depth the rest of the language uses: assigning a model
-copies the reference (§3.4), so a set copied out holds the very same models.
+copies the reference ([§3.4](#34-values-and-references)), so a set copied out holds the very same models.
 
 ### 3.2b Only on a set of optionals
 
@@ -1625,7 +1694,7 @@ string is a string — the same rule `Subset` follows on a set, where a run of o
 
 | | |
 |---|---|
-| `optional.HasValue()`, `Or(fallback)`, `Value()` | §8 |
+| `optional.HasValue()`, `Or(fallback)`, `Value()` | [§8](#8-optionals) |
 | `fraction.ToReal()` | `real` |
 | `real.ToFraction()` | `fraction` |
 | `enumeration.ToInteger()` | `integer` |
@@ -1920,7 +1989,7 @@ pc ast hello.pc                 the tree
 ```
 
 Every command takes a **file**, never a folder — a folder is reached by naming a file in it,
-which §12.1 explains. The extension may be omitted: `pc run hello` finds `hello.pc`, and asks
+which [§12.1](#121-what-a-compilation-is-made-of) explains. The extension may be omitted: `pc run hello` finds `hello.pc`, and asks
 for the extension only where both a `.pc` and a `.pcp` of that name exist.
 
 **`Program` may be declared exactly once in a compilation, and must be
@@ -2054,8 +2123,34 @@ files are compiled and affects no name; a using decides which names are reachabl
 and brings in no file.** Which to reach for follows the scale of what is wanted: one file, an
 import; a group of related types, a namespace; a whole build across folders, a project.
 
-Because `Program` may be declared once in a compilation, a project listing two files that each
-declare one is rejected, naming the second.
+#### Which program starts
+
+A compilation may hold more than one `Program`, since namespaces make `Tools.Program` and
+`App.Program` two types rather than one name used twice. Something then has to say which one
+the build begins at, and it is not the compiler's to decide: an assembly holds one entry point
+in its metadata, so the choice is made when the thing is built however it is spelled, and
+picking by the order files were listed would make a build's behaviour depend on the order of
+its own file list.
+
+**A project names it**, and only needs to where there is a choice:
+
+```
+project tools
+    entry Tools.Program
+    source Tools.pc
+    source App.pc
+end project
+```
+
+Written where the sources declare exactly one `Program`, the line decides nothing and is
+warned about (`PC0236`). Left out where they declare several, the compilation is rejected and
+the programs are named (`PC0234`). Naming something that is not one of them is `PC0235`, which
+lists what was there. A project starts in one place, so a second `entry` is `PC0627`.
+
+**`pc run <file>` needs none of this**: it runs the `Program` that file declares.
+
+The name is written as a `using` would write it — the namespaces in front of the type, and the
+type — because that is the name the type has. It is not a path to a file.
 
 ### 12.2 A name belongs to one type
 
@@ -2090,7 +2185,7 @@ namespaces may each declare a type of the same name**, which is most of what the
 
 From the namespace it sits in, then outward through every namespace around it, ending at the
 global one. If none of those has it, then the namespaces in scope: whatever the file wrote
-`using` of, and `Standard` (§11).
+`using` of, and `Standard` ([§11](#11-the-standard-library)).
 
 **Nearest wins.** A `Circle` beside you is the one you meant, whatever else in the program
 shares the name — so a namespace reaches its own types with nothing written, and reaches
@@ -2158,7 +2253,7 @@ than an error, because it is only a name and a program that means it works.
 each other are ordinary, and stay legal however the files are arranged. A namespace is a way of
 naming things rather than a thing that gets built: every file in a compilation is resolved
 together, so a `using` introduces no order for a circle to violate. This is exactly the
-difference §12.1 draws. An import decides what is compiled, and what is compiled has to be
+difference [§12.1](#121-what-a-compilation-is-made-of) draws. An import decides what is compiled, and what is compiled has to be
 reachable from somewhere, so its circles matter; a using decides what is spelled short, and
 nothing is spelled first.
 
@@ -2253,6 +2348,9 @@ Warnings do not block compilation; everything else does.
 | `PC0231` | error | This belongs above any namespace |
 | `PC0232` | warning | This namespace repeats one around it |
 | `PC0233` | error | Nothing can be of this type |
+| `PC0234` | error | Which program starts? |
+| `PC0235` | error | No such program |
+| `PC0236` | warning | This 'entry' decides nothing |
 
 ### PC0300 to PC0399
 
@@ -2336,4 +2434,6 @@ Warnings do not block compilation; everything else does.
 | `PC0623` | error | Project referenced more than once |
 | `PC0624` | error | Projects reference each other |
 | `PC0625` | error | Two projects claim one file |
+| `PC0626` | error | Nothing named to start at |
+| `PC0627` | error | More than one 'entry' |
 

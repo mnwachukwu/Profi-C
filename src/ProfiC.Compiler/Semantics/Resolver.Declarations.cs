@@ -582,9 +582,10 @@ public sealed partial class Resolver
             return;
         }
 
-        // A second Program is a second type of a name already taken, and is reported as one
-        // when it is collected, which also says which file the first is in.
-        DeclaredTypeSymbol program = programs[0];
+        if (ChooseProgram(programs, unit) is not { } program)
+        {
+            return;
+        }
 
         if (program is not ModelSymbol { IsGlobal: true } model)
         {
@@ -614,4 +615,71 @@ public sealed partial class Resolver
         // for: the name is reserved for exactly this.
         Report(DiagnosticDescriptors.EntryPointMissing, model.Declaration ?? unit);
     }
+
+    /// <summary>
+    /// <para>Settles which <c>Program</c> a compilation begins at.</para>
+    /// <para>One is no question. Several is a question the compiler must not answer for
+    /// itself: the choice belongs to the build, because an assembly holds one entry point in
+    /// its metadata and picking by source order would make the answer depend on the order a
+    /// project happened to list its files.</para>
+    /// <para>Null means the question went unanswered and was reported, so nothing downstream
+    /// should go looking for an entry point.</para>
+    /// </summary>
+    private DeclaredTypeSymbol? ChooseProgram(
+        List<DeclaredTypeSymbol> programs,
+        CompilationUnit unit)
+    {
+        if (_entryPoint is null)
+        {
+            if (programs.Count == 1)
+            {
+                return programs[0];
+            }
+
+            // Listed and suggested in one settled order, so the name offered is the first of
+            // the names shown rather than whichever file happened to be read first.
+            List<string> choices =
+                [.. programs.Select(FullNameOf).OrderBy(n => n, StringComparer.Ordinal)];
+
+            Report(
+                DiagnosticDescriptors.EntryPointAmbiguous, unit, Wording.List(choices), choices[0]);
+
+            return null;
+        }
+
+        DeclaredTypeSymbol? named = programs.FirstOrDefault(
+            p => string.Equals(FullNameOf(p), _entryPoint, StringComparison.Ordinal));
+
+        if (named is null)
+        {
+            Report(
+                DiagnosticDescriptors.EntryPointNotFound,
+                unit,
+                _entryPoint,
+                programs.Count == 0
+                    ? "These sources declare none."
+                    : "Did you mean "
+                      + Wording.Either([.. programs.Select(FullNameOf)
+                                                   .OrderBy(n => n, StringComparer.Ordinal)])
+                      + "?");
+
+            return null;
+        }
+
+        if (programs.Count == 1)
+        {
+            Report(DiagnosticDescriptors.EntryPointUnnecessary, unit, FullNameOf(named));
+        }
+
+        return named;
+    }
+
+    /// <summary>
+    /// A type's name with the namespaces it sits in written in front, which is what an
+    /// <c>entry</c> line names it by.
+    /// </summary>
+    private static string FullNameOf(DeclaredTypeSymbol type) =>
+        type.Container is NamespaceSymbol { FullName.Length: > 0 } place
+            ? $"{place.FullName}.{type.Name}"
+            : type.Name;
 }

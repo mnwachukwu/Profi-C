@@ -1,0 +1,502 @@
+CompilationUnit
+  ModelDecl 'KitchenProblem' extends Exception
+    FunctionDecl 'KitchenProblem' [public]
+      ParameterDecl 'message'
+        NamedTypeSyntax 'string'
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          IdentifierExpr 'message'
+  ModelDecl 'OutOfIngredient' extends KitchenProblem
+    FieldDecl 'Ingredient' [public]
+      NamedTypeSyntax 'string'
+    FunctionDecl 'OutOfIngredient' [public]
+      ParameterDecl 'ingredient'
+        NamedTypeSyntax 'string'
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "no " [String]
+              IdentifierExpr 'ingredient'
+            LiteralExpr " left" [String]
+      AssignmentStmt
+        MemberExpr 'Ingredient'
+          ThisExpr
+        IdentifierExpr 'ingredient'
+  ModelDecl 'OvenBroken' extends KitchenProblem
+    FunctionDecl 'OvenBroken' [public]
+      ExpressionStmt
+        CallExpr
+          BaseExpr
+          LiteralExpr "the oven will not light" [String]
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ThrowingAndCatching'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'CatchingByAncestor'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhichClauseWins'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'FinallyRunsEitherWay'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'PassingItOn'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TheOnesTheLanguageRaises'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhenNotToThrow'
+            IdentifierExpr 'Program'
+    FunctionDecl 'Bake'
+      ParameterDecl 'ingredient'
+        NamedTypeSyntax 'string'
+      IfStmt
+        BinaryExpr '=='
+          IdentifierExpr 'ingredient'
+          LiteralExpr "flour" [String]
+        ThrowStmt
+          NewExpr 'OutOfIngredient'
+            LiteralExpr "flour" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  baked with ' ''
+            InterpolationPart
+              IdentifierExpr 'ingredient'
+    FunctionDecl 'ThrowingAndCatching'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== throwing and catching ==" [String]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Bake'
+              IdentifierExpr 'Program'
+            LiteralExpr "sugar" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Bake'
+              IdentifierExpr 'Program'
+            LiteralExpr "flour" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  never reached" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'OutOfIngredient'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  the missing one was ' ''
+                InterpolationPart
+                  MemberExpr 'Ingredient'
+                    IdentifierExpr 'problem'
+    FunctionDecl 'CatchingByAncestor'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== catching a parent ==" [String]
+      TryStmt
+        ThrowStmt
+          NewExpr 'OvenBroken'
+        CatchClause 'problem'
+          NamedTypeSyntax 'KitchenProblem'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  something in the kitchen: ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+      TryStmt
+        ThrowStmt
+          NewExpr 'OutOfIngredient'
+            LiteralExpr "eggs" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'Exception'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  something, anything: ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+    FunctionDecl 'WhichClauseWins'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== which clause wins ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Attempt'
+            IdentifierExpr 'Program'
+          NewExpr 'OutOfIngredient'
+            LiteralExpr "butter" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Attempt'
+            IdentifierExpr 'Program'
+          NewExpr 'OvenBroken'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Attempt'
+            IdentifierExpr 'Program'
+          NewExpr 'Exception'
+            LiteralExpr "something else entirely" [String]
+    FunctionDecl 'Attempt'
+      ParameterDecl 'what'
+        NamedTypeSyntax 'Exception'
+      TryStmt
+        ThrowStmt
+          IdentifierExpr 'what'
+        CatchClause 'problem'
+          NamedTypeSyntax 'OutOfIngredient'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  shopping: ' ''
+                InterpolationPart
+                  MemberExpr 'Ingredient'
+                    IdentifierExpr 'problem'
+        CatchClause 'problem'
+          NamedTypeSyntax 'KitchenProblem'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  kitchen:  ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+        CatchClause 'problem'
+          NamedTypeSyntax 'Exception'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  other:    ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+    FunctionDecl 'FinallyRunsEitherWay'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== finally ==" [String]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  nothing wrong" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  and the kitchen is tidied" [String]
+      TryStmt
+        ThrowStmt
+          NewExpr 'OvenBroken'
+        CatchClause 'problem'
+          NamedTypeSyntax 'KitchenProblem'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  caught it" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  and the kitchen is tidied again" [String]
+    FunctionDecl 'PassingItOn'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== handing it on ==" [String]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'NoteAndRethrow'
+              IdentifierExpr 'Program'
+        CatchClause 'problem'
+          NamedTypeSyntax 'KitchenProblem'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  the caller dealt with it: ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+    FunctionDecl 'NoteAndRethrow'
+      TryStmt
+        ThrowStmt
+          NewExpr 'OutOfIngredient'
+            LiteralExpr "salt" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'OutOfIngredient'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  noted, but this is not mine to fix" [String]
+          ThrowStmt
+            IdentifierExpr 'problem'
+    FunctionDecl 'TheOnesTheLanguageRaises'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== the ones the language raises ==" [String]
+      VarDeclStmt 'three'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'zero'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      VarDeclStmt 'nothing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'count'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Show'
+            IdentifierExpr 'Program'
+          LambdaExpr block
+            VarDeclStmt 'a' [inferred]
+              BinaryExpr '/'
+                LiteralExpr 1 [Integer]
+                IdentifierExpr 'zero'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Show'
+            IdentifierExpr 'Program'
+          LambdaExpr block
+            VarDeclStmt 'b' [inferred]
+              IndexExpr
+                IdentifierExpr 'three'
+                LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Show'
+            IdentifierExpr 'Program'
+          LambdaExpr block
+            VarDeclStmt 'c' [inferred]
+              CallExpr
+                MemberExpr 'Value'
+                  IdentifierExpr 'nothing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Show'
+            IdentifierExpr 'Program'
+          LambdaExpr block
+            VarDeclStmt 'd' [inferred]
+              BinaryExpr '*'
+                BinaryExpr '*'
+                  LiteralExpr 2147483647 [Integer]
+                  LiteralExpr 2147483647 [Integer]
+                LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Show'
+            IdentifierExpr 'Program'
+          LambdaExpr block
+            VarDeclStmt 'e' [inferred]
+              CallExpr
+                MemberExpr 'Format'
+                  IdentifierExpr 'count'
+                LiteralExpr "Q9" [String]
+    FunctionDecl 'Show'
+      ParameterDecl 'attempt'
+        FunctionTypeSyntax
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            IdentifierExpr 'attempt'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  nothing went wrong" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'DivideByZeroException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  divided by zero" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'IndexOutOfRangeException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  reached past the end" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'EmptyOptionalException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  read an empty optional" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'OverflowException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  too big to hold" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'FormatException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  a pattern that means nothing" [String]
+    FunctionDecl 'WhenNotToThrow'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== an answer, or the absence of one ==" [String]
+      VarDeclStmt 'shelf'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CollectionExpr
+          LiteralExpr "flour" [String]
+          LiteralExpr "sugar" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  looking for sugar: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Find'
+                      IdentifierExpr 'Program'
+                    IdentifierExpr 'shelf'
+                    LiteralExpr "sugar" [String]
+                LiteralExpr "not there" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  looking for salt:  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Find'
+                      IdentifierExpr 'Program'
+                    IdentifierExpr 'shelf'
+                    LiteralExpr "salt" [String]
+                LiteralExpr "not there" [String]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Weigh'
+              IdentifierExpr 'Program'
+            UnaryExpr '-'
+              LiteralExpr 1 [Integer]
+        CatchClause 'problem'
+          NamedTypeSyntax 'ArgumentException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              InterpolatedStringExpr '  ' ''
+                InterpolationPart
+                  CallExpr
+                    MemberExpr 'Message'
+                      IdentifierExpr 'problem'
+    FunctionDecl 'Find'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'string'
+      ParameterDecl 'shelf'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+      ParameterDecl 'what'
+        NamedTypeSyntax 'string'
+      ForEachStmt 'item'
+        IdentifierExpr 'shelf'
+        IfStmt
+          BinaryExpr '=='
+            IdentifierExpr 'item'
+            IdentifierExpr 'what'
+          YieldStmt
+            IdentifierExpr 'item'
+      VarDeclStmt 'missing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+      YieldStmt
+        IdentifierExpr 'missing'
+    FunctionDecl 'Weigh'
+      ParameterDecl 'grams'
+        NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr '<'
+          IdentifierExpr 'grams'
+          LiteralExpr 0 [Integer]
+        ThrowStmt
+          NewExpr 'ArgumentException'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "cannot weigh " [String]
+                IdentifierExpr 'grams'
+              LiteralExpr " grams" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  weighed ' 'g'
+            InterpolationPart
+              IdentifierExpr 'grams'

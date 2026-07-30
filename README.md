@@ -401,6 +401,23 @@ project Storefront
 end project
 ```
 
+**A project with more than one program says which one starts, with `entry`:**
+
+```
+project Tools
+    entry Tools.Program
+    source Tools.pc
+    source App.pc
+end project
+```
+
+Only needed where there is a choice. Namespaces make `Tools.Program` and `App.Program` two
+different types, so a compilation may hold both — and then the compiler must be told rather
+than choose, because an assembly holds one entry point in its metadata and picking by the order
+the sources were listed would make a build's behaviour depend on the order of its own file
+list. Written where only one program exists, the line decides nothing and says so. `pc run` on
+a single file needs none of it: it runs the `Program` that file declares.
+
 References are followed as far as they chain, a project reached twice is brought once, and what
 a project references is built before the project itself. Unlike imports, projects **may not**
 reference in a circle: a build that has to exist before itself can't be produced, so that one is
@@ -538,6 +555,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
+| [exceptions.pc](samples/exceptions.pc) | **Everything about going wrong.** A hierarchy the program declares, catching by ancestor, which clause wins, `finally`, throwing again, the ones the language raises — and when an optional is the right answer instead |
 | [files.pc](samples/files.pc) | **Keeping things in files.** Whole files out and back, a line at a time, what is not there against what went wrong — and it removes the folder it made |
 | [asking.pc](samples/asking.pc) | **Reading what somebody typed.** `Console.Read` and the two questions it forces — was anything typed, and did it read as what you wanted |
 | [sets.pc](samples/sets.pc) | **Rows of things.** Building, asking, taking a run out, `Union`/`Intersect`/`Except` — and the same words on a string, where the difference is that a set changes and a string does not |
