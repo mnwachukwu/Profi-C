@@ -5,6 +5,8 @@
   removing a 99     false
   what is left      {1, 2, 4}
   repeats are fine  {1, 1, 2, 2}
+  one of each       {1, 2}
+  and the original  {1, 1, 2, 2}
 == asking ==
   how many      3
   any milk      true
@@ -24,6 +26,7 @@
   only yours     {4, 5}
   every element back, reordered: {3, 1, 2}
   and mine is untouched {1, 2, 3}
+  merged, not appended  {1, 2, 3, 4, 5}
 == the same words on a string ==
   how many        7
   any 'fi'        true

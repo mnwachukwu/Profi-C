@@ -118,6 +118,22 @@ CompilationUnit
           InterpolatedStringExpr '  repeats are fine  ' ''
             InterpolationPart
               IdentifierExpr 'repeated'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  one of each       ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Distinct'
+                  IdentifierExpr 'repeated'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  and the original  ' ''
+            InterpolationPart
+              IdentifierExpr 'repeated'
     FunctionDecl 'AskingAboutIt'
       ExpressionStmt
         CallExpr
@@ -337,6 +353,18 @@ CompilationUnit
           InterpolatedStringExpr '  and mine is untouched ' ''
             InterpolationPart
               IdentifierExpr 'mine'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  merged, not appended  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Distinct'
+                  CallExpr
+                    MemberExpr 'Union'
+                      IdentifierExpr 'mine'
+                    IdentifierExpr 'yours'
     FunctionDecl 'TheSameWordsOnAString'
       ExpressionStmt
         CallExpr

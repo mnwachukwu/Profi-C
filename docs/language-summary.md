@@ -72,6 +72,7 @@ Members are private by default, so `protected`, `internal`, and `public` opt out
 | `FormatException` | thrown when a parse or format operation fails |
 | `ArgumentException` | thrown when an argument is invalid |
 | `OverflowException` | thrown when an arithmetic result does not fit its type |
+| `IOException` | thrown when a file operation fails for any reason other than the file not being there |
 
 Users may extend `Exception` and its subtypes. `Model` **is** extendable and is extended implicitly by everything, exactly as `object` is in C#; what cannot be done is redeclaring the name. `Console` and `Reference` are `global model`s, so neither can be extended or instantiated.
 

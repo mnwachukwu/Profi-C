@@ -255,7 +255,7 @@
     "reserved-type": {
       "comment": "Types the language provides. Not keywords, so the scanner reads them as ordinary names; they are listed here because a reader still meets them as part of the language.",
       "name": "support.class.profi-c",
-      "match": "\\b(Model|Function|Console|Reference|Math|Random|Fraction|DateTime|TimeSpan|Date|Time|Program|Exception|ArgumentException|DivideByZeroException|EmptyOptionalException|FormatException|IndexOutOfRangeException|InvalidCastException|OverflowException)\\b"
+      "match": "\\b(Model|Function|Console|Reference|Math|Random|Fraction|DateTime|TimeSpan|Date|Time|File|Directory|Program|Exception|IOException|ArgumentException|DivideByZeroException|EmptyOptionalException|FormatException|IndexOutOfRangeException|InvalidCastException|OverflowException)\\b"
     },
 
     "constant": {

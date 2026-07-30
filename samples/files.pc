@@ -1,0 +1,194 @@
+##
+    Keeping things in files.
+
+    A file is somewhere a program puts text and takes it back later. There is no opening and
+    no closing here: a file is read whole or written whole, which is what a program being
+    learned on actually wants and avoids the one mistake every beginner makes with the other
+    kind — forgetting to close it.
+
+    Two questions run through all of it, and they are different questions:
+
+      Is there a file there?   An ordinary thing to ask. Reading gives back nothing, and
+                               nothing is an answer.
+
+      Did something go wrong?  A locked file, a folder that is not there, a full disk. These
+                               raise IOException, because "nothing" cannot say which happened.
+
+    This program works inside a folder it makes, and removes it at the end, so running it
+    leaves nothing behind.
+##
+
+global model Program
+
+    constant string Folder = "profi-c-sample-files";
+
+    function Main()
+        Directory.Create(Program.Folder);
+
+        Program.WritingAndReading();
+        Program.LineByLine();
+        Program.AskingBeforeReading();
+        Program.MovingThingsAbout();
+        Program.LookingInAFolder();
+        Program.WhenSomethingGoesWrong();
+
+        # Taking the folder takes everything in it.
+        Directory.Delete(Program.Folder);
+
+        Console.WriteLine("cleaned up: {{not Directory.Exists(Program.Folder)}}");
+    end function
+
+    string function In(string name)
+        yield Program.Folder + "/" + name;
+    end function
+
+    # ---- The whole of it, out and back ---------------------------------------------------
+
+    ##
+        Write replaces whatever was there; Append adds to the end. Both make the file if there
+        is none. Neither makes the folder it sits in, so a path with a typo in it fails rather
+        than quietly building somewhere new.
+    ##
+    function WritingAndReading()
+        Console.WriteLine("== out and back ==");
+
+        let path = Program.In("notes.txt");
+
+        File.Write(path, "the first thing");
+        Console.WriteLine("  wrote and read  {{File.Read(path).Or("nothing")}}");
+
+        File.Write(path, "the second thing");
+        Console.WriteLine("  writing replaces {{File.Read(path).Or("nothing")}}");
+
+        File.Append(path, ", and more");
+        Console.WriteLine("  appending adds  {{File.Read(path).Or("nothing")}}");
+
+        Console.WriteLine("  how big         {{File.Size(path).Or(0)}}");
+        Console.WriteLine("  when it changed is known: {{File.Changed(path).HasValue()}}");
+    end function
+
+    # ---- A line at a time ------------------------------------------------------------------
+
+    ##
+        Lines go out with one ending each and come back without them, so a set of lines is the
+        same set whichever machine wrote the file. Nothing has to strip anything.
+    ##
+    function LineByLine()
+        Console.WriteLine("== line by line ==");
+
+        let path = Program.In("shopping.txt");
+
+        File.WriteLines(path, {"bread", "milk", "eggs"});
+
+        string[] lines = File.ReadLines(path).Or({});
+
+        Console.WriteLine("  how many        {{lines.Count()}}");
+        Console.WriteLine("  each one        {{lines.Join(", ")}}");
+        Console.WriteLine("  no endings left {{lines[0] == "bread"}}");
+
+        # Reading and writing back is a whole edit, with nothing held open in between.
+        File.WriteLines(path, lines.Union({"jam"}));
+
+        Console.WriteLine("  after adding    {{File.ReadLines(path).Or({}).Join(", ")}}");
+    end function
+
+    # ---- What is not there ------------------------------------------------------------------
+
+    ##
+        This is why reading yields an optional. The alternative is asking Exists first and
+        reading second, which is two questions where one will do — and the file can go away
+        between them.
+    ##
+    function AskingBeforeReading()
+        Console.WriteLine("== what is not there ==");
+
+        let missing = Program.In("nothing-here.txt");
+
+        string? held = File.Read(missing);
+
+        if held.HasValue()
+            Console.WriteLine("  read it:        {{held.Value()}}");
+        else
+            Console.WriteLine("  nothing to read, and nothing went wrong");
+        end if
+
+        Console.WriteLine("  exists          {{File.Exists(missing)}}");
+        Console.WriteLine("  size            {{File.Size(missing).HasValue()}}");
+
+        # Or gives a value to fall back on, which is the one-line version of the same thing.
+        Console.WriteLine("  falling back    {{File.Read(missing).Or("(empty)")}}");
+    end function
+
+    # ---- Copying, moving, removing -----------------------------------------------------------
+
+    function MovingThingsAbout()
+        Console.WriteLine("== moving things ==");
+
+        let first = Program.In("first.txt");
+        let second = Program.In("second.txt");
+        let third = Program.In("third.txt");
+
+        File.Write(first, "text");
+        File.Copy(first, second);
+        File.Move(second, third);
+
+        Console.WriteLine("  original stays  {{File.Exists(first)}}");
+        Console.WriteLine("  the moved one   {{File.Exists(second)}}");
+        Console.WriteLine("  where it went   {{File.Read(third).Or("nothing")}}");
+
+        # Delete says whether there was one, the way removing from a set does.
+        Console.WriteLine("  deleting it     {{File.Delete(third)}}");
+        Console.WriteLine("  and again       {{File.Delete(third)}}");
+    end function
+
+    # ---- What is in a folder ------------------------------------------------------------------
+
+    ##
+        Both come back in a settled order rather than whatever the file system happens to
+        offer, so a program prints the same list twice and on two machines.
+    ##
+    function LookingInAFolder()
+        Console.WriteLine("== looking in a folder ==");
+
+        Directory.Create(Program.In("inner"));
+
+        File.Write(Program.In("gamma.txt"), "");
+        File.Write(Program.In("alpha.txt"), "");
+
+        Console.WriteLine("  files            {{Directory.Files(Program.Folder).Or({}).Count()}}");
+        Console.WriteLine("  folders          {{Directory.Folders(Program.Folder).Or({}).Count()}}");
+
+        # A folder that is not there lists nothing, for the same reason a file that is not
+        # there reads as nothing.
+        Console.WriteLine("  a folder with no name here: "
+                          + Directory.Files(Program.In("nowhere")).HasValue());
+
+        Console.WriteLine("  where we are is a folder:   "
+                          + Directory.Exists(Directory.Current));
+    end function
+
+    # ---- When something really is wrong ---------------------------------------------------------
+
+    ##
+        Everything that is not "there is no such file" raises, because absence cannot say which
+        of them happened. Writing into a folder that does not exist is the one to meet first.
+    ##
+    function WhenSomethingGoesWrong()
+        Console.WriteLine("== when something is wrong ==");
+
+        try
+            File.Write(Program.In("no/such/folder/notes.txt"), "text");
+            Console.WriteLine("  wrote it");
+        catch IOException problem
+            Console.WriteLine("  writing where there is no folder raised IOException");
+        end try
+
+        try
+            File.Copy(Program.In("absent.txt"), Program.In("copy.txt"));
+            Console.WriteLine("  copied it");
+        catch IOException problem
+            Console.WriteLine("  copying what is not there raised IOException");
+        end try
+    end function
+
+end model

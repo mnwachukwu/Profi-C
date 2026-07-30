@@ -5,8 +5,9 @@
     value carries members of its own. Nothing here is imported or installed; these are part
     of the language rather than a library you add.
 
-    This is v1's whole standard library. Random, DateTime, and file access are named in the
-    specification but are not built yet.
+    This is v1's whole standard library, with one part left out on purpose: File and Directory
+    are shown in files.pc instead, because exercising them means writing to a disk, and what
+    this program prints is compared against a recording on every build.
 ##
 
 global model Program

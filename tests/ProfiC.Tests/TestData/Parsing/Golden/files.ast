@@ -1,0 +1,550 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FieldDecl 'Folder' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "profi-c-sample-files" [String]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Create'
+            IdentifierExpr 'Directory'
+          MemberExpr 'Folder'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WritingAndReading'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'LineByLine'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AskingBeforeReading'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'MovingThingsAbout'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'LookingInAFolder'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhenSomethingGoesWrong'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Delete'
+            IdentifierExpr 'Directory'
+          MemberExpr 'Folder'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr 'cleaned up: ' ''
+            InterpolationPart
+              UnaryExpr 'not'
+                CallExpr
+                  MemberExpr 'Exists'
+                    IdentifierExpr 'Directory'
+                  MemberExpr 'Folder'
+                    IdentifierExpr 'Program'
+    FunctionDecl 'In'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'name'
+        NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          BinaryExpr '+'
+            MemberExpr 'Folder'
+              IdentifierExpr 'Program'
+            LiteralExpr "/" [String]
+          IdentifierExpr 'name'
+    FunctionDecl 'WritingAndReading'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== out and back ==" [String]
+      VarDeclStmt 'path' [inferred]
+        CallExpr
+          MemberExpr 'In'
+            IdentifierExpr 'Program'
+          LiteralExpr "notes.txt" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'File'
+          IdentifierExpr 'path'
+          LiteralExpr "the first thing" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  wrote and read  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Read'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'path'
+                LiteralExpr "nothing" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'File'
+          IdentifierExpr 'path'
+          LiteralExpr "the second thing" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  writing replaces ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Read'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'path'
+                LiteralExpr "nothing" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Append'
+            IdentifierExpr 'File'
+          IdentifierExpr 'path'
+          LiteralExpr ", and more" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  appending adds  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Read'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'path'
+                LiteralExpr "nothing" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  how big         ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Size'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'path'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  when it changed is known: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'HasValue'
+                  CallExpr
+                    MemberExpr 'Changed'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'path'
+    FunctionDecl 'LineByLine'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== line by line ==" [String]
+      VarDeclStmt 'path' [inferred]
+        CallExpr
+          MemberExpr 'In'
+            IdentifierExpr 'Program'
+          LiteralExpr "shopping.txt" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLines'
+            IdentifierExpr 'File'
+          IdentifierExpr 'path'
+          CollectionExpr
+            LiteralExpr "bread" [String]
+            LiteralExpr "milk" [String]
+            LiteralExpr "eggs" [String]
+      VarDeclStmt 'lines'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'Or'
+            CallExpr
+              MemberExpr 'ReadLines'
+                IdentifierExpr 'File'
+              IdentifierExpr 'path'
+          CollectionExpr
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  how many        ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'lines'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  each one        ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Join'
+                  IdentifierExpr 'lines'
+                LiteralExpr ", " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  no endings left ' ''
+            InterpolationPart
+              BinaryExpr '=='
+                IndexExpr
+                  IdentifierExpr 'lines'
+                  LiteralExpr 0 [Integer]
+                LiteralExpr "bread" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLines'
+            IdentifierExpr 'File'
+          IdentifierExpr 'path'
+          CallExpr
+            MemberExpr 'Union'
+              IdentifierExpr 'lines'
+            CollectionExpr
+              LiteralExpr "jam" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  after adding    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Join'
+                  CallExpr
+                    MemberExpr 'Or'
+                      CallExpr
+                        MemberExpr 'ReadLines'
+                          IdentifierExpr 'File'
+                        IdentifierExpr 'path'
+                    CollectionExpr
+                LiteralExpr ", " [String]
+    FunctionDecl 'AskingBeforeReading'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== what is not there ==" [String]
+      VarDeclStmt 'missing' [inferred]
+        CallExpr
+          MemberExpr 'In'
+            IdentifierExpr 'Program'
+          LiteralExpr "nothing-here.txt" [String]
+      VarDeclStmt 'held'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'Read'
+            IdentifierExpr 'File'
+          IdentifierExpr 'missing'
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'held'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr '  read it:        ' ''
+              InterpolationPart
+                CallExpr
+                  MemberExpr 'Value'
+                    IdentifierExpr 'held'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  nothing to read, and nothing went wrong" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  exists          ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Exists'
+                  IdentifierExpr 'File'
+                IdentifierExpr 'missing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  size            ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'HasValue'
+                  CallExpr
+                    MemberExpr 'Size'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'missing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  falling back    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Read'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'missing'
+                LiteralExpr "(empty)" [String]
+    FunctionDecl 'MovingThingsAbout'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== moving things ==" [String]
+      VarDeclStmt 'first' [inferred]
+        CallExpr
+          MemberExpr 'In'
+            IdentifierExpr 'Program'
+          LiteralExpr "first.txt" [String]
+      VarDeclStmt 'second' [inferred]
+        CallExpr
+          MemberExpr 'In'
+            IdentifierExpr 'Program'
+          LiteralExpr "second.txt" [String]
+      VarDeclStmt 'third' [inferred]
+        CallExpr
+          MemberExpr 'In'
+            IdentifierExpr 'Program'
+          LiteralExpr "third.txt" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'File'
+          IdentifierExpr 'first'
+          LiteralExpr "text" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Copy'
+            IdentifierExpr 'File'
+          IdentifierExpr 'first'
+          IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Move'
+            IdentifierExpr 'File'
+          IdentifierExpr 'second'
+          IdentifierExpr 'third'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  original stays  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Exists'
+                  IdentifierExpr 'File'
+                IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  the moved one   ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Exists'
+                  IdentifierExpr 'File'
+                IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  where it went   ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Read'
+                      IdentifierExpr 'File'
+                    IdentifierExpr 'third'
+                LiteralExpr "nothing" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  deleting it     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Delete'
+                  IdentifierExpr 'File'
+                IdentifierExpr 'third'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  and again       ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Delete'
+                  IdentifierExpr 'File'
+                IdentifierExpr 'third'
+    FunctionDecl 'LookingInAFolder'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== looking in a folder ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Create'
+            IdentifierExpr 'Directory'
+          CallExpr
+            MemberExpr 'In'
+              IdentifierExpr 'Program'
+            LiteralExpr "inner" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'File'
+          CallExpr
+            MemberExpr 'In'
+              IdentifierExpr 'Program'
+            LiteralExpr "gamma.txt" [String]
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'File'
+          CallExpr
+            MemberExpr 'In'
+              IdentifierExpr 'Program'
+            LiteralExpr "alpha.txt" [String]
+          LiteralExpr "" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  files            ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Count'
+                  CallExpr
+                    MemberExpr 'Or'
+                      CallExpr
+                        MemberExpr 'Files'
+                          IdentifierExpr 'Directory'
+                        MemberExpr 'Folder'
+                          IdentifierExpr 'Program'
+                    CollectionExpr
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  folders          ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Count'
+                  CallExpr
+                    MemberExpr 'Or'
+                      CallExpr
+                        MemberExpr 'Folders'
+                          IdentifierExpr 'Directory'
+                        MemberExpr 'Folder'
+                          IdentifierExpr 'Program'
+                    CollectionExpr
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a folder with no name here: " [String]
+            CallExpr
+              MemberExpr 'HasValue'
+                CallExpr
+                  MemberExpr 'Files'
+                    IdentifierExpr 'Directory'
+                  CallExpr
+                    MemberExpr 'In'
+                      IdentifierExpr 'Program'
+                    LiteralExpr "nowhere" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  where we are is a folder:   " [String]
+            CallExpr
+              MemberExpr 'Exists'
+                IdentifierExpr 'Directory'
+              MemberExpr 'Current'
+                IdentifierExpr 'Directory'
+    FunctionDecl 'WhenSomethingGoesWrong'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== when something is wrong ==" [String]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'File'
+            CallExpr
+              MemberExpr 'In'
+                IdentifierExpr 'Program'
+              LiteralExpr "no/such/folder/notes.txt" [String]
+            LiteralExpr "text" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  wrote it" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'IOException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  writing where there is no folder raised IOException" [String]
+      TryStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Copy'
+              IdentifierExpr 'File'
+            CallExpr
+              MemberExpr 'In'
+                IdentifierExpr 'Program'
+              LiteralExpr "absent.txt" [String]
+            CallExpr
+              MemberExpr 'In'
+                IdentifierExpr 'Program'
+              LiteralExpr "copy.txt" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  copied it" [String]
+        CatchClause 'problem'
+          NamedTypeSyntax 'IOException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  copying what is not there raised IOException" [String]

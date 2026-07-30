@@ -458,6 +458,7 @@ public sealed partial class Interpreter
             BuiltInId.SetExcept => new StrongBox<object?>(
                 new ProfiCSet<object?>(
                     Set().Where(element => !OtherSet(0).Contains(element)))),
+            BuiltInId.SetDistinct => new StrongBox<object?>(OneOfEach(Set())),
 
             BuiltInId.SetSubsetFrom => new StrongBox<object?>(
                 Subset(Set(), (int)Integer(0), Set().Count)),
@@ -569,6 +570,63 @@ public sealed partial class Interpreter
 
             BuiltInId.StringToFraction => new StrongBox<object?>(ReadFraction(Subject())),
 
+            // ---- Files ----------------------------------------------------------------
+            //
+            // A file that is not there gives nothing back, so the ordinary question needs no
+            // guard. Every other failure travels as the IOException it already is, which is
+            // the type a program names after 'catch'.
+            BuiltInId.FileRead => new StrongBox<object?>(
+                File.Exists(Text(0)) ? File.ReadAllText(Text(0), Utf8) : null),
+            BuiltInId.FileReadLines => new StrongBox<object?>(
+                File.Exists(Text(0))
+                    ? new ProfiCSet<object?>(
+                        File.ReadAllLines(Text(0), Utf8).Select(line => (object?)line))
+                    : null),
+
+            BuiltInId.FileWrite => Then(() => File.WriteAllText(Text(0), Text(1), Utf8)),
+            BuiltInId.FileWriteLines => Then(() => File.WriteAllText(
+                Text(0),
+                string.Concat(OtherSet(1).Select(line => AsText(line) + "\n")),
+                Utf8)),
+            BuiltInId.FileAppend => Then(() => File.AppendAllText(Text(0), Text(1), Utf8)),
+
+            BuiltInId.FileExists => new StrongBox<object?>(File.Exists(Text(0))),
+
+            BuiltInId.FileDelete => new StrongBox<object?>(Removed(Text(0))),
+
+            BuiltInId.FileCopy => Then(() => File.Copy(Text(0), Text(1), overwrite: true)),
+            BuiltInId.FileMove => Then(() => File.Move(Text(0), Text(1), overwrite: true)),
+
+            BuiltInId.FileSize => new StrongBox<object?>(
+                File.Exists(Text(0)) ? new FileInfo(Text(0)).Length : null),
+            BuiltInId.FileChanged => new StrongBox<object?>(
+                File.Exists(Text(0)) ? File.GetLastWriteTime(Text(0)) : null),
+
+            BuiltInId.DirectoryCurrent => new StrongBox<object?>(
+                System.IO.Directory.GetCurrentDirectory()),
+            BuiltInId.DirectoryExists => new StrongBox<object?>(
+                System.IO.Directory.Exists(Text(0))),
+            BuiltInId.DirectoryCreate => Then(
+                () => System.IO.Directory.CreateDirectory(Text(0))),
+            BuiltInId.DirectoryDelete => new StrongBox<object?>(RemovedFolder(Text(0))),
+
+            // Named in a settled order rather than whatever the file system offers, so a
+            // program prints the same list twice and on two machines.
+            BuiltInId.DirectoryFiles => new StrongBox<object?>(
+                System.IO.Directory.Exists(Text(0))
+                    ? new ProfiCSet<object?>(
+                        System.IO.Directory.GetFiles(Text(0))
+                            .OrderBy(p => p, StringComparer.Ordinal)
+                            .Select(p => (object?)p))
+                    : null),
+            BuiltInId.DirectoryFolders => new StrongBox<object?>(
+                System.IO.Directory.Exists(Text(0))
+                    ? new ProfiCSet<object?>(
+                        System.IO.Directory.GetDirectories(Text(0))
+                            .OrderBy(p => p, StringComparer.Ordinal)
+                            .Select(p => (object?)p))
+                    : null),
+
             // The halves of a moment, and the ways of building one from them.
             BuiltInId.DateTimeDatePart => new StrongBox<object?>(DateOnly.FromDateTime(Moment())),
             BuiltInId.DateTimeTimePart => new StrongBox<object?>(TimeOnly.FromDateTime(Moment())),
@@ -669,6 +727,62 @@ public sealed partial class Interpreter
         };
     }
 #pragma warning restore CS8524
+
+    /// <summary>
+    /// UTF-8 with no mark at the front, which is what everything else reads without being
+    /// told. A mark would travel into files a Profi-C program wrote and nothing else expects.
+    /// </summary>
+    private static readonly System.Text.UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
+
+    /// <summary>
+    /// <para>The elements of a set with the repeats taken out, keeping the first of each.
+    /// </para>
+    /// <para>Asked one at a time against what has been kept so far, rather than through a
+    /// hash of each value. Equality here is the deep, cycle-safe comparison <c>==</c> uses,
+    /// which no hash code is built to agree with — and asking the same way <c>Contains</c>
+    /// and <c>Intersect</c> already do means all three answer alike.</para>
+    /// </summary>
+    private static ProfiCSet<object?> OneOfEach(ProfiCSet<object?> values)
+    {
+        ProfiCSet<object?> kept = new();
+
+        foreach (object? value in values)
+        {
+            if (!kept.Contains(value))
+            {
+                kept.Insert(value);
+            }
+        }
+
+        return kept;
+    }
+
+    /// <summary>
+    /// Deletes a file if there is one, saying whether there was. Asked and done in one step
+    /// rather than checked first, so that nothing can slip in between the two.
+    /// </summary>
+    private static bool Removed(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        File.Delete(path);
+        return true;
+    }
+
+    /// <summary>The same for a folder, and everything inside it.</summary>
+    private static bool RemovedFolder(string path)
+    {
+        if (!System.IO.Directory.Exists(path))
+        {
+            return false;
+        }
+
+        System.IO.Directory.Delete(path, recursive: true);
+        return true;
+    }
 
     /// <summary>
     /// <para>Reads a ratio written with either mark between its halves, or a whole number.

@@ -52,6 +52,12 @@ global model Program
         integer[] repeated = {1, 1, 2, 2};
 
         Console.WriteLine("  repeats are fine  {{repeated}}");
+
+        # Distinct is how you ask for one of each, keeping the first of every repeat so what
+        # comes back is in the order the values were first met. It is the one member that
+        # turns this into the set of mathematics, and it only does so when asked.
+        Console.WriteLine("  one of each       {{repeated.Distinct()}}");
+        Console.WriteLine("  and the original  {{repeated}}");
     end function
 
     # ---- Asking about it ----------------------------------------------------------------
@@ -113,6 +119,10 @@ global model Program
         Console.WriteLine("  every element back, reordered: "
                           + "{{mine.Intersect(yours).Union(mine.Except(yours))}}");
         Console.WriteLine("  and mine is untouched {{mine}}");
+
+        # Union followed by Distinct is the union of mathematics, said in two steps because
+        # they are two decisions: put them together, then decide about the repeats.
+        Console.WriteLine("  merged, not appended  {{mine.Union(yours).Distinct()}}");
     end function
 
     # ---- The same words, on a string ----------------------------------------------------

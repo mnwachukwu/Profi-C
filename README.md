@@ -538,6 +538,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
+| [files.pc](samples/files.pc) | **Keeping things in files.** Whole files out and back, a line at a time, what is not there against what went wrong — and it removes the folder it made |
 | [asking.pc](samples/asking.pc) | **Reading what somebody typed.** `Console.Read` and the two questions it forces — was anything typed, and did it read as what you wanted |
 | [sets.pc](samples/sets.pc) | **Rows of things.** Building, asking, taking a run out, `Union`/`Intersect`/`Except` — and the same words on a string, where the difference is that a set changes and a string does not |
 | [text.pc](samples/text.pc) | **Building text.** Values written into a sentence with `{{ }}`, a pattern after the colon saying how, block strings that read nothing they hold, and taking a string apart with `Split` and `Join` |

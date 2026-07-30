@@ -1413,6 +1413,7 @@ Eight exception types, and every one descends from `Exception`:
 | `FormatException` | Text that could not be read as what was wanted |
 | `ArgumentException` | An argument a function will not accept |
 | `OverflowException` | A result too large for the type to hold |
+| `IOException` | Anything going wrong with a file except its not being there, which is an absent optional instead (§11.5e) |
 
 Every one carries a `Message()`. A name the language can raise is a name a program can catch:
 the two come from one list, so nothing can be thrown that cannot be named.
@@ -1467,7 +1468,8 @@ the language: the alternative teaches people to write `catch` clauses that swall
 
 The library is small, and lives in a namespace named **`Standard`**: `Model`, `Function`,
 `Exception` and its subtypes, `Console`, `Reference`, `Math`, `Fraction`, `Random`,
-`DateTime`, `TimeSpan`, `Date`, and `Time`. Of these only `Exception` may be extended.
+`DateTime`, `TimeSpan`, `Date`, `Time`, `File`, and `Directory`. Of these only `Exception` may
+be extended.
 
 **`Standard` is in scope in every file with nothing written**, so the library is reached
 without importing anything, and `Standard.Math` is legal without a `using` too — qualifying a
@@ -1538,9 +1540,32 @@ Inherited from `Model` by every type, values included. Calling one on a value do
 | `Clear()` | empties it |
 | `Subset(start)` | a copy of everything from `start` on |
 | `Subset(start, end)` | a copy of the run from `start` up to but not including `end` |
+| `Union(other)` | a new set: this one's elements then the other's |
+| `Intersect(other)` | a new set: the elements also in the other, in this one's order |
+| `Except(other)` | a new set: the elements not in the other |
+| `Distinct()` | a new set: one of each, keeping the first of every repeat |
+| `Join(separator)` | `string`; every element written out, with the separator between |
 
 `Subset`'s end is **exclusive**, the reading `until` has, which is what makes
 `xs.Subset(0, n)` and `xs.Subset(n)` add back up to the whole set.
+
+**These are not the operations of the same name in mathematics**, because a Profi-C set is not
+one: it keeps its order and a value may appear in it twice. So `Union` **appends** rather than
+merging, and `{1, 2}.Union({2, 3})` is `{1, 2, 2, 3}`. `Distinct` is how a program asks for one
+of each, and `xs.Union(ys).Distinct()` is the union of mathematics said in two steps — which is
+two steps because they are two decisions: put them together, then decide about the repeats.
+
+`Intersect` and `Except` divide a set in two between them: every element goes to exactly one
+answer. Putting those back together therefore returns every element, though in the order they
+were divided rather than the order they started in.
+
+Membership everywhere here — `Contains`, `IndexOf`, `Intersect`, `Except`, `Distinct` — is the
+same deep comparison `==` makes (§11.1), so all of them agree about what counts as the same
+value.
+
+`Join` reads on the set rather than on a string, because the thing being joined is the
+collection; it is the counterpart of `Split` on a string (§11.3). Any set answers it, not only
+a set of strings: each element is written the way it would be written on its own.
 
 **Nothing that yields a set changes one.** `Subset` and the four in §3.2b hand back a new set;
 `Insert`, `InsertAt`, `RemoveAt` and `Clear` change the set and yield nothing, and `Remove`
@@ -1764,6 +1789,57 @@ name that says what it is.
 A `Time` is not a `TimeSpan`, though both are written with colons. A span is how long something
 lasted, may exceed a day, and may run backwards; a `Time` is a reading on a clock and always
 sits between midnight and the next one.
+
+### 11.5e Files and folders
+
+**A file is read whole or written whole.** There is nothing to open and nothing to close, and
+no way to read part of one. Holding a file open needs an object with state that must be
+released afterwards, and v1 has neither interfaces nor anything that releases itself — but the
+restriction is not only that: whole-file is what a program being learned on wants, and it
+removes the mistake every beginner makes with the other kind.
+
+| `File` | |
+|---|---|
+| `Read(path)` | `string?`; the whole file as text |
+| `ReadLines(path)` | `string[]?`; one entry per line, endings removed |
+| `Write(path, text)` | replaces what was there, making the file if there is none |
+| `WriteLines(path, lines)` | the same, one line per entry |
+| `Append(path, text)` | adds to the end |
+| `Exists(path)` | `boolean` |
+| `Delete(path)` | `boolean`; whether there was one to delete |
+| `Copy(from, to)`, `Move(from, to)` | both replace what is at the destination |
+| `Size(path)` | `integer?`; bytes |
+| `Changed(path)` | `DateTime?`; when it was last written |
+
+| `Directory` | |
+|---|---|
+| `Current` | `string`. **A value, so written without `()`** |
+| `Exists(path)` | `boolean` |
+| `Create(path)` | makes every folder on the way |
+| `Delete(path)` | `boolean`; takes what is inside with it |
+| `Files(path)`, `Folders(path)` | `string[]?`; sorted |
+
+**A missing file is an absent optional; everything else raises `IOException`.** These are
+different questions and the language keeps them apart. Whether a file is there is ordinary, and
+answering it with absence means the common case — read it if it is there — needs no guard, and
+no `Exists` check that the file could slip out from under between the asking and the reading.
+A locked file, a folder that is not there, a path the system will not take, a disk with no room:
+none of those can be said with absence, because absence cannot say which happened.
+
+`Folders` rather than `Directories` only because `Directory.Directories` reads as a stutter;
+the two words mean the same thing. Both members correspond to .NET's `GetFiles` and
+`GetDirectories`, with the `Get` dropped as it is everywhere else here.
+
+**Text is UTF-8 with no byte-order mark.** Writing ends every line with `\n`; reading accepts
+either that or `\r\n` and returns neither, so a file written on one machine reads as the same
+lines on another. Listings come back sorted rather than in whatever order the file system
+offers, so a program prints the same list twice and on two machines.
+
+**Writing does not create the folder it writes into.** A path with a typo in it fails, rather
+than quietly building somewhere nobody meant. `Directory.Create` is the way to say it on
+purpose, and it does make every folder on the way.
+
+Paths are handed to the system as written. A forward slash separates folders on every platform.
 
 ### 11.5a How far a real answer can be trusted
 

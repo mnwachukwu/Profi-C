@@ -366,7 +366,10 @@ public sealed class BuiltInCatalogTests
     public void EveryIdentifierIsCovered()
     {
         IEnumerable<BuiltInId> tested =
-            Expectations.Select(e => e.Id).Concat(ValueMemberIds).Distinct();
+            Expectations.Select(e => e.Id)
+                        .Concat(ValueMemberIds)
+                        .Concat(FileMemberTests.Covered)
+                        .Distinct();
 
         Assert.That(
             tested.OrderBy(i => i),
@@ -668,6 +671,10 @@ public sealed class BuiltInCatalogTests
     [TestCase("{1, 2, 3}.Intersect({2, 3, 4})", "{2, 3}")]
     [TestCase("{1, 2}.Intersect({3, 4})", "{}")]
     [TestCase("{1, 2, 3}.Except({2, 4})", "{1, 3}")]
+    [TestCase("{3, 1, 3, 2, 1}.Distinct()", "{3, 1, 2}")]
+    [TestCase("{1, 2, 3}.Distinct()", "{1, 2, 3}")]
+    [TestCase("{\"a\", \"b\", \"a\"}.Distinct()", "{\"a\", \"b\"}")]
+    [TestCase("{1, 2}.Union({2, 3}).Distinct()", "{1, 2, 3}")]
     [TestCase("{1, 2, 3}.Except({})", "{1, 2, 3}")]
     [TestCase("\"a-b-c\".Replace(\"-\", \".\")", "a.b.c")]
     [TestCase("\"Profi-C\".ToUpper()", "PROFI-C")]
@@ -720,7 +727,7 @@ public sealed class BuiltInCatalogTests
         BuiltInId.StringTrimEnd, BuiltInId.StringTrimEndText, BuiltInId.StringTrimEndSet,
         BuiltInId.StringSplit, BuiltInId.StringReplace, BuiltInId.StringToUpper,
         BuiltInId.StringToLower, BuiltInId.StringCapitalize, BuiltInId.SetJoin,
-        BuiltInId.SetUnion, BuiltInId.SetIntersect, BuiltInId.SetExcept,
+        BuiltInId.SetUnion, BuiltInId.SetIntersect, BuiltInId.SetExcept, BuiltInId.SetDistinct,
         BuiltInId.StringToInteger, BuiltInId.StringToReal, BuiltInId.StringToBoolean,
         BuiltInId.StringToFraction,
         BuiltInId.IntegerFormat, BuiltInId.RealFormat, BuiltInId.FractionFormat,

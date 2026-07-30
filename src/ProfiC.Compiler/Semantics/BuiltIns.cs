@@ -207,6 +207,9 @@ public enum BuiltInId
     SetIntersect,
     SetExcept,
 
+    /// <summary>One of each, which a Profi-C set does not otherwise guarantee.</summary>
+    SetDistinct,
+
     /// <summary>
     /// <para>Reading a value back from text, which is the way in that Format is the way out.
     /// </para>
@@ -235,6 +238,34 @@ public enum BuiltInId
     StringToReal,
     StringToBoolean,
     StringToFraction,
+
+    /// <summary>
+    /// <para>Files, whole at a time.</para>
+    /// <para>There is no way to read part of one, because holding a file open needs an object
+    /// with state to close afterwards, and v1 has neither interfaces nor anything that closes
+    /// itself. Whole-file is also what a program being taught with actually wants.</para>
+    /// <para>A file that is not there is an absent optional, since asking whether one exists
+    /// is an ordinary question. Everything else that can go wrong raises IOException, because
+    /// absence cannot say which of them happened.</para>
+    /// </summary>
+    FileRead,
+    FileReadLines,
+    FileWrite,
+    FileWriteLines,
+    FileAppend,
+    FileExists,
+    FileDelete,
+    FileCopy,
+    FileMove,
+    FileSize,
+    FileChanged,
+
+    DirectoryExists,
+    DirectoryCreate,
+    DirectoryDelete,
+    DirectoryFiles,
+    DirectoryFolders,
+    DirectoryCurrent,
 
     /// <summary>The two halves of a moment, and the ways of putting one together.</summary>
     DateTimeDatePart,
@@ -341,6 +372,68 @@ public static class BuiltIns
         new("Reference", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             Member(BuiltInId.ReferenceEquals, "Equals", PrimitiveType.Boolean, [null, null]),
+        ]),
+
+        // Reading and writing whole files. A name to reach members through rather than
+        // something to make one of, since a file is not a thing a program holds — it is
+        // somewhere a program puts text and takes it back.
+        //
+        // Reading yields an optional: a file that is not there is an ordinary answer, and the
+        // alternative is asking Exists first, which is the pattern that races. Everything else
+        // that can go wrong raises IOException, since absence cannot say which.
+        //
+        // Text is UTF-8 with no mark at the front. Writing ends every line with "\n"; reading
+        // accepts either that or "\r\n" and gives back neither, so a file written on one
+        // machine reads the same on another.
+        new("File", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Member(BuiltInId.FileRead, "Read", new OptionalType(PrimitiveType.String),
+                   PrimitiveType.String),
+            Member(BuiltInId.FileReadLines, "ReadLines",
+                   new OptionalType(new SetType(PrimitiveType.String)), PrimitiveType.String),
+
+            // Writing replaces what was there; appending adds to the end. Both make the file
+            // when there is none, and neither makes the folder it sits in — a path with a
+            // typo in it should fail rather than quietly build somewhere new.
+            Member(BuiltInId.FileWrite, "Write", null, PrimitiveType.String, PrimitiveType.String),
+            Member(BuiltInId.FileWriteLines, "WriteLines", null,
+                   PrimitiveType.String, new SetType(PrimitiveType.String)),
+            Member(BuiltInId.FileAppend, "Append", null,
+                   PrimitiveType.String, PrimitiveType.String),
+
+            Member(BuiltInId.FileExists, "Exists", PrimitiveType.Boolean, PrimitiveType.String),
+
+            // Yields whether there was one to delete, as removing from a set does.
+            Member(BuiltInId.FileDelete, "Delete", PrimitiveType.Boolean, PrimitiveType.String),
+
+            Member(BuiltInId.FileCopy, "Copy", null, PrimitiveType.String, PrimitiveType.String),
+            Member(BuiltInId.FileMove, "Move", null, PrimitiveType.String, PrimitiveType.String),
+
+            // Absent for the same reason Read is: there is no size and no date for a file
+            // that is not there.
+            Member(BuiltInId.FileSize, "Size", new OptionalType(PrimitiveType.Integer),
+                   PrimitiveType.String),
+            Member(BuiltInId.FileChanged, "Changed", new OptionalType(BuiltInTypes.Of("DateTime")),
+                   PrimitiveType.String),
+        ]),
+
+        // The folders files sit in. 'Folders' rather than 'Directories' only because
+        // Directory.Directories reads as a stutter; the two words mean the same thing.
+        new("Directory", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Value(BuiltInId.DirectoryCurrent, "Current", PrimitiveType.String),
+
+            Member(BuiltInId.DirectoryExists, "Exists", PrimitiveType.Boolean, PrimitiveType.String),
+
+            // Makes every folder on the way, since making one inside another that is not
+            // there yet is the ordinary reason to ask.
+            Member(BuiltInId.DirectoryCreate, "Create", null, PrimitiveType.String),
+            Member(BuiltInId.DirectoryDelete, "Delete", PrimitiveType.Boolean, PrimitiveType.String),
+
+            Member(BuiltInId.DirectoryFiles, "Files",
+                   new OptionalType(new SetType(PrimitiveType.String)), PrimitiveType.String),
+            Member(BuiltInId.DirectoryFolders, "Folders",
+                   new OptionalType(new SetType(PrimitiveType.String)), PrimitiveType.String),
         ]),
 
         // Every version taking a number is written for each number the language has. A
@@ -771,6 +864,12 @@ public static class BuiltIns
         // What this set has that the other does not. The counterpart of Intersect: between
         // them they divide this set in two, so Intersect and Except put it back together.
         Member(BuiltInId.SetExcept, "Except", set, set),
+
+        // One of each, keeping the first of every run of equals so that what comes back is in
+        // the order the values were first met. This is what makes a Profi-C set into the set
+        // of mathematics, which it is not until asked: order is kept and a value may appear
+        // twice, so Union appends rather than merging and Distinct is how you say otherwise.
+        Member(BuiltInId.SetDistinct, "Distinct", set),
 
         .. TrimmingEmpties(set),
         .. OnEveryType(),

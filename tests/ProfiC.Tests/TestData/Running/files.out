@@ -1,0 +1,31 @@
+== out and back ==
+  wrote and read  the first thing
+  writing replaces the second thing
+  appending adds  the second thing, and more
+  how big         26
+  when it changed is known: true
+== line by line ==
+  how many        3
+  each one        bread, milk, eggs
+  no endings left true
+  after adding    bread, milk, eggs, jam
+== what is not there ==
+  nothing to read, and nothing went wrong
+  exists          false
+  size            false
+  falling back    (empty)
+== moving things ==
+  original stays  true
+  the moved one   false
+  where it went   text
+  deleting it     true
+  and again       false
+== looking in a folder ==
+  files            5
+  folders          1
+  a folder with no name here: false
+  where we are is a folder:   true
+== when something is wrong ==
+  writing where there is no folder raised IOException
+  copying what is not there raised IOException
+cleaned up: true

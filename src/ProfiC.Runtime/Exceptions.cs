@@ -3,10 +3,10 @@ namespace ProfiC.Runtime;
 /// <summary>
 /// <para>Thrown when an empty optional is unwrapped with <c>Value()</c>.</para>
 /// <para>This is the only exception Profi-C names that the base class library does not
-/// already have. The other six — dividing by zero, indexing out of range, an invalid cast, a
-/// bad format, a bad argument, and an overflow — map onto <c>System</c> types verbatim, which
-/// is what will make an eventual bridge between .NET exceptions and Profi-C ones nearly
-/// free.</para>
+/// already have. The rest — dividing by zero, indexing out of range, an invalid cast, a bad
+/// format, a bad argument, an overflow, and anything going wrong with a file — map onto
+/// <c>System</c> types verbatim, which is what will make an eventual bridge between .NET
+/// exceptions and Profi-C ones nearly free.</para>
 /// <para>Reaching this is rare by design: optional access is checked while compiling, and
 /// <c>Value()</c> is the deliberate escape hatch, as Kotlin's <c>!!</c> is.</para>
 /// </summary>
@@ -50,6 +50,12 @@ public static class BuiltInExceptions
         ("FormatException", typeof(FormatException)),
         ("ArgumentException", typeof(ArgumentException)),
         ("OverflowException", typeof(OverflowException)),
+
+        // Everything that can go wrong with a file except the file not being there, which is
+        // an absent optional rather than a fault. Maps onto System.IOException, which is
+        // already the parent of the more particular ones the framework raises, so a locked
+        // file, a bad path and a full disk all arrive here without being listed separately.
+        ("IOException", typeof(System.IO.IOException)),
     ];
 
     /// <summary>Every exception name the language defines.</summary>
