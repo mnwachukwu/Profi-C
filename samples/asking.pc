@@ -1,0 +1,80 @@
+##
+    Asking a person something.
+
+    Console.Read gives back what they typed, or nothing at all when there is nothing left to
+    read — the end of a file piped in, or a person pressing Ctrl+D. That is why it yields an
+    optional: "they typed nothing more" is an answer, not a fault.
+
+    Everything they type arrives as text, so anything else has to be read out of it. Every one
+    of those readings yields an optional too, for the same reason: text that will not read is
+    the ordinary case when a person is doing the typing.
+
+    Run it with something piped in:
+
+        echo 7 | pc run samples/asking.pc
+##
+
+global model Program
+
+    function Main()
+        Program.AskingForAName();
+        Program.AskingForANumber();
+        Program.WhenNothingComes();
+    end function
+
+    # ---- Text, which needs no reading ---------------------------------------------------
+
+    function AskingForAName()
+        Console.Write("your name? ");
+
+        string? typed = Console.Read();
+
+        if typed.HasValue()
+            Console.WriteLine("hello, {{typed.Value()}}");
+        else
+            Console.WriteLine("nobody there");
+        end if
+    end function
+
+    # ---- A number, which does ------------------------------------------------------------
+
+    ##
+        Two questions, and both must be asked. Was anything typed? And did what they typed
+        read as a number? Neither can be skipped, and the compiler will not let them be: an
+        optional cannot be used until its presence is proven.
+    ##
+    function AskingForANumber()
+        Console.Write("a number? ");
+
+        string? typed = Console.Read();
+
+        if not typed.HasValue()
+            Console.WriteLine("nothing to read");
+            yield;
+        end if
+
+        integer? number = typed.Value().Trim().ToInteger();
+
+        if number.HasValue()
+            Console.WriteLine("{{number.Value()}} doubled is {{number.Value() * 2}}");
+        else
+            Console.WriteLine("'{{typed.Value()}}' is not a number");
+        end if
+    end function
+
+    # ---- Or say what to do instead --------------------------------------------------------
+
+    ##
+        Or gives a value to fall back on, which turns both questions into one line when a
+        sensible default exists. What it must not do is hide a mistake worth reporting — here
+        an unreadable answer really does mean "take none", so it is the right shape.
+    ##
+    function WhenNothingComes()
+        Console.Write("how many? ");
+
+        integer count = Console.Read().Or("0").Trim().ToInteger().Or(0);
+
+        Console.WriteLine("taking {{count}}");
+    end function
+
+end model

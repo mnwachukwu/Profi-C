@@ -81,6 +81,66 @@ CompilationUnit
     FieldDecl 'Accented' [constant]
       NamedTypeSyntax 'string'
       LiteralExpr "café" [String]
+    FieldDecl 'Braced' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "a set is written {1, 2}" [String]
+    FieldDecl 'EscapedBrace' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr "a hole is written \{\{ name }}" [String]
+    FieldDecl 'Block' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr """no escape \n, no hole {{x}}, and a " as well""" [BlockString]
+    FieldDecl 'Spanning' [constant]
+      NamedTypeSyntax 'string'
+      LiteralExpr """
+        A block over several lines. The indentation of the closing quotes comes off
+        every line, so what this holds starts at the left margin.
+        """ [BlockString]
+    FunctionDecl 'Interpolated'
+      VarDeclStmt 'count' [inferred]
+        LiteralExpr 2 [Integer]
+      VarDeclStmt 'one' [inferred]
+        InterpolatedStringExpr '' ''
+          InterpolationPart
+            IdentifierExpr 'count'
+      VarDeclStmt 'around' [inferred]
+        InterpolatedStringExpr 'before ' ' after'
+          InterpolationPart
+            IdentifierExpr 'count'
+      VarDeclStmt 'several' [inferred]
+        InterpolatedStringExpr '' ' and ' ' and ' ''
+          InterpolationPart
+            IdentifierExpr 'count'
+          InterpolationPart
+            BinaryExpr '+'
+              IdentifierExpr 'count'
+              LiteralExpr 1 [Integer]
+          InterpolationPart
+            BinaryExpr '*'
+              IdentifierExpr 'count'
+              LiteralExpr 2 [Integer]
+      VarDeclStmt 'adjacent' [inferred]
+        InterpolatedStringExpr '' '' ''
+          InterpolationPart
+            IdentifierExpr 'count'
+          InterpolationPart
+            IdentifierExpr 'count'
+      VarDeclStmt 'formatted' [inferred]
+        InterpolatedStringExpr '' ''
+          InterpolationPart format 'N2'
+            IdentifierExpr 'count'
+      VarDeclStmt 'holding' [inferred]
+        InterpolatedStringExpr '' ''
+          InterpolationPart
+            LiteralExpr "a string in a hole" [String]
+      VarDeclStmt 'nested' [inferred]
+        InterpolatedStringExpr '' ''
+          InterpolationPart
+            CallExpr
+              MemberExpr 'Count'
+                CollectionExpr
+                  LiteralExpr 1 [Integer]
+                  LiteralExpr 2 [Integer]
     FieldDecl 'Yes' [constant]
       NamedTypeSyntax 'boolean'
       LiteralExpr true [Boolean]

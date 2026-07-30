@@ -1,0 +1,170 @@
+##
+    Namespaces, and what they are for.
+
+    A namespace is a place a name sits in. Two of them may each hold a Circle, and the two are
+    different types that never have to know about each other. That is most of what a namespace
+    is for and very nearly all of what it does.
+
+    Everything else here follows from one rule: a bare name is read from where it is written,
+    then outward, ending at the global namespace. Nearest wins.
+##
+
+##
+    A using shortens names from one namespace, for one file. It brings in no code and compiles
+    no extra file — it only decides which names this file can write without qualifying. Here it
+    makes a bare 'Circle' mean the flat one.
+##
+using Geometry.Flat;
+
+##
+    The file-scoped form. Everything below belongs to Geometry, and there is no closer because
+    there is nothing after it to close.
+
+    A namespace written inside this one is a child of it rather than a second beside it, so the
+    file says what it is once at the top, and then says where within itself each piece sits.
+##
+namespace Geometry;
+
+##
+    Declared in Geometry itself, so both namespaces below reach it with nothing written: the
+    walk outward from each of them passes through here.
+
+    This is what keeps a namespace a place to put things rather than a wall around them. A
+    child reaches its parent for free; a parent reaches into a child only by saying so.
+##
+public abstract model Shape
+
+    protected string name;
+
+    public function Shape(string label)
+        this.name = label;
+    end function
+
+    public virtual real function Area()
+        yield 0.0;
+    end function
+
+    public override string function ToString()
+        yield this.name + " of area " + Math.Round(this.Area());
+    end function
+
+end model
+
+namespace Flat
+
+    ##
+        Written as Geometry.Flat.Circle from outside, and as Circle from anywhere already inside
+        Geometry.Flat. It extends Shape, which is not declared here — that name is found by
+        walking out one level.
+    ##
+    public model Circle extends Shape
+
+        real radius;
+
+        public function Circle(real radius)
+            base("a flat circle");
+            this.radius = radius;
+        end function
+
+        public override real function Area()
+            yield Math.Pi * this.radius * this.radius;
+        end function
+
+    end model
+
+end namespace
+
+namespace Solid
+
+    ##
+        A second Circle, and nothing about it collides with the first. Their full names are
+        Geometry.Flat.Circle and Geometry.Solid.Circle, so the compiler never has to guess, and
+        a reader who needs both says which one is meant.
+    ##
+    public model Circle extends Shape
+
+        real radius;
+
+        public function Circle(real radius)
+            base("a sphere");
+            this.radius = radius;
+        end function
+
+        # The surface area of a sphere, which is four times the flat circle's.
+        public override real function Area()
+            yield 4.0 * Math.Pi * this.radius * this.radius;
+        end function
+
+    end model
+
+end namespace
+
+global model Program
+
+    function Main()
+        Program.WhatTheUsingDecides();
+        Program.WhatQualifyingReaches();
+        Program.WhatTheyShare();
+        Program.WhereStandardSits();
+    end function
+
+    # ---- A using picks one namespace's names ---------------------------------------
+
+    ##
+        'Circle' with nothing in front of it is the flat one, because that is the namespace the
+        file wrote a using for. Take the using away and this line stops compiling — it does not
+        quietly become the other Circle.
+    ##
+    function WhatTheUsingDecides()
+        Circle flat = new Circle(2.0);
+
+        Console.WriteLine("a bare Circle is " + flat);
+    end function
+
+    # ---- Qualifying reaches past it -------------------------------------------------
+
+    ##
+        Writing the namespace in front reaches a type no using named. Two spellings work, and
+        both mean the same type: 'Solid' is read outward from here, finds Geometry.Solid, and
+        stops; 'Geometry.Solid' says the whole path and needs nothing found for it.
+    ##
+    function WhatQualifyingReaches()
+        Solid.Circle nearby = new Solid.Circle(2.0);
+        Geometry.Solid.Circle spelledOut = new Geometry.Solid.Circle(2.0);
+
+        Console.WriteLine("Solid.Circle is " + nearby);
+        Console.WriteLine("and so is Geometry.Solid.Circle: " + spelledOut);
+        Console.WriteLine("the two are equal: " + (nearby == spelledOut));
+    end function
+
+    # ---- What they have in common ----------------------------------------------------
+
+    ##
+        Both Circles extend the same Shape, so both fit in one set of them. A namespace divides
+        names, not types: it decides what a program has to write, and changes nothing about what
+        the program then does.
+    ##
+    function WhatTheyShare()
+        Shape[] shapes = {new Circle(1.0), new Solid.Circle(1.0)};
+
+        Console.WriteLine("both are a Shape, so both fit in one set of them:");
+
+        for each shape in shapes
+            Console.WriteLine("  " + shape);
+        end for
+    end function
+
+    # ---- The one namespace nobody declares ---------------------------------------------
+
+    ##
+        Everything the language provides sits in Standard, which is in scope in every file
+        without a using. It can still be named, and naming it is how a program reaches Math when
+        it has declared a Math of its own.
+    ##
+    function WhereStandardSits()
+        Console.WriteLine("Math.Pi is          " + Math.Pi);
+        Console.WriteLine("Standard.Math.Pi is " + Standard.Math.Pi);
+        Console.WriteLine("the same value:     " + (Math.Pi == Standard.Math.Pi));
+    end function
+
+end model

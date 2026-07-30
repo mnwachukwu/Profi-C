@@ -164,7 +164,7 @@ global model Program
             Console.Write(reporter() + " ");
         end for
 
-        Console.WriteLine("");
+        Console.WriteLine();
     end function
 
     # ---- Naming one that already exists --------------------------------------------

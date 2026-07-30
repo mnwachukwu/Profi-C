@@ -282,6 +282,52 @@ literal may not span a line terminator; an unterminated one is reported at its o
 
 **Boolean literals** are the reserved words `true` and `false`.
 
+**Block string literals** are a sequence of characters between triple quotation marks:
+`"""text"""`. Nothing inside is read: no escape is recognized, no interpolation is looked for,
+and a lone quotation mark is a quotation mark. A block may span line terminators.
+
+Because nothing inside is read, this is also the language's verbatim form, and no separate one
+exists. Where a block spans lines, the indentation of the closing quotes is removed from every
+line, and the line terminators next to each pair of quotes are dropped — so a block may sit at
+the indentation of the code around it without carrying that indentation into what it holds.
+Written on one line, it is exactly what lies between the quotes.
+
+### 1.5a Interpolated strings
+
+A string literal may hold expressions, written between **doubled braces**:
+
+```
+Console.WriteLine("{{apples}} apples and {{pears}} pears is {{apples + pears}} fruit");
+```
+
+**A single brace is ordinary text.** Only a pair opens a hole, so `"a set is {1, 2}"` needs
+nothing done to it. This is why the braces are doubled rather than the literal being marked
+with a prefix: the cost is paid only where interpolation is used, instead of by every string
+that happens to contain a brace. To write a literal pair, escape the first: `"\{{"`.
+
+**A hole holds any expression**, including a call, a conditional, or a string that interpolates
+in turn. The scanner counts braces opened inside a hole, so `"{{ {1, 2}.Count() }}"` closes at
+the right pair.
+
+**A colon says how to write the value.** What follows it is a pattern rather than code, taken
+whole to the closing braces:
+
+```
+"to a penny: {{price:F2}}"        →  to a penny: 1234.50
+"the date: {{when:yyyy-MM-dd}}"   →  the date: 2026-08-15
+```
+
+The patterns are .NET's, unchanged, so what is learned here transfers. A pattern may only be
+given where the value answers `Format` — the measured and the dated types do, and asking it of
+anything else is `PC0341`. The same patterns are available without a string around them,
+through `Format` itself.
+
+**An interpolated string is a `string`**, whatever it holds, and means exactly the
+concatenation it looks like: each hole becomes `ToString()`, or `Format(pattern)` where one was
+named, and the pieces are joined with `+`.
+
+A block string does **not** interpolate, per §1.5.
+
 ### 1.6 Escape sequences
 
 Character and string literals may contain these escapes, and no others:
@@ -295,7 +341,12 @@ Character and string literals may contain these escapes, and no others:
 | `\\` | backslash |
 | `\"` | quotation mark |
 | `\'` | apostrophe |
+| `\{` | opening brace |
+| `\}` | closing brace |
 | `\u####` | the character with the given four-digit hexadecimal code |
+
+A brace is already ordinary text and needs no escape; `\{` exists only so that a literal pair
+can be written without opening a hole (§1.5a).
 
 An escape outside this set is an error, as is a `\u` not followed by four hexadecimal digits.
 An escape counts as one character for the purpose of the character-literal rule above.
@@ -378,7 +429,7 @@ zero-width position just past the final character.
 
 ### 2.4 Recovery
 
-Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0010`,
+Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0014`,
 listed in [Appendix A](#appendix-a-diagnostics) — has a defined recovery, so a file containing
 several mistakes reports all of them in one pass and still yields a usable token stream.
 
@@ -1581,6 +1632,36 @@ string is a string — the same rule `Subset` follows on a set, where a run of o
 | `Random.Next()`, `Next(below)`, `Next(low, high)` | `integer`; the high bound is **excluded** |
 | `Random.NextDouble()` | `real`, from zero up to but never reaching one |
 | `DateTime.Now`, `DateTime.Today` | `DateTime`. **Values, so written without `()`** |
+| `Format(pattern)` | `string`. On `integer`, `real`, `fraction`, and all four date and time types |
+| `ToInteger()`, `ToReal()`, `ToBoolean()`, `ToFraction()` | On `string`; `integer?`, `real?`, `boolean?`, `fraction?` |
+| `DateTime.Date`, `DateTime.Time` | `Date` and `Time`. **Values, so written without `()`** |
+| `new DateTime(date)`, `new DateTime(date, time)` | A moment built from its halves; the first takes midnight |
+| `DateTime.Parse(text)`, `Parse(text, pattern)` | `DateTime?`, and the same pair on `Date`, `Time` and `TimeSpan` |
+
+**`Format` and `Parse` are the two directions of the same thing**, and both take .NET's own
+patterns unchanged — `F2`, `N0`, `yyyy-MM-dd`, `dddd` — so a pattern learned here is one that
+works in C#. Everything is invariant unless the pattern says otherwise, which is what lets a
+program print and read the same on any machine. A pattern the runtime cannot use raises
+`FormatException`; a pattern given to a type that has no `Format` is `PC0341`, caught while
+compiling.
+
+**`Parse` yields an optional rather than raising.** Text that will not read is the ordinary
+case, not an exceptional one, since most of it arrives from a person typing — so there is
+nothing to catch and no second variable to pass in, and the type says the answer may be absent
+where C# needs either an exception or a `TryParse`. Given a pattern, it reads exactly that
+pattern, which is how a value written by one is read back by the same one.
+
+**A number, a truth or a ratio is read off the text rather than off the type**, because
+`integer` is a reserved word and cannot stand in front of a dot: `"42".ToInteger()`, not
+`integer.Parse("42")`. Each yields an optional for the same reason `Parse` does. `ToFraction`
+accepts either mark between the halves — the language writes `22|7` because a slash already
+means division, a person writes `22/7` because that is what a fraction looks like everywhere
+else, and reading takes both. A bare whole number reads as a ratio over one.
+
+Together with `Console.Read`, which yields `string?` at the end of input, this is what makes
+asking a person for a number two questions rather than one: was anything typed, and did what
+was typed read. Neither can be skipped, because an optional cannot be used until its presence
+is proven.
 
 **`Math.Log` of one number is the natural logarithm** — log to base `e`, what mathematicians
 write as `ln`. That is what C#, Java and C all mean by the name, and Profi-C means it too, so
@@ -2031,6 +2112,10 @@ Warnings do not block compilation; everything else does.
 | `PC0008` | error | Malformed Unicode escape sequence |
 | `PC0009` | warning | This name needs no '@' |
 | `PC0010` | error | Nothing to escape |
+| `PC0011` | error | Unterminated interpolation |
+| `PC0012` | error | Nothing to interpolate |
+| `PC0013` | error | Unterminated block string |
+| `PC0014` | error | Nothing to format by |
 
 ### PC0100 to PC0199
 
@@ -2136,6 +2221,8 @@ Warnings do not block compilation; everything else does.
 | `PC0337` | warning | Not every member is handled |
 | `PC0338` | error | This member is a value |
 | `PC0339` | error | Member cannot be reached from here |
+| `PC0340` | warning | This empty string does nothing |
+| `PC0341` | error | This cannot be formatted |
 
 ### PC0400 to PC0499
 

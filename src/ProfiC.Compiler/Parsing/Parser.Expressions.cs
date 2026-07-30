@@ -137,10 +137,86 @@ public sealed partial class Parser
         return arguments;
     }
 
+    /// <summary>
+    /// <para>A string with holes in it, from its opening quote to its closing one.</para>
+    /// <para>The scanner has already decided where the text ends and each hole begins, so
+    /// there is nothing to re-scan here: what lies between the braces arrived as ordinary
+    /// tokens and is parsed by the ordinary expression parser, which is what makes any
+    /// expression legal in a hole without the grammar saying so twice.</para>
+    /// <para>Texts and holes alternate, and a run between two adjacent holes is an empty text
+    /// rather than a missing one, so the two lists stay in step.</para>
+    /// </summary>
+    private Expression ParseInterpolatedString()
+    {
+        Token start = Current;
+        Advance();
+
+        List<string> texts = [];
+        List<InterpolationPart> holes = [];
+        string pending = string.Empty;
+
+        while (Kind is not TokenType.InterpolatedStringEnd and not TokenType.EndOfFile)
+        {
+            if (Kind == TokenType.InterpolatedStringText)
+            {
+                pending += Current.Lexeme;
+                Advance();
+                continue;
+            }
+
+            if (Kind != TokenType.InterpolationStart)
+            {
+                // Nothing else can appear here: the scanner emits text, a hole, or the end.
+                // Standing a token in keeps the loop moving rather than spinning on one.
+                Advance();
+                continue;
+            }
+
+            Token opener = Current;
+            Advance();
+
+            texts.Add(pending);
+            pending = string.Empty;
+
+            Expression value = Kind is TokenType.InterpolationEnd or TokenType.InterpolationFormat
+                ? new MissingExpr(EmptySpanHere())
+                : ParseExpression();
+
+            string? format = null;
+
+            if (Kind == TokenType.InterpolationFormat)
+            {
+                format = Current.Lexeme[1..];
+                Advance();
+            }
+
+            holes.Add(new InterpolationPart(SpanFrom(opener), value, format));
+
+            if (Kind == TokenType.InterpolationEnd)
+            {
+                Advance();
+            }
+        }
+
+        texts.Add(pending);
+
+        if (Kind == TokenType.InterpolatedStringEnd)
+        {
+            Advance();
+        }
+
+        return new InterpolatedStringExpr(SpanFrom(start), texts, holes);
+    }
+
     /// <summary>The leaves of an expression, plus the bracketed forms.</summary>
     private Expression ParsePrimary()
     {
         Token token = Current;
+
+        if (Kind == TokenType.InterpolatedStringStart)
+        {
+            return ParseInterpolatedString();
+        }
 
         if (LiteralExpr.KindFrom(Kind) is { } literal)
         {

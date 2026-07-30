@@ -236,6 +236,45 @@ public sealed class BuiltInCatalogTests
         (BuiltInId.MathCeilingReal, "Console.WriteLine(Math.Ceiling(3.2))", "4\n"),
         (BuiltInId.MathCeilingFraction, "Console.WriteLine(Math.Ceiling(7|2))", "4\n"),
         (BuiltInId.MathRoundReal, "Console.WriteLine(Math.Round(2.5))", "3\n"),
+        (BuiltInId.MathRoundRealPlaces, "Console.WriteLine(Math.Round(2.345, 2))", "2.35\n"),
+
+        // Reading text back. Each is asked once of text that reads and once of text that does
+        // not, since an optional yielding nothing is half of what these are for.
+        (BuiltInId.DateTimeParse,
+         "Console.WriteLine(DateTime.Parse(\"2026-08-15 14:30:00\").Or(new DateTime(1, 1, 1)))",
+         "2026-08-15 14:30:00\n"),
+        (BuiltInId.DateTimeParseExact,
+         "Console.WriteLine(DateTime.Parse(\"15/08/2026\", \"dd/MM/yyyy\").HasValue())",
+         "true\n"),
+        (BuiltInId.TimeSpanParse,
+         "Console.WriteLine(TimeSpan.Parse(\"02:30:00\").Or(TimeSpan.Zero))",
+         "02:30:00\n"),
+        (BuiltInId.TimeSpanParseExact,
+         "Console.WriteLine(TimeSpan.Parse(\"02:30:00\", \"c\").HasValue())",
+         "true\n"),
+        (BuiltInId.DateParse,
+         "Console.WriteLine(Date.Parse(\"2026-08-15\").Or(new Date(1, 1, 1)))",
+         "2026-08-15\n"),
+        (BuiltInId.DateParseExact,
+         "Console.WriteLine(Date.Parse(\"nonsense\", \"yyyy-MM-dd\").HasValue())",
+         "false\n"),
+        (BuiltInId.TimeParse,
+         "Console.WriteLine(Time.Parse(\"nonsense\").HasValue())",
+         "false\n"),
+        (BuiltInId.TimeParseExact,
+         "Console.WriteLine(Time.Parse(\"14:30\", \"HH:mm\").Or(new Time(0, 0)))",
+         "14:30:00\n"),
+
+        // A moment taken apart and put back together.
+        (BuiltInId.DateTimeDatePart,
+         "Console.WriteLine(new DateTime(2026, 8, 15, 14, 30, 0).Date)", "2026-08-15\n"),
+        (BuiltInId.DateTimeTimePart,
+         "Console.WriteLine(new DateTime(2026, 8, 15, 14, 30, 0).Time)", "14:30:00\n"),
+        (BuiltInId.DateTimeFromDate,
+         "Console.WriteLine(new DateTime(new Date(2026, 8, 15)).Hour)", "0\n"),
+        (BuiltInId.DateTimeFromDateAndTime,
+         "Console.WriteLine(new DateTime(new Date(2026, 8, 15), new Time(9, 0)))",
+         "2026-08-15 09:00:00\n"),
         (BuiltInId.MathRoundFraction, "Console.WriteLine(Math.Round(5|2))", "3\n"),
 
         (BuiltInId.MathMinInteger, "Console.WriteLine(Math.Min(3, 7))", "3\n"),
@@ -313,6 +352,7 @@ public sealed class BuiltInCatalogTests
             .. BuiltIns.OnOptional(optional),
             .. BuiltIns.OnFraction(),
             .. BuiltIns.OnReal(),
+            .. BuiltIns.OnInteger(),
             .. BuiltIns.OnEnumeration(),
             .. BuiltIns.OnException(),
         ];
@@ -614,6 +654,54 @@ public sealed class BuiltInCatalogTests
         Is.EqualTo("renamed\ntrue\n"));
 
     /// <summary>
+    /// <para>Taking a string apart, putting a set back together, and writing a value out by a
+    /// pattern.</para>
+    /// <para>The patterns are .NET's own and are passed through untouched, so these rows are
+    /// as much a check that nothing intercepts them as a check of the members themselves —
+    /// <c>yyyy-MM-dd</c> arriving intact matters more than any one of the answers.</para>
+    /// </summary>
+    [TestCase("\"the quick brown\".Split(\" \").Count()", "3")]
+    [TestCase("\"a-b-c\".Split(\"-\").Join(\"+\")", "a+b+c")]
+    [TestCase("{1, 2, 3}.Join(\", \")", "1, 2, 3")]
+    [TestCase("{1, 2}.Union({3, 4})", "{1, 2, 3, 4}")]
+    [TestCase("{1, 2}.Union({2, 3})", "{1, 2, 2, 3}")]
+    [TestCase("{1, 2, 3}.Intersect({2, 3, 4})", "{2, 3}")]
+    [TestCase("{1, 2}.Intersect({3, 4})", "{}")]
+    [TestCase("{1, 2, 3}.Except({2, 4})", "{1, 3}")]
+    [TestCase("{1, 2, 3}.Except({})", "{1, 2, 3}")]
+    [TestCase("\"a-b-c\".Replace(\"-\", \".\")", "a.b.c")]
+    [TestCase("\"Profi-C\".ToUpper()", "PROFI-C")]
+    [TestCase("\"Profi-C\".ToLower()", "profi-c")]
+    [TestCase("\"matt nwachukwu\".Capitalize()", "Matt nwachukwu")]
+    [TestCase("\"\".Capitalize()", "")]
+    [TestCase("1234567.Format(\"N0\")", "1,234,567")]
+    [TestCase("3.14159.Format(\"F2\")", "3.14")]
+    [TestCase("(1|3).Format(\"F3\")", "0.333")]
+    [TestCase("new DateTime(2026, 8, 15).Format(\"yyyy-MM-dd\")", "2026-08-15")]
+    [TestCase("TimeSpan.FromMinutes(90.0).Format(\"h'h 'm'm'\")", "1h 30m")]
+    [TestCase("new Date(2026, 8, 15).Format(\"MMMM d\")", "August 15")]
+    [TestCase("new Time(14, 30).Format(\"HH:mm\")", "14:30")]
+    [TestCase("\"42\".ToInteger().Or(-1)", "42")]
+    [TestCase("\"nope\".ToInteger().Or(-1)", "-1")]
+    [TestCase("\"3.14\".ToReal().Or(0.0)", "3.14")]
+    [TestCase("\"TRUE\".ToBoolean().Or(false)", "true")]
+    [TestCase("\"yes\".ToBoolean().HasValue()", "false")]
+    [TestCase("\"22/7\".ToFraction().Or(0|1)", "22|7")]
+    [TestCase("\"22|7\".ToFraction().Or(0|1)", "22|7")]
+    [TestCase("\"4/8\".ToFraction().Or(0|1)", "1|2")]
+    [TestCase("\"5\".ToFraction().Or(0|1)", "5|1")]
+    [TestCase("\"1/0\".ToFraction().HasValue()", "false")]
+    public void TheTextMembers(string expression, string expected) => Assert.That(
+        RunProgram($$"""
+            global model Program
+                function Main()
+                    Console.WriteLine({{expression}});
+                end function
+            end model
+            """),
+        Is.EqualTo(expected + "\n"));
+
+    /// <summary>
     /// What the rows above exercise. Listed rather than inferred so that adding a value member
     /// without a row makes the coverage test fail.
     /// </summary>
@@ -630,6 +718,14 @@ public sealed class BuiltInCatalogTests
         BuiltInId.StringTrim, BuiltInId.StringTrimText, BuiltInId.StringTrimSet,
         BuiltInId.StringTrimStart, BuiltInId.StringTrimStartText, BuiltInId.StringTrimStartSet,
         BuiltInId.StringTrimEnd, BuiltInId.StringTrimEndText, BuiltInId.StringTrimEndSet,
+        BuiltInId.StringSplit, BuiltInId.StringReplace, BuiltInId.StringToUpper,
+        BuiltInId.StringToLower, BuiltInId.StringCapitalize, BuiltInId.SetJoin,
+        BuiltInId.SetUnion, BuiltInId.SetIntersect, BuiltInId.SetExcept,
+        BuiltInId.StringToInteger, BuiltInId.StringToReal, BuiltInId.StringToBoolean,
+        BuiltInId.StringToFraction,
+        BuiltInId.IntegerFormat, BuiltInId.RealFormat, BuiltInId.FractionFormat,
+        BuiltInId.DateTimeFormat, BuiltInId.TimeSpanFormat, BuiltInId.DateFormat,
+        BuiltInId.TimeFormat,
         BuiltInId.OptionalHasValue, BuiltInId.OptionalOr, BuiltInId.OptionalValue,
         BuiltInId.FractionToReal, BuiltInId.RealToFraction, BuiltInId.EnumerationToInteger,
         BuiltInId.ExceptionMessage, BuiltInId.ModelToString, BuiltInId.ModelEquals,

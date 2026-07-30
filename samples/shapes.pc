@@ -114,11 +114,11 @@ global model Program
             Console.WriteLine(shape);
         end for
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("total area: " + Program.TotalArea(shapes));
 
         # 'is' asks, and 'as' yields an optional rather than failing.
-        Console.WriteLine("");
+        Console.WriteLine();
         for each shape in shapes
             if shape is Square
                 Console.WriteLine("found a square");

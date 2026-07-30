@@ -74,6 +74,8 @@ public abstract class SyntaxVisitor
     // ---- Expressions --------------------------------------------------------------------
 
     public virtual void VisitLiteralExpr(LiteralExpr node) => DefaultVisit(node);
+    public virtual void VisitInterpolatedStringExpr(InterpolatedStringExpr node) => DefaultVisit(node);
+    public virtual void VisitInterpolationPart(InterpolationPart node) => DefaultVisit(node);
     public virtual void VisitIdentifierExpr(IdentifierExpr node) => DefaultVisit(node);
     public virtual void VisitReceiverExpr(ReceiverExpr node) => DefaultVisit(node);
     public virtual void VisitParenthesizedExpr(ParenthesizedExpr node) => DefaultVisit(node);
@@ -163,6 +165,8 @@ public abstract class SyntaxVisitor<TResult>
     // ---- Expressions --------------------------------------------------------------------
 
     public virtual TResult VisitLiteralExpr(LiteralExpr node) => DefaultVisit(node);
+    public virtual TResult VisitInterpolatedStringExpr(InterpolatedStringExpr node) => DefaultVisit(node);
+    public virtual TResult VisitInterpolationPart(InterpolationPart node) => DefaultVisit(node);
     public virtual TResult VisitIdentifierExpr(IdentifierExpr node) => DefaultVisit(node);
     public virtual TResult VisitReceiverExpr(ReceiverExpr node) => DefaultVisit(node);
     public virtual TResult VisitParenthesizedExpr(ParenthesizedExpr node) => DefaultVisit(node);

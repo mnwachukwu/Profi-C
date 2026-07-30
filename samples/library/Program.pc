@@ -22,7 +22,7 @@ global model Program
             Console.WriteLine("  " + book.Described() + " - " + Program.Availability(book));
         end for
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Program.Lend(shelf[1]);
         Program.Lend(shelf[2]);
     end function

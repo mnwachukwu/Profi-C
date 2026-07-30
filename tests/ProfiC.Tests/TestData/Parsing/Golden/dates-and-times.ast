@@ -1,0 +1,658 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'FourQuestions'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'PuttingThemTogether'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'HowFarApart'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'MovingAround'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'PuttingThemInOrder'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WritingThemDown'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ReadingThemBack'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatTimeIsItNow'
+            IdentifierExpr 'Program'
+    FunctionDecl 'WritingThemDown'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== writing one down ==" [String]
+      VarDeclStmt 'party'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+          LiteralExpr 14 [Integer]
+          LiteralExpr 30 [Integer]
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'birthday'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+      VarDeclStmt 'lasted'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'FromHours'
+            IdentifierExpr 'TimeSpan'
+          LiteralExpr 2.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  plain          " [String]
+            IdentifierExpr 'party'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  just the date  ' ''
+            InterpolationPart format 'yyyy-MM-dd'
+              IdentifierExpr 'party'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  just the time  ' ''
+            InterpolationPart format 'HH:mm'
+              IdentifierExpr 'party'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  written out    ' ''
+            InterpolationPart format 'MMMM d, yyyy'
+              IdentifierExpr 'birthday'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  the weekday    ' ''
+            InterpolationPart format 'dddd'
+              IdentifierExpr 'birthday'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  how long       ' ''
+            InterpolationPart format 'h'h 'm'm''
+              IdentifierExpr 'lasted'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  through Format " [String]
+            CallExpr
+              MemberExpr 'Format'
+                IdentifierExpr 'birthday'
+              LiteralExpr "yyyy-MM-dd" [String]
+    FunctionDecl 'ReadingThemBack'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== reading one back ==" [String]
+      VarDeclStmt 'read'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'Date'
+        CallExpr
+          MemberExpr 'Parse'
+            IdentifierExpr 'Date'
+          LiteralExpr "2026-08-15" [String]
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'read'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "  read a date    " [String]
+              CallExpr
+                MemberExpr 'Value'
+                  IdentifierExpr 'read'
+      VarDeclStmt 'nonsense'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'Date'
+        CallExpr
+          MemberExpr 'Parse'
+            IdentifierExpr 'Date'
+          LiteralExpr "the fifteenth" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  'the fifteenth' read: " [String]
+            CallExpr
+              MemberExpr 'HasValue'
+                IdentifierExpr 'nonsense'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  falling back to today's year: " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'nonsense'
+              NewExpr 'Date'
+                LiteralExpr 2026 [Integer]
+                LiteralExpr 1 [Integer]
+                LiteralExpr 1 [Integer]
+      VarDeclStmt 'written' [inferred]
+        CallExpr
+          MemberExpr 'Format'
+            NewExpr 'Date'
+              LiteralExpr 2026 [Integer]
+              LiteralExpr 12 [Integer]
+              LiteralExpr 25 [Integer]
+          LiteralExpr "dd/MM/yyyy" [String]
+      VarDeclStmt 'returned'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'Date'
+        CallExpr
+          MemberExpr 'Parse'
+            IdentifierExpr 'Date'
+          IdentifierExpr 'written'
+          LiteralExpr "dd/MM/yyyy" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  ' ' came back as ' ''
+            InterpolationPart
+              IdentifierExpr 'written'
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  IdentifierExpr 'returned'
+                NewExpr 'Date'
+                  LiteralExpr 1 [Integer]
+                  LiteralExpr 1 [Integer]
+                  LiteralExpr 1 [Integer]
+    FunctionDecl 'FourQuestions'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== four types, four questions ==" [String]
+      VarDeclStmt 'birthday'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+      VarDeclStmt 'doorsOpen'
+        NamedTypeSyntax 'Time'
+        NewExpr 'Time'
+          LiteralExpr 14 [Integer]
+          LiteralExpr 30 [Integer]
+      VarDeclStmt 'howLong'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'FromHours'
+            IdentifierExpr 'TimeSpan'
+          LiteralExpr 2.5 [Real]
+      VarDeclStmt 'startsAt'
+        NamedTypeSyntax 'DateTime'
+        CallExpr
+          MemberExpr 'ToDateTime'
+            IdentifierExpr 'birthday'
+          IdentifierExpr 'doorsOpen'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  which day    " [String]
+            IdentifierExpr 'birthday'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  what time    " [String]
+            IdentifierExpr 'doorsOpen'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  how long     " [String]
+            IdentifierExpr 'howLong'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  which moment " [String]
+            IdentifierExpr 'startsAt'
+    FunctionDecl 'PuttingThemTogether'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== together and apart ==" [String]
+      VarDeclStmt 'day'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+      VarDeclStmt 'clock'
+        NamedTypeSyntax 'Time'
+        NewExpr 'Time'
+          LiteralExpr 14 [Integer]
+          LiteralExpr 30 [Integer]
+      VarDeclStmt 'moment'
+        NamedTypeSyntax 'DateTime'
+        CallExpr
+          MemberExpr 'ToDateTime'
+            IdentifierExpr 'day'
+          IdentifierExpr 'clock'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  built       " [String]
+            IdentifierExpr 'moment'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  its day     " [String]
+            CallExpr
+              MemberExpr 'FromDateTime'
+                IdentifierExpr 'Date'
+              IdentifierExpr 'moment'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  its time    " [String]
+            CallExpr
+              MemberExpr 'FromDateTime'
+                IdentifierExpr 'Time'
+              IdentifierExpr 'moment'
+    FunctionDecl 'HowFarApart'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== how far apart ==" [String]
+      VarDeclStmt 'opens'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+          LiteralExpr 14 [Integer]
+          LiteralExpr 30 [Integer]
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'closes'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+          LiteralExpr 17 [Integer]
+          LiteralExpr 0 [Integer]
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'party'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'Subtract'
+            IdentifierExpr 'closes'
+          IdentifierExpr 'opens'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the party lasted   " [String]
+            IdentifierExpr 'party'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  LiteralExpr "  as we would say it " [String]
+                  MemberExpr 'Hours'
+                    IdentifierExpr 'party'
+                LiteralExpr "h " [String]
+              MemberExpr 'Minutes'
+                IdentifierExpr 'party'
+            LiteralExpr "m" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  as we would measure it, in minutes " [String]
+            MemberExpr 'TotalMinutes'
+              IdentifierExpr 'party'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and in hours                       " [String]
+            MemberExpr 'TotalHours'
+              IdentifierExpr 'party'
+      VarDeclStmt 'backwards'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'Subtract'
+            IdentifierExpr 'opens'
+          IdentifierExpr 'closes'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the other way round " [String]
+            IdentifierExpr 'backwards'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  its size            " [String]
+            CallExpr
+              MemberExpr 'Duration'
+                IdentifierExpr 'backwards'
+    FunctionDecl 'MovingAround'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== moving around ==" [String]
+      VarDeclStmt 'day'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a week later  " [String]
+            CallExpr
+              MemberExpr 'AddDays'
+                IdentifierExpr 'day'
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a month later " [String]
+            CallExpr
+              MemberExpr 'AddMonths'
+                IdentifierExpr 'day'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a year later  " [String]
+            CallExpr
+              MemberExpr 'AddYears'
+                IdentifierExpr 'day'
+              LiteralExpr 1 [Integer]
+      VarDeclStmt 'late'
+        NamedTypeSyntax 'Time'
+        NewExpr 'Time'
+          LiteralExpr 23 [Integer]
+          LiteralExpr 30 [Integer]
+      VarDeclStmt 'lateMoment'
+        NamedTypeSyntax 'DateTime'
+        CallExpr
+          MemberExpr 'ToDateTime'
+            IdentifierExpr 'day'
+          IdentifierExpr 'late'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  23:30 plus an hour, on a clock    " [String]
+            CallExpr
+              MemberExpr 'AddHours'
+                IdentifierExpr 'late'
+              LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  23:30 plus an hour, as a moment   " [String]
+            CallExpr
+              MemberExpr 'AddHours'
+                IdentifierExpr 'lateMoment'
+              LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and with a span                   " [String]
+            CallExpr
+              MemberExpr 'Add'
+                IdentifierExpr 'lateMoment'
+              CallExpr
+                MemberExpr 'FromMinutes'
+                  IdentifierExpr 'TimeSpan'
+                LiteralExpr 45.0 [Real]
+    FunctionDecl 'PuttingThemInOrder'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== which came first ==" [String]
+      VarDeclStmt 'earlier'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+      VarDeclStmt 'later'
+        NamedTypeSyntax 'Date'
+        NewExpr 'Date'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 12 [Integer]
+          LiteralExpr 25 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  august before december " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'CompareTo'
+                    IdentifierExpr 'earlier'
+                  IdentifierExpr 'later'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  december before august " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'CompareTo'
+                    IdentifierExpr 'later'
+                  IdentifierExpr 'earlier'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a day equals itself    " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'earlier'
+                NewExpr 'Date'
+                  LiteralExpr 2026 [Integer]
+                  LiteralExpr 8 [Integer]
+                  LiteralExpr 15 [Integer]
+      VarDeclStmt 'morning'
+        NamedTypeSyntax 'Time'
+        NewExpr 'Time'
+          LiteralExpr 9 [Integer]
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'evening'
+        NamedTypeSyntax 'Time'
+        NewExpr 'Time'
+          LiteralExpr 21 [Integer]
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  nine before nine pm    " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'CompareTo'
+                    IdentifierExpr 'morning'
+                  IdentifierExpr 'evening'
+                LiteralExpr 0 [Integer]
+      VarDeclStmt 'hour'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'FromHours'
+            IdentifierExpr 'TimeSpan'
+          LiteralExpr 1.0 [Real]
+      VarDeclStmt 'minute'
+        NamedTypeSyntax 'TimeSpan'
+        CallExpr
+          MemberExpr 'FromMinutes'
+            IdentifierExpr 'TimeSpan'
+          LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a minute is shorter    " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'CompareTo'
+                    IdentifierExpr 'minute'
+                  IdentifierExpr 'hour'
+                LiteralExpr 0 [Integer]
+    FunctionDecl 'WhatTimeIsItNow'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== right now ==" [String]
+      VarDeclStmt 'moment'
+        NamedTypeSyntax 'DateTime'
+        MemberExpr 'Now'
+          IdentifierExpr 'DateTime'
+      VarDeclStmt 'day'
+        NamedTypeSyntax 'Date'
+        MemberExpr 'Today'
+          IdentifierExpr 'Date'
+      VarDeclStmt 'clock'
+        NamedTypeSyntax 'Time'
+        MemberExpr 'Now'
+          IdentifierExpr 'Time'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Today is midnight, having no time of day  " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                MemberExpr 'Hour'
+                  MemberExpr 'Today'
+                    IdentifierExpr 'DateTime'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Now has one                               " [String]
+            ParenthesizedExpr
+              BinaryExpr '>'
+                MemberExpr 'Year'
+                  IdentifierExpr 'moment'
+                LiteralExpr 2000 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  today's date agrees with now's            " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'day'
+                CallExpr
+                  MemberExpr 'FromDateTime'
+                    IdentifierExpr 'Date'
+                  IdentifierExpr 'moment'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the clock is somewhere in the day         " [String]
+            ParenthesizedExpr
+              BinaryExpr 'and'
+                BinaryExpr '>='
+                  MemberExpr 'Hour'
+                    IdentifierExpr 'clock'
+                  LiteralExpr 0 [Integer]
+                BinaryExpr '<='
+                  MemberExpr 'Hour'
+                    IdentifierExpr 'clock'
+                  LiteralExpr 23 [Integer]

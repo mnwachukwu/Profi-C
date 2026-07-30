@@ -127,7 +127,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -162,7 +161,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

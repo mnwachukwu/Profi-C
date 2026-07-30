@@ -17,6 +17,14 @@ public sealed partial class Interpreter
     private readonly SemanticModel _model;
     private readonly TextWriter _output;
 
+    /// <summary>
+    /// <para>Where <c>Console.Read</c> reads from.</para>
+    /// <para>Handed in for the same reason the writer is: a program that asks a question can
+    /// only be tested if the answers can be given to it, and reaching for the process's own
+    /// input would make one test depend on how another was run.</para>
+    /// </summary>
+    private readonly TextReader _input;
+
     /// <summary>Global storage, for the fields of a global model.</summary>
     private readonly Environment _globals = new(parent: null);
 
@@ -47,10 +55,11 @@ public sealed partial class Interpreter
 
     private const int MaximumDepth = 512;
 
-    private Interpreter(SemanticModel model, TextWriter output)
+    private Interpreter(SemanticModel model, TextWriter output, TextReader input)
     {
         _model = model;
         _output = output;
+        _input = input;
     }
 
     /// <summary>
@@ -61,12 +70,13 @@ public sealed partial class Interpreter
     public static int Run(
         IReadOnlyList<CompilationUnit> lowered,
         SemanticModel model,
-        TextWriter? output = null)
+        TextWriter? output = null,
+        TextReader? input = null)
     {
         ArgumentNullException.ThrowIfNull(lowered);
         ArgumentNullException.ThrowIfNull(model);
 
-        Interpreter interpreter = new(model, output ?? Console.Out);
+        Interpreter interpreter = new(model, output ?? Console.Out, input ?? Console.In);
 
         try
         {
@@ -86,11 +96,12 @@ public sealed partial class Interpreter
     public static int Run(
         CompilationUnit lowered,
         SemanticModel model,
-        TextWriter? output = null)
+        TextWriter? output = null,
+        TextReader? input = null)
     {
         ArgumentNullException.ThrowIfNull(lowered);
 
-        return Run([lowered], model, output);
+        return Run([lowered], model, output, input);
     }
 
     private int Execute(IReadOnlyList<CompilationUnit> units)

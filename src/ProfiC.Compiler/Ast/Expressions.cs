@@ -12,6 +12,13 @@ public enum LiteralKind
     String,
     Fraction,
     Boolean,
+
+    /// <summary>
+    /// A string written between triple quotes. Held apart from <see cref="String"/> because
+    /// the two are read differently rather than written differently: nothing inside this one
+    /// is an escape, so decoding it means taking the text as it stands.
+    /// </summary>
+    BlockString,
 }
 
 /// <summary>
@@ -42,6 +49,7 @@ public sealed class LiteralExpr(SourceSpan span, LiteralKind kind, string text)
         TokenType.RealLiteral => LiteralKind.Real,
         TokenType.CharLiteral => LiteralKind.Character,
         TokenType.StringLiteral => LiteralKind.String,
+        TokenType.BlockStringLiteral => LiteralKind.BlockString,
         TokenType.FractionLiteral => LiteralKind.Fraction,
         TokenType.True or TokenType.False => LiteralKind.Boolean,
         _ => null,
@@ -247,6 +255,55 @@ public sealed class NewExpr(
 }
 
 /// <summary>A call. The callee is an arbitrary expression, since a function is a value.</summary>
+/// <summary>
+/// <para>One hole in an interpolated string: what to write, and optionally how.</para>
+/// <para><see cref="Format"/> is the pattern after the colon, without it, or null where none
+/// was written. It is text rather than an expression because a pattern is not code — the
+/// language never evaluates it, only hands it to the value being written.</para>
+/// </summary>
+public sealed class InterpolationPart(SourceSpan span, Expression value, string? format)
+    : SyntaxNode(span)
+{
+    public Expression Value { get; } = value;
+
+    public string? Format { get; } = format;
+
+    public override IEnumerable<SyntaxNode> Children => [Value];
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitInterpolationPart(this);
+
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+        visitor.VisitInterpolationPart(this);
+}
+
+/// <summary>
+/// <para>A string with at least one <c>{{ }}</c> in it.</para>
+/// <para>Kept as what was written rather than turned into concatenation here, so that the
+/// recorded tree says what the source says and a diagnostic inside a hole points at the hole.
+/// Lowering is where it becomes the <c>+</c> chain the back end already runs.</para>
+/// <para><see cref="Texts"/> always holds one more entry than <see cref="Holes"/>: the text
+/// before the first hole, between each pair, and after the last, any of which may be empty.
+/// Holding them that way means the two alternate by construction rather than by a rule
+/// somebody has to keep.</para>
+/// </summary>
+public sealed class InterpolatedStringExpr(
+    SourceSpan span,
+    IReadOnlyList<string> texts,
+    IReadOnlyList<InterpolationPart> holes) : Expression(span)
+{
+    public IReadOnlyList<string> Texts { get; } = texts;
+
+    public IReadOnlyList<InterpolationPart> Holes { get; } = holes;
+
+    public override IEnumerable<SyntaxNode> Children => Holes;
+
+    public override void Accept(SyntaxVisitor visitor) =>
+        visitor.VisitInterpolatedStringExpr(this);
+
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+        visitor.VisitInterpolatedStringExpr(this);
+}
+
 public sealed class CallExpr(
     SourceSpan span,
     Expression callee,

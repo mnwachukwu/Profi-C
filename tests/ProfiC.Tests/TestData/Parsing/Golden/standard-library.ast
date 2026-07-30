@@ -85,7 +85,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowMath'
       ExpressionStmt
         CallExpr
@@ -233,7 +232,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowSets'
       ExpressionStmt
         CallExpr
@@ -391,7 +389,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowSetsOfOptionals'
       ExpressionStmt
         CallExpr
@@ -475,7 +472,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowStrings'
       ExpressionStmt
         CallExpr
@@ -670,12 +666,10 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowOptionals'
       ExpressionStmt
         CallExpr
@@ -745,7 +739,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowRandom'
       ExpressionStmt
         CallExpr
@@ -779,7 +772,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
       VarDeclStmt 'again'
         NamedTypeSyntax 'Random'
         NewExpr 'Random'
@@ -807,7 +799,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -849,7 +840,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowDateTime'
       ExpressionStmt
         CallExpr
@@ -1011,7 +1001,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowSpansAndParts'
       ExpressionStmt
         CallExpr
@@ -1193,7 +1182,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ShowReference'
       ExpressionStmt
         CallExpr
@@ -1269,7 +1257,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'Render'
       NamedTypeSyntax 'string'
       ParameterDecl 'values'

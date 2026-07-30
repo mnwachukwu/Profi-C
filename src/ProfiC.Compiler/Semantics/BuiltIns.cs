@@ -193,6 +193,67 @@ public enum BuiltInId
     StringTrimEndText,
     StringTrimEndSet,
 
+    StringSplit,
+    StringReplace,
+    StringToUpper,
+    StringToLower,
+    StringCapitalize,
+
+    /// <summary>Joining a set of strings, which reads on the set rather than on a string.</summary>
+    SetJoin,
+
+    /// <summary>Two sets put together, what they have in common, and what only this one has.</summary>
+    SetUnion,
+    SetIntersect,
+    SetExcept,
+
+    /// <summary>
+    /// <para>Reading a value back from text, which is the way in that Format is the way out.
+    /// </para>
+    /// <para>Each yields an optional rather than raising: text that will not read is the
+    /// ordinary case, not an exceptional one, since most of it arrives from a person typing.
+    /// The plain form takes the shapes the language writes; the other takes exactly the
+    /// pattern it is given, which is how a value written by a pattern is read back by it.</para>
+    /// </summary>
+    DateTimeParse,
+    DateTimeParseExact,
+    TimeSpanParse,
+    TimeSpanParseExact,
+    DateParse,
+    DateParseExact,
+    TimeParse,
+    TimeParseExact,
+
+    /// <summary>
+    /// <para>Reading a number, a truth or a ratio out of text, each yielding an optional for
+    /// the same reason the dates do.</para>
+    /// <para>These read off the string rather than off the type, because <c>integer</c> is a
+    /// reserved word and cannot stand in front of a dot. Asking the text is the reading that
+    /// is available, and it is the one a reader has the value for anyway.</para>
+    /// </summary>
+    StringToInteger,
+    StringToReal,
+    StringToBoolean,
+    StringToFraction,
+
+    /// <summary>The two halves of a moment, and the ways of putting one together.</summary>
+    DateTimeDatePart,
+    DateTimeTimePart,
+    DateTimeFromDate,
+    DateTimeFromDateAndTime,
+
+    /// <summary>Writing a value out by a pattern. One id per type, since each formats itself.</summary>
+    IntegerFormat,
+    RealFormat,
+    FractionFormat,
+    DateTimeFormat,
+    TimeSpanFormat,
+    DateFormat,
+    TimeFormat,
+
+    /// <summary>Rounding to a given number of decimal places, rather than to a whole number.</summary>
+    MathRoundRealPlaces,
+
     OptionalHasValue,
     OptionalOr,
     OptionalValue,
@@ -352,6 +413,11 @@ public static class BuiltIns
             Member(BuiltInId.MathCeilingReal, "Ceiling", PrimitiveType.Integer, PrimitiveType.Real),
             Member(BuiltInId.MathCeilingFraction, "Ceiling", PrimitiveType.Integer, PrimitiveType.Fraction),
             Member(BuiltInId.MathRoundReal, "Round", PrimitiveType.Integer, PrimitiveType.Real),
+
+            // Rounding to a whole number gives an integer, since that is what the answer is.
+            // Rounding to a place gives a real, since 2.50 still has a fraction to hold.
+            Member(BuiltInId.MathRoundRealPlaces, "Round", PrimitiveType.Real,
+                   PrimitiveType.Real, PrimitiveType.Integer),
             Member(BuiltInId.MathRoundFraction, "Round", PrimitiveType.Integer, PrimitiveType.Fraction),
 
             // Choosing between two values gives back one of them, so the answer is whatever
@@ -428,6 +494,12 @@ public static class BuiltIns
             Value(BuiltInId.DateTimeDayOfWeek, "DayOfWeek", PrimitiveType.Integer),
             Value(BuiltInId.DateTimeDayOfYear, "DayOfYear", PrimitiveType.Integer),
 
+            // The two halves a moment is made of. Values rather than functions, because
+            // neither is worked out: a moment already holds both, and asking for one is
+            // reading a part rather than performing a conversion.
+            Value(BuiltInId.DateTimeDatePart, "Date", DateType),
+            Value(BuiltInId.DateTimeTimePart, "Time", TimeType),
+
             // Each takes a real, as .NET's do, so half a day is sayable and a whole one still
             // reads as AddDays(10) — an integer widens on the way in.
             Member(BuiltInId.DateTimeAddDays, "AddDays", DateTimeType, PrimitiveType.Real),
@@ -447,6 +519,11 @@ public static class BuiltIns
             Member(BuiltInId.DateTimeSubtract, "Subtract", TimeSpanType, DateTimeType),
             Member(BuiltInId.DateTimeSubtractSpan, "Subtract", DateTimeType, TimeSpanType),
             Member(BuiltInId.DateTimeAdd, "Add", DateTimeType, TimeSpanType),
+            Member(BuiltInId.DateTimeFormat, "Format", PrimitiveType.String, PrimitiveType.String),
+            Member(BuiltInId.DateTimeParse, "Parse", new OptionalType(DateTimeType),
+                   PrimitiveType.String),
+            Member(BuiltInId.DateTimeParseExact, "Parse", new OptionalType(DateTimeType),
+                   PrimitiveType.String, PrimitiveType.String),
         ],
         [
             Member(BuiltInId.DateTimeNewDate, "DateTime", DateTimeType,
@@ -454,6 +531,12 @@ public static class BuiltIns
             Member(BuiltInId.DateTimeNewMoment, "DateTime", DateTimeType,
                    PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer,
                    PrimitiveType.Integer, PrimitiveType.Integer, PrimitiveType.Integer),
+
+            // Built from the halves rather than from six numbers. The one-argument form takes
+            // midnight, which is the only time of day a bare date can mean.
+            Member(BuiltInId.DateTimeFromDate, "DateTime", DateTimeType, DateType),
+            Member(BuiltInId.DateTimeFromDateAndTime, "DateTime", DateTimeType,
+                   DateType, TimeType),
         ]),
 
         // How long something lasts, as against when it happened. This is what a moment
@@ -489,6 +572,11 @@ public static class BuiltIns
             Member(BuiltInId.TimeSpanNegate, "Negate", TimeSpanType),
             Member(BuiltInId.TimeSpanDuration, "Duration", TimeSpanType),
             Member(BuiltInId.TimeSpanCompareTo, "CompareTo", PrimitiveType.Integer, TimeSpanType),
+            Member(BuiltInId.TimeSpanFormat, "Format", PrimitiveType.String, PrimitiveType.String),
+            Member(BuiltInId.TimeSpanParse, "Parse", new OptionalType(TimeSpanType),
+                   PrimitiveType.String),
+            Member(BuiltInId.TimeSpanParseExact, "Parse", new OptionalType(TimeSpanType),
+                   PrimitiveType.String, PrimitiveType.String),
         ],
         [
             Member(BuiltInId.TimeSpanNewTime, "TimeSpan", TimeSpanType,
@@ -523,6 +611,10 @@ public static class BuiltIns
             // A day and a time of day together make a moment, which is the way back.
             Member(BuiltInId.DateAtTime, "ToDateTime", DateTimeType, TimeType),
             Member(BuiltInId.DateCompareTo, "CompareTo", PrimitiveType.Integer, DateType),
+            Member(BuiltInId.DateFormat, "Format", PrimitiveType.String, PrimitiveType.String),
+            Member(BuiltInId.DateParse, "Parse", new OptionalType(DateType), PrimitiveType.String),
+            Member(BuiltInId.DateParseExact, "Parse", new OptionalType(DateType),
+                   PrimitiveType.String, PrimitiveType.String),
         ],
         [
             Member(BuiltInId.DateNew, "Date", DateType,
@@ -551,6 +643,10 @@ public static class BuiltIns
             // How far into the day it is, which is a span.
             Member(BuiltInId.TimeToTimeSpan, "ToTimeSpan", TimeSpanType),
             Member(BuiltInId.TimeCompareTo, "CompareTo", PrimitiveType.Integer, TimeType),
+            Member(BuiltInId.TimeFormat, "Format", PrimitiveType.String, PrimitiveType.String),
+            Member(BuiltInId.TimeParse, "Parse", new OptionalType(TimeType), PrimitiveType.String),
+            Member(BuiltInId.TimeParseExact, "Parse", new OptionalType(TimeType),
+                   PrimitiveType.String, PrimitiveType.String),
         ],
         [
             Member(BuiltInId.TimeNewToMinute, "Time", TimeType,
@@ -656,6 +752,26 @@ public static class BuiltIns
         Member(BuiltInId.SetSubsetBetween, "Subset", set,
                PrimitiveType.Integer, PrimitiveType.Integer),
 
+        // Reads on the set rather than on a string, because the thing being joined is the
+        // collection. Any set answers it, not only a set of strings: each element is written
+        // out the way it would be on its own, which is what a reader joining numbers expects
+        // and what they would otherwise have to write a loop for.
+        Member(BuiltInId.SetJoin, "Join", PrimitiveType.String, PrimitiveType.String),
+
+        // <para>Two sets read together. Both give back a new set and leave both originals
+        // alone, as Subset does.</para>
+        //
+        // <para>A Profi-C set keeps its order and allows a value twice, so these are not the
+        // operations of the same name in mathematics: Union appends rather than merging, so
+        // what was in both is in the answer twice. Intersect keeps a run of what appears in
+        // the other, in this set's order.</para>
+        Member(BuiltInId.SetUnion, "Union", set, set),
+        Member(BuiltInId.SetIntersect, "Intersect", set, set),
+
+        // What this set has that the other does not. The counterpart of Intersect: between
+        // them they divide this set in two, so Intersect and Except put it back together.
+        Member(BuiltInId.SetExcept, "Except", set, set),
+
         .. TrimmingEmpties(set),
         .. OnEveryType(),
     ];
@@ -727,6 +843,34 @@ public static class BuiltIns
         Member(BuiltInId.StringTrimEndSet, "TrimEnd", PrimitiveType.String,
                new SetType(PrimitiveType.Character)),
 
+        // Splitting gives a set, and joining one back together is a member of the set rather
+        // than of a string — the thing being joined is the collection, and reading it off the
+        // separator would put the sentence the wrong way round.
+        Member(BuiltInId.StringSplit, "Split", new SetType(PrimitiveType.String),
+               PrimitiveType.String),
+
+        Member(BuiltInId.StringReplace, "Replace", PrimitiveType.String,
+               PrimitiveType.String, PrimitiveType.String),
+
+        Member(BuiltInId.StringToUpper, "ToUpper", PrimitiveType.String),
+        Member(BuiltInId.StringToLower, "ToLower", PrimitiveType.String),
+
+        // Not a .NET member. The first letter is raised and the rest is left exactly as it
+        // was, which is what you want for a name or the start of a sentence — and is not what
+        // .NET's title-casing does, since that also lowers everything it did not raise.
+        Member(BuiltInId.StringCapitalize, "Capitalize", PrimitiveType.String),
+
+        // Text back into a value. Each yields an optional rather than raising: text that will
+        // not read is the ordinary case, since most of it was typed by somebody.
+        Member(BuiltInId.StringToInteger, "ToInteger", new OptionalType(PrimitiveType.Integer)),
+        Member(BuiltInId.StringToReal, "ToReal", new OptionalType(PrimitiveType.Real)),
+        Member(BuiltInId.StringToBoolean, "ToBoolean", new OptionalType(PrimitiveType.Boolean)),
+
+        // A ratio reads with either mark between its halves. The language writes '22|7',
+        // because a slash is already division; a person writes '22/7', because that is what a
+        // fraction looks like everywhere outside a compiler. Reading takes both.
+        Member(BuiltInId.StringToFraction, "ToFraction", new OptionalType(PrimitiveType.Fraction)),
+
         .. OnEveryType(),
     ];
 
@@ -745,15 +889,32 @@ public static class BuiltIns
     ];
 
     /// <summary>The two conversions the language deliberately refuses to make on its own.</summary>
+    /// <summary>
+    /// <para>Writing a value out by a pattern, which every type that can be measured or dated
+    /// answers.</para>
+    /// <para>The patterns are .NET's own, unchanged, for the same reason the rest of the
+    /// library keeps its shapes: what a reader learns here is what they will type next
+    /// somewhere else. <c>F2</c> is two decimal places, <c>N0</c> is a whole number with
+    /// separators, <c>yyyy-MM-dd</c> is a date. A pattern the runtime does not recognize is a
+    /// FormatException rather than a silent oddity.</para>
+    /// </summary>
+    public static IReadOnlyList<BuiltInMember> OnInteger() =>
+    [
+        Member(BuiltInId.IntegerFormat, "Format", PrimitiveType.String, PrimitiveType.String),
+        .. OnEveryType(),
+    ];
+
     public static IReadOnlyList<BuiltInMember> OnFraction() =>
     [
         Member(BuiltInId.FractionToReal, "ToReal", PrimitiveType.Real),
+        Member(BuiltInId.FractionFormat, "Format", PrimitiveType.String, PrimitiveType.String),
         .. OnEveryType(),
     ];
 
     public static IReadOnlyList<BuiltInMember> OnReal() =>
     [
         Member(BuiltInId.RealToFraction, "ToFraction", PrimitiveType.Fraction),
+        Member(BuiltInId.RealFormat, "Format", PrimitiveType.String, PrimitiveType.String),
         .. OnEveryType(),
     ];
 

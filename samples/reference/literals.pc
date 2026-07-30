@@ -44,6 +44,37 @@ global model Literals
     constant string Escaped = "a newline \n a tab \t a backslash \\ a quote \"";
     constant string Accented = "café";
 
+    # A brace is ordinary; only a pair opens a hole, and escaping the first writes one.
+    constant string Braced = "a set is written {1, 2}";
+    constant string EscapedBrace = "a hole is written \{\{ name }}";
+
+    # ---- Block strings, which read nothing they hold ------------------------------
+
+    constant string Block = """no escape \n, no hole {{x}}, and a " as well""";
+
+    constant string Spanning = """
+        A block over several lines. The indentation of the closing quotes comes off
+        every line, so what this holds starts at the left margin.
+        """;
+
+    # ---- Strings with holes in them ---------------------------------------------------
+
+    ##
+        Not constants: a hole holds an expression, and an expression is not folded before the
+        program runs. Written in a function for that reason alone.
+    ##
+    function Interpolated()
+        let count = 2;
+
+        let one = "{{count}}";
+        let around = "before {{count}} after";
+        let several = "{{count}} and {{count + 1}} and {{count * 2}}";
+        let adjacent = "{{count}}{{count}}";
+        let formatted = "{{count:N2}}";
+        let holding = "{{ "a string in a hole" }}";
+        let nested = "{{ {1, 2}.Count() }}";
+    end function
+
     # ---- Booleans ---------------------------------------------------------------
 
     constant boolean Yes = true;

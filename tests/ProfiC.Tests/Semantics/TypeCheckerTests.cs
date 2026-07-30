@@ -1531,7 +1531,14 @@ public sealed class TypeCheckerTests
     [TestCase("        Random r = new Random(1, 2);", new[] { "PC0308" })]
     [TestCase("        DateTime d = new DateTime(2026, 7, 29);", new string[0])]
     [TestCase("        DateTime d = new DateTime(2026, 7, 29, 13, 0, 0);", new string[0])]
-    [TestCase("        DateTime d = new DateTime(2026);", new[] { "PC0308" })]
+    [TestCase("        DateTime d = new DateTime(new Date(2026, 7, 29));", new string[0])]
+    [TestCase("        DateTime d = new DateTime(new Date(2026, 7, 29), new Time(9, 0));",
+              new string[0])]
+
+    // A form does take one argument, so what is wrong here is the argument rather than the
+    // count — which is why this reports a type and not PC0308.
+    [TestCase("        DateTime d = new DateTime(2026);", new[] { "PC0300" })]
+    [TestCase("        DateTime d = new DateTime(2026, 7);", new[] { "PC0300", "PC0300" })]
     public void TheConstructibleOnesTakeTheFormsTheyList(string body, string[] expected) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(expected));
 

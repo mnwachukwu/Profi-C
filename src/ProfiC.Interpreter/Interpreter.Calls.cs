@@ -1,3 +1,4 @@
+using System.Globalization;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Runtime;
@@ -214,6 +215,8 @@ public sealed partial class Interpreter
         };
 
         ProfiCSet<object?> Set() => (ProfiCSet<object?>)target!;
+
+        ProfiCSet<object?> OtherSet(int index) => (ProfiCSet<object?>)Argument(index)!;
         string Subject() => (string)target!;
 
         char[] Characters(int index) => Argument(index) is ProfiCSet<object?> given
@@ -248,7 +251,9 @@ public sealed partial class Interpreter
                     ? string.Empty
                     : ModelOperations.ToDisplayString(arguments[0]))),
 
-            BuiltInId.ConsoleRead => new StrongBox<object?>(Console.ReadLine()),
+            // A null line means the input ran out, which is exactly what an absent optional
+            // says, so nothing has to translate it.
+            BuiltInId.ConsoleRead => new StrongBox<object?>(_input.ReadLine()),
 
             BuiltInId.ReferenceEquals =>
                 new StrongBox<object?>(ReferenceEquals(Argument(0), Argument(1))),
@@ -303,6 +308,9 @@ public sealed partial class Interpreter
                 new StrongBox<object?>((long)Math.Round(Real(0), MidpointRounding.AwayFromZero)),
             BuiltInId.MathRoundFraction =>
                 new StrongBox<object?>(Fraction.Round(Ratio(0))),
+            BuiltInId.MathRoundRealPlaces =>
+                new StrongBox<object?>(
+                    Math.Round(Real(0), (int)Integer(1), MidpointRounding.AwayFromZero)),
 
             BuiltInId.MathMinInteger => new StrongBox<object?>(Math.Min(Integer(0), Integer(1))),
             BuiltInId.MathMinReal => new StrongBox<object?>(Math.Min(Real(0), Real(1))),
@@ -439,6 +447,18 @@ public sealed partial class Interpreter
             BuiltInId.SetIndexOf => new StrongBox<object?>((long)Set().IndexOf(Argument(0))),
             BuiltInId.SetClear => Then(Set().Clear),
 
+            // Both leave their two originals alone and hand back a new set, as Subset does.
+            // Membership is asked of the other set, so it is the same structural question
+            // '==' asks rather than a reference check.
+            BuiltInId.SetUnion => new StrongBox<object?>(
+                new ProfiCSet<object?>(Set().Concat(OtherSet(0)))),
+            BuiltInId.SetIntersect => new StrongBox<object?>(
+                new ProfiCSet<object?>(
+                    Set().Where(element => OtherSet(0).Contains(element)))),
+            BuiltInId.SetExcept => new StrongBox<object?>(
+                new ProfiCSet<object?>(
+                    Set().Where(element => !OtherSet(0).Contains(element)))),
+
             BuiltInId.SetSubsetFrom => new StrongBox<object?>(
                 Subset(Set(), (int)Integer(0), Set().Count)),
             BuiltInId.SetSubsetBetween => new StrongBox<object?>(
@@ -454,6 +474,11 @@ public sealed partial class Interpreter
                 new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: false, end: true))),
             BuiltInId.SetTrimAll => new StrongBox<object?>(
                 new ProfiCSet<object?>(Set().Where(element => element is not null))),
+
+            // Each element written the way it would be written on its own, so a set of
+            // anything joins and not only a set of strings.
+            BuiltInId.SetJoin => new StrongBox<object?>(
+                string.Join(Text(0), Set().Select(ModelOperations.ToDisplayString))),
 
             BuiltInId.StringCount => new StrongBox<object?>((long)Subject().Length),
             BuiltInId.StringContains => new StrongBox<object?>(
@@ -492,6 +517,32 @@ public sealed partial class Interpreter
             BuiltInId.StringTrimEndSet =>
                 new StrongBox<object?>(Subject().TrimEnd(Characters(0))),
 
+            // Splitting on an empty separator would give one empty piece per character with
+            // nothing to show for it, so the whole string comes back as the only piece.
+            BuiltInId.StringSplit => new StrongBox<object?>(
+                new ProfiCSet<object?>(
+                    Text(0).Length == 0
+                        ? [Subject()]
+                        : Subject().Split(Text(0), StringSplitOptions.None)
+                                   .Select(piece => (object?)piece))),
+
+            BuiltInId.StringReplace => new StrongBox<object?>(
+                Text(0).Length == 0
+                    ? Subject()
+                    : Subject().Replace(Text(0), Text(1), StringComparison.Ordinal)),
+
+            BuiltInId.StringToUpper => new StrongBox<object?>(
+                Subject().ToUpperInvariant()),
+            BuiltInId.StringToLower => new StrongBox<object?>(
+                Subject().ToLowerInvariant()),
+
+            // The first letter raised, the rest untouched. An empty string has no first
+            // letter and comes back as it went in, rather than as an index nobody asked for.
+            BuiltInId.StringCapitalize => new StrongBox<object?>(
+                Subject().Length == 0
+                    ? Subject()
+                    : char.ToUpperInvariant(Subject()[0]) + Subject()[1..]),
+
             // An optional is the value itself, or nothing at all, so absence is a null target
             // rather than a wrapper to look inside.
             BuiltInId.OptionalHasValue => new StrongBox<object?>(target is not null),
@@ -499,6 +550,102 @@ public sealed partial class Interpreter
             BuiltInId.OptionalValue => target is not null
                 ? new StrongBox<object?>(target)
                 : throw new EmptyOptionalException(),
+
+            BuiltInId.StringToInteger => new StrongBox<object?>(
+                long.TryParse(Subject(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                              out long whole)
+                    ? whole
+                    : null),
+            BuiltInId.StringToReal => new StrongBox<object?>(
+                double.TryParse(Subject(), NumberStyles.Float, CultureInfo.InvariantCulture,
+                                out double measured)
+                    ? measured
+                    : null),
+
+            // Only the two words the language writes, so "yes" and "1" are not truths. Read
+            // without regard to case, since a person typing one is not thinking about that.
+            BuiltInId.StringToBoolean => new StrongBox<object?>(
+                bool.TryParse(Subject().Trim(), out bool truth) ? truth : null),
+
+            BuiltInId.StringToFraction => new StrongBox<object?>(ReadFraction(Subject())),
+
+            // The halves of a moment, and the ways of building one from them.
+            BuiltInId.DateTimeDatePart => new StrongBox<object?>(DateOnly.FromDateTime(Moment())),
+            BuiltInId.DateTimeTimePart => new StrongBox<object?>(TimeOnly.FromDateTime(Moment())),
+            BuiltInId.DateTimeFromDate => new StrongBox<object?>(
+                OtherDay(0).ToDateTime(TimeOnly.MinValue)),
+            BuiltInId.DateTimeFromDateAndTime => new StrongBox<object?>(
+                OtherDay(0).ToDateTime(Clock(1))),
+
+            // Read back from text. Nothing is raised: an optional is what says the text did
+            // not read, and text that does not read is the ordinary case rather than a fault.
+            //
+            // Invariant here too, so a value written on one machine reads on another. The
+            // second form takes exactly the pattern given, which is how something written by
+            // a pattern is read back by the same one.
+            BuiltInId.DateTimeParse => new StrongBox<object?>(
+                DateTime.TryParse(Text(0), CultureInfo.InvariantCulture,
+                                  DateTimeStyles.None, out DateTime moment)
+                    ? moment
+                    : null),
+            BuiltInId.DateTimeParseExact => new StrongBox<object?>(
+                DateTime.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
+                                       DateTimeStyles.None, out DateTime exact)
+                    ? exact
+                    : null),
+
+            BuiltInId.TimeSpanParse => new StrongBox<object?>(
+                TimeSpan.TryParse(Text(0), CultureInfo.InvariantCulture, out TimeSpan length)
+                    ? length
+                    : null),
+            BuiltInId.TimeSpanParseExact => new StrongBox<object?>(
+                TimeSpan.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
+                                       out TimeSpan exactLength)
+                    ? exactLength
+                    : null),
+
+            BuiltInId.DateParse => new StrongBox<object?>(
+                DateOnly.TryParse(Text(0), CultureInfo.InvariantCulture,
+                                  DateTimeStyles.None, out DateOnly day)
+                    ? day
+                    : null),
+            BuiltInId.DateParseExact => new StrongBox<object?>(
+                DateOnly.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
+                                       DateTimeStyles.None, out DateOnly exactDay)
+                    ? exactDay
+                    : null),
+
+            BuiltInId.TimeParse => new StrongBox<object?>(
+                TimeOnly.TryParse(Text(0), CultureInfo.InvariantCulture,
+                                  DateTimeStyles.None, out TimeOnly clock)
+                    ? clock
+                    : null),
+            BuiltInId.TimeParseExact => new StrongBox<object?>(
+                TimeOnly.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
+                                       DateTimeStyles.None, out TimeOnly exactClock)
+                    ? exactClock
+                    : null),
+
+            // Written by a pattern. Invariant, as everything else here is: a program prints
+            // the same on every machine, and the pattern is what says otherwise.
+            //
+            // A pattern the runtime cannot read raises a FormatException, which is already the
+            // one a Profi-C program catches — the two are the same type — so nothing has to
+            // translate it.
+            BuiltInId.IntegerFormat => new StrongBox<object?>(
+                AsInteger(target).ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.RealFormat => new StrongBox<object?>(
+                (target is double r ? r : 0).ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.FractionFormat => new StrongBox<object?>(
+                ((Fraction)target!).ToReal().ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.DateTimeFormat => new StrongBox<object?>(
+                Moment().ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.TimeSpanFormat => new StrongBox<object?>(
+                Length().ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.DateFormat => new StrongBox<object?>(
+                Day().ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.TimeFormat => new StrongBox<object?>(
+                OnTheClock().ToString(Text(0), CultureInfo.InvariantCulture)),
 
             BuiltInId.FractionToReal => new StrongBox<object?>(((Fraction)target!).ToReal()),
             BuiltInId.RealToFraction => new StrongBox<object?>(
@@ -522,6 +669,39 @@ public sealed partial class Interpreter
         };
     }
 #pragma warning restore CS8524
+
+    /// <summary>
+    /// <para>Reads a ratio written with either mark between its halves, or a whole number.
+    /// </para>
+    /// <para><c>22|7</c> is how the language writes one, because a slash already means
+    /// division. <c>22/7</c> is how a person writes one, because that is what a fraction looks
+    /// like everywhere outside a compiler. Both are read, and a bare <c>22</c> is a ratio over
+    /// one — the same three shapes <c>Fraction.Create</c> accepts.</para>
+    /// </summary>
+    private static object? ReadFraction(string text)
+    {
+        string trimmed = text.Trim();
+        int mark = trimmed.IndexOfAny(['|', '/']);
+
+        if (mark < 0)
+        {
+            return long.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                 out long whole)
+                ? new Fraction(whole, 1)
+                : null;
+        }
+
+        if (!long.TryParse(trimmed[..mark].Trim(), NumberStyles.Integer,
+                           CultureInfo.InvariantCulture, out long numerator)
+            || !long.TryParse(trimmed[(mark + 1)..].Trim(), NumberStyles.Integer,
+                              CultureInfo.InvariantCulture, out long denominator)
+            || denominator == 0)
+        {
+            return null;
+        }
+
+        return new Fraction(numerator, denominator);
+    }
 
     /// <summary>Runs something that produces no value, and reports that it produced none.</summary>
     private static StrongBox<object?> Then(Action action)

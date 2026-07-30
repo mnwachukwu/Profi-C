@@ -80,6 +80,12 @@ public sealed class AstPrinter(bool includePositions = false)
         CatchClause n => Quote(n.VariableName),
 
         LiteralExpr n => $"{n.Text} [{n.Kind}]",
+
+        // The text is quoted so that an empty run between two holes is visible rather than
+        // reading as nothing at all.
+        InterpolatedStringExpr n => string.Join(" ", n.Texts.Select(t => $"'{t}'")),
+        InterpolationPart n => n.Format is null ? string.Empty : $"format '{n.Format}'",
+
         IdentifierExpr n => Quote(n.Name),
         UnaryExpr n => Quote(n.Operator.Spelling()),
         BinaryExpr n => Quote(n.Operator.Spelling()),

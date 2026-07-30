@@ -358,7 +358,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'Triple'
       NamedTypeSyntax 'integer'
       ParameterDecl 'n'

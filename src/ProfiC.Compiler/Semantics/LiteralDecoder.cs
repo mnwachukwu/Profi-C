@@ -29,9 +29,58 @@ public static class LiteralDecoder
             LiteralKind.Fraction => DecodeFraction(literal.Text),
             LiteralKind.Character => DecodeCharacter(literal.Text),
             LiteralKind.String => DecodeString(literal.Text),
+            LiteralKind.BlockString => DecodeBlockString(literal.Text),
             LiteralKind.Boolean => string.Equals(literal.Text, "true", StringComparison.Ordinal),
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// <para>Reads a block string: the text between the triple quotes, taken as it stands.
+    /// </para>
+    /// <para>Where the block spans lines, the indentation of the closing quotes is removed
+    /// from every line, and the line breaks next to each pair of quotes go. That is C#'s rule,
+    /// and it is what lets a block sit at the indentation of the code around it without
+    /// carrying that indentation into what it holds — which is the difference between the
+    /// feature being usable inside a function and only at the left margin.</para>
+    /// <para>Written on one line, it is simply what lies between the quotes.</para>
+    /// </summary>
+    private static object DecodeBlockString(string text)
+    {
+        string inner = text.Length >= 6 ? text[3..^3] : string.Empty;
+
+        int firstBreak = inner.IndexOf('\n');
+
+        if (firstBreak < 0)
+        {
+            return inner;
+        }
+
+        // Everything before the first break is whitespace in a well-formed block; anything
+        // else there is the author's and is kept by leaving the one-line reading alone above.
+        string body = inner[(firstBreak + 1)..];
+        int lastBreak = body.LastIndexOf('\n');
+
+        string closing = lastBreak < 0 ? string.Empty : body[(lastBreak + 1)..];
+
+        if (closing.Trim().Length > 0)
+        {
+            // The closing quotes share a line with text, so there is no margin to read and
+            // nothing is removed.
+            return body;
+        }
+
+        string[] lines = (lastBreak < 0 ? string.Empty : body[..lastBreak])
+            .Split('\n');
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            lines[i] = lines[i].StartsWith(closing, StringComparison.Ordinal)
+                ? lines[i][closing.Length..]
+                : lines[i].TrimStart();
+        }
+
+        return string.Join("\n", lines).ReplaceLineEndings("\n");
     }
 
     private static object? DecodeInteger(string text) =>

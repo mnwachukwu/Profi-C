@@ -13,15 +13,18 @@
    consults; the one below restates it for a reader.
 
    So this file can drift from the compiler without anything failing. What
-   actually pins the syntax is samples/reference/tour.pc, which contains
-   every construct here exactly once and is checked against a recorded token
-   stream and a recorded tree on every build. Change a production here and
-   nothing breaks; change one there and the goldens do.
+   actually pins the syntax is the sample corpus, and above all
+   samples/reference/tour.pc, which holds nearly every construct here exactly
+   once. Every sample is checked against a recorded token stream and a
+   recorded tree on every build, and the tests assert that between them the
+   samples reach every node the parser can build. Change a production here
+   and nothing breaks; change one there and the goldens do.
 
-   AHEAD OF THE COMPILER. Namespaces are described in full below and parse
-   today, but nothing scopes them yet: a type declared inside one is reached
-   without qualification, exactly as though the namespace were not written.
-   Everything else below is implemented.
+   "Nearly", because the tour opens with block namespaces and so holds no
+   file-scoped one. samples/namespaces.pc writes that form, with blocks
+   nested inside it -- which is how the two combine.
+
+   Everything below is implemented.
 
    Metasyntax: braces mean zero or more, square brackets mean optional,
    parentheses group, a vertical bar separates alternatives, and quoted
@@ -44,7 +47,9 @@
 
 CompilationUnit = { UsingDirective | ImportDirective }
                   ( FileScopedNamespace
-                  | { NamespaceDecl | ModelDecl | StructureDecl } ) EOF ;
+                  | { TopLevelDecl } ) EOF ;
+
+TopLevelDecl    = NamespaceDecl | ModelDecl | StructureDecl | EnumerationDecl ;
 
 (* A using decides which names are reachable unqualified and brings in no
    file. An import decides which files are compiled and affects no name.
@@ -53,11 +58,9 @@ CompilationUnit = { UsingDirective | ImportDirective }
 UsingDirective      = "using" QualifiedName ";" ;
 ImportDirective     = "import" StringLiteral ";" ;
 
-FileScopedNamespace = "namespace" QualifiedName ";"
-                      { NamespaceDecl | ModelDecl | StructureDecl } ;
+FileScopedNamespace = "namespace" QualifiedName ";" { TopLevelDecl } ;
 
-NamespaceDecl       = "namespace" QualifiedName
-                      { NamespaceDecl | ModelDecl | StructureDecl | EnumerationDecl }
+NamespaceDecl       = "namespace" QualifiedName { TopLevelDecl }
                       "end" "namespace" ;
 
 QualifiedName       = Identifier { "." Identifier } ;
@@ -168,6 +171,7 @@ TypeList       = Type { "," Type } ;
 ArgList        = Expr { "," Expr } ;
 
 Primary        = IntegerLiteral | RealLiteral | CharLiteral | StringLiteral
+               | BlockStringLiteral | InterpolatedString
                | FractionLiteral | "true" | "false"
                | Identifier | "this" | "base"
                | "(" Expr ")"
@@ -175,6 +179,29 @@ Primary        = IntegerLiteral | RealLiteral | CharLiteral | StringLiteral
                | NewExpr
                | Lambda
                | IfExpr ;
+
+(* A string with expressions written into it. A pair of braces opens a hole and a
+   pair closes one; a single brace is ordinary text and needs no escaping, which is
+   why doubling them was chosen over a prefix on the literal. To write a literal
+   pair, escape the first: "\{{".
+
+   A hole holds any expression, including a string that interpolates in turn, so the
+   scanner counts the braces opened inside one to know which pair closes it. What
+   follows a colon is a pattern rather than code, taken whole to the closing braces
+   and handed to the value being written -- so "{{when:yyyy-MM-dd}}" holds a date
+   pattern, not a subtraction.
+
+   Lowering turns the whole thing into concatenation: each hole becomes ToString(),
+   or Format(pattern) where one was named, and the pieces are joined with "+". *)
+InterpolatedString = '"' { StringChar | Interpolation } '"' ;
+
+Interpolation      = "{{" Expr [ ":" FormatPattern ] "}}" ;
+
+(* Three quotes to three quotes, holding whatever lies between them. No escape is
+   read and no hole is looked for, so this is also the language's verbatim form and
+   no separate one exists. Where it spans lines, the indentation of the closing
+   quotes is removed from every line and the breaks beside each pair of quotes go. *)
+BlockStringLiteral = '"""' { AnyCharacter } '"""' ;
 
 Lambda         = "function" "(" [ LambdaParams ] ")" Body "end" "function"
                | "(" [ LambdaParams ] ")" "yield" Expr ;

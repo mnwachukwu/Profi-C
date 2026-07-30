@@ -1,0 +1,634 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'BuildingOne'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AskingAboutIt'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TakingARunOut'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TwoSetsTogether'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TheSameWordsOnAString'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AStringDoesNotChange'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'BetweenTheTwo'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'DroppingTheEmpties'
+            IdentifierExpr 'Program'
+    FunctionDecl 'BuildingOne'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== building one ==" [String]
+      VarDeclStmt 'numbers'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'numbers'
+          LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'InsertAt'
+            IdentifierExpr 'numbers'
+          LiteralExpr 0 [Integer]
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  after inserting   ' ''
+            InterpolationPart
+              IdentifierExpr 'numbers'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'RemoveAt'
+            IdentifierExpr 'numbers'
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  after removing at ' ''
+            InterpolationPart
+              IdentifierExpr 'numbers'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  removing a 3      ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Remove'
+                  IdentifierExpr 'numbers'
+                LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  removing a 99     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Remove'
+                  IdentifierExpr 'numbers'
+                LiteralExpr 99 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  what is left      ' ''
+            InterpolationPart
+              IdentifierExpr 'numbers'
+      VarDeclStmt 'repeated'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  repeats are fine  ' ''
+            InterpolationPart
+              IdentifierExpr 'repeated'
+    FunctionDecl 'AskingAboutIt'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== asking ==" [String]
+      VarDeclStmt 'shopping'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CollectionExpr
+          LiteralExpr "bread" [String]
+          LiteralExpr "milk" [String]
+          LiteralExpr "eggs" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  how many      ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'shopping'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  any milk      ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Contains'
+                  IdentifierExpr 'shopping'
+                LiteralExpr "milk" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  where is milk ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'IndexOf'
+                  IdentifierExpr 'shopping'
+                LiteralExpr "milk" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  any jam       ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Contains'
+                  IdentifierExpr 'shopping'
+                LiteralExpr "jam" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  where is jam  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'IndexOf'
+                  IdentifierExpr 'shopping'
+                LiteralExpr "jam" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  the first one ' ''
+            InterpolationPart
+              IndexExpr
+                IdentifierExpr 'shopping'
+                LiteralExpr 0 [Integer]
+    FunctionDecl 'TakingARunOut'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a run of it ==" [String]
+      VarDeclStmt 'all'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 10 [Integer]
+          LiteralExpr 20 [Integer]
+          LiteralExpr 30 [Integer]
+          LiteralExpr 40 [Integer]
+          LiteralExpr 50 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  from 2 on     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Subset'
+                  IdentifierExpr 'all'
+                LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  from 1 to 3   ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Subset'
+                  IdentifierExpr 'all'
+                LiteralExpr 1 [Integer]
+                LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the two halves put back together: " [String]
+            InterpolatedStringExpr '' ''
+              InterpolationPart
+                CallExpr
+                  MemberExpr 'Union'
+                    CallExpr
+                      MemberExpr 'Subset'
+                        IdentifierExpr 'all'
+                      LiteralExpr 0 [Integer]
+                      LiteralExpr 2 [Integer]
+                  CallExpr
+                    MemberExpr 'Subset'
+                      IdentifierExpr 'all'
+                    LiteralExpr 2 [Integer]
+                    LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  and the original is untouched     ' ''
+            InterpolationPart
+              IdentifierExpr 'all'
+    FunctionDecl 'TwoSetsTogether'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== two together ==" [String]
+      VarDeclStmt 'mine'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'yours'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 3 [Integer]
+          LiteralExpr 4 [Integer]
+          LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  both piles     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Union'
+                  IdentifierExpr 'mine'
+                IdentifierExpr 'yours'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  in both        ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Intersect'
+                  IdentifierExpr 'mine'
+                IdentifierExpr 'yours'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  only mine      ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Except'
+                  IdentifierExpr 'mine'
+                IdentifierExpr 'yours'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  only yours     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Except'
+                  IdentifierExpr 'yours'
+                IdentifierExpr 'mine'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  every element back, reordered: " [String]
+            InterpolatedStringExpr '' ''
+              InterpolationPart
+                CallExpr
+                  MemberExpr 'Union'
+                    CallExpr
+                      MemberExpr 'Intersect'
+                        IdentifierExpr 'mine'
+                      IdentifierExpr 'yours'
+                  CallExpr
+                    MemberExpr 'Except'
+                      IdentifierExpr 'mine'
+                    IdentifierExpr 'yours'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  and mine is untouched ' ''
+            InterpolationPart
+              IdentifierExpr 'mine'
+    FunctionDecl 'TheSameWordsOnAString'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== the same words on a string ==" [String]
+      VarDeclStmt 'text' [inferred]
+        LiteralExpr "Profi-C" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  how many        ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'text'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  any 'fi'        ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Contains'
+                  IdentifierExpr 'text'
+                LiteralExpr "fi" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  where is 'fi'   ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'IndexOf'
+                  IdentifierExpr 'text'
+                LiteralExpr "fi" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  from 5 on       ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Subset'
+                  IdentifierExpr 'text'
+                LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  from 0 to 5     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Subset'
+                  IdentifierExpr 'text'
+                LiteralExpr 0 [Integer]
+                LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  five characters ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Substring'
+                  IdentifierExpr 'text'
+                LiteralExpr 0 [Integer]
+                LiteralExpr 5 [Integer]
+    FunctionDecl 'AStringDoesNotChange'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a set changes, a string does not ==" [String]
+      VarDeclStmt 'numbers'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'numbers'
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  the set changed      ' ''
+            InterpolationPart
+              IdentifierExpr 'numbers'
+      VarDeclStmt 'greeting' [inferred]
+        LiteralExpr "hello" [String]
+      VarDeclStmt 'longer' [inferred]
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'greeting'
+          LiteralExpr ", world" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  the new string       ' ''
+            InterpolationPart
+              IdentifierExpr 'longer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  the original one     ' ''
+            InterpolationPart
+              IdentifierExpr 'greeting'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  without the middle   ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Remove'
+                  LiteralExpr "a-b-c" [String]
+                LiteralExpr "-b" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  without the first    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'RemoveAt'
+                  LiteralExpr "abc" [String]
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  with something in it ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'InsertAt'
+                  LiteralExpr "ac" [String]
+                LiteralExpr 1 [Integer]
+                LiteralExpr "b" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  trimmed              [' ']'
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Trim'
+                  LiteralExpr "  padded  " [String]
+    FunctionDecl 'BetweenTheTwo'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== between the two ==" [String]
+      VarDeclStmt 'sentence' [inferred]
+        LiteralExpr "the quick brown fox" [String]
+      VarDeclStmt 'words'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'Split'
+            IdentifierExpr 'sentence'
+          LiteralExpr " " [String]
+      VarDeclStmt 'letters'
+        SetTypeSyntax
+          NamedTypeSyntax 'character'
+        CallExpr
+          MemberExpr 'ToCharacters'
+            LiteralExpr "abc" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  split into words   ' ''
+            InterpolationPart
+              IdentifierExpr 'words'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  joined again       ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Join'
+                  IdentifierExpr 'words'
+                LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  as characters      ' ''
+            InterpolationPart
+              IdentifierExpr 'letters'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  how many words     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'words'
+      VarDeclStmt 'counts'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  numbers joined     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Join'
+                  IdentifierExpr 'counts'
+                LiteralExpr " then " [String]
+    FunctionDecl 'DroppingTheEmpties'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== dropping the gaps ==" [String]
+      VarDeclStmt 'nothing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'readings'
+        SetTypeSyntax
+          OptionalTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          IdentifierExpr 'nothing'
+          LiteralExpr 1 [Integer]
+          IdentifierExpr 'nothing'
+          LiteralExpr 2 [Integer]
+          IdentifierExpr 'nothing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  as they came    ' ''
+            InterpolationPart
+              IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  ends trimmed    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Trim'
+                  IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  start only      ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'TrimStart'
+                  IdentifierExpr 'readings'
+      VarDeclStmt 'certain'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'TrimAll'
+            IdentifierExpr 'readings'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  every gap gone  ' ''
+            InterpolationPart
+              IdentifierExpr 'certain'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  and no unwrapping needed: ' ''
+            InterpolationPart
+              BinaryExpr '+'
+                IndexExpr
+                  IdentifierExpr 'certain'
+                  LiteralExpr 0 [Integer]
+                IndexExpr
+                  IdentifierExpr 'certain'
+                  LiteralExpr 1 [Integer]

@@ -1,0 +1,47 @@
+== four types, four questions ==
+  which day    2026-08-15
+  what time    14:30:00
+  how long     02:30:00
+  which moment 2026-08-15 14:30:00
+== together and apart ==
+  built       2026-08-15 14:30:00
+  its day     2026-08-15
+  its time    14:30:00
+== how far apart ==
+  the party lasted   02:30:00
+  as we would say it 2h 30m
+  as we would measure it, in minutes 150
+  and in hours                       2.5
+  the other way round -02:30:00
+  its size            02:30:00
+== moving around ==
+  a week later  2026-08-22
+  a month later 2026-09-15
+  a year later  2027-08-15
+  23:30 plus an hour, on a clock    00:30:00
+  23:30 plus an hour, as a moment   2026-08-16 00:30:00
+  and with a span                   2026-08-16 00:15:00
+== which came first ==
+  august before december true
+  december before august false
+  a day equals itself    true
+  nine before nine pm    true
+  a minute is shorter    true
+== writing one down ==
+  plain          2026-08-15 14:30:00
+  just the date  2026-08-15
+  just the time  14:30
+  written out    August 15, 2026
+  the weekday    Saturday
+  how long       2h 30m
+  through Format 2026-08-15
+== reading one back ==
+  read a date    2026-08-15
+  'the fifteenth' read: false
+  falling back to today's year: 2026-01-01
+  25/12/2026 came back as 2026-12-25
+== right now ==
+  Today is midnight, having no time of day  true
+  Now has one                               true
+  today's date agrees with now's            true
+  the clock is somewhere in the day         true

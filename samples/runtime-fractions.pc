@@ -26,7 +26,7 @@ global model Program
                               + ", and " + d + " of them make " + piece * Fraction.Create(d));
         end for
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== it reduces and normalizes, exactly as a literal does ==");
         Console.WriteLine("  Fraction.Create(6, 8)   is " + Fraction.Create(6, 8));
         Console.WriteLine("  Fraction.Create(-3, -9) is " + Fraction.Create(-3, -9));
@@ -36,12 +36,12 @@ global model Program
         Console.WriteLine("  Fraction.Create(5, -10) is " + Fraction.Create(5, -10));
         Console.WriteLine("  and equals -1|2?           " + (Fraction.Create(5, -10) == -1|2));
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== summing a series that literals could not express ==");
         Console.WriteLine("  1 + 1|2 + ... + 1|10 = " + Program.Harmonic(10));
         Console.WriteLine("  as a real:             " + Program.Harmonic(10).ToReal());
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== a denominator of zero ==");
 
         ##

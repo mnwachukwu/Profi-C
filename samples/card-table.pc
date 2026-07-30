@@ -56,7 +56,7 @@ global model Program
             Console.Write(Program.NameOf(suit) + " ");
         end for
 
-        Console.WriteLine("");
+        Console.WriteLine();
     end function
 
     # ---- Grouping labels ------------------------------------------------------------

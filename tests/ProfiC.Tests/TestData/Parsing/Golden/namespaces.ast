@@ -1,0 +1,206 @@
+CompilationUnit
+  UsingDirective
+    QualifiedName 'Geometry.Flat'
+  NamespaceDecl 'Geometry' file-scoped
+    QualifiedName 'Geometry'
+    ModelDecl 'Shape' [public abstract]
+      FieldDecl 'name' [protected]
+        NamedTypeSyntax 'string'
+      FunctionDecl 'Shape' [public]
+        ParameterDecl 'label'
+          NamedTypeSyntax 'string'
+        AssignmentStmt
+          MemberExpr 'name'
+            ThisExpr
+          IdentifierExpr 'label'
+      FunctionDecl 'Area' [public virtual]
+        NamedTypeSyntax 'real'
+        YieldStmt
+          LiteralExpr 0.0 [Real]
+      FunctionDecl 'ToString' [public override]
+        NamedTypeSyntax 'string'
+        YieldStmt
+          BinaryExpr '+'
+            BinaryExpr '+'
+              MemberExpr 'name'
+                ThisExpr
+              LiteralExpr " of area " [String]
+            CallExpr
+              MemberExpr 'Round'
+                IdentifierExpr 'Math'
+              CallExpr
+                MemberExpr 'Area'
+                  ThisExpr
+    NamespaceDecl 'Flat'
+      QualifiedName 'Flat'
+      ModelDecl 'Circle' [public] extends Shape
+        FieldDecl 'radius'
+          NamedTypeSyntax 'real'
+        FunctionDecl 'Circle' [public]
+          ParameterDecl 'radius'
+            NamedTypeSyntax 'real'
+          ExpressionStmt
+            CallExpr
+              BaseExpr
+              LiteralExpr "a flat circle" [String]
+          AssignmentStmt
+            MemberExpr 'radius'
+              ThisExpr
+            IdentifierExpr 'radius'
+        FunctionDecl 'Area' [public override]
+          NamedTypeSyntax 'real'
+          YieldStmt
+            BinaryExpr '*'
+              BinaryExpr '*'
+                MemberExpr 'Pi'
+                  IdentifierExpr 'Math'
+                MemberExpr 'radius'
+                  ThisExpr
+              MemberExpr 'radius'
+                ThisExpr
+    NamespaceDecl 'Solid'
+      QualifiedName 'Solid'
+      ModelDecl 'Circle' [public] extends Shape
+        FieldDecl 'radius'
+          NamedTypeSyntax 'real'
+        FunctionDecl 'Circle' [public]
+          ParameterDecl 'radius'
+            NamedTypeSyntax 'real'
+          ExpressionStmt
+            CallExpr
+              BaseExpr
+              LiteralExpr "a sphere" [String]
+          AssignmentStmt
+            MemberExpr 'radius'
+              ThisExpr
+            IdentifierExpr 'radius'
+        FunctionDecl 'Area' [public override]
+          NamedTypeSyntax 'real'
+          YieldStmt
+            BinaryExpr '*'
+              BinaryExpr '*'
+                BinaryExpr '*'
+                  LiteralExpr 4.0 [Real]
+                  MemberExpr 'Pi'
+                    IdentifierExpr 'Math'
+                MemberExpr 'radius'
+                  ThisExpr
+              MemberExpr 'radius'
+                ThisExpr
+    ModelDecl 'Program' [global]
+      FunctionDecl 'Main'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WhatTheUsingDecides'
+              IdentifierExpr 'Program'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WhatQualifyingReaches'
+              IdentifierExpr 'Program'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WhatTheyShare'
+              IdentifierExpr 'Program'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WhereStandardSits'
+              IdentifierExpr 'Program'
+      FunctionDecl 'WhatTheUsingDecides'
+        VarDeclStmt 'flat'
+          NamedTypeSyntax 'Circle'
+          NewExpr 'Circle'
+            LiteralExpr 2.0 [Real]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "a bare Circle is " [String]
+              IdentifierExpr 'flat'
+      FunctionDecl 'WhatQualifyingReaches'
+        VarDeclStmt 'nearby'
+          NamedTypeSyntax 'Solid.Circle'
+          NewExpr 'Solid.Circle'
+            LiteralExpr 2.0 [Real]
+        VarDeclStmt 'spelledOut'
+          NamedTypeSyntax 'Geometry.Solid.Circle'
+          NewExpr 'Geometry.Solid.Circle'
+            LiteralExpr 2.0 [Real]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "Solid.Circle is " [String]
+              IdentifierExpr 'nearby'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "and so is Geometry.Solid.Circle: " [String]
+              IdentifierExpr 'spelledOut'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "the two are equal: " [String]
+              ParenthesizedExpr
+                BinaryExpr '=='
+                  IdentifierExpr 'nearby'
+                  IdentifierExpr 'spelledOut'
+      FunctionDecl 'WhatTheyShare'
+        VarDeclStmt 'shapes'
+          SetTypeSyntax
+            NamedTypeSyntax 'Shape'
+          CollectionExpr
+            NewExpr 'Circle'
+              LiteralExpr 1.0 [Real]
+            NewExpr 'Solid.Circle'
+              LiteralExpr 1.0 [Real]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "both are a Shape, so both fit in one set of them:" [String]
+        ForEachStmt 'shape'
+          IdentifierExpr 'shapes'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr "  " [String]
+                IdentifierExpr 'shape'
+      FunctionDecl 'WhereStandardSits'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "Math.Pi is          " [String]
+              MemberExpr 'Pi'
+                IdentifierExpr 'Math'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "Standard.Math.Pi is " [String]
+              MemberExpr 'Pi'
+                MemberExpr 'Math'
+                  IdentifierExpr 'Standard'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "the same value:     " [String]
+              ParenthesizedExpr
+                BinaryExpr '=='
+                  MemberExpr 'Pi'
+                    IdentifierExpr 'Math'
+                  MemberExpr 'Pi'
+                    MemberExpr 'Math'
+                      IdentifierExpr 'Standard'

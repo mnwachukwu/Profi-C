@@ -95,6 +95,11 @@ public static class BuiltInMembers
             return BuiltIns.OnReal();
         }
 
+        if (ReferenceEquals(type, PrimitiveType.Integer))
+        {
+            return BuiltIns.OnInteger();
+        }
+
         return BuiltIns.OnEveryType();
     }
 

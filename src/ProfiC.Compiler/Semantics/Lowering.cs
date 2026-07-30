@@ -287,6 +287,9 @@ public sealed class Lowering
                 // are dropped rather than carried into every later pass.
                 return LowerExpression(parenthesized.Inner);
 
+            case InterpolatedStringExpr interpolated:
+                return LowerInterpolatedString(interpolated);
+
             case UnaryExpr unary:
                 return Carry(unary, new UnaryExpr(
                     unary.Span, unary.Operator, LowerExpression(unary.Operand)));
@@ -352,6 +355,109 @@ public sealed class Lowering
     // ---- Building new nodes -------------------------------------------------------------------
 
     /// <summary>Copies what was known about a node onto the node that replaces it.</summary>
+    /// <summary>
+    /// <para>Turns a string with holes into the concatenation it means.</para>
+    /// <para><c>"a {{x}} b"</c> becomes <c>"a " + x + " b"</c>, and a hole that says how to
+    /// format itself becomes <c>x.Format("F2")</c> first. Both are things the language already
+    /// had, so nothing downstream learns a new shape: the interpreter runs the result with the
+    /// code it uses for any other sum, and the emitter will too.</para>
+    /// <para>Empty runs are dropped rather than added as empty strings — every literal here is
+    /// one the source did not write, and leaving out the ones that say nothing keeps the
+    /// lowered tree readable.</para>
+    /// </summary>
+    private Expression LowerInterpolatedString(InterpolatedStringExpr interpolated)
+    {
+        Expression? built = null;
+
+        for (int i = 0; i < interpolated.Texts.Count; i++)
+        {
+            if (interpolated.Texts[i].Length > 0)
+            {
+                built = Append(built, TextLiteral(interpolated, interpolated.Texts[i]));
+            }
+
+            if (i < interpolated.Holes.Count)
+            {
+                built = Append(built, LowerHole(interpolated.Holes[i]));
+            }
+        }
+
+        // A string with nothing in it at all, which is still a string.
+        return built ?? TextLiteral(interpolated, string.Empty);
+
+        Expression Append(Expression? left, Expression right)
+        {
+            if (left is null)
+            {
+                return right;
+            }
+
+            BinaryExpr sum = new(interpolated.Span, left, BinaryOperator.Add, right);
+            _model.BindType(sum, PrimitiveType.String);
+            return sum;
+        }
+    }
+
+    /// <summary>
+    /// <para>One hole, lowered to something that is already a string.</para>
+    /// <para>Asking the value for its text here rather than leaving it to the <c>+</c> is what
+    /// keeps this pass honest: a <c>+</c> that joins a number to a string only works because
+    /// the checker recorded a conversion on the operand, and a tree built after the checker
+    /// has run carries no such record. Calling <c>ToString</c> outright needs none, since the
+    /// operands are then strings on both sides.</para>
+    /// <para>A hole that named a pattern calls <c>Format</c> instead, which yields a string
+    /// for the same reason.</para>
+    /// </summary>
+    private Expression LowerHole(InterpolationPart hole)
+    {
+        TypeSymbol? held = _model.GetType(hole.Value);
+        Expression value = LowerExpression(hole.Value);
+
+        string name = hole.Format is null ? "ToString" : "Format";
+
+        IReadOnlyList<Expression> arguments = hole.Format is null
+            ? []
+            : [Text(hole, hole.Format)];
+
+        MemberExpr member = new(hole.Span, value, name);
+        CallExpr call = new(hole.Span, member, arguments);
+
+        _model.BindType(member, PrimitiveType.String);
+        _model.BindType(call, PrimitiveType.String);
+
+        if (held is not null
+            && BuiltInMembers.FindAll(held, name) is [{ Id: { } id }, ..])
+        {
+            _model.BindBuiltIn(member, id);
+        }
+
+        return call;
+
+        Expression Text(SyntaxNode at, string text)
+        {
+            LiteralExpr literal = new(at.Span, LiteralKind.String, Quoted(text));
+            _model.BindType(literal, PrimitiveType.String);
+            return literal;
+        }
+    }
+
+    /// <summary>
+    /// A run of text as the literal it stands for. The lexeme is rebuilt rather than sliced
+    /// out of the source, because the text between two holes is not a literal anybody wrote
+    /// and has no quotes of its own to keep.
+    /// </summary>
+    private LiteralExpr TextLiteral(SyntaxNode at, string text)
+    {
+        LiteralExpr literal = new(at.Span, LiteralKind.String, Quoted(text));
+        _model.BindType(literal, PrimitiveType.String);
+        return literal;
+    }
+
+    private static string Quoted(string text) =>
+        "\"" + text.Replace("\\", "\\\\", StringComparison.Ordinal)
+                   .Replace("\"", "\\\"", StringComparison.Ordinal)
+             + "\"";
+
     private T Carry<T>(SyntaxNode original, T replacement)
         where T : SyntaxNode
     {

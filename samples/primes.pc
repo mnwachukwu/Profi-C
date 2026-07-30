@@ -27,7 +27,7 @@ global model Program
             end if
         end for
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("That is " + found + " of them.");
     end function
 

@@ -17,23 +17,23 @@ global model Program
         Console.WriteLine("1|3 + 1|3 + 1|3 = " + (1|3 + 1|3 + 1|3));
         Console.WriteLine("as real:          " + (1.0 / 3.0 + 1.0 / 3.0 + 1.0 / 3.0));
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== tenths ==");
         Console.WriteLine("1|10 + 2|10 = " + (1|10 + 2|10));
         Console.WriteLine("as real:      " + (0.1 + 0.2));
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== lowest terms, always ==");
         Console.WriteLine("6|8   is " + 6|8);
         Console.WriteLine("100|4 is " + 100|4);
         Console.WriteLine("3|1   is " + 3|1);
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== a harmonic sum, exactly ==");
         Console.WriteLine("1 + 1|2 + ... + 1|8 = " + Program.Harmonic(8));
         Console.WriteLine("and as a real:        " + Program.Harmonic(8).ToReal());
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== raising to a power stays exact ==");
         Console.WriteLine("(1|2) ^ 3  is " + (1|2) ^ 3);
         Console.WriteLine("(2|3) ^ 2  is " + (2|3) ^ 2);
@@ -49,7 +49,7 @@ global model Program
         Console.WriteLine("(3|1) ^ -1 is " + (3|1) ^ -1);
         Console.WriteLine("as a real:    " + 3.0 ^ -1.0);
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("== an integer widens to a fraction on its own ==");
         fraction whole = 3;
         Console.WriteLine("3 as a fraction is " + whole);

@@ -1,0 +1,134 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AskingForAName'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AskingForANumber'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhenNothingComes'
+            IdentifierExpr 'Program'
+    FunctionDecl 'AskingForAName'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "your name? " [String]
+      VarDeclStmt 'typed'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'Read'
+            IdentifierExpr 'Console'
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'typed'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr 'hello, ' ''
+              InterpolationPart
+                CallExpr
+                  MemberExpr 'Value'
+                    IdentifierExpr 'typed'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "nobody there" [String]
+    FunctionDecl 'AskingForANumber'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "a number? " [String]
+      VarDeclStmt 'typed'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'Read'
+            IdentifierExpr 'Console'
+      IfStmt
+        UnaryExpr 'not'
+          CallExpr
+            MemberExpr 'HasValue'
+              IdentifierExpr 'typed'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "nothing to read" [String]
+        YieldStmt
+      VarDeclStmt 'number'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'ToInteger'
+            CallExpr
+              MemberExpr 'Trim'
+                CallExpr
+                  MemberExpr 'Value'
+                    IdentifierExpr 'typed'
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'number'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr '' ' doubled is ' ''
+              InterpolationPart
+                CallExpr
+                  MemberExpr 'Value'
+                    IdentifierExpr 'number'
+              InterpolationPart
+                BinaryExpr '*'
+                  CallExpr
+                    MemberExpr 'Value'
+                      IdentifierExpr 'number'
+                  LiteralExpr 2 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr ''' '' is not a number'
+              InterpolationPart
+                CallExpr
+                  MemberExpr 'Value'
+                    IdentifierExpr 'typed'
+    FunctionDecl 'WhenNothingComes'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "how many? " [String]
+      VarDeclStmt 'count'
+        NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Or'
+            CallExpr
+              MemberExpr 'ToInteger'
+                CallExpr
+                  MemberExpr 'Trim'
+                    CallExpr
+                      MemberExpr 'Or'
+                        CallExpr
+                          MemberExpr 'Read'
+                            IdentifierExpr 'Console'
+                      LiteralExpr "0" [String]
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr 'taking ' ''
+            InterpolationPart
+              IdentifierExpr 'count'

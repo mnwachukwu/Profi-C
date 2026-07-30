@@ -238,6 +238,17 @@ namespace Tour
             # A non-string operand converts implicitly when joined to a string.
             Console.WriteLine("the answer is " + explicitly);
 
+            # The same sentence with the value written in place. A pair of braces holds an
+            # expression; a colon after it says how to write what the expression yields.
+            Console.WriteLine("the answer is {{explicitly}}");
+            Console.WriteLine("to two places: {{Tour.Half:F2}}");
+
+            # Three quotes hold text exactly as written: no escape is read, no hole is looked
+            # for, and the indentation of the closing quotes comes off every line.
+            Console.WriteLine("""
+                A block string, which holds a \ and a " and a {{ without reading any of them.
+                """);
+
             yield;
         end function
 
@@ -254,7 +265,10 @@ namespace Tour
     ##
     model Surveying
         public integer function SidesOf(Polygon shape)
-            yield shape.sides;
+            # Written out, a name reaches the same type with no 'using' behind it. What comes
+            # before the last part is read the way a bare name is: from here, then outward.
+            Tour.Shapes.Polygon same = shape;
+            yield same.sides;
         end function
     end model
 

@@ -1,0 +1,29 @@
+== putting values in ==
+  hello, Matt
+  3 apples and 4 pears is 7 fruit
+  in capitals: MATT
+  the longer word: Profi-C
+  a set looks like {1, 2, 3}
+  and a hole is written {{ like this }}
+== saying how ==
+  plain:      1234.5
+  to a penny: 1234.50
+  with commas:1,234.50
+  the date:   2026-08-15
+  the time:   14:30
+  through Format: 1234.50
+  rounded to 2:   1234.5
+== a block, as written ==
+Usage: pc run <file>
+
+A path may hold \ and " and {{ freely,
+because nothing in here is read as anything.
+  one line, no escapes: C:\Users\Matt
+== apart and back together ==
+  words:      4
+  hyphenated: the-quick-brown-fox
+  shouted:    THE QUICK BROWN FOX
+  quietly:    the quick brown fox
+  as a title: The quick brown fox
+  swapped:    the slow brown fox
+  counts:     1, 2, 3

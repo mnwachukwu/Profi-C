@@ -22,7 +22,14 @@ public sealed class InterpreterTests
     /// program does not check cleanly, so that a broken fixture never masquerades as a broken
     /// interpreter.
     /// </summary>
-    private static string Run(string source)
+    /// <summary>
+    /// Runs a program with lines waiting to be read, as though they had been typed or piped
+    /// in. Reading past the last one yields nothing, which is what the end of input means.
+    /// </summary>
+    private static string RunReading(string source, params string[] lines) =>
+        Run(source, new StringReader(string.Concat(lines.Select(line => line + "\n"))));
+
+    private static string Run(string source, TextReader? input = null)
     {
         DiagnosticBag diagnostics = new();
         CompilationUnit unit = Parser.Parse(new SourceText(source, "<test>"), diagnostics);
@@ -36,10 +43,79 @@ public sealed class InterpreterTests
             "the program should check cleanly before it is run");
 
         StringWriter output = new();
-        ProfiC.Interpreter.Interpreter.Run(Lowering.Lower(unit, model), model, output);
+        ProfiC.Interpreter.Interpreter.Run(
+            Lowering.Lower(unit, model), model, output, input ?? TextReader.Null);
 
         return output.ToString().ReplaceLineEndings("\n");
     }
+
+    // ---- Reading what somebody typed --------------------------------------------------
+
+    /// <summary>
+    /// <para>What <c>Console.Read</c> does, which nothing exercised until now.</para>
+    /// <para>It yields an optional because the end of input is an answer rather than a fault,
+    /// and these are the three cases that matter: a line is there, the input has run out, and
+    /// what was there does not read as what was wanted.</para>
+    /// </summary>
+    [Test]
+    public void ReadGivesBackTheLineThatWasTyped() => Assert.That(
+        RunReading(
+            """
+            global model Program
+                function Main()
+                    Console.WriteLine(Console.Read().Or("nothing"));
+                    Console.WriteLine(Console.Read().Or("nothing"));
+                end function
+            end model
+            """,
+            "first", "second"),
+        Is.EqualTo("first\nsecond\n"));
+
+    [Test]
+    public void ReadGivesNothingOnceTheInputHasRunOut() => Assert.That(
+        RunReading(
+            """
+            global model Program
+                function Main()
+                    Console.WriteLine(Console.Read().HasValue());
+                    Console.WriteLine(Console.Read().HasValue());
+                end function
+            end model
+            """,
+            "only one"),
+        Is.EqualTo("true\nfalse\n"));
+
+    [Test]
+    public void ReadGivesNothingWhenThereWasNeverAnything() => Assert.That(
+        Run(
+            """
+            global model Program
+                function Main()
+                    Console.WriteLine(Console.Read().HasValue());
+                end function
+            end model
+            """),
+        Is.EqualTo("false\n"));
+
+    /// <summary>
+    /// The whole point of the parsing members: what arrives is text, and turning it into
+    /// anything else is a second question that may also have no answer.
+    /// </summary>
+    [Test]
+    public void WhatWasTypedIsReadIntoANumber() => Assert.That(
+        RunReading(
+            """
+            global model Program
+                function Main()
+                    integer? first = Console.Read().Or("").ToInteger();
+                    integer? second = Console.Read().Or("").ToInteger();
+
+                    Console.WriteLine(first.Or(-1) + " and " + second.Or(-1));
+                end function
+            end model
+            """,
+            "21", "banana"),
+        Is.EqualTo("21 and -1\n"));
 
     /// <summary>
     /// Compiles and runs a program that is expected to warn, returning what it wrote and the
@@ -325,11 +401,11 @@ public sealed class InterpreterTests
                 for i = 1 to 3
                     Console.Write(i);
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
                 for i = 1 until 3
                     Console.Write(i);
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
         """),
         Is.EqualTo("123\n12\n"));
 
@@ -339,7 +415,7 @@ public sealed class InterpreterTests
                 for i = 3 until 0 step -1
                     Console.Write(i);
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
         """),
         Is.EqualTo("321\n"));
 
@@ -365,7 +441,7 @@ public sealed class InterpreterTests
                     end if
                     Console.Write(i);
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
         """),
         Is.EqualTo("13\n"));
 
@@ -406,7 +482,7 @@ public sealed class InterpreterTests
                     Console.Write(x);
                     total = total + x;
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
                 Console.WriteLine(total);
         """),
         Is.EqualTo("102030\n60\n"));
@@ -432,7 +508,7 @@ public sealed class InterpreterTests
                         Console.Write(x * y);
                     end for
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
         """),
         Is.EqualTo("3468\n"));
 
@@ -444,7 +520,7 @@ public sealed class InterpreterTests
                     Console.Write(c);
                     Console.Write("-");
                 end for
-                Console.WriteLine("");
+                Console.WriteLine();
         """),
         Is.EqualTo("a-b-c-\n"));
 

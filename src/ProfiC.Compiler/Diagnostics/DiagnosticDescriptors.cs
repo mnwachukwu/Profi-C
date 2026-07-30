@@ -88,6 +88,55 @@ public static class DiagnosticDescriptors
         "Nothing to escape",
         "'@' marks a reserved word being used as a name, so a name must follow it.");
 
+    /// <summary>
+    /// Reported at the <c>{{</c>, which is where the missing closer belongs. A hole runs to
+    /// the end of the line at worst, for the same reason a string literal does: letting one
+    /// run further turns a single missing brace into every following line being read as an
+    /// expression.
+    /// </summary>
+    public static readonly DiagnosticDescriptor UnterminatedInterpolation = Error(
+        "PC0011",
+        "Unterminated interpolation",
+        "Unterminated interpolation; expected '}}'.");
+
+    public static readonly DiagnosticDescriptor EmptyInterpolation = Error(
+        "PC0012",
+        "Nothing to interpolate",
+        "An interpolation holds an expression. Write '{{name}}', or a single brace for a "
+        + "literal one.");
+
+    public static readonly DiagnosticDescriptor UnterminatedBlockString = Error(
+        "PC0013",
+        "Unterminated block string",
+        "Unterminated block string; expected '\"\"\"'.");
+
+    public static readonly DiagnosticDescriptor EmptyFormatSpecifier = Error(
+        "PC0014",
+        "Nothing to format by",
+        "A ':' in an interpolation is followed by how to format the value, as in "
+        + "'{{total:F2}}'. Leave it out to format the value the ordinary way.");
+
+    /// <summary>
+    /// <para><c>Console.WriteLine("")</c>, where the empty string does nothing.</para>
+    /// <para>A warning rather than an error, because it prints exactly what was meant. It is
+    /// worth saying because the argument reads as though it were doing the work, when the
+    /// newline comes from <c>WriteLine</c> itself and the string is only standing there.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor EmptyLineNeedsNoArgument = Warning(
+        "PC0340",
+        "This empty string does nothing",
+        "'WriteLine' ends the line by itself. Write 'Console.WriteLine()'.");
+
+    /// <summary>
+    /// A hole that says how to write its value, held by something that has no say in how it is
+    /// written. Only the measured and the dated answer <c>Format</c>.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NoFormatForThisType = Error(
+        "PC0341",
+        "This cannot be formatted",
+        "{0} has no 'Format', so ':{1}' says nothing. Leave the ':' out to write it the "
+        + "ordinary way.");
+
     // ---- Syntax, PC0100 to PC0199 -----------------------------------------------------
 
     public static readonly DiagnosticDescriptor UnexpectedToken = Error(

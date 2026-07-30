@@ -70,7 +70,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'RootsAndPowers'
       ExpressionStmt
         CallExpr
@@ -155,7 +154,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'Logarithms'
       ExpressionStmt
         CallExpr
@@ -221,7 +219,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ToFourPlaces'
       NamedTypeSyntax 'real'
       ParameterDecl 'value'
@@ -355,7 +352,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'MeasuringAndChoosing'
       ExpressionStmt
         CallExpr
@@ -465,7 +461,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'Rounding'
       ExpressionStmt
         CallExpr
@@ -570,7 +565,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'Counting'
       ExpressionStmt
         CallExpr
@@ -594,7 +588,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

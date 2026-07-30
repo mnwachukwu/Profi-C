@@ -68,7 +68,7 @@ global model Program
         Program.Attempt(accounts, "alan", 60);
         Program.Attempt(accounts, "grace", 10);
 
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine("final balances");
 
         for each account in accounts
@@ -77,7 +77,7 @@ global model Program
     end function
 
     function Attempt(Account[] accounts, string who, integer amount)
-        Console.WriteLine("");
+        Console.WriteLine();
         Console.WriteLine(who + " withdraws " + amount);
 
         Account? found = Program.Find(accounts, who);

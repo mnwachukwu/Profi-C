@@ -51,8 +51,8 @@ Three things worth knowing:
 ## What it colours
 
 Reserved words, the primitive types, the types the language provides, literals of every form
-including fraction literals like `22|7`, both comment forms, and the name a declaration
-introduces. A closer and what it closes read as one thing, so `end function` colours together
+including fraction literals like `22|7`, block strings, the holes in an interpolated string,
+both comment forms, and the name a declaration introduces. A closer and what it closes read as one thing, so `end function` colours together
 rather than as a keyword beside a noun.
 
 ## Tweaking the colours
@@ -108,6 +108,13 @@ This repository already carries the comment colour in `.vscode/settings.json`, s
 opened here reads the same for everyone. That file is workspace-scoped: it changes nothing
 about any other project, and editing a colour there applies at once with no reload.
 
+**Inside an interpolated string**, the doubled braces are
+`punctuation.section.interpolation.begin` and `.end`, and a pattern after the colon is
+`constant.other.format`. What sits between the braces is code and is coloured as code — a call
+reads as a call, an operator as an operator — which is what the marked edges are for. A block
+string written with `"""` is `string.quoted.triple` and holds nothing else, since nothing
+inside one is read.
+
 The full list, if you want something not above: `comment.line.number-sign`,
 `string.quoted.double`, `string.quoted.single`, `constant.character.escape`,
 `invalid.illegal.unknown-escape`, `constant.numeric.integer`, `constant.numeric.real`,
@@ -117,6 +124,18 @@ The full list, if you want something not above: `comment.line.number-sign`,
 A type name is `entity.name.type.profi-c` wherever it appears: after `model`, after
 `extends`, after `new`, after `catch`, after `is` and `as`, and standing in front of the field,
 local, or parameter it describes.
+
+**Only the type's own name is coloured.** In `Geometry.Solid.Circle`, `Circle` is the type and
+`Geometry.Solid` says where to find it, so the namespace part is left plain — the same as the
+name after `namespace` and after `using`, which are namespaces and nothing else. `Standard` is
+left plain for the same reason, being the namespace the language provides rather than a type in
+it.
+
+Where a name is written to reach a member rather than to name a type — `Console.WriteLine`,
+`Math.Pi`, `Color.Green` — the part before the dot is coloured as a type. A grammar cannot tell
+`Namespace.Type` from `Type.Member` when both are capitalized, and a program's own namespace in
+that position will be coloured as though it were a type. That is the same limit that makes a
+local called `Total` look like one, and it goes away when the compiler is the thing answering.
 
 ## Keeping it honest
 

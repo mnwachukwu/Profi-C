@@ -70,6 +70,30 @@ public sealed class Lexer
     private readonly DiagnosticBag _diagnostics;
     private int _index;
 
+    /// <summary>
+    /// <para>The interpolated strings currently open, innermost last.</para>
+    /// <para>A stack rather than a flag because a hole may hold a string, and that string may
+    /// interpolate in turn. <see cref="Hole.Depth"/> counts the braces opened inside the hole
+    /// and not yet closed, which is what tells the <c>}}</c> that ends the hole apart from the
+    /// one ending a set literal written inside it.</para>
+    /// </summary>
+    private readonly Stack<Hole> _holes = new();
+
+    private sealed class Hole
+    {
+        /// <summary>Whether scanning is inside the braces rather than in the text around them.</summary>
+        public bool InExpression { get; set; }
+
+        /// <summary>Braces opened within the expression and not yet closed.</summary>
+        public int Depth { get; set; }
+
+        /// <summary>Where the open <c>{{</c> was, so an unterminated one is reported there.</summary>
+        public int Opened { get; set; }
+
+        /// <summary>Where the string's own quote was, for the same reason.</summary>
+        public int Quote { get; init; }
+    }
+
     /// <summary>Creates a scanner over a source file, reporting into a shared bag.</summary>
     public Lexer(SourceText source, DiagnosticBag diagnostics)
     {
@@ -122,6 +146,22 @@ public sealed class Lexer
 
         while (true)
         {
+            // Inside a string but outside its braces, whitespace is content and a '#' is a
+            // '#'. Trivia is only trivia where code is expected.
+            if (_holes.TryPeek(out Hole? open) && !open.InExpression)
+            {
+                tokens.Add(ContinueInterpolatedString(open));
+                continue;
+            }
+
+            // A hole ends on the line it opened, as a string literal does, and for the same
+            // reason: one missing '}}' should cost one diagnostic rather than turn every
+            // line below it into an expression nobody wrote.
+            if (open is not null && EndOfLineInsideAHole(open))
+            {
+                continue;
+            }
+
             SkipTrivia();
 
             if (IsAtEnd())
@@ -136,6 +176,10 @@ public sealed class Lexer
                 tokens.Add(token);
             }
         }
+
+        // A string left open at end of file has already been reported by whichever scan
+        // opened it; the stack is cleared so nothing outlives the file.
+        _holes.Clear();
 
         tokens.Add(new Token(TokenType.EndOfFile, string.Empty, SpanOf(_text.Length, 0)));
         return tokens;
@@ -229,6 +273,11 @@ public sealed class Lexer
     {
         char c = Current();
 
+        if (_holes.TryPeek(out Hole? hole) && hole.InExpression && ScanHoleEdge(hole, c) is { } edge)
+        {
+            return edge;
+        }
+
         if (c == '\'')
         {
             return ScanCharacterLiteral();
@@ -236,7 +285,9 @@ public sealed class Lexer
 
         if (c == '"')
         {
-            return ScanStringLiteral();
+            return Peek() == '"' && Peek(2) == '"'
+                ? ScanBlockString()
+                : ScanStringLiteral();
         }
 
         if (c == '@')
@@ -418,14 +469,234 @@ public sealed class Lexer
         return MakeToken(TokenType.CharLiteral, start);
     }
 
+    // ---- Interpolation ------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>Handles the three places inside a hole where an ordinary scan would read the
+    /// wrong thing, and returns null everywhere else so the rest of the scanner runs
+    /// unchanged.</para>
+    /// <para>Those places are the <c>}}</c> that ends the hole, the <c>:</c> that introduces a
+    /// format, and the braces of a set literal written inside it — which have to be counted,
+    /// or <c>{{ {1, 2}.Count() }}</c> would end at the wrong pair.</para>
+    /// </summary>
+    private Token? ScanHoleEdge(Hole hole, char c)
+    {
+        if (hole.Depth == 0 && c == '}' && Peek() == '}')
+        {
+            int start = _index;
+            _index += 2;
+            hole.InExpression = false;
+            return MakeToken(TokenType.InterpolationEnd, start);
+        }
+
+        if (hole.Depth == 0 && c == ':')
+        {
+            return ScanFormatSpecifier();
+        }
+
+        // A quote inside a hole is usually a string written in it, which is why one is allowed
+        // there at all. But it is also what the enclosing string closes with, and when the
+        // hole was never closed that is what this one is. Told apart by whether a matching
+        // quote follows on the line: a string that never closes is not the reading to take,
+        // and taking it swallows the rest of the line as text.
+        if (c == '"' && !AQuoteClosesOnThisLine())
+        {
+            int quote = _index;
+            _diagnostics.Report(
+                DiagnosticDescriptors.UnterminatedInterpolation, SpanOf(hole.Opened, 2));
+
+            _index++;
+            _holes.Pop();
+            return MakeToken(TokenType.InterpolatedStringEnd, quote);
+        }
+
+        if (c == '{')
+        {
+            hole.Depth++;
+        }
+        else if (c == '}')
+        {
+            // Guarded so a stray closer cannot drive the count below zero and take the hole's
+            // own '}}' with it.
+            hole.Depth = Math.Max(0, hole.Depth - 1);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// <para>Scans how a hole's value should be written out: the <c>:</c> and everything to
+    /// the <c>}}</c>.</para>
+    /// <para>Taken whole rather than tokenized, because a format is a pattern rather than
+    /// code — <c>F2</c>, <c>yyyy-MM-dd</c>, <c>#,##0.00</c> — and scanning it as though it
+    /// were code would read most of those as several tokens and some as mistakes.</para>
+    /// </summary>
+    private Token ScanFormatSpecifier()
+    {
+        int start = _index;
+        _index++;
+
+        while (!IsAtEnd() && Current() != '\n')
+        {
+            if (Current() == '}' && Peek() == '}')
+            {
+                break;
+            }
+
+            _index++;
+        }
+
+        if (_index == start + 1)
+        {
+            _diagnostics.Report(DiagnosticDescriptors.EmptyFormatSpecifier, SpanFrom(start));
+        }
+
+        return MakeToken(TokenType.InterpolationFormat, start);
+    }
+
+    /// <summary>
+    /// <para>Scans the text of an interpolated string up to whichever comes first: the next
+    /// hole, the closing quote, or the end of the line.</para>
+    /// <para>Called from the scanning loop rather than from a single method that reads the
+    /// whole literal, because what sits between the holes and what sits inside them are
+    /// scanned by different rules, and the loop is what alternates between them.</para>
+    /// </summary>
+    private Token ContinueInterpolatedString(Hole hole)
+    {
+        int start = _index;
+
+        while (!IsAtEnd() && Current() != '\n')
+        {
+            if (Current() == '"')
+            {
+                if (_index > start)
+                {
+                    return MakeToken(TokenType.InterpolatedStringText, start);
+                }
+
+                _index++;
+                _holes.Pop();
+                return MakeToken(TokenType.InterpolatedStringEnd, start);
+            }
+
+            if (Current() == '{' && Peek() == '{')
+            {
+                if (_index > start)
+                {
+                    return MakeToken(TokenType.InterpolatedStringText, start);
+                }
+
+                _index += 2;
+                hole.InExpression = true;
+                hole.Depth = 0;
+                hole.Opened = start;
+
+                if (Current() == '}' && Peek() == '}')
+                {
+                    _diagnostics.Report(
+                        DiagnosticDescriptors.EmptyInterpolation, SpanOf(start, 4));
+                }
+
+                return MakeToken(TokenType.InterpolationStart, start);
+            }
+
+            if (Current() == '\\')
+            {
+                ScanEscape();
+                continue;
+            }
+
+            _index++;
+        }
+
+        // Ran out of line with the string still open. Whatever text had accumulated is handed
+        // over first, so it is not lost and does not end up standing in for the closing quote.
+        if (_index > start)
+        {
+            return MakeToken(TokenType.InterpolatedStringText, start);
+        }
+
+        // Reported at the opening quote, which is where the missing one belongs. The string is
+        // then closed off with an empty token, so the parser is handed a whole shape rather
+        // than a dangling one.
+        _diagnostics.Report(DiagnosticDescriptors.UnterminatedString, SpanOf(hole.Quote, 1));
+        _holes.Pop();
+        return MakeToken(TokenType.InterpolatedStringEnd, start);
+    }
+
+    /// <summary>
+    /// Ends a hole that reached the end of its line, so that the tokens after it are read as
+    /// the code they are rather than as more of the expression.
+    /// </summary>
+    private bool EndOfLineInsideAHole(Hole hole)
+    {
+        int probe = _index;
+
+        while (probe < _text.Length && (_text[probe] == ' ' || _text[probe] == '\t'
+                                        || _text[probe] == '\r'))
+        {
+            probe++;
+        }
+
+        if (probe < _text.Length && _text[probe] != '\n')
+        {
+            return false;
+        }
+
+        _diagnostics.Report(
+            DiagnosticDescriptors.UnterminatedInterpolation, SpanOf(hole.Opened, 2));
+
+        _index = probe;
+        _holes.Pop();
+        return true;
+    }
+
+    /// <summary>
+    /// <para>Scans a block string: everything between one <c>"""</c> and the next.</para>
+    /// <para>Verbatim, as C#'s is. No escape is read and no hole is looked for, so a path, a
+    /// brace, a backslash or a quote survives being pasted in — which is the whole reason to
+    /// reach for one. It is also why the language needs no separate verbatim form: this is
+    /// that form.</para>
+    /// </summary>
+    private Token ScanBlockString()
+    {
+        int start = _index;
+        _index += 3;
+
+        while (!IsAtEnd())
+        {
+            if (Current() == '"' && Peek() == '"' && Peek(2) == '"')
+            {
+                _index += 3;
+                return MakeToken(TokenType.BlockStringLiteral, start);
+            }
+
+            _index++;
+        }
+
+        _diagnostics.Report(DiagnosticDescriptors.UnterminatedBlockString, SpanOf(start, 3));
+        return MakeToken(TokenType.BlockStringLiteral, start);
+    }
+
     /// <summary>
     /// <para>Scans a string literal.</para>
     /// <para>A literal may not span a line break. Letting it do so means one missing closing
     /// quote swallows the rest of the file, turning a single real error into a cascade of
     /// invented ones.</para>
+    /// <para>One holding an interpolation is handed to the loop instead, which takes it apart
+    /// into text and holes. Looking ahead for a <c>{{</c> first means a string without one is
+    /// still a single token, so nothing that never interpolates changes shape.</para>
     /// </summary>
     private Token ScanStringLiteral()
     {
+        if (HoldsAnInterpolation())
+        {
+            int quote = _index;
+            _index++;
+            _holes.Push(new Hole { Quote = quote });
+            return MakeToken(TokenType.InterpolatedStringStart, quote);
+        }
+
         int start = _index;
         _index++;
 
@@ -450,6 +721,60 @@ public sealed class Lexer
 
         _index++;
         return MakeToken(TokenType.StringLiteral, start);
+    }
+
+    /// <summary>
+    /// Whether the quote at the current position has a closing one after it on the same line.
+    /// </summary>
+    private bool AQuoteClosesOnThisLine()
+    {
+        for (int probe = _index + 1; probe < _text.Length && _text[probe] != '\n'; probe++)
+        {
+            if (_text[probe] == '\\')
+            {
+                probe++;
+                continue;
+            }
+
+            if (_text[probe] == '"')
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether the literal starting here holds a <c>{{</c> before it ends. Looked at without
+    /// consuming anything, since the answer decides which of two shapes the literal takes.
+    /// </summary>
+    private bool HoldsAnInterpolation()
+    {
+        for (int probe = _index + 1; probe < _text.Length; probe++)
+        {
+            char c = _text[probe];
+
+            if (c == '\n' || c == '"')
+            {
+                return false;
+            }
+
+            // A '\{' is a literal brace and cannot open a hole, so it is stepped over whole
+            // rather than letting its second character be read as the start of one.
+            if (c == '\\')
+            {
+                probe++;
+                continue;
+            }
+
+            if (c == '{' && probe + 1 < _text.Length && _text[probe + 1] == '{')
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -480,6 +805,13 @@ public sealed class Lexer
             case '\\':
             case '"':
             case '\'':
+                return;
+
+            // A single brace is already literal, so this is needed only to write two in a row
+            // without opening a hole. Rare, and the alternative is a sentence about
+            // interpolation that no ordinary string can say.
+            case '{':
+            case '}':
                 return;
 
             case 'u':

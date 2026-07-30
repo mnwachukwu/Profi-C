@@ -33,4 +33,15 @@ public static class Wording
         1 => items[0],
         _ => string.Join(", ", items.Take(items.Count - 1)) + " and " + items[^1],
     };
+
+    /// <summary>
+    /// The same, for choices rather than for members of a group: "one, three or six". A reader
+    /// told a thing takes "1, 3 and 6 arguments" would reasonably ask for all ten.
+    /// </summary>
+    public static string Either(IReadOnlyList<string> items) => items.Count switch
+    {
+        0 => string.Empty,
+        1 => items[0],
+        _ => string.Join(", ", items.Take(items.Count - 1)) + " or " + items[^1],
+    };
 }

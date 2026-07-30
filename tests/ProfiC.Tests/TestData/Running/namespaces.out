@@ -1,0 +1,10 @@
+a bare Circle is a flat circle of area 13
+Solid.Circle is a sphere of area 50
+and so is Geometry.Solid.Circle: a sphere of area 50
+the two are equal: true
+both are a Shape, so both fit in one set of them:
+  a flat circle of area 3
+  a sphere of area 13
+Math.Pi is          3.141592653589793
+Standard.Math.Pi is 3.141592653589793
+the same value:     true

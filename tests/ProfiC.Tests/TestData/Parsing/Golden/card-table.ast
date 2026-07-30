@@ -94,7 +94,6 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "" [String]
     FunctionDecl 'ColorOf'
       NamedTypeSyntax 'string'
       ParameterDecl 'suit'

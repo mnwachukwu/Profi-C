@@ -86,10 +86,10 @@ public abstract class LexerTestBase
     /// <summary>
     /// <para>Every single-file sample: the programs in <c>samples</c>, and the corpus in
     /// <c>samples/reference</c> that exercises the syntax without being a program.</para>
-    /// <para>The two are kept apart because a folder is compiled as a unit. <c>tour.pc</c>
-    /// declares a model of nearly every shape, which would collide with the programs beside it
-    /// if they shared a folder. The multi-file samples and the negatives have their own
-    /// fixtures.</para>
+    /// <para>The two are kept apart because naming a source file also compiles the files
+    /// beside it that declare no <c>Program</c>. None of the four reference files declares one,
+    /// so among the programs they would attach themselves to every single one. The multi-file
+    /// samples and the negatives have their own fixtures.</para>
     /// </summary>
     protected static IEnumerable<string> SampleFiles =>
         new[] { "samples", Path.Combine("samples", "reference") }

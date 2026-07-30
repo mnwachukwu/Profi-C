@@ -97,9 +97,23 @@
       {
         "scope": [
           "string.quoted.double.profi-c",
-          "string.quoted.single.profi-c"
+          "string.quoted.single.profi-c",
+          "string.quoted.triple.profi-c"
         ],
         "settings": { "foreground": "#C4794A" }
+      },
+
+      // The braces around a hole, and the pattern after the colon in one. Both take the
+      // colour an escape takes, and for the same reason: they mark the places inside a
+      // string where what is written is not what is meant. What sits between the braces is
+      // code and is coloured as code, which is the whole point of marking the edges.
+      {
+        "scope": [
+          "punctuation.section.interpolation.begin.profi-c",
+          "punctuation.section.interpolation.end.profi-c",
+          "constant.other.format.profi-c"
+        ],
+        "settings": { "foreground": "#E6C07B" }
       },
 
       // Numbers sit in the same warm family and are told from a string by being lighter,

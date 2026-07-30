@@ -442,6 +442,28 @@ CompilationUnit
             BinaryExpr '+'
               LiteralExpr "the answer is " [String]
               IdentifierExpr 'explicitly'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr 'the answer is ' ''
+              InterpolationPart
+                IdentifierExpr 'explicitly'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr 'to two places: ' ''
+              InterpolationPart format 'F2'
+                MemberExpr 'Half'
+                  IdentifierExpr 'Tour'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr """
+                A block string, which holds a \ and a " and a {{ without reading any of them.
+                """ [BlockString]
         YieldStmt
       FunctionDecl 'WithValue'
         NamedTypeSyntax 'string'
@@ -452,9 +474,12 @@ CompilationUnit
         NamedTypeSyntax 'integer'
         ParameterDecl 'shape'
           NamedTypeSyntax 'Polygon'
+        VarDeclStmt 'same'
+          NamedTypeSyntax 'Tour.Shapes.Polygon'
+          IdentifierExpr 'shape'
         YieldStmt
           MemberExpr 'sides'
-            IdentifierExpr 'shape'
+            IdentifierExpr 'same'
   NamespaceDecl 'Tour.Shapes'
     QualifiedName 'Tour.Shapes'
     ModelDecl 'Polygon' [public]

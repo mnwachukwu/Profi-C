@@ -1,0 +1,241 @@
+##
+    Dates, times, moments, and how long things last.
+
+    Four types, because there are four different questions. Which day? What time of day? How
+    long? Which exact moment? A language with only the last one makes you answer the other
+    three by pretending, and the pretending is where the bugs come from.
+
+    A birthday is a Date. It is the fifteenth of August wherever you are and whatever the
+    clock says, and holding it as a moment forces a midnight onto it that nobody meant.
+
+    Nine in the morning is a Time. It is nine every day, and pinning it to one day says
+    something nobody meant either.
+
+    Two hours is a TimeSpan. It is not a time of day: it can be longer than a day, and it can
+    run backwards, neither of which a clock reading can do.
+
+    A DateTime is one exact moment: this day, at this time. It is what you get when you put a
+    Date and a Time together, and it is the only one of the four that answers "when did that
+    actually happen".
+##
+
+global model Program
+
+    function Main()
+        Program.FourQuestions();
+        Program.PuttingThemTogether();
+        Program.HowFarApart();
+        Program.MovingAround();
+        Program.PuttingThemInOrder();
+        Program.WritingThemDown();
+        Program.ReadingThemBack();
+        Program.WhatTimeIsItNow();
+    end function
+
+    # ---- Writing one down -----------------------------------------------------------------
+
+    ##
+        Printing one gives a plain, unambiguous form that reads the same everywhere. Format
+        says something else instead, using .NET's patterns unchanged — so what is learned here
+        is what you will type in C# later.
+
+        Everything is invariant unless the pattern says otherwise, which is what makes a
+        program print the same on a machine in Lagos as on one in Lisbon.
+    ##
+    function WritingThemDown()
+        Console.WriteLine("== writing one down ==");
+
+        DateTime party = new DateTime(2026, 8, 15, 14, 30, 0);
+        Date birthday = new Date(2026, 8, 15);
+        TimeSpan lasted = TimeSpan.FromHours(2.5);
+
+        Console.WriteLine("  plain          " + party);
+        Console.WriteLine("  just the date  {{party:yyyy-MM-dd}}");
+        Console.WriteLine("  just the time  {{party:HH:mm}}");
+        Console.WriteLine("  written out    {{birthday:MMMM d, yyyy}}");
+        Console.WriteLine("  the weekday    {{birthday:dddd}}");
+        Console.WriteLine("  how long       {{lasted:h'h 'm'm'}}");
+
+        # The same patterns without a string around them.
+        Console.WriteLine("  through Format " + birthday.Format("yyyy-MM-dd"));
+    end function
+
+    # ---- Reading one back -------------------------------------------------------------------
+
+    ##
+        Parse is the way in that Format is the way out, and it yields an optional rather than
+        raising: text that will not read is the ordinary case, since most of it arrives from a
+        person typing. There is no exception to catch and no second variable to pass in — the
+        type says the answer may be absent, and the compiler will not let that be forgotten.
+
+        Given a pattern, it reads exactly that pattern, which is how something written by one
+        is read back by the same one.
+    ##
+    function ReadingThemBack()
+        Console.WriteLine("== reading one back ==");
+
+        Date? read = Date.Parse("2026-08-15");
+
+        if read.HasValue()
+            Console.WriteLine("  read a date    " + read.Value());
+        end if
+
+        # Nothing raised, nothing caught: the answer is simply absent.
+        Date? nonsense = Date.Parse("the fifteenth");
+
+        Console.WriteLine("  'the fifteenth' read: " + nonsense.HasValue());
+        Console.WriteLine("  falling back to today's year: "
+                          + nonsense.Or(new Date(2026, 1, 1)));
+
+        # Out by a pattern and back by the same one.
+        let written = new Date(2026, 12, 25).Format("dd/MM/yyyy");
+        Date? returned = Date.Parse(written, "dd/MM/yyyy");
+
+        Console.WriteLine("  {{written}} came back as {{returned.Or(new Date(1, 1, 1))}}");
+    end function
+
+    # ---- One of each ---------------------------------------------------------------
+
+    function FourQuestions()
+        Console.WriteLine("== four types, four questions ==");
+
+        Date birthday = new Date(2026, 8, 15);
+        Time doorsOpen = new Time(14, 30);
+        TimeSpan howLong = TimeSpan.FromHours(2.5);
+        DateTime startsAt = birthday.ToDateTime(doorsOpen);
+
+        Console.WriteLine("  which day    " + birthday);
+        Console.WriteLine("  what time    " + doorsOpen);
+        Console.WriteLine("  how long     " + howLong);
+        Console.WriteLine("  which moment " + startsAt);
+    end function
+
+    # ---- A day and a time make a moment; a moment comes apart into both ----------------
+
+    ##
+        The way in and the way back. This is what keeps the four types from being a burden:
+        nothing is trapped in the type you first wrote it as.
+    ##
+    function PuttingThemTogether()
+        Console.WriteLine("== together and apart ==");
+
+        Date day = new Date(2026, 8, 15);
+        Time clock = new Time(14, 30);
+
+        DateTime moment = day.ToDateTime(clock);
+
+        Console.WriteLine("  built       " + moment);
+        Console.WriteLine("  its day     " + Date.FromDateTime(moment));
+        Console.WriteLine("  its time    " + Time.FromDateTime(moment));
+    end function
+
+    # ---- Subtracting two moments leaves a span -----------------------------------------
+
+    ##
+        Components against totals, which is the thing to read twice. An hour and a half has
+        Hours of 1 and Minutes of 30 — that is how you would say it aloud. Its TotalMinutes is
+        90 — that is how you would measure it. Reaching for the wrong pair is the most common
+        mistake this type invites, so both are printed side by side.
+    ##
+    function HowFarApart()
+        Console.WriteLine("== how far apart ==");
+
+        DateTime opens = new DateTime(2026, 8, 15, 14, 30, 0);
+        DateTime closes = new DateTime(2026, 8, 15, 17, 0, 0);
+
+        TimeSpan party = closes.Subtract(opens);
+
+        Console.WriteLine("  the party lasted   " + party);
+        Console.WriteLine("  as we would say it " + party.Hours + "h " + party.Minutes + "m");
+        Console.WriteLine("  as we would measure it, in minutes " + party.TotalMinutes);
+        Console.WriteLine("  and in hours                       " + party.TotalHours);
+
+        # A span may run backwards. Duration is the same length with the sign taken off.
+        TimeSpan backwards = opens.Subtract(closes);
+
+        Console.WriteLine("  the other way round " + backwards);
+        Console.WriteLine("  its size            " + backwards.Duration());
+    end function
+
+    # ---- Moving a date, a moment, and a clock ------------------------------------------
+
+    ##
+        Adding to a Time wraps around midnight, because a clock does. Adding to a DateTime
+        rolls into the next day, because a calendar does. The two differ exactly where you
+        would expect them to, and this is the clearest place to see why they are not one type.
+    ##
+    function MovingAround()
+        Console.WriteLine("== moving around ==");
+
+        Date day = new Date(2026, 8, 15);
+
+        Console.WriteLine("  a week later  " + day.AddDays(7));
+        Console.WriteLine("  a month later " + day.AddMonths(1));
+        Console.WriteLine("  a year later  " + day.AddYears(1));
+
+        Time late = new Time(23, 30);
+        DateTime lateMoment = day.ToDateTime(late);
+
+        Console.WriteLine("  23:30 plus an hour, on a clock    " + late.AddHours(1.0));
+        Console.WriteLine("  23:30 plus an hour, as a moment   " + lateMoment.AddHours(1.0));
+
+        # Adding a span to a moment is the same idea, said with a span.
+        Console.WriteLine("  and with a span                   "
+                          + lateMoment.Add(TimeSpan.FromMinutes(45.0)));
+    end function
+
+    # ---- Ordering, which is spelled with a word rather than an operator ------------------
+
+    ##
+        CompareTo yields a negative number when this one comes first, zero when they are the
+        same, and a positive number when it comes after. Written as a word because that is
+        what .NET does, and because '<' on two dates reads as though it were arithmetic.
+
+        Equality is the exception: '==' works on all four, as it does on everything.
+    ##
+    function PuttingThemInOrder()
+        Console.WriteLine("== which came first ==");
+
+        Date earlier = new Date(2026, 8, 15);
+        Date later = new Date(2026, 12, 25);
+
+        Console.WriteLine("  august before december " + (earlier.CompareTo(later) < 0));
+        Console.WriteLine("  december before august " + (later.CompareTo(earlier) < 0));
+        Console.WriteLine("  a day equals itself    " + (earlier == new Date(2026, 8, 15)));
+
+        Time morning = new Time(9, 0);
+        Time evening = new Time(21, 0);
+
+        Console.WriteLine("  nine before nine pm    " + (morning.CompareTo(evening) < 0));
+
+        TimeSpan hour = TimeSpan.FromHours(1.0);
+        TimeSpan minute = TimeSpan.FromMinutes(1.0);
+
+        Console.WriteLine("  a minute is shorter    " + (minute.CompareTo(hour) < 0));
+    end function
+
+    # ---- Asking what time it is ---------------------------------------------------------
+
+    ##
+        Each of the three that can answer does. Nothing here prints the answer, because it is
+        different every second and this file's output is checked against a recording — so what
+        is printed is what stays true whenever you run it.
+    ##
+    function WhatTimeIsItNow()
+        Console.WriteLine("== right now ==");
+
+        DateTime moment = DateTime.Now;
+        Date day = Date.Today;
+        Time clock = Time.Now;
+
+        Console.WriteLine("  Today is midnight, having no time of day  "
+                          + (DateTime.Today.Hour == 0));
+        Console.WriteLine("  Now has one                               "
+                          + (moment.Year > 2000));
+        Console.WriteLine("  today's date agrees with now's            "
+                          + (day == Date.FromDateTime(moment)));
+        Console.WriteLine("  the clock is somewhere in the day         "
+                          + (clock.Hour >= 0 and clock.Hour <= 23));
+    end function
+
+end model

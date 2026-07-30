@@ -139,6 +139,30 @@ public sealed class ParsedCorpusTests : LexerTestBase
                     "these node kinds appear in no sample");
     }
 
+    /// <summary>
+    /// <para>Both ways of declaring a namespace, which the check above cannot see.</para>
+    /// <para>The two forms are one node kind told apart by a property, so the set of kinds is
+    /// the same whichever a sample writes. Without this, the file-scoped form could leave the
+    /// corpus and nothing would fail — and it is the form no sample wrote for as long as
+    /// namespaces went unscoped.</para>
+    /// </summary>
+    [Test]
+    public void Corpus_WritesBothNamespaceForms()
+    {
+        List<NamespaceDecl> declarations = [.. SampleNames
+            .SelectMany(name => ParseSample(name).Unit.Descendants())
+            .OfType<NamespaceDecl>()];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(declarations.Any(n => n.IsFileScoped), Is.True,
+                        "no sample declares a file-scoped namespace");
+
+            Assert.That(declarations.Any(n => !n.IsFileScoped), Is.True,
+                        "no sample declares a block namespace");
+        });
+    }
+
     // ---- Golden trees ---------------------------------------------------------------------
 
     private static bool UpdateRequested =>

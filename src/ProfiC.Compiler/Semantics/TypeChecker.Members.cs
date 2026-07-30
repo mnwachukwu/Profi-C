@@ -415,6 +415,15 @@ public sealed partial class TypeChecker
             RecordBuiltIn(member, chosenBuiltIn);
             CheckArgumentsAgainst(call, member.MemberName, chosenBuiltIn.ParameterTypes, arguments);
 
+            // Only a literal written on the spot. A named constant that happens to be empty
+            // was named deliberately, and saying anything about it would be arguing with the
+            // name rather than with the code.
+            if (chosenBuiltIn.Id is BuiltInId.ConsoleWriteLine
+                && call.Arguments is [LiteralExpr { Kind: LiteralKind.String, Text: "\"\"" }])
+            {
+                Report(DiagnosticDescriptors.EmptyLineNeedsNoArgument, call.Arguments[0]);
+            }
+
             // A fraction with a denominator of zero is the same mistake as dividing by zero,
             // so it is caught in the same place when it can be seen while compiling.
             if (onType

@@ -15,6 +15,41 @@ public enum TokenType
     StringLiteral,
     FractionLiteral,
 
+    /// <summary>
+    /// A string written between triple quotes. Verbatim: no escape is read and no
+    /// interpolation is looked for, so whatever is between the quotes is what it holds.
+    /// </summary>
+    BlockStringLiteral,
+
+    // ---- The pieces of an interpolated string ---------------------------------------------
+    //
+    // A string holding no interpolation is one StringLiteral, exactly as before, so nothing
+    // that never interpolates sees any of these. One that does interpolate is taken apart
+    // here rather than left whole and picked over later: the expression in a hole is ordinary
+    // Profi-C, and scanning it as ordinary tokens means the parser parses it with the code it
+    // already has, every span inside it points at real source, and a mistake in one hole is
+    // reported where it was written instead of somewhere in a literal.
+
+    /// <summary>The opening quote of a string that holds at least one interpolation.</summary>
+    InterpolatedStringStart,
+
+    /// <summary>A run of ordinary text between the holes.</summary>
+    InterpolatedStringText,
+
+    /// <summary>The <c>{{</c> that opens a hole.</summary>
+    InterpolationStart,
+
+    /// <summary>
+    /// The <c>:</c> and the pattern after it, when a hole says how to format its value.
+    /// </summary>
+    InterpolationFormat,
+
+    /// <summary>The <c>}}</c> that closes a hole.</summary>
+    InterpolationEnd,
+
+    /// <summary>The closing quote.</summary>
+    InterpolatedStringEnd,
+
     // ---- Identifier ---------------------------------------------------------------------
 
     Identifier,

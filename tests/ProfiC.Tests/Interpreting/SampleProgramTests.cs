@@ -57,7 +57,11 @@ public sealed class SampleProgramTests : LexerTestBase
             $"{name} should check cleanly");
 
         StringWriter output = new();
-        ProfiC.Interpreter.Interpreter.Run(Lowering.Lower(unit, model), model, output);
+        // Nothing to read, so a sample that asks a question gets the same answer here as it
+        // would from a pipe with nothing in it. Left to the test host's own input, what a
+        // sample printed would depend on how the suite happened to be started.
+        ProfiC.Interpreter.Interpreter.Run(
+            Lowering.Lower(unit, model), model, output, TextReader.Null);
 
         string actual = output.ToString().ReplaceLineEndings("\n");
         string goldenPath = Path.Combine(GoldenDirectory, Path.ChangeExtension(name, ".out"));

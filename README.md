@@ -478,9 +478,15 @@ disagree, it is right.
 from it, and no build step checks it. Profi-C is parsed by hand-written recursive descent, one
 method per production, with expressions handled by precedence climbing against the table in
 `src/ProfiC.Compiler/Ast/Operators.cs`. So the grammar can drift from the compiler without
-anything failing; what actually pins the syntax is
-[samples/reference/tour.pc](samples/reference/tour.pc), which holds every construct exactly
-once and is checked against a recorded token stream and a recorded tree on every build.
+anything failing; what actually pins the syntax is the sample corpus, and above all
+[samples/reference/tour.pc](samples/reference/tour.pc), which holds nearly every construct
+exactly once. Every sample is checked against a recorded token stream and a recorded tree on
+every build, and the suite asserts that between them the samples reach every node the parser
+can build.
+
+"Nearly", because the tour opens with block namespaces and so holds no file-scoped one.
+[namespaces.pc](samples/namespaces.pc) writes that form, with blocks nested inside it — which
+is how the two combine.
 
 ## Building
 
@@ -532,13 +538,21 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
+| [asking.pc](samples/asking.pc) | **Reading what somebody typed.** `Console.Read` and the two questions it forces — was anything typed, and did it read as what you wanted |
+| [sets.pc](samples/sets.pc) | **Rows of things.** Building, asking, taking a run out, `Union`/`Intersect`/`Except` — and the same words on a string, where the difference is that a set changes and a string does not |
+| [text.pc](samples/text.pc) | **Building text.** Values written into a sentence with `{{ }}`, a pattern after the colon saying how, block strings that read nothing they hold, and taking a string apart with `Split` and `Join` |
+| [dates-and-times.pc](samples/dates-and-times.pc) | **Four types, four questions.** Which day, what time of day, how long, which moment — why 23:30 plus an hour is 00:30 on a clock but the next day as a moment, and writing one out by a pattern and reading it back |
+| [namespaces.pc](samples/namespaces.pc) | **Where a name sits.** Two namespaces each holding a `Circle`, both forms of declaring one, what a `using` decides, and what qualifying reaches past it |
+
 `samples/reference/` holds four files that are not programs and declare no entry point:
-[tour.pc](samples/reference/tour.pc), which contains every construct in the grammar exactly
-once, and `literals.pc`, `operators.pc`, and `comments.pc`, which exercise the scanner. They
-sit apart from the programs because a folder is compiled as a unit, and `namespace` does not
-yet scope: `tour.pc` wraps its declarations in `namespace Tour`, and until that means
-something they are simply names beside every other. They belong with the programs once it
-does.
+[tour.pc](samples/reference/tour.pc), which contains nearly every construct in the grammar
+exactly once, and `literals.pc`, `operators.pc`, and `comments.pc`, which exercise the scanner.
+
+They sit in their own folder because of the rule that naming a source file also compiles the
+files beside it that declare no `Program` — which is what makes a folder of shared code work
+without a project file. All four declare none, so putting them among the programs would attach
+four hundred lines of reference material to every one of them. Apart, they compile as a unit
+with each other and with nothing else.
 
 Two samples are more than one file, and each shows a different way of saying so:
 

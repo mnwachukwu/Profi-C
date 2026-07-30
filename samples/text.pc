@@ -1,0 +1,132 @@
+##
+    Building text.
+
+    Three things that all end up as a string, and each is worth reaching for at a different
+    moment: joining values into a sentence, writing a block out as it stands, and taking a
+    string apart to put it back together differently.
+##
+
+global model Program
+
+    function Main()
+        Program.Interpolation();
+        Program.SayingHowToWriteIt();
+        Program.BlockStrings();
+        Program.TakingStringsApart();
+    end function
+
+    # ---- Putting values into a sentence -----------------------------------------------
+
+    ##
+        A pair of braces inside a string holds an expression, and what it yields is written
+        where it stands. Anything you could write after a '+' can go in one, because that is
+        exactly what it becomes.
+
+        A single brace is just a brace and needs nothing done to it. Only a pair opens a hole,
+        which is why an ordinary string full of braces stays ordinary. To write a literal pair,
+        escape the first one.
+    ##
+    function Interpolation()
+        Console.WriteLine("== putting values in ==");
+
+        let name = "Matt";
+        let apples = 3;
+        let pears = 4;
+
+        Console.WriteLine("  hello, {{name}}");
+        Console.WriteLine("  {{apples}} apples and {{pears}} pears is {{apples + pears}} fruit");
+
+        # Any expression, not only a name.
+        Console.WriteLine("  in capitals: {{name.ToUpper()}}");
+        Console.WriteLine("  the longer word: {{if name.Count() > 4 then name else "Profi-C"}}");
+
+        # A brace on its own, and a pair written on purpose.
+        Console.WriteLine("  a set looks like {1, 2, 3}");
+        Console.WriteLine("  and a hole is written \{\{ like this }}");
+    end function
+
+    # ---- Saying how a value should be written -------------------------------------------
+
+    ##
+        A colon inside a hole says how to write the value, using the same patterns .NET uses —
+        so what you learn here is what you will type in C# later. 'F2' is two decimal places,
+        'N0' is a whole number with separators, 'yyyy-MM-dd' is a date.
+
+        The same patterns are available without a string around them, through Format.
+    ##
+    function SayingHowToWriteIt()
+        Console.WriteLine("== saying how ==");
+
+        let price = 1234.5;
+        let when = new DateTime(2026, 8, 15, 14, 30, 0);
+
+        Console.WriteLine("  plain:      {{price}}");
+        Console.WriteLine("  to a penny: {{price:F2}}");
+        Console.WriteLine("  with commas:{{price:N2}}");
+        Console.WriteLine("  the date:   {{when:yyyy-MM-dd}}");
+        Console.WriteLine("  the time:   {{when:HH:mm}}");
+
+        # The same thing, asked of the value rather than written in a string.
+        Console.WriteLine("  through Format: " + price.Format("F2"));
+
+        # Rounding is a different question from writing: this gives back a real, not text.
+        Console.WriteLine("  rounded to 2:   " + Math.Round(price, 2));
+    end function
+
+    # ---- A block of text, exactly as written ---------------------------------------------
+
+    ##
+        Three quotes open a block, and three close it. Nothing inside is read: no escape, no
+        hole, no end of string. A backslash is a backslash and a quote is a quote, which is
+        what makes this the one to reach for when pasting something in.
+
+        Where the block spans lines, the indentation of the closing quotes is removed from
+        every line — so a block can sit at the indentation of the code around it without
+        dragging that indentation into what it holds.
+    ##
+    function BlockStrings()
+        Console.WriteLine("== a block, as written ==");
+
+        let usage = """
+            Usage: pc run <file>
+
+            A path may hold \ and " and {{ freely,
+            because nothing in here is read as anything.
+            """;
+
+        Console.WriteLine(usage);
+
+        # On one line, it is simply what lies between the quotes.
+        Console.WriteLine("""  one line, no escapes: C:\Users\Matt""");
+    end function
+
+    # ---- Taking a string apart ------------------------------------------------------------
+
+    ##
+        Split gives a set, and Join puts one back together. They are opposites, and the pair is
+        how most text handling starts and ends.
+
+        Capitalize raises the first letter and leaves the rest alone. That is not what .NET's
+        title-casing does — that one also lowers everything it did not raise, which is wrong
+        for a name like "McDonald".
+    ##
+    function TakingStringsApart()
+        Console.WriteLine("== apart and back together ==");
+
+        let sentence = "the quick brown fox";
+        string[] words = sentence.Split(" ");
+
+        Console.WriteLine("  words:      {{words.Count()}}");
+        Console.WriteLine("  hyphenated: {{words.Join("-")}}");
+        Console.WriteLine("  shouted:    {{sentence.ToUpper()}}");
+        Console.WriteLine("  quietly:    {{sentence.ToLower()}}");
+        Console.WriteLine("  as a title: {{sentence.Capitalize()}}");
+        Console.WriteLine("  swapped:    {{sentence.Replace("quick", "slow")}}");
+
+        # A set of anything joins, not only a set of strings.
+        integer[] counts = {1, 2, 3};
+
+        Console.WriteLine("  counts:     {{counts.Join(", ")}}");
+    end function
+
+end model

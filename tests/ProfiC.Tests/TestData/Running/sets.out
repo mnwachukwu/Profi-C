@@ -1,0 +1,53 @@
+== building one ==
+  after inserting   {0, 1, 2, 3, 4}
+  after removing at {1, 2, 3, 4}
+  removing a 3      true
+  removing a 99     false
+  what is left      {1, 2, 4}
+  repeats are fine  {1, 1, 2, 2}
+== asking ==
+  how many      3
+  any milk      true
+  where is milk 1
+  any jam       false
+  where is jam  -1
+  the first one bread
+== a run of it ==
+  from 2 on     {30, 40, 50}
+  from 1 to 3   {20, 30}
+  the two halves put back together: {10, 20, 30, 40, 50}
+  and the original is untouched     {10, 20, 30, 40, 50}
+== two together ==
+  both piles     {1, 2, 3, 3, 4, 5}
+  in both        {3}
+  only mine      {1, 2}
+  only yours     {4, 5}
+  every element back, reordered: {3, 1, 2}
+  and mine is untouched {1, 2, 3}
+== the same words on a string ==
+  how many        7
+  any 'fi'        true
+  where is 'fi'   3
+  from 5 on       -C
+  from 0 to 5     Profi
+  five characters Profi
+== a set changes, a string does not ==
+  the set changed      {1, 2, 3}
+  the new string       hello, world
+  the original one     hello
+  without the middle   a-c
+  without the first    bc
+  with something in it abc
+  trimmed              [padded]
+== between the two ==
+  split into words   {"the", "quick", "brown", "fox"}
+  joined again       the quick brown fox
+  as characters      {'a', 'b', 'c'}
+  how many words     4
+  numbers joined     1 then 2 then 3
+== dropping the gaps ==
+  as they came    {empty, 1, empty, 2, empty}
+  ends trimmed    {1, empty, 2}
+  start only      {1, empty, 2, empty}
+  every gap gone  {1, 2}
+  and no unwrapping needed: 3

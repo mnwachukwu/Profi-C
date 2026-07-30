@@ -123,6 +123,7 @@ public sealed partial class TypeChecker
     {
         MissingExpr => ErrorType.Instance,
         LiteralExpr literal => TypeOfLiteral(literal),
+        InterpolatedStringExpr interpolated => TypeOfInterpolatedString(interpolated),
         IdentifierExpr identifier => TypeOfIdentifier(identifier),
         ReceiverExpr receiver => _model.GetType(receiver) ?? ErrorType.Instance,
         ParenthesizedExpr parenthesized => CheckExpression(parenthesized.Inner),
@@ -140,12 +141,43 @@ public sealed partial class TypeChecker
         _ => ErrorType.Instance,
     };
 
+    /// <summary>
+    /// <para>An interpolated string is a string, whatever it holds.</para>
+    /// <para>Every hole is checked, and nothing is asked of what it yields: joining a value to
+    /// a string already accepts any type, and a hole is that same join written a shorter way.
+    /// A hole that says how to format itself is the exception, since only a value that answers
+    /// <c>Format</c> can be asked to.</para>
+    /// </summary>
+    private TypeSymbol TypeOfInterpolatedString(InterpolatedStringExpr interpolated)
+    {
+        foreach (InterpolationPart hole in interpolated.Holes)
+        {
+            TypeSymbol held = CheckExpression(hole.Value);
+
+            if (hole.Format is null || held is ErrorType)
+            {
+                continue;
+            }
+
+            if (BuiltInMembers.FindAll(held, "Format").Count == 0)
+            {
+                Report(
+                    DiagnosticDescriptors.NoFormatForThisType,
+                    hole,
+                    held.WithArticleCapitalized(),
+                    hole.Format);
+            }
+        }
+
+        return PrimitiveType.String;
+    }
+
     private static TypeSymbol TypeOfLiteral(LiteralExpr literal) => literal.Kind switch
     {
         LiteralKind.Integer => PrimitiveType.Integer,
         LiteralKind.Real => PrimitiveType.Real,
         LiteralKind.Character => PrimitiveType.Character,
-        LiteralKind.String => PrimitiveType.String,
+        LiteralKind.String or LiteralKind.BlockString => PrimitiveType.String,
         LiteralKind.Fraction => PrimitiveType.Fraction,
         LiteralKind.Boolean => PrimitiveType.Boolean,
         _ => ErrorType.Instance,
@@ -640,11 +672,38 @@ public sealed partial class TypeChecker
 
             if (form is null)
             {
+                // A form taking this many arguments but refusing these ones is a mistake about
+                // a type, not about a count, so it is checked against and reports as one. That
+                // is the difference between being told 'DateTime takes 3 arguments' and being
+                // told which argument is wrong — and with five forms to choose from, naming an
+                // arbitrary one of them says nothing.
+                // Where several forms take this many, the one that got closest is the one to
+                // report against: it is almost always the form the writer meant.
+                BuiltInMember? sameCount = builtIn.Constructors
+                    .Where(c => c.ParameterTypes.Count == arguments.Count)
+                    .OrderByDescending(c => c.ParameterTypes
+                        .Where((p, i) => p is not null && Conversions.IsAssignable(arguments[i], p))
+                        .Count())
+                    .FirstOrDefault();
+
+                if (sameCount is not null)
+                {
+                    CheckArgumentsAgainst(
+                        construction, construction.Arguments, type.Name,
+                        sameCount.ParameterTypes, arguments);
+
+                    return;
+                }
+
                 Report(
                     DiagnosticDescriptors.WrongArgumentCount,
                     construction,
                     type.Name,
-                    Wording.Count(builtIn.Constructors[0].ParameterTypes.Count, "argument"),
+                    Wording.Either([.. builtIn.Constructors
+                        .Select(c => c.ParameterTypes.Count)
+                        .Distinct()
+                        .OrderBy(n => n)
+                        .Select(n => Wording.Count(n, "argument"))]),
                     arguments.Count);
 
                 return;

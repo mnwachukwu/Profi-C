@@ -25,6 +25,16 @@ public sealed partial class Resolver
                 BindExpression(parenthesized.Inner);
                 break;
 
+            case InterpolatedStringExpr interpolated:
+                // What sits in a hole is an ordinary expression written in an ordinary scope,
+                // so the names in it are bound the same way as any others.
+                foreach (InterpolationPart hole in interpolated.Holes)
+                {
+                    BindExpression(hole.Value);
+                }
+
+                break;
+
             case UnaryExpr unary:
                 BindExpression(unary.Operand);
                 break;
