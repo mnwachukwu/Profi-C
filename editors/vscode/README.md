@@ -15,6 +15,11 @@ anything to sell. Installing it means copying this folder into your extensions d
 which is all the Marketplace would do anyway. There is no build step: everything here is
 declarative, so nothing is compiled and nothing is downloaded.
 
+**If you are working on the language, link it instead of copying it** — see below. A copy is a
+snapshot, and a snapshot goes stale the moment the grammar changes: the editor then colours by
+rules the repository no longer has, which looks like a bug in the highlighting and is not one.
+A link cannot go stale.
+
 Change the first line to wherever you cloned the repository, then run the rest as-is.
 
 **Windows** (PowerShell):
@@ -43,10 +48,18 @@ Three things worth knowing:
   same.
 - **The folder name carries the version**, and VS Code will keep serving an old copy if a new
   one arrives under the same name. Bump it to match `package.json` when that changes.
-- **If you are editing the grammar**, link the folder rather than copying it, so a change shows
-  up on reload instead of after another copy. On Windows, in an elevated shell:
+- **If you are editing the grammar, link the folder rather than copying it.** A change then
+  shows up on the next window reload, instead of after remembering to copy again. On Windows,
+  in an elevated shell:
   `New-Item -ItemType SymbolicLink -Path $dest -Target "$repo\editors\vscode"`. Elsewhere:
   `ln -s "$repo/editors/vscode" "$dest"`.
+
+  **How a stale copy shows itself:** the editor colours by whatever rules it has, so a
+  construct added since the copy was taken is coloured by the rules for something else. A
+  block string in a copy that predates them reads as an empty string followed by an ordinary
+  one, so the first `"` inside it ends a string that was never open and everything after it is
+  coloured as text. Nothing is wrong with the grammar; the editor is simply reading an old one.
+  Check with `grep block-string` against the installed copy before hunting for a bug.
 
 ## What it colours
 
@@ -108,12 +121,18 @@ This repository already carries the comment colour in `.vscode/settings.json`, s
 opened here reads the same for everyone. That file is workspace-scoped: it changes nothing
 about any other project, and editing a colour there applies at once with no reload.
 
-**Inside an interpolated string**, the doubled braces are
+**Inside an interpolated string**, the hole is `meta.interpolation`, its doubled braces are
 `punctuation.section.interpolation.begin` and `.end`, and a pattern after the colon is
 `constant.other.format`. What sits between the braces is code and is coloured as code — a call
-reads as a call, an operator as an operator — which is what the marked edges are for. A block
-string written with `"""` is `string.quoted.triple` and holds nothing else, since nothing
-inside one is read.
+reads as a call, an operator as an operator. A block string written with `"""` is
+`string.quoted.triple` and holds nothing else, since nothing inside one is read.
+
+**Give `meta.interpolation` a colour, even the plain one.** A hole is scanned inside the string
+rule, so `string.quoted.double` stays on the scope stack while it is read, and anything in
+there without a scope of its own — a local's name, a bracket, a comma — falls back to the
+deepest scope that has a colour. Leave `meta.interpolation` out and that is the string, so the
+hole reads as the text around it. Naming it gives those tokens something nearer to fall back
+to, which is what makes a hole look like code.
 
 The full list, if you want something not above: `comment.line.number-sign`,
 `string.quoted.double`, `string.quoted.single`, `constant.character.escape`,

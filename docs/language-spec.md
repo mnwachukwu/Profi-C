@@ -2213,6 +2213,7 @@ Warnings do not block compilation; everything else does.
 | `PC0113` | error | Too many problems |
 | `PC0114` | error | This word is reserved |
 | `PC0115` | warning | This parameter's type is already known |
+| `PC0116` | error | A function type is spelled in lowercase |
 
 ### PC0200 to PC0299
 

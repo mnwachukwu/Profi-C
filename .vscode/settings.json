@@ -103,16 +103,33 @@
         "settings": { "foreground": "#C4794A" }
       },
 
-      // The braces around a hole, and the pattern after the colon in one. Both take the
-      // colour an escape takes, and for the same reason: they mark the places inside a
-      // string where what is written is not what is meant. What sits between the braces is
-      // code and is coloured as code, which is the whole point of marking the edges.
+      // A hole, and the braces around it, read as ordinary code rather than as string.
+      //
+      // This rule has to exist, and setting it to the plain foreground is not the same as
+      // leaving it out. A hole is written inside the string rule, so 'string.quoted.double'
+      // stays on the scope stack while it is scanned, and anything in there without a scope
+      // of its own — a local's name, a bracket, a comma — falls back to the deepest scope
+      // that has a colour, which was the string's. That is what made a hole look like the
+      // text around it. Naming the hole's own scope gives it something nearer to fall back
+      // to, and code inside it goes back to looking like code.
+      //
+      // The braces themselves are plain for the same reason: they are punctuation in code,
+      // and the string on either side of them is already a different colour, so nothing has
+      // to be spent making the boundary visible.
       {
         "scope": [
+          "meta.interpolation.profi-c",
           "punctuation.section.interpolation.begin.profi-c",
-          "punctuation.section.interpolation.end.profi-c",
-          "constant.other.format.profi-c"
+          "punctuation.section.interpolation.end.profi-c"
         ],
+        "settings": { "foreground": "#D4D4D4" }
+      },
+
+      // The pattern after the colon is not code — it is text handed to the value — so it
+      // keeps the colour an escape takes: a place inside a string where what is written is
+      // not what is meant.
+      {
+        "scope": "constant.other.format.profi-c",
         "settings": { "foreground": "#E6C07B" }
       },
 
