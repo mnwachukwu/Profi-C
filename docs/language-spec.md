@@ -769,6 +769,56 @@ demands in return.
 A `let` is not a different kind of variable. It is the same variable with its type worked out
 rather than written, and it may be assigned again afterwards.
 
+**A name may not be reused while an earlier one is still visible.** A local, a parameter, a
+loop's binding, a lambda's parameter, or a caught exception may not take a name already in
+use by a scope around it (`PC0237`):
+
+```
+let value = 1;
+begin
+    let value = 2;          PC0237: 'value' is already the name of something here
+end
+
+let items = {1, 2};
+let show = (integer items) yield items;    PC0237, for the same reason
+```
+
+Two scopes that cannot see one another are not in conflict, so the same name may be used in
+each:
+
+```
+begin
+    let value = 1;
+end
+begin
+    let value = 2;          fine — neither can see the other
+end
+```
+
+Inside a function body, then, a bare name means one thing throughout. That is what allows a
+lambda to reach a local of the function around it with nothing marking the reach: there is
+nothing the name could be confused with, so a marking would carry no information.
+
+**A local may still carry a field's name.** Fields are never reached by a bare name — that is
+what `this.` is for — so the two never compete:
+
+```
+model Box
+    public string name;
+
+    public function Show()
+        string name = "local";
+        Console.WriteLine(name);        the local
+        Console.WriteLine(this.name);   the field
+    end function
+end model
+```
+
+The rules differ because the problems differ. A field may be declared in an ancestor model or
+in another file, so `this.` tells a reader to stop looking in this function; and forbidding the
+overlap would mean adding a field could break methods that have nothing to do with it. A local
+in an enclosing scope is always a few lines above, in the same body.
+
 ### 4.2 Constants
 
 `constant` marks a binding that never changes:
@@ -2415,6 +2465,7 @@ Warnings do not block compilation; everything else does.
 | `PC0234` | error | Which program starts? |
 | `PC0235` | error | No such program |
 | `PC0236` | warning | This 'entry' decides nothing |
+| `PC0237` | error | This name is already in use here |
 
 ### PC0300 to PC0399
 

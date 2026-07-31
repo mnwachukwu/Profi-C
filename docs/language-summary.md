@@ -210,6 +210,7 @@ The second pair is more confusable than the first, since both live near the idea
 | Overloading | including constructors |
 | Reference semantics for classes | models are references |
 | Lambdas capture by reference | same trap surface, same power |
+| No shadowing inside a function | a local, a parameter, a loop's binding, or a caught exception may not reuse a name a scope around it is using — C# `CS0136`, Profi-C `PC0237`. In both, a local may still carry a field's name, which is what `this.` distinguishes. Profi-C extends the rule to a lambda's parameters, where C# permits shadowing |
 | Private by default | C# class members are also private by default |
 | Nested types are isolated | a nested model holds no reference to the model it sits inside, exactly as a C# nested class does not. One that needs its enclosing instance takes it as a constructor argument |
 | Definite assignment | C# enforces it for locals; Profi-C extends it to all model references |

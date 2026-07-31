@@ -1,0 +1,67 @@
+##
+    Names reused while an earlier one is still visible.
+
+    This program does not compile. Inside a function body a bare name means one thing all the
+    way through, so nothing may take a name a scope around it is already using. That rule is
+    what lets a lambda reach a local of the function it sits in without marking the reach —
+    there is nothing the name could be confused with.
+
+    A local named after a field is a different matter and stays legal, because a field is never
+    reached by a bare name. That is the whole job of 'this.', and the last function here shows
+    the two side by side.
+##
+
+model Basket
+    public integer count;
+
+    public function Basket(integer count)
+        this.count = count;
+    end function
+
+    public function Report(integer total)
+        # A block's local, hiding the local above it.
+        let items = 3;
+
+        begin
+            let items = 4;
+            Console.WriteLine(items);
+        end
+
+        # A lambda's parameter, hiding a local of the function around it.
+        let double = (integer items) yield items * 2;
+
+        # A loop's binding, hiding the parameter.
+        for total = 1 to 3
+            Console.WriteLine(total);
+        end for
+
+        # A caught exception, hiding a local.
+        let trouble = "none";
+
+        try
+            Console.WriteLine(double(items));
+        catch Exception trouble
+            Console.WriteLine(trouble.Message());
+        end try
+    end function
+
+    ##
+        Legal, and here to show the boundary. A local may carry a field's name: the bare name
+        is the local and 'this.' reaches the field, so the two never compete.
+    ##
+    public function Show()
+        integer count = 7;
+
+        Console.WriteLine(count);
+        Console.WriteLine(this.count);
+    end function
+end model
+
+global model Program
+    function Main()
+        Basket basket = new Basket(2);
+
+        basket.Report(10);
+        basket.Show();
+    end function
+end model

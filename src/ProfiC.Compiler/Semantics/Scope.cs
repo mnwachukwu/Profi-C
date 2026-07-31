@@ -17,8 +17,9 @@ public sealed class Scope(Scope? parent)
     public Scope Push() => new(this);
 
     /// <summary>
-    /// Declares a name here. Returns false if this scope already has one, which the caller
-    /// reports; shadowing an outer scope is permitted and returns true.
+    /// Declares a name here. Returns false if this scope already has one. A name taken by a
+    /// scope further out still returns true, since the two are different mistakes with
+    /// different fixes; the caller looks outward itself and reports accordingly.
     /// </summary>
     public bool TryDeclare(Symbol symbol)
     {

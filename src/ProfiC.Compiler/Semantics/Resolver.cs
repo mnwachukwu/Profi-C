@@ -177,19 +177,36 @@ public sealed partial class Resolver
         }
     }
 
-    /// <summary>Declares a local or parameter, reporting a clash within the same scope.</summary>
+    /// <summary>
+    /// <para>Declares a local or parameter, reporting a name already taken.</para>
+    /// <para>Two ways it can be taken, and they are told apart because the fixes differ. A
+    /// second declaration in the same scope is a duplicate. One that hides a name from a scope
+    /// around it is a shadow, which the language forbids so that a bare name means one thing
+    /// throughout a function body.</para>
+    /// <para>Only locals and parameters live in a scope, so a local named after a field is
+    /// neither: that is what <c>this.</c> distinguishes.</para>
+    /// </summary>
     private void Declare(Symbol symbol, SyntaxNode node)
     {
-        if (_scope.TryDeclare(symbol))
+        // A name that failed to parse is empty, and two of those are not a clash worth
+        // reporting — whatever went wrong has already been said once each.
+        bool named = symbol.Name.Length > 0;
+
+        if (!_scope.TryDeclare(symbol))
         {
+            if (named)
+            {
+                Report(DiagnosticDescriptors.DuplicateDeclaration, node, symbol.Name);
+            }
+
             return;
         }
 
-        // A name that failed to parse is empty, and two of those are not a clash worth
-        // reporting — whatever went wrong has already been said once each.
-        if (symbol.Name.Length > 0)
+        // The name is declared either way, so the body binds to what the reader wrote rather
+        // than to whatever it would have hidden.
+        if (named && _scope.Parent?.Lookup(symbol.Name) is not null)
         {
-            Report(DiagnosticDescriptors.DuplicateDeclaration, node, symbol.Name);
+            Report(DiagnosticDescriptors.NameShadowsEnclosing, node, symbol.Name);
         }
     }
 

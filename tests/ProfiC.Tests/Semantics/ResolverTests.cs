@@ -157,18 +157,79 @@ public sealed class ResolverTests
         Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0200" }));
     }
 
+    /// <summary>
+    /// <para>Inside a function body a bare name means one thing throughout. This is the rule
+    /// that makes it true, and it is what lets a lambda reach an enclosing local unmarked:
+    /// there is nothing the name could be confused with.</para>
+    /// <para>Each of these is a different way of introducing a name, and all of them are bound
+    /// through one place, so one failing would mean that place had been bypassed.</para>
+    /// </summary>
+    [TestCase("        begin\n            let value = 2;\n        end", TestName = "a block's local")]
+    [TestCase("        let show = (integer value) yield value;", TestName = "a lambda's parameter")]
+    [TestCase("        for value = 1 to 3\n        end for", TestName = "a for binding")]
+    [TestCase("        for each value in {1, 2}\n        end for", TestName = "a for-each binding")]
+    [TestCase("        try\n        catch Exception value\n        end try",
+              TestName = "a caught exception")]
+    public void ANestedScopeMayNotShadowAnOuterName(string written)
+    {
+        (_, DiagnosticBag diagnostics) = ResolveBody($"        let value = 1;\n{written}");
+
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0237" }));
+    }
+
+    /// <summary>
+    /// Two scopes that cannot see each other are not shadowing, so the same name may be used
+    /// in both. Forbidding that would make a name unusable in a whole function because some
+    /// unrelated block above it happened to pick that word.
+    /// </summary>
     [Test]
-    public void ANestedScopeMayShadowAnOuterName()
+    public void TwoScopesSideBySideMayUseTheSameName()
     {
         (_, DiagnosticBag diagnostics) = ResolveBody(
             """
-                    let value = 1;
+                    begin
+                        let value = 1;
+                    end
                     begin
                         let value = 2;
                     end
             """);
 
-        Assert.That(IdsOf(diagnostics), Is.Empty, "shadowing an outer scope is allowed");
+        Assert.That(IdsOf(diagnostics), Is.Empty);
+    }
+
+    /// <summary>
+    /// A function's parameters and the statements of its body share one scope, so which of the
+    /// two complaints a repeated parameter name draws depends on where it is written. Both are
+    /// right, and the fix differs: one name is taken twice in a row, the other is taken again
+    /// further in.
+    /// </summary>
+    [TestCase("        let parameter = 2;", "PC0202", TestName = "beside it, a duplicate")]
+    [TestCase("        begin\n            let parameter = 2;\n        end", "PC0237",
+              TestName = "inside a block, a shadow")]
+    public void AParameterMayNotHaveItsNameTakenAgain(string written, string expected)
+    {
+        (_, DiagnosticBag diagnostics) = ResolveBody(written);
+
+        Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { expected }));
+    }
+
+    /// <summary>
+    /// <para>A local named after a field is left alone, which is the other half of the rule.
+    /// Only locals and parameters live in a scope, so the two never meet: a bare name is the
+    /// local and <c>this.</c> reaches the field.</para>
+    /// <para>Forbidding it would mean adding a field to a model could break methods that have
+    /// nothing to do with it, and it would leave <c>this.</c> with nothing to distinguish.
+    /// </para>
+    /// </summary>
+    [TestCase("        let count = 2;", TestName = "an instance field")]
+    [TestCase("        let total = 2;", TestName = "a global field")]
+    [TestCase("        let Limit = 2;", TestName = "a constant")]
+    public void ALocalMayStillCarryAFieldsName(string written)
+    {
+        (_, DiagnosticBag diagnostics) = ResolveBody(written);
+
+        Assert.That(IdsOf(diagnostics), Is.Empty);
     }
 
     [Test]

@@ -689,6 +689,24 @@ public static class DiagnosticDescriptors
         "This 'entry' decides nothing",
         "Only '{0}' declares a Program, so it begins whether or not this line is here.");
 
+    /// <summary>
+    /// <para>A local, parameter, or loop binding reusing a name already visible from a scope
+    /// around it.</para>
+    /// <para>Inside a function body a bare name means exactly one thing throughout, and this is
+    /// the rule that makes that true. It is what lets a lambda or a nested function reach an
+    /// enclosing local unmarked: there is nothing the name could be confused with, so a marking
+    /// would carry no information. <c>this.</c> earns its keep on the other side of the
+    /// boundary, where a field may be declared in an ancestor model or another file.</para>
+    /// <para>An error rather than a warning. The inner name would win and the program would run,
+    /// but the reader has to hold two meanings for one word, and the rule that makes capture
+    /// legible is only worth having if it holds everywhere.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NameShadowsEnclosing = Error(
+        "PC0237",
+        "This name is already in use here",
+        "'{0}' is already the name of something in an enclosing scope, so this one would hide "
+        + "it. Give it a name of its own.");
+
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(
