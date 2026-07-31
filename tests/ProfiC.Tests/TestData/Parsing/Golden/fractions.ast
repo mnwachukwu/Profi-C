@@ -134,6 +134,66 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
+          LiteralExpr "== turning one over ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "2|3 turned over is " [String]
+            CallExpr
+              MemberExpr 'Reciprocal'
+                ParenthesizedExpr
+                  LiteralExpr 2|3 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "and 5 is           " [String]
+            CallExpr
+              MemberExpr 'Reciprocal'
+                ParenthesizedExpr
+                  LiteralExpr 5|1 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "twice gives it back: " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                CallExpr
+                  MemberExpr 'Reciprocal'
+                    CallExpr
+                      MemberExpr 'Reciprocal'
+                        ParenthesizedExpr
+                          LiteralExpr 2|3 [Fraction]
+                LiteralExpr 2|3 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "a real does not:     " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr '/'
+                    LiteralExpr 1.0 [Real]
+                    ParenthesizedExpr
+                      BinaryExpr '/'
+                        LiteralExpr 1.0 [Real]
+                        LiteralExpr 49.0 [Real]
+                LiteralExpr 49.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
           LiteralExpr "== raising to a power stays exact ==" [String]
       ExpressionStmt
         CallExpr

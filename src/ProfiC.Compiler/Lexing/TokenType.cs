@@ -64,6 +64,7 @@ public enum TokenType
     As,
     Base,
     Begin,
+    Bitwise,
     Boolean,
     Break,
     Case,
@@ -99,6 +100,7 @@ public enum TokenType
     Integer,
     Internal,
     Is,
+    LeftShift,
     Let,
     Model,
     Namespace,
@@ -120,10 +122,12 @@ public enum TokenType
     To,
     True,
     Try,
+    RightShift,
     Until,
     Using,
     Virtual,
     While,
+    Xor,
     Yield,
 
     // ---- Arithmetic operators -----------------------------------------------------------

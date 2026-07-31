@@ -464,6 +464,15 @@ public sealed class BuiltInCatalogTests
     [TestCase("Console.WriteLine((5).Equals(6))", "false\n")]
     [TestCase("Console.WriteLine((1|2).ToReal())", "0.5\n")]
     [TestCase("Console.WriteLine((0.5).ToFraction())", "1|2\n")]
+    [TestCase("Console.WriteLine((2|3).Reciprocal())", "3|2\n")]
+    [TestCase("Console.WriteLine((5|1).Reciprocal())", "1|5\n")]
+
+    // The sign stays on the numerator, since a normalized fraction keeps its denominator
+    // positive — so turning a negative one over does not leave "3|-2".
+    [TestCase("Console.WriteLine(Fraction.Create(-2, 3).Reciprocal())", "-3|2\n")]
+
+    // Its own undo, which is the property a real does not have.
+    [TestCase("Console.WriteLine((2|3).Reciprocal().Reciprocal() == 2|3)", "true\n")]
     public void EveryValueMemberProducesItsAnswer(string body, string expected) =>
         Assert.That(Run(body), Is.EqualTo(expected));
 
@@ -734,7 +743,8 @@ public sealed class BuiltInCatalogTests
         BuiltInId.DateTimeFormat, BuiltInId.TimeSpanFormat, BuiltInId.DateFormat,
         BuiltInId.TimeFormat,
         BuiltInId.OptionalHasValue, BuiltInId.OptionalOr, BuiltInId.OptionalValue,
-        BuiltInId.FractionToReal, BuiltInId.RealToFraction, BuiltInId.EnumerationToInteger,
+        BuiltInId.FractionToReal, BuiltInId.FractionReciprocal, BuiltInId.RealToFraction,
+        BuiltInId.EnumerationToInteger,
         BuiltInId.ExceptionMessage, BuiltInId.ModelToString, BuiltInId.ModelEquals,
     ];
 

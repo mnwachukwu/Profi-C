@@ -1,0 +1,253 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FieldDecl 'Read' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0b0001 [Integer]
+    FieldDecl 'Write' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0b0010 [Integer]
+    FieldDecl 'Delete' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0b0100 [Integer]
+    FieldDecl 'Share' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0b1000 [Integer]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'CombiningAndAsking'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TheThreeOperations'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Shifting'
+            IdentifierExpr 'Program'
+    FunctionDecl 'CombiningAndAsking'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== putting flags together and asking about them ==" [String]
+      VarDeclStmt 'granted'
+        NamedTypeSyntax 'integer'
+        BinaryExpr 'bitwise or'
+          MemberExpr 'Read'
+            IdentifierExpr 'Program'
+          MemberExpr 'Write'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  granted:      " [String]
+            CallExpr
+              MemberExpr 'Format'
+                IdentifierExpr 'granted'
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  may read:     " [String]
+            ParenthesizedExpr
+              BinaryExpr '!='
+                ParenthesizedExpr
+                  BinaryExpr 'bitwise and'
+                    IdentifierExpr 'granted'
+                    MemberExpr 'Read'
+                      IdentifierExpr 'Program'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  may delete:   " [String]
+            ParenthesizedExpr
+              BinaryExpr '!='
+                ParenthesizedExpr
+                  BinaryExpr 'bitwise and'
+                    IdentifierExpr 'granted'
+                    MemberExpr 'Delete'
+                      IdentifierExpr 'Program'
+                LiteralExpr 0 [Integer]
+      VarDeclStmt 'again'
+        NamedTypeSyntax 'integer'
+        BinaryExpr 'bitwise or'
+          IdentifierExpr 'granted'
+          MemberExpr 'Read'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  added twice:  " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'again'
+                IdentifierExpr 'granted'
+    FunctionDecl 'TheThreeOperations'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== and, or, xor ==" [String]
+      VarDeclStmt 'left'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0b1100 [Integer]
+      VarDeclStmt 'right'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0b1010 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1100 and 1010: " [String]
+            CallExpr
+              MemberExpr 'Format'
+                ParenthesizedExpr
+                  BinaryExpr 'bitwise and'
+                    IdentifierExpr 'left'
+                    IdentifierExpr 'right'
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1100 or  1010: " [String]
+            CallExpr
+              MemberExpr 'Format'
+                ParenthesizedExpr
+                  BinaryExpr 'bitwise or'
+                    IdentifierExpr 'left'
+                    IdentifierExpr 'right'
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1100 xor 1010: " [String]
+            CallExpr
+              MemberExpr 'Format'
+                ParenthesizedExpr
+                  BinaryExpr 'xor'
+                    IdentifierExpr 'left'
+                    IdentifierExpr 'right'
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  xor undoes it: " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr 'xor'
+                    BinaryExpr 'xor'
+                      IdentifierExpr 'left'
+                      IdentifierExpr 'right'
+                    IdentifierExpr 'right'
+                IdentifierExpr 'left'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  levels:        " [String]
+            CallExpr
+              MemberExpr 'Format'
+                ParenthesizedExpr
+                  BinaryExpr 'bitwise or'
+                    LiteralExpr 0b1100 [Integer]
+                    BinaryExpr 'bitwise and'
+                      LiteralExpr 0b0011 [Integer]
+                      LiteralExpr 0b0001 [Integer]
+              LiteralExpr "B" [String]
+    FunctionDecl 'Shifting'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== moving the bits along ==" [String]
+      VarDeclStmt 'one'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0b0001 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1 left 4:     " [String]
+            CallExpr
+              MemberExpr 'Format'
+                ParenthesizedExpr
+                  BinaryExpr 'leftshift'
+                    IdentifierExpr 'one'
+                    LiteralExpr 4 [Integer]
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and as a number: " [String]
+            ParenthesizedExpr
+              BinaryExpr 'leftshift'
+                IdentifierExpr 'one'
+                LiteralExpr 4 [Integer]
+      VarDeclStmt 'sixty4'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0b1000000 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  64 right 3:   " [String]
+            CallExpr
+              MemberExpr 'Format'
+                ParenthesizedExpr
+                  BinaryExpr 'rightshift'
+                    IdentifierExpr 'sixty4'
+                    LiteralExpr 3 [Integer]
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  doubling:     " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr 'leftshift'
+                    LiteralExpr 5 [Integer]
+                    LiteralExpr 1 [Integer]
+                BinaryExpr '*'
+                  LiteralExpr 5 [Integer]
+                  LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  precedence:   " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr 'leftshift'
+                    LiteralExpr 1 [Integer]
+                    BinaryExpr '+'
+                      LiteralExpr 2 [Integer]
+                      LiteralExpr 1 [Integer]
+                LiteralExpr 8 [Integer]

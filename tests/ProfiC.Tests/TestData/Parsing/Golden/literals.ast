@@ -12,6 +12,27 @@ CompilationUnit
     FieldDecl 'Large' [constant]
       NamedTypeSyntax 'integer'
       LiteralExpr 2147483647 [Integer]
+    FieldDecl 'Hexadecimal' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0xFF [Integer]
+    FieldDecl 'HexadecimalUpper' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0XdeadBEEF [Integer]
+    FieldDecl 'Binary' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0b1010 [Integer]
+    FieldDecl 'BinaryUpper' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0B1111 [Integer]
+    FieldDecl 'Million' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 1_000_000 [Integer]
+    FieldDecl 'GroupedHex' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0xFF_FF [Integer]
+    FieldDecl 'GroupedBinary' [constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0b1111_1111 [Integer]
     FieldDecl 'Half' [constant]
       NamedTypeSyntax 'real'
       LiteralExpr 0.5 [Real]
@@ -21,6 +42,21 @@ CompilationUnit
     FieldDecl 'Whole' [constant]
       NamedTypeSyntax 'real'
       LiteralExpr 1.0 [Real]
+    FieldDecl 'Grouped' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 3.141_592 [Real]
+    FieldDecl 'Scaled' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 1.5e3 [Real]
+    FieldDecl 'Tiny' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 2.5e-3 [Real]
+    FieldDecl 'Signed' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 4.0E+2 [Real]
+    FieldDecl 'NoPoint' [constant]
+      NamedTypeSyntax 'real'
+      LiteralExpr 1e3 [Real]
     FieldDecl 'Third' [constant]
       NamedTypeSyntax 'fraction'
       LiteralExpr 1|3 [Fraction]
@@ -30,6 +66,9 @@ CompilationUnit
     FieldDecl 'Approximation' [constant]
       NamedTypeSyntax 'fraction'
       LiteralExpr 22|7 [Fraction]
+    FieldDecl 'GroupedRatio' [constant]
+      NamedTypeSyntax 'fraction'
+      LiteralExpr 1_500|1_000 [Fraction]
     FieldDecl 'Letter' [constant]
       NamedTypeSyntax 'character'
       LiteralExpr 'A' [Character]

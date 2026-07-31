@@ -68,6 +68,13 @@ public sealed class RefusalMessageTests : LexerTestBase
         ("Console.WriteLine(Math.Root(8.0, 0));", typeof(ProfiC.Interpreter.ProfiCRuntimeException),
          "A root of degree zero is not a number."),
 
+        // The amount arrived in a variable, so nothing could judge it while compiling. Written
+        // down, it is PC0343 instead.
+        ("integer places = 64;\n        Console.WriteLine(1 leftshift places);",
+         typeof(ArgumentException),
+         "A shift of 64 places is outside an integer, which holds 64 bits. An amount from 0 to "
+         + "63 is what there is to move."),
+
         ("integer low = 5;\n        Console.WriteLine(Random.Next(low, 1));",
          typeof(ArgumentException),
          "A random number needs a low bound no greater than the high one, but 5 is greater "
@@ -86,6 +93,11 @@ public sealed class RefusalMessageTests : LexerTestBase
 
         ("fraction zero = Fraction.Create(0, 1);\n        Console.WriteLine(1|2 % zero);",
          typeof(DivideByZeroException), "Cannot take the remainder of a fraction by zero."),
+
+        ("fraction zero = Fraction.Create(0, 1);\n"
+         + "        Console.WriteLine(zero.Reciprocal());",
+         typeof(DivideByZeroException),
+         "Zero has no reciprocal: nothing multiplied by zero gives one."),
 
         ("fraction zero = Fraction.Create(0, 1);\n        integer power = -2;\n"
          + "        Console.WriteLine(zero ^ power);",

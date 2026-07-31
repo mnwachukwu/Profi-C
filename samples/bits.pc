@@ -1,0 +1,106 @@
+##
+    Working on the bits of a whole number.
+
+    This is the one part of the language aimed past a first program. Nothing else needs it, and
+    a reader who never meets it loses nothing — but a whole number is a row of bits underneath,
+    and there are jobs where saying so directly is the honest way to write them.
+
+    Everything here is spelled as a word. '&' and '|' would have been new punctuation, and '|'
+    could not be had in any case: it already writes a fraction. So 'bitwise' qualifies the
+    'and' and 'or' that already mean something, and the rest stand alone.
+##
+
+global model Program
+
+    ##
+        A row of switches, each standing for one thing that is either on or off. Written in
+        binary, the value and the picture are the same thing.
+    ##
+    constant integer Read = 0b0001;
+    constant integer Write = 0b0010;
+    constant integer Delete = 0b0100;
+    constant integer Share = 0b1000;
+
+    function Main()
+        Program.CombiningAndAsking();
+        Program.TheThreeOperations();
+        Program.Shifting();
+    end function
+
+    ##
+        'bitwise or' puts flags together: a bit is on in the answer if it was on in either.
+        'bitwise and' asks whether one is present, since the answer keeps only the bits both
+        sides had.
+    ##
+    function CombiningAndAsking()
+        Console.WriteLine("== putting flags together and asking about them ==");
+
+        integer granted = Program.Read bitwise or Program.Write;
+
+        Console.WriteLine("  granted:      " + granted.Format("B"));
+        Console.WriteLine("  may read:     " + ((granted bitwise and Program.Read) != 0));
+        Console.WriteLine("  may delete:   " + ((granted bitwise and Program.Delete) != 0));
+
+        # Adding one that is already there changes nothing, which is what makes 'or' safe to
+        # apply twice.
+        integer again = granted bitwise or Program.Read;
+
+        Console.WriteLine("  added twice:  " + (again == granted));
+    end function
+
+    ##
+        'xor' needs no 'bitwise' in front of it, because nothing else in the language claims
+        the word. On booleans there is nothing for it to do that '!=' does not already say.
+
+        It is its own undo: applying the same mask twice gives back what you started with.
+    ##
+    function TheThreeOperations()
+        Console.WriteLine("== and, or, xor ==");
+
+        integer left = 0b1100;
+        integer right = 0b1010;
+
+        Console.WriteLine("  1100 and 1010: " + (left bitwise and right).Format("B"));
+        Console.WriteLine("  1100 or  1010: " + (left bitwise or right).Format("B"));
+        Console.WriteLine("  1100 xor 1010: " + (left xor right).Format("B"));
+
+        Console.WriteLine("  xor undoes it: " + ((left xor right xor right) == left));
+
+        ##
+            The three sit on three levels, as they do in C#: 'or' is loosest, then 'xor', then
+            'and'. So the line below is 1100 or (0011 and 0001), which is 1101.
+        ##
+        Console.WriteLine("  levels:        "
+                          + (0b1100 bitwise or 0b0011 bitwise and 0b0001).Format("B"));
+    end function
+
+    ##
+        A shift moves every bit along, which doubles or halves the number as many times as it
+        moves. The direction is in the word rather than in the sign of the amount, so there is
+        nothing to work out.
+
+        An amount below zero or past 63 is refused: an integer holds 64 bits, and a shift
+        further than that has nothing left to move. C# quietly wraps the amount instead, which
+        is a result nothing in the line suggests.
+    ##
+    function Shifting()
+        Console.WriteLine("== moving the bits along ==");
+
+        integer one = 0b0001;
+
+        Console.WriteLine("  1 left 4:     " + (one leftshift 4).Format("B"));
+        Console.WriteLine("  and as a number: " + (one leftshift 4));
+
+        integer sixty4 = 0b1000000;
+
+        Console.WriteLine("  64 right 3:   " + (sixty4 rightshift 3).Format("B"));
+
+        # Shifting left by one doubles, which is the same arithmetic said another way.
+        Console.WriteLine("  doubling:     " + ((5 leftshift 1) == 5 * 2));
+
+        # A shift binds tighter than a comparison and looser than arithmetic, so the amount
+        # here is 2 + 1 and the whole thing is compared afterwards.
+        Console.WriteLine("  precedence:   " + ((1 leftshift 2 + 1) == 8));
+    end function
+
+end model

@@ -33,6 +33,18 @@ global model Program
         Console.WriteLine("1 + 1|2 + ... + 1|8 = " + Program.Harmonic(8));
         Console.WriteLine("and as a real:        " + Program.Harmonic(8).ToReal());
 
+        ##
+            Reciprocal turns a fraction over. It is its own undo — turning one over twice
+            gives back exactly what it was — which is the property a real cannot promise:
+            1.0 / (1.0 / 49.0) is not 49.
+        ##
+        Console.WriteLine();
+        Console.WriteLine("== turning one over ==");
+        Console.WriteLine("2|3 turned over is " + (2|3).Reciprocal());
+        Console.WriteLine("and 5 is           " + (5|1).Reciprocal());
+        Console.WriteLine("twice gives it back: " + ((2|3).Reciprocal().Reciprocal() == 2|3));
+        Console.WriteLine("a real does not:     " + ((1.0 / (1.0 / 49.0)) == 49.0));
+
         Console.WriteLine();
         Console.WriteLine("== raising to a power stays exact ==");
         Console.WriteLine("(1|2) ^ 3  is " + (1|2) ^ 3);

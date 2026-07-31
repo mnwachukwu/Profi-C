@@ -52,6 +52,7 @@ end model
 global model Program
 
     function Main()
+        Program.HowANumberIsWritten();
         Program.Widening();
         Program.AskingForIt();
         Program.StringsAndCharacters();
@@ -63,6 +64,44 @@ global model Program
         An integer becomes a real or a fraction on its own. Both hold every integer exactly,
         so there is nothing to lose and nothing to decide.
     ##
+    ##
+        A number has one value and several spellings. The base a whole number is written in
+        changes nothing about it — 255, 0xFF and 0b1111_1111 are the same number, and comparing
+        them says so.
+
+        Format is the way out and a prefix is the way back, which is the pair worth knowing:
+        anything printed in hexadecimal can be written down again as it was printed.
+
+        An underscore groups digits for whoever reads the line and is not part of the number.
+    ##
+    function HowANumberIsWritten()
+        Console.WriteLine("== one number, several spellings ==");
+
+        integer plain = 255;
+        integer hexadecimal = 0xFF;
+        integer binary = 0b1111_1111;
+
+        Console.WriteLine("  all the same: " + (plain == hexadecimal and hexadecimal == binary));
+        Console.WriteLine("  as hex:       " + plain.Format("X"));
+        Console.WriteLine("  as binary:    " + plain.Format("B"));
+        Console.WriteLine("  and back:     " + 0xFF + ", " + 0b11111111);
+
+        # Grouping is for the reader. A million is a million however it is written down.
+        Console.WriteLine("  a million:    " + (1_000_000 == 1000000));
+
+        ##
+            An exponent says how far to move the point, so what it writes is a real whether or
+            not a point was written. 1e3 is a real holding 1000; 1000 is how the integer is
+            asked for.
+        ##
+        real scaled = 1.5e3;
+        real small = 2.5e-3;
+
+        Console.WriteLine("  1.5e3:        " + scaled);
+        Console.WriteLine("  2.5e-3:       " + small);
+        Console.WriteLine("  1e3 is real:  " + (1e3 == 1000.0));
+    end function
+
     function Widening()
         real r = 7;
         fraction f = 7;

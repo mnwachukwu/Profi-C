@@ -9,19 +9,20 @@ A condensed reference and a full comparison to C#. For the normative definition 
 
 ## 1. Reserved words
 
-### 1.1 The 57 reserved words
+### 1.1 The 61 reserved words
 
 ```
-abstract    and         as          base        begin       boolean
-break       case        catch       character   constant    continue
-default     delegate    each        else        end         enumeration
-extends     false       finally     for         fraction    function
-global      if          import      in          integer     internal
-is          let         model       namespace   new         not
-or          override    protected   public      real        sealed
-step        string      structure   switch      then        this
-throw       to          true        try         until       using
-virtual     while       yield
+abstract    and         as          base        begin       bitwise
+boolean     break       case        catch       character   constant
+continue    default     delegate    each        else        end
+enumeration extends     false       finally     for         fraction
+function    global      if          import      in          integer
+internal    is          leftshift   let         model       namespace
+new         not         or          override    protected   public
+real        rightshift  sealed      step        string      structure
+switch      then        this        throw       to          true
+try         until       using       virtual     while       xor
+yield
 ```
 
 A name may take one back by writing `@` in front of it — `@end`, `@step` — which is the only
@@ -31,9 +32,9 @@ place a name may begin with something other than a letter.
 
 | | Profi-C | C# |
 |---|---|---|
-| Reserved everywhere | **57** | 77 |
+| Reserved everywhere | **61** | 77 |
 | Contextual — reserved only in one position | **0** | 46 |
-| Words that are special somewhere | **57** | 123 |
+| Words that are special somewhere | **61** | 123 |
 
 C#'s figures are Roslyn's own, from `SyntaxFacts.GetReservedKeywordKinds` and
 `GetContextualKeywordKinds`, minus four undocumented `__`-prefixed ones it also counts.
@@ -174,7 +175,7 @@ printing and calling never disagree.
 | `Math` | `Pi` and `E` as values; `Sqrt`, `Cbrt`, `Root`, `Pow`, `Log` and its family, the trig six and their hyperbolic counterparts, `Abs`, `Min`, `Max`, the three roundings, and `Factorial` |
 | `Random` | `new Random()` or `new Random(seed)`, and the same members through the name; `Next` excludes its upper bound, as .NET's does |
 | `DateTime` | `new DateTime(...)`; what .NET reads as a property is read as one here, so `Year` and `Now` take no parentheses |
-| `fraction` | `ToReal` |
+| `fraction` | `ToReal`; `Reciprocal` turns it over, so `(2\|3).Reciprocal()` is `3\|2` |
 | enumerations | `ToString` returns the member name |
 | `real` | `ToFraction` |
 
@@ -209,6 +210,7 @@ The second pair is more confusable than the first, since both live near the idea
 | `sealed` | a model no other may extend, as a sealed class |
 | `abstract` | a model that cannot be constructed, and a function ending at `;` that every model built from it must write. `abstract` implies `virtual`, and only an abstract model may carry one — all as in C# |
 | Block strings with `"""` | the same rule as a C# raw string literal, longer runs of quotes included. There is no separate verbatim form, because nothing inside a block is read |
+| Number literals | `0xFF`, `0b1010`, `1.5e3` and `1_000_000` are written and mean what they do in C#. The one difference: an exponent always makes a real, so `1e3` is `1000.0` where C# reads it as a `double` too but lets a suffix say otherwise — Profi-C has no numeric suffixes |
 | `base(...)` and `base.Method()` | constructor chaining and parent calls |
 | Exceptions | `try` / `catch` / `finally` / `throw`, matched by type |
 | Overloading | including constructors |
@@ -247,6 +249,8 @@ The second pair is more confusable than the first, since both live near the idea
 | `global` | `static` |
 | `3\|4` fraction literal | no equivalent |
 | `2 ^ 10` raises to a power | `^` is exclusive-or; use `Math.Pow` |
+| `a bitwise and b`, `a bitwise or b`, `a xor b` | `a & b`, `a \| b`, `a ^ b`. `\|` was unavailable — it writes a fraction — so the operations are words. `xor` needs no qualifier because nothing else claims it, and it refuses two booleans where C#'s `^` accepts them |
+| `a leftshift 2`, `a rightshift 2` | `a << 2`, `a >> 2`. The direction is in the word, and an amount below 0 or above 63 is an error where C# folds it into range |
 | `enumeration Color` | `enum Color` |
 | `global model` | `static class` |
 | a `global model` has global members | a `static class` marks each member `static` |
@@ -284,7 +288,7 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **Fractions are a primitive** with exact rational arithmetic. `fraction` and `real` never implicitly convert in either direction; both are explicit.
 
-**`^` raises to a power** and is the only right-associative operator, so `2 ^ 3 ^ 2` is 512. It binds tighter than a leading minus, making `-2 ^ 2` equal to `-4` as on paper. A **whole** exponent preserves the base's type: an integer base gives an integer, and a fraction base stays exact, so `(1|2) ^ -3` is `8|1`. Any other exponent takes a root and gives a real, so `9 ^ 1|2` is `3` and `16 ^ 3|4` is `8` — the one place a fraction widens to a real unasked, since a root has no exact rational form to preserve. **In C# `^` is exclusive-or**; Profi-C has no bitwise operators, so the meaning does not carry across.
+**`^` raises to a power** and is the only right-associative operator, so `2 ^ 3 ^ 2` is 512. It binds tighter than a leading minus, making `-2 ^ 2` equal to `-4` as on paper. A **whole** exponent preserves the base's type: an integer base gives an integer, and a fraction base stays exact, so `(1|2) ^ -3` is `8|1`. Any other exponent takes a root and gives a real, so `9 ^ 1|2` is `3` and `16 ^ 3|4` is `8` — the one place a fraction widens to a real unasked, since a root has no exact rational form to preserve. **In C# `^` is exclusive-or**, so the meaning does not carry across; the operation it names there is spelled `xor` here.
 
 **Assignment is a statement.** `if (x = 5)` is a syntax error rather than a warning.
 

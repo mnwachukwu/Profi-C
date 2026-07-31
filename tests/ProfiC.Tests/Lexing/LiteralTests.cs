@@ -1,3 +1,4 @@
+using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
 
 namespace ProfiC.Tests.Lexing;
@@ -57,17 +58,169 @@ public sealed class LiteralTests : LexerTestBase
                     Is.EqualTo(new[] { TokenType.Identifier, TokenType.Pipe, TokenType.Identifier }));
     }
 
-    [Test]
-    public void Number_FollowedByLetters_SplitsIntoTwoTokens()
+    // ---- Bases other than ten -----------------------------------------------------------
+
+    /// <summary>
+    /// A prefix says which digits follow, and the result is a whole number like any other —
+    /// the same token, so nothing past the scanner knows how it was written.
+    /// </summary>
+    [TestCase("0xFF")]
+    [TestCase("0XFF")]
+    [TestCase("0x0")]
+    [TestCase("0xdeadBEEF")]
+    [TestCase("0b1010")]
+    [TestCase("0B1010")]
+    [TestCase("0b0")]
+    public void NumberInAnotherBase_ScansAsAWholeNumber(string source)
     {
-        List<Token> tokens = ScanWithoutEof("40var");
+        Token token = ScanSingle(source);
 
         Assert.Multiple(() =>
         {
-            Assert.That(tokens.Select(t => t.Type),
-                        Is.EqualTo(new[] { TokenType.IntegerLiteral, TokenType.Identifier }));
-            Assert.That(tokens[0].Lexeme, Is.EqualTo("40"));
-            Assert.That(tokens[1].Lexeme, Is.EqualTo("var"));
+            Assert.That(token.Type, Is.EqualTo(TokenType.IntegerLiteral));
+            Assert.That(token.Lexeme, Is.EqualTo(source));
+        });
+    }
+
+    /// <summary>
+    /// Everything after the prefix is taken before any of it is judged, so a stray digit is one
+    /// mistake with one message rather than a number that stops early and a name that starts
+    /// where it stopped.
+    /// </summary>
+    [TestCase("0x", "PC0017")]
+    [TestCase("0b", "PC0017")]
+    [TestCase("0xG", "PC0018")]
+    [TestCase("0b12", "PC0018")]
+    [TestCase("0xFFZZ", "PC0018")]
+    public void AMalformedBase_IsOneMistake(string source, string expected)
+    {
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { expected }));
+            Assert.That(tokens[0].Type, Is.EqualTo(TokenType.IntegerLiteral),
+                        "a token is still produced, so the parser can carry on");
+        });
+    }
+
+    /// <summary>Only a whole number may name a base; the prefix is not a real's business.</summary>
+    [Test]
+    public void ABaseIsNotFollowedByAPoint()
+    {
+        List<Token> tokens = ScanWithoutEof("0x1.5");
+
+        Assert.That(
+            tokens.Select(t => t.Type),
+            Is.EqualTo(new[] { TokenType.IntegerLiteral, TokenType.Dot, TokenType.IntegerLiteral }));
+    }
+
+    // ---- Exponents -----------------------------------------------------------------------
+
+    /// <summary>
+    /// An exponent names a scale rather than a count, so what it produces is a real whether or
+    /// not a point was written.
+    /// </summary>
+    [TestCase("1e3")]
+    [TestCase("1E3")]
+    [TestCase("1e+3")]
+    [TestCase("1e-3")]
+    [TestCase("1.5e3")]
+    [TestCase("2.5e-30")]
+    [TestCase("0e0")]
+    public void AnExponent_ScansAsAReal(string source)
+    {
+        Token token = ScanSingle(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(token.Type, Is.EqualTo(TokenType.RealLiteral));
+            Assert.That(token.Lexeme, Is.EqualTo(source));
+        });
+    }
+
+    // ---- Separators -----------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>An underscore groups digits for a reader and means nothing to the value, so it is
+    /// allowed in every run of digits rather than only in a whole number.</para>
+    /// <para>A rule with a hole in it — grouping allowed before a point and not after — would
+    /// be one more thing to learn and buy nothing.</para>
+    /// </summary>
+    [TestCase("1_000", TokenType.IntegerLiteral)]
+    [TestCase("1_000_000", TokenType.IntegerLiteral)]
+    [TestCase("0xFF_FF", TokenType.IntegerLiteral)]
+    [TestCase("0b1010_1010", TokenType.IntegerLiteral)]
+    [TestCase("1_000.5", TokenType.RealLiteral)]
+    [TestCase("1.000_5", TokenType.RealLiteral)]
+    [TestCase("1e1_0", TokenType.RealLiteral)]
+    [TestCase("1_500|1_000", TokenType.FractionLiteral)]
+    public void ASeparator_GroupsDigitsWithoutChangingTheForm(string source, TokenType expected)
+    {
+        Token token = ScanSingle(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(token.Type, Is.EqualTo(expected));
+            Assert.That(token.Lexeme, Is.EqualTo(source), "the lexeme is the exact source slice");
+        });
+    }
+
+    /// <summary>
+    /// A separator sits between digits, so one at either end has nothing to group. Reported
+    /// in every base, since a rule that holds in ten and not in sixteen is not a rule.
+    /// </summary>
+    [TestCase("1_")]
+    [TestCase("1_000_")]
+    [TestCase("0xFF_")]
+    [TestCase("0x_FF")]
+    [TestCase("1.5_")]
+    public void ASeparatorWithNothingToGroup_IsReported(string source) => Assert.That(
+        ScanRaw(source).Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0020" }));
+
+    /// <summary>
+    /// A name may still begin with one, which is what keeps the rule about numbers from
+    /// reaching into identifiers.
+    /// </summary>
+    [TestCase("_")]
+    [TestCase("_1")]
+    [TestCase("_count")]
+    public void ANameMayStillBeginWithASeparator(string source) =>
+        Assert.That(ScanSingle(source).Type, Is.EqualTo(TokenType.Identifier));
+
+    /// <summary>
+    /// A number cannot sit against a name, so an <c>e</c> with nothing usable after it was
+    /// being written as an exponent whatever else it looks like. Saying so beats leaving the
+    /// parser to report a name where a semicolon was wanted.
+    /// </summary>
+    [TestCase("1e")]
+    [TestCase("1e;")]
+    [TestCase("40e")]
+    [TestCase("1e+")]
+    [TestCase("1.5e-")]
+    public void AnExponentWithNoDigits_IsReported(string source) => Assert.That(
+        ScanRaw(source).Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0019" }));
+
+    /// <summary>
+    /// <para>A name cannot begin with a digit, and a number cannot sit against one, so a word
+    /// written straight after a number is one mistake rather than two things.</para>
+    /// <para>The word is taken into the number's lexeme so the parser sees one token and adds
+    /// nothing: <c>1each</c> used to draw three complaints about a statement that could not
+    /// start, none of which named what was written.</para>
+    /// </summary>
+    [TestCase("1each")]
+    [TestCase("1extra")]
+    [TestCase("40var")]
+    [TestCase("1.5abc")]
+    [TestCase("1|2fifths")]
+    public void ANameWrittenAgainstANumber_IsOneMistake(string source)
+    {
+        (List<Token> tokens, DiagnosticBag diagnostics) = ScanRaw(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0021" }));
+            Assert.That(tokens, Has.Count.EqualTo(2), "one number, then the end of the file");
         });
     }
 

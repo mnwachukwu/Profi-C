@@ -308,6 +308,11 @@ An identifier begins with a **Unicode letter or an underscore**, and continues w
 decimal digits, and underscores. So `count`, `_count`, `max_score`, `item2`, and `café` are
 all identifiers.
 
+**A digit cannot begin one**, and a name written against a number is reported as the single
+mistake it is (`PC0021`) rather than read as a number beside a name: nothing in the language
+puts two values side by side, so `1each` and `40var` have no reading in which they are two
+things.
+
 Identifiers are case-sensitive, so `Model` and `model` are different words — and since one of
 them is reserved, they are different *kinds* of word.
 
@@ -336,9 +341,27 @@ verbatim `@name` form for using a reserved word as an identifier.
 **Integer literals** are one or more decimal digits. Leading zeros are permitted and
 insignificant.
 
+A `0x` or `0b` prefix writes the same whole number in **hexadecimal or binary**: `0xFF` and
+`0b1111_1111` are both 255. Case is not significant in either the prefix or the digits, and a
+digit outside the base is reported (`PC0018`) rather than ending the number early. There is no
+prefix for a real, since a base names how digits are written and a point is not one of them.
+
+The pairing is with `Format`, which already prints those bases: `n.Format("X")` gives `FF` and
+`n.Format("B")` gives `11111111`, and `0xFF` and `0b11111111` are how they are read back.
+
 **Real literals** are digits, a full stop, then digits. Digits are required on *both* sides:
 `1.0` is a real, while `1.` is an integer followed by a full stop, which is what makes member
 access on a number possible.
+
+A real may also carry an **exponent** — `e` or `E`, an optional sign, then digits — with or
+without a point before it. `1.5e3` is 1500.0 and `2e-3` is 0.002. An exponent names a scale
+rather than a count, so a literal carrying one is a real whether or not a point was written:
+`1e3` is `1000.0`, and `1000` is how the integer is asked for.
+
+**An underscore may separate digits**, in any literal and any base, and means nothing to the
+value: `1_000_000`, `0xFF_FF`, `3.141_592`, `1_500|1_000`. It has to sit between digits, since
+grouping is all it does, so `1_` is reported (`PC0020`) — and a name may still begin with one,
+which is why `_1` is a name and not a number.
 
 **Fraction literals** are digits, a vertical bar, then digits, and denote an exact rational:
 `22|7`, `1|3`. Digits are required on both sides here too, so `a|b` is not a fraction.
@@ -463,16 +486,17 @@ Profi-C has **56** reserved words. A name may take one back by writing `@` in fr
 `@end`, `@step` — which is the only place a name may begin with something other than a letter.
 
 ```
-abstract     and          as           base         begin        boolean
-break        case         catch        character    constant     continue
-default      each         else         end          enumeration  extends
-false        finally      for          fraction     function     global
-if           import       in           integer      internal     is
-let          model        namespace    new          not          or
-override     protected    public       real         sealed       step
-string       structure    switch       then         this         throw
-to           true         try          until        using        virtual
-while        yield
+abstract     and          as           base         begin        bitwise
+boolean      break        case         catch        character    constant
+continue     default      delegate     each         else         end
+enumeration  extends      false        finally      for          fraction
+function     global       if           import       in           integer
+internal     is           leftshift    let          model        namespace
+new          not          or           override     protected    public
+real         rightshift   sealed       step         string       structure
+switch       then         this         throw        to           true
+try          until        using        virtual      while        xor
+yield
 ```
 
 These are every reserved word, and nothing is reserved outside the list. A comment is marked
@@ -504,11 +528,13 @@ fraction literal. `^` raises to a power.
 say what it produces, so `(integer n) yield n + 1` is read with vocabulary already learned.
 Writing `=>` or `->` reports `PC0006` and names the word to use instead.
 
-**`^` is exponentiation, not exclusive-or.** Profi-C has no bitwise operators. In C# the same
-symbol is a bitwise operation, where `10 ^ 2` evaluates to 8, so the meaning does not carry
-across.
+**`^` is exponentiation, not exclusive-or.** In C# the same symbol is a bitwise operation,
+where `10 ^ 2` evaluates to 8, so the meaning does not carry across — the operation it names
+there is spelled `xor` here.
 
-The boolean operators are the reserved words `and`, `or`, and `not`, not symbols.
+The boolean operators are the reserved words `and`, `or`, and `not`, not symbols. So are the
+ones that work on bits: `bitwise and`, `bitwise or`, `xor`, `leftshift` and `rightshift`
+([§5.2](#52-operators)).
 
 There is **no** ternary conditional, no compound assignment (`+=` and its family), and no
 increment or decrement (`++`, `--`). The role of the ternary is filled by the
@@ -529,7 +555,7 @@ zero-width position just past the final character.
 
 ### 2.4 Recovery
 
-Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0016`,
+Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0021`,
 listed in [Appendix A](#appendix-a-diagnostics) — has a defined recovery, so a file containing
 several mistakes reports all of them in one pass and still yields a usable token stream.
 
@@ -1009,8 +1035,38 @@ Both short-circuit. `not` is the word for `!`.
 `x--` are each reported by name with the rewrite. There is no ternary either — `if ... then
 ... else` is an expression and does that job.
 
-`^` raises to a power, and is **not** exclusive-or; Profi-C has no bitwise operators. In C#
-the same symbol is bitwise, where `10 ^ 2` is 8, so the meaning does not carry across.
+`^` raises to a power, and is **not** exclusive-or. In C# the same symbol is bitwise, where
+`10 ^ 2` is 8, so the meaning does not carry across — which is why the operation it names
+there is spelled `xor` here.
+
+**The operations on bits are written as words**, and take integers on both sides:
+
+```
+flags bitwise and mask      the bits both have
+flags bitwise or mask       the bits either has
+flags xor mask              the bits exactly one has
+flags leftshift 2           every bit two places up, so the value quadruples
+flags rightshift 2          every bit two places down
+```
+
+`&` and `|` were not available to be borrowed: `|` already writes a fraction, and adding
+punctuation for the rest would have been the only symbol operators in a language that spells
+`and`, `or` and `not`. So `bitwise` qualifies the two words that already mean something.
+Nothing else claims `xor`, `leftshift` or `rightshift`, so those stand alone, and a word after
+`bitwise` that is not `and` or `or` is reported (`PC0118`).
+
+The three sit on three levels, in C#'s order among themselves — `or` loosest, then `xor`, then
+`and` — so `a bitwise or b bitwise and c` groups as `a bitwise or (b bitwise and c)`. A shift
+binds tighter than a comparison and looser than arithmetic.
+
+**Two booleans are refused** (`PC0342`) rather than treated as one bit each: `a != b` already
+asks whether exactly one of them holds, and the language keeps one spelling for one idea. This
+is a deliberate divergence from C#, whose `^` covers both.
+
+**A shift of fewer than zero places, or of 64 or more, is an error** (`PC0343`) — an integer
+holds 64 bits and a shift past all of them has nothing left to move. A literal amount is caught
+while compiling; one that arrives in a variable raises `ArgumentException`. C# folds the amount
+into range instead, so `x << 64` quietly means `x << 0` there.
 
 ### 5.3 Raising to a power
 
@@ -1868,6 +1924,7 @@ string is a string — the same rule `Subset` follows on a set, where a run of o
 |---|---|
 | `optional.HasValue()`, `Or(fallback)`, `Value()` | [§8](#8-optionals) |
 | `fraction.ToReal()` | `real` |
+| `fraction.Reciprocal()` | `fraction`; the fraction turned over. Zero has no reciprocal and refuses |
 | `real.ToFraction()` | `fraction` |
 | `enumeration.ToInteger()` | `integer` |
 | `exception.Message()` | `string` |
@@ -2456,6 +2513,11 @@ Warnings do not block compilation; everything else does.
 | `PC0014` | error | Nothing to format by |
 | `PC0015` | warning | More quotes in a row than close the block |
 | `PC0016` | error | Block string delimiters differ in length |
+| `PC0017` | error | This base has no digits |
+| `PC0018` | error | This digit is not in the base |
+| `PC0019` | error | This exponent has no digits |
+| `PC0020` | error | This separator has no digits after it |
+| `PC0021` | error | A name cannot begin with a digit |
 
 ### PC0100 to PC0199
 
@@ -2479,6 +2541,7 @@ Warnings do not block compilation; everything else does.
 | `PC0115` | warning | This parameter's type is already known |
 | `PC0116` | error | A function's type is written with 'delegate' |
 | `PC0117` | error | A function's type is written with 'delegate' |
+| `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' |
 
 ### PC0200 to PC0299
 
@@ -2575,6 +2638,8 @@ Warnings do not block compilation; everything else does.
 | `PC0339` | error | Member cannot be reached from here |
 | `PC0340` | warning | This empty string does nothing |
 | `PC0341` | error | This cannot be formatted |
+| `PC0342` | error | This works on bits, not on booleans |
+| `PC0343` | error | This shift is outside the width of an integer |
 
 ### PC0400 to PC0499
 

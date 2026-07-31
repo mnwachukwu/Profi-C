@@ -11,17 +11,19 @@ namespace ProfiC.Tests.Lexing;
 [TestFixture]
 public sealed class ReservedWordTests : LexerTestBase
 {
-    /// <summary>The 57 reserved words, written out rather than derived from the table.</summary>
+    /// <summary>The 61 reserved words, written out rather than derived from the table.</summary>
     private static readonly string[] Expected =
     [
-        "abstract", "and", "as", "base", "begin", "boolean", "break", "case", "catch",
+        "abstract", "and", "as", "base", "begin", "bitwise", "boolean", "break", "case", "catch",
         "character", "constant", "continue", "default", "delegate", "each", "else", "end",
         "enumeration",
         "extends", "false", "finally", "for", "fraction", "function", "global", "if", "import", "in",
-        "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or", "override",
-        "protected", "public", "real", "sealed", "step", "string", "structure", "switch",
+        "integer", "internal", "is", "leftshift", "let", "model", "namespace", "new", "not", "or",
+        "override",
+        "protected", "public", "real", "rightshift", "sealed", "step", "string", "structure",
+        "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
-        "yield",
+        "xor", "yield",
     ];
 
     /// <summary>Words a C# author might expect to be reserved, which deliberately are not.</summary>
@@ -86,9 +88,9 @@ public sealed class ReservedWordTests : LexerTestBase
         Assert.That(ScanRaw("@ ").Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0010" }));
 
     [Test]
-    public void KeywordTable_ContainsExactlyFiftySixWords()
+    public void KeywordTable_ContainsExactlySixtyOneWords()
     {
-        Assert.That(ReservedWords.Count, Is.EqualTo(57));
+        Assert.That(ReservedWords.Count, Is.EqualTo(61));
     }
 
     [Test]
@@ -101,7 +103,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_MapsEachWordToADistinctTokenType()
     {
-        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(57));
+        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(61));
     }
 
     [Test]
@@ -208,8 +210,61 @@ public sealed class ReservedWordTests : LexerTestBase
         File.ReadAllText(SummaryPath),
         Does.Contain($"### 1.1 The {ReservedWords.Count} reserved words"));
 
+    /// <summary>
+    /// <para>The specification prints the same list, and it is the one nothing was checking —
+    /// which is how it came to be missing <c>delegate</c> for as long as that word existed.
+    /// </para>
+    /// <para>Two hand-written copies of one table drift independently, so both are held to it.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void TheSpecificationListsEveryReservedWord()
+    {
+        string[] listed = WordsInTheFenceAfter(
+            SpecificationPath, "These are every reserved word");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                listed.Except(ReservedWords.Keywords.Keys),
+                Is.Empty,
+                "the specification lists words the language does not reserve");
+
+            Assert.That(
+                ReservedWords.Keywords.Keys.Except(listed),
+                Is.Empty,
+                "the language reserves words the specification does not list");
+        });
+    }
+
     private static string SummaryPath =>
         Path.Combine(RepositoryRootForTests, "docs", "language-summary.md");
+
+    private static string SpecificationPath =>
+        Path.Combine(RepositoryRootForTests, "docs", "language-spec.md");
+
+    /// <summary>
+    /// The words in the fenced block that ends just before a given sentence. The specification
+    /// names its list by what follows rather than by a heading, so that is what locates it.
+    /// </summary>
+    private static string[] WordsInTheFenceAfter(string path, string sentence)
+    {
+        string[] lines = File.ReadAllLines(path);
+
+        int after = Array.FindIndex(
+            lines, l => l.StartsWith(sentence, StringComparison.Ordinal));
+
+        Assert.That(after, Is.GreaterThanOrEqualTo(0), $"{path} has no reserved-word list");
+
+        int close = Array.FindLastIndex(
+            lines, after, l => l.StartsWith("```", StringComparison.Ordinal));
+
+        int open = Array.FindLastIndex(
+            lines, close - 1, l => l.StartsWith("```", StringComparison.Ordinal));
+
+        return [.. lines[(open + 1)..close]
+            .SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))];
+    }
 
     /// <summary>The words in the summary's fenced block, whatever shape the grid is in.</summary>
     private static string[] WordsInTheSummary()

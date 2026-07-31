@@ -93,8 +93,11 @@
 
     "number": {
       "patterns": [
-        { "name": "constant.numeric.real.profi-c", "match": "\\b[0-9]+\\.[0-9]+\\b" },
-        { "name": "constant.numeric.integer.profi-c", "match": "\\b[0-9]+\\b" }
+        { "comment": "A base is offered first, or the leading 0 colours as an integer and the rest as a name.", "name": "constant.numeric.integer.profi-c", "match": "\\b0[xX][0-9a-fA-F_]+\\b" },
+        { "comment": "Binary, for the same reason.", "name": "constant.numeric.integer.profi-c", "match": "\\b0[bB][01_]+\\b" },
+        { "comment": "A real, with or without a point, so long as it carries an exponent.", "name": "constant.numeric.real.profi-c", "match": "\\b[0-9][0-9_]*(\\.[0-9][0-9_]*)?[eE][+-]?[0-9][0-9_]*\\b" },
+        { "name": "constant.numeric.real.profi-c", "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*\\b" },
+        { "name": "constant.numeric.integer.profi-c", "match": "\\b[0-9][0-9_]*\\b" }
       ]
     },
 
@@ -239,9 +242,9 @@
           "match": "\\b(namespace|using|import|new|as|is|base|this)\\b"
         },
         {
-          "comment": "Spelled out rather than punctuated, which is the point of them.",
+          "comment": "Spelled out rather than punctuated, which is the point of them. The ones that work on bits are here too: 'bitwise' qualifies the 'and' or 'or' after it, and the rest stand alone.",
           "name": "keyword.operator.word.profi-c",
-          "match": "\\b(and|or|not)\\b"
+          "match": "\\b(and|or|not|bitwise|xor|leftshift|rightshift)\\b"
         }
       ]
     },

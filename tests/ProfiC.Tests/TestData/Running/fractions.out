@@ -15,6 +15,12 @@ as real:      0.30000000000000004
 1 + 1|2 + ... + 1|8 = 761|280
 and as a real:        2.717857142857143
 
+== turning one over ==
+2|3 turned over is 3|2
+and 5 is           1|5
+twice gives it back: true
+a real does not:     false
+
 == raising to a power stays exact ==
 (1|2) ^ 3  is 1|8
 (2|3) ^ 2  is 4|9

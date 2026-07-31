@@ -132,6 +132,26 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
         return checked(left - (right * new Fraction(whole, 1)));
     }
 
+    /// <summary>
+    /// <para>This fraction turned upside down: two thirds becomes three halves.</para>
+    /// <para>Exact, and its own undo — turning one over twice gives back what it was, which is
+    /// not true of doing the same to a real. The sign stays on the numerator, since a
+    /// normalized fraction keeps its denominator positive.</para>
+    /// </summary>
+    /// <exception cref="DivideByZeroException">This fraction is zero.</exception>
+    public Fraction Reciprocal()
+    {
+        if (Numerator == 0)
+        {
+            throw new DivideByZeroException(
+                "Zero has no reciprocal: nothing multiplied by zero gives one.");
+        }
+
+        return Numerator < 0
+            ? new Fraction(checked(-Denominator), checked(-Numerator))
+            : new Fraction(Denominator, Numerator);
+    }
+
     public static Fraction operator -(Fraction value) =>
         new(checked(-value.Numerator), value.Denominator, alreadyNormalized: true);
 

@@ -9,17 +9,39 @@ global model Literals
     constant integer Padded = 007;
     constant integer Large = 2147483647;
 
+    # ---- The same whole numbers in another base -------------------------------
+
+    constant integer Hexadecimal = 0xFF;
+    constant integer HexadecimalUpper = 0XdeadBEEF;
+    constant integer Binary = 0b1010;
+    constant integer BinaryUpper = 0B1111;
+
+    # ---- Underscores, which group digits and mean nothing to the value --------
+
+    constant integer Million = 1_000_000;
+    constant integer GroupedHex = 0xFF_FF;
+    constant integer GroupedBinary = 0b1111_1111;
+
     # ---- Reals, which need digits on both sides of the point --------------------
 
     constant real Half = 0.5;
     constant real Pi = 3.14159;
     constant real Whole = 1.0;
+    constant real Grouped = 3.141_592;
+
+    # ---- Reals with an exponent, which needs no point before it ---------------
+
+    constant real Scaled = 1.5e3;
+    constant real Tiny = 2.5e-3;
+    constant real Signed = 4.0E+2;
+    constant real NoPoint = 1e3;
 
     # ---- Fractions, which are exact rationals ---------------------------------
 
     constant fraction Third = 1|3;
     constant fraction Sixth = 1|6;
     constant fraction Approximation = 22|7;
+    constant fraction GroupedRatio = 1_500|1_000;
 
     # ---- Characters, including every escape ----------------------------------
 

@@ -39,6 +39,10 @@ CompilationUnit
     FunctionDecl 'Main'
       ExpressionStmt
         CallExpr
+          MemberExpr 'HowANumberIsWritten'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
           MemberExpr 'Widening'
             IdentifierExpr 'Program'
       ExpressionStmt
@@ -57,6 +61,106 @@ CompilationUnit
         CallExpr
           MemberExpr 'Enumerations'
             IdentifierExpr 'Program'
+    FunctionDecl 'HowANumberIsWritten'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== one number, several spellings ==" [String]
+      VarDeclStmt 'plain'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 255 [Integer]
+      VarDeclStmt 'hexadecimal'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0xFF [Integer]
+      VarDeclStmt 'binary'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0b1111_1111 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  all the same: " [String]
+            ParenthesizedExpr
+              BinaryExpr 'and'
+                BinaryExpr '=='
+                  IdentifierExpr 'plain'
+                  IdentifierExpr 'hexadecimal'
+                BinaryExpr '=='
+                  IdentifierExpr 'hexadecimal'
+                  IdentifierExpr 'binary'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  as hex:       " [String]
+            CallExpr
+              MemberExpr 'Format'
+                IdentifierExpr 'plain'
+              LiteralExpr "X" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  as binary:    " [String]
+            CallExpr
+              MemberExpr 'Format'
+                IdentifierExpr 'plain'
+              LiteralExpr "B" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  and back:     " [String]
+                LiteralExpr 0xFF [Integer]
+              LiteralExpr ", " [String]
+            LiteralExpr 0b11111111 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a million:    " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                LiteralExpr 1_000_000 [Integer]
+                LiteralExpr 1000000 [Integer]
+      VarDeclStmt 'scaled'
+        NamedTypeSyntax 'real'
+        LiteralExpr 1.5e3 [Real]
+      VarDeclStmt 'small'
+        NamedTypeSyntax 'real'
+        LiteralExpr 2.5e-3 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1.5e3:        " [String]
+            IdentifierExpr 'scaled'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  2.5e-3:       " [String]
+            IdentifierExpr 'small'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1e3 is real:  " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                LiteralExpr 1e3 [Real]
+                LiteralExpr 1000.0 [Real]
     FunctionDecl 'Widening'
       VarDeclStmt 'r'
         NamedTypeSyntax 'real'

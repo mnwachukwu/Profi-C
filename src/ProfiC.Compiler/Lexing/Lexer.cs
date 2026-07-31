@@ -393,37 +393,198 @@ public sealed class Lexer
     {
         int start = _index;
 
-        while (!IsAtEnd() && char.IsDigit(Current()))
+        // A base other than ten, which only a whole number may be written in.
+        if (Current() == '0' && Peek() is 'x' or 'X' or 'b' or 'B')
         {
-            _index++;
+            return ScanNumberInBase(start);
         }
+
+        ScanDigits(char.IsDigit);
 
         if (Current() == '.' && char.IsDigit(Peek()))
         {
             _index++;
+            ScanDigits(char.IsDigit);
 
-            while (!IsAtEnd() && char.IsDigit(Current()))
-            {
-                _index++;
-            }
-
-            return MakeToken(TokenType.RealLiteral, start);
+            ScanExponent();
+            return FinishNumber(TokenType.RealLiteral, start);
         }
 
         if (Current() == '|' && char.IsDigit(Peek()))
         {
             _index++;
+            ScanDigits(char.IsDigit);
 
-            while (!IsAtEnd() && char.IsDigit(Current()))
+            return FinishNumber(TokenType.FractionLiteral, start);
+        }
+
+        // An exponent makes a whole number a real, since what it names is a scale rather than a
+        // count: 1e3 is 1000.0. Writing 1000 is how the integer is asked for.
+        return ScanExponent()
+            ? FinishNumber(TokenType.RealLiteral, start)
+            : FinishNumber(TokenType.IntegerLiteral, start);
+    }
+
+    /// <summary>
+    /// <para>Closes a number, reporting a name written against it.</para>
+    /// <para>A digit run touching a letter is never two things: nothing in the language puts
+    /// two values side by side, so <c>1each</c> and <c>40var</c> are one mistake however they
+    /// were meant. The word is taken into the number's lexeme rather than left to scan on its
+    /// own, which is what turns three complaints about a statement that could not start into
+    /// the one about what was actually written.</para>
+    /// </summary>
+    private Token FinishNumber(TokenType type, int start)
+    {
+        if (IsAtEnd() || !IsIdentifierStart(Current()))
+        {
+            return MakeToken(type, start);
+        }
+
+        int name = _index;
+
+        while (!IsAtEnd() && IsIdentifierPart(Current()))
+        {
+            _index++;
+        }
+
+        _diagnostics.Report(
+            DiagnosticDescriptors.NameAgainstNumber,
+            SpanFrom(start),
+            _text[name.._index]);
+
+        return MakeToken(type, start);
+    }
+
+    /// <summary>
+    /// <para>Consumes a run of digits, in which an underscore may separate one from the next.
+    /// </para>
+    /// <para>A separator has to sit between digits: it groups them and there is nothing to
+    /// group at either end. One that does not is reported and consumed, since <c>1_</c> would
+    /// otherwise read as a number beside the name <c>_</c>, and no reader means that.</para>
+    /// </summary>
+    private void ScanDigits(Func<char, bool> isDigit)
+    {
+        while (!IsAtEnd() && isDigit(Current()))
+        {
+            _index++;
+
+            if (Current() != '_')
+            {
+                continue;
+            }
+
+            int separator = _index;
+
+            while (Current() == '_')
             {
                 _index++;
             }
 
-            return MakeToken(TokenType.FractionLiteral, start);
+            if (!isDigit(Current()))
+            {
+                _diagnostics.Report(
+                    DiagnosticDescriptors.SeparatorNeedsDigits, SpanFrom(separator));
+
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// <para>Reads an exponent if one is there — <c>e</c>, an optional sign, then digits — and
+    /// answers whether it did, since that is what turns a whole number into a real.</para>
+    /// <para>Nothing is consumed unless digits follow, so a name that begins with <c>e</c> is
+    /// still a name and <c>1 e</c> is still two things. Where an <c>e</c> is written and the
+    /// digits are missing there is no reading in which it was meant as a name, so that is
+    /// reported and consumed rather than left to arrive as an undefined one.</para>
+    /// </summary>
+    private bool ScanExponent()
+    {
+        if (Current() is not ('e' or 'E'))
+        {
+            return false;
+        }
+
+        int after = _index + 1;
+
+        if (after < _text.Length && (_text[after] == '+' || _text[after] == '-'))
+        {
+            after++;
+        }
+
+        if (after < _text.Length && char.IsDigit(_text[after]))
+        {
+            _index = after;
+            ScanDigits(char.IsDigit);
+
+            return true;
+        }
+
+        // An 'e' followed by a letter is the start of a name, not a broken exponent: "1else"
+        // is nothing anyone writes, but "e" as a name is, and a number cannot touch one.
+        if (after < _text.Length && IsIdentifierPart(_text[after]))
+        {
+            return false;
+        }
+
+        _diagnostics.Report(DiagnosticDescriptors.ExponentNeedsDigits, SpanFrom(_index));
+        _index = after;
+
+        return true;
+    }
+
+    /// <summary>
+    /// <para>Reads a whole number written in hexadecimal or binary, the prefix already in
+    /// sight.</para>
+    /// <para>Every letter and digit after the prefix is taken before any is judged, so
+    /// <c>0b12</c> and <c>0xG</c> are each one mistake with one message rather than a number
+    /// that stops early and a name that starts in the middle of it.</para>
+    /// </summary>
+    private Token ScanNumberInBase(int start)
+    {
+        bool hexadecimal = Peek() is 'x' or 'X';
+        _index += 2;
+
+        int digits = _index;
+
+        while (!IsAtEnd() && (char.IsLetterOrDigit(Current()) || Current() == '_'))
+        {
+            _index++;
+        }
+
+        string raw = _text[digits.._index];
+        string written = raw.Replace("_", string.Empty, StringComparison.Ordinal);
+
+        // The same rule the other bases follow: a separator sits between digits, so one at
+        // either end has nothing to group.
+        if (raw.StartsWith('_') || raw.EndsWith('_'))
+        {
+            _diagnostics.Report(DiagnosticDescriptors.SeparatorNeedsDigits, SpanFrom(start));
+        }
+        else if (written.Length == 0)
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.BaseNeedsDigits,
+                SpanFrom(start),
+                hexadecimal ? "0x" : "0b",
+                hexadecimal ? "hexadecimal" : "binary");
+        }
+        else if (written.FirstOrDefault(c => !IsDigitInBase(c, hexadecimal)) is var stray
+                 && stray != '\0')
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.DigitOutsideBase,
+                SpanFrom(start),
+                stray,
+                hexadecimal ? "hexadecimal" : "binary",
+                hexadecimal ? "0 to 9 and a to f" : "0 and 1");
         }
 
         return MakeToken(TokenType.IntegerLiteral, start);
     }
+
+    private static bool IsDigitInBase(char c, bool hexadecimal) =>
+        hexadecimal ? char.IsAsciiHexDigit(c) : c is '0' or '1';
 
     // ---- Literals with escapes ----------------------------------------------------------
 

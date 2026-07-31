@@ -1,3 +1,12 @@
+== one number, several spellings ==
+  all the same: true
+  as hex:       FF
+  as binary:    11111111
+  and back:     255, 255
+  a million:    true
+  1.5e3:        1500
+  2.5e-3:       0.0025
+  1e3 is real:  true
 7 as a real is 7, as a fraction 7|1
 a third as a real is 0.3333333333333333
 a tenth as a fraction is 3602879701896397|36028797018963968

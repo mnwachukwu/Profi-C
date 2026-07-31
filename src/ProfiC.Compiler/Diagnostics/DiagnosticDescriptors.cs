@@ -111,6 +111,62 @@ public static class DiagnosticDescriptors
         "Unterminated block string; expected '{0}'.");
 
     /// <summary>
+    /// A base written with nothing after it. There is no number here to read, and the prefix
+    /// alone is not one.
+    /// </summary>
+    public static readonly DiagnosticDescriptor BaseNeedsDigits = Error(
+        "PC0017",
+        "This base has no digits",
+        "'{0}' says the number that follows is {1}, and none follows.");
+
+    /// <summary>
+    /// <para>A digit that does not exist in the base it was written in — <c>0b12</c>, or
+    /// <c>0xG</c>.</para>
+    /// <para>Everything after the prefix is taken before any of it is judged, so this is one
+    /// message about one number rather than a number that stopped early and a name that began
+    /// where it stopped.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor DigitOutsideBase = Error(
+        "PC0018",
+        "This digit is not in the base",
+        "'{0}' is not a {1} digit, which is {2}.");
+
+    /// <summary>
+    /// <para>An <c>e</c> that opens an exponent with no digits behind it.</para>
+    /// <para>Only reported where a name could not have been meant: an <c>e</c> followed by a
+    /// letter is a name and is left alone, so this fires on <c>1e</c> and <c>1e+</c> where
+    /// nothing else was being written.</para>
+    /// </summary>
+    /// <summary>
+    /// An underscore in a number with no digit after it. A separator groups digits, so one at
+    /// the end has nothing to group — and left alone it would read as the name <c>_</c> sitting
+    /// against a number, which nothing means.
+    /// </summary>
+    /// <summary>
+    /// <para>A name written against a number, with nothing between them.</para>
+    /// <para>Nothing in the language puts two values side by side, so this is never a number
+    /// and then a name — it is one thing that was written wrong. A name may not begin with a
+    /// digit, which is the rule this enforces from the number's side.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NameAgainstNumber = Error(
+        "PC0021",
+        "A name cannot begin with a digit",
+        "'{0}' is written against the number before it. A name begins with a letter or an "
+        + "underscore, and nothing in the language puts two values side by side.");
+
+    public static readonly DiagnosticDescriptor SeparatorNeedsDigits = Error(
+        "PC0020",
+        "This separator has no digits after it",
+        "An '_' in a number separates digits, so more have to follow it — '1_000' is a "
+        + "thousand.");
+
+    public static readonly DiagnosticDescriptor ExponentNeedsDigits = Error(
+        "PC0019",
+        "This exponent has no digits",
+        "An 'e' says how many places to move the point, so it needs digits after it — '1e3' "
+        + "is 1000.0.");
+
+    /// <summary>
     /// <para>More quotes in a row than opened the block string.</para>
     /// <para>The last of them close it and the rest are held, which is almost always what was
     /// meant — <c>"""He said "hi""""</c> is <c>He said "hi"</c>. A warning rather than an error
@@ -251,6 +307,20 @@ public static class DiagnosticDescriptors
         "A function's type is written with 'delegate'",
         "'function' declares a function or makes one on the spot. To write the type of one, "
         + "use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.");
+
+    /// <summary>
+    /// <para>A word after <c>bitwise</c> that is not <c>and</c> or <c>or</c>.</para>
+    /// <para>Those two are the only ones that need qualifying, because they already mean
+    /// something on their own. Everything else the language does to bits — <c>xor</c>,
+    /// <c>leftshift</c>, <c>rightshift</c> — is a word nothing else claims, so it stands
+    /// alone.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BitwiseNeedsAndOrOr = Error(
+        "PC0118",
+        "Only 'and' or 'or' may follow 'bitwise'",
+        "'bitwise' says which of two operations follows, and {0} is neither. Write 'bitwise "
+        + "and' or 'bitwise or' — 'xor', 'leftshift' and 'rightshift' need no word before "
+        + "them.");
 
     /// <summary>
     /// The diagnostic qualified <c>end</c> exists to produce. Naming both the closer written
@@ -688,6 +758,30 @@ public static class DiagnosticDescriptors
         "PC0236",
         "This 'entry' decides nothing",
         "Only '{0}' declares a Program, so it begins whether or not this line is here.");
+
+    /// <summary>
+    /// <para>A bitwise operation asked of two booleans.</para>
+    /// <para>The mistake a C# reader makes, since <c>^</c> there is exclusive or on booleans as
+    /// well as on the bits of an integer. Here it is only the second, because <c>!=</c> already
+    /// asks the first and the language keeps one spelling for one idea.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BitsOnBooleans = Error(
+        "PC0342",
+        "This works on bits, not on booleans",
+        "'{0}' works on the bits of a whole number. For two booleans, '!=' asks whether "
+        + "exactly one of them holds.");
+
+    /// <summary>
+    /// <para>A shift by more places than an integer has, or by a negative number of them.</para>
+    /// <para>C# folds the amount into range, so a shift of 64 there quietly means a shift of
+    /// none. Nothing in the line suggests that, so it is refused instead — and the direction is
+    /// already in the word, which is what leaves a negative amount with nothing to mean.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ShiftOutsideTheWidth = Error(
+        "PC0343",
+        "This shift is outside the width of an integer",
+        "An integer holds 64 bits, so a shift of {0} places moves past all of them. An amount "
+        + "from 0 to 63 is what there is to move.");
 
     /// <summary>
     /// <para>A local, parameter, or loop binding reusing a name already visible from a scope

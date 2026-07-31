@@ -93,19 +93,44 @@ public static class LiteralDecoder
         return string.Join("\n", lines).ReplaceLineEndings("\n");
     }
 
-    private static object? DecodeInteger(string text) =>
-        long.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out long value)
+    /// <summary>
+    /// Reads a whole number, in ten or in the base its prefix names. The prefix is dropped
+    /// rather than parsed, since what it says is which digits follow rather than any of them.
+    /// </summary>
+    private static object? DecodeInteger(string written)
+    {
+        // Separators group digits for a reader and mean nothing to the value.
+        string text = written.Replace("_", string.Empty, StringComparison.Ordinal);
+
+        NumberStyles style = text.Length > 2 && text[0] == '0'
+            ? text[1] switch
+            {
+                'x' or 'X' => NumberStyles.AllowHexSpecifier,
+                'b' or 'B' => NumberStyles.AllowBinarySpecifier,
+                _ => NumberStyles.None,
+            }
+            : NumberStyles.None;
+
+        string digits = style == NumberStyles.None ? text : text[2..];
+
+        return long.TryParse(digits, style, CultureInfo.InvariantCulture, out long value)
             ? value
             : null;
+    }
 
-    private static object? DecodeReal(string text) =>
-        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+    private static object? DecodeReal(string written) =>
+        double.TryParse(
+            written.Replace("_", string.Empty, StringComparison.Ordinal),
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out double value)
             ? value
             : null;
 
     /// <summary>Decodes <c>numerator|denominator</c>, reducing it on the way.</summary>
-    private static object? DecodeFraction(string text)
+    private static object? DecodeFraction(string written)
     {
+        string text = written.Replace("_", string.Empty, StringComparison.Ordinal);
         int bar = text.IndexOf('|', StringComparison.Ordinal);
 
         if (bar < 0)

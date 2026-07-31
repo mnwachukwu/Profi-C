@@ -708,6 +708,8 @@ public sealed partial class Interpreter
                 OnTheClock().ToString(Text(0), CultureInfo.InvariantCulture)),
 
             BuiltInId.FractionToReal => new StrongBox<object?>(((Fraction)target!).ToReal()),
+            BuiltInId.FractionReciprocal =>
+                new StrongBox<object?>(((Fraction)target!).Reciprocal()),
             BuiltInId.RealToFraction => new StrongBox<object?>(
                 Fraction.FromReal(target is double d ? d : 0)),
             BuiltInId.EnumerationToInteger => new StrongBox<object?>(

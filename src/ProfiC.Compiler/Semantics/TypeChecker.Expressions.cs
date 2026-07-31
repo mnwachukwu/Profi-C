@@ -290,6 +290,12 @@ public sealed partial class TypeChecker
             return ErrorType.Instance;
         }
 
+        if (binary.Operator is BinaryOperator.BitwiseAnd or BinaryOperator.BitwiseOr
+                or BinaryOperator.Xor or BinaryOperator.LeftShift or BinaryOperator.RightShift)
+        {
+            return CheckBitwise(binary, left, right);
+        }
+
         if (!IsNumeric(left) || !IsNumeric(right))
         {
             Report(
@@ -330,6 +336,52 @@ public sealed partial class TypeChecker
 
         WidenOperands(binary, left, right, result);
         return result;
+    }
+
+    /// <summary>
+    /// <para>The operations that work on the bits of a whole number.</para>
+    /// <para>Integers on both sides and nothing else. A real or a fraction has no bits to
+    /// speak of — what it holds is a value, and how that value is stored is the runtime's
+    /// business rather than the program's.</para>
+    /// <para>Two booleans are told something more useful than that: <c>a != b</c> already
+    /// asks whether exactly one of them holds, and reaching for <c>xor</c> instead is what a
+    /// C# reader does, since <c>^</c> there covers both.</para>
+    /// </summary>
+    private TypeSymbol CheckBitwise(BinaryExpr binary, TypeSymbol left, TypeSymbol right)
+    {
+        bool shift = binary.Operator is BinaryOperator.LeftShift or BinaryOperator.RightShift;
+
+        if (!ReferenceEquals(left, PrimitiveType.Integer)
+            || !ReferenceEquals(right, PrimitiveType.Integer))
+        {
+            if (!shift
+                && ReferenceEquals(left, PrimitiveType.Boolean)
+                && ReferenceEquals(right, PrimitiveType.Boolean))
+            {
+                Report(DiagnosticDescriptors.BitsOnBooleans, binary, binary.Operator.Spelling());
+            }
+            else
+            {
+                Report(
+                    DiagnosticDescriptors.OperatorNotDefined,
+                    binary,
+                    binary.Operator.Spelling(),
+                    left.WithArticle(),
+                    right.WithArticle());
+            }
+
+            return ErrorType.Instance;
+        }
+
+        // An amount the program wrote down can be judged now, so it never has to be reached.
+        if (shift
+            && ConstantFolder.TryFold(binary.Right, _model) is long amount
+            && amount is < 0 or > 63)
+        {
+            Report(DiagnosticDescriptors.ShiftOutsideTheWidth, binary.Right, amount);
+        }
+
+        return PrimitiveType.Integer;
     }
 
     /// <summary>

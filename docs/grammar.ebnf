@@ -219,6 +219,27 @@ BlockStringLiteral = QuoteRun { AnyCharacter } QuoteRun ;
 
 QuoteRun           = '"' '"' '"' { '"' } ;
 
+(* An underscore may separate digits anywhere they run, and means nothing to the
+   value. It groups them, so it has to sit between two. *)
+DigitRun           = Digit { [ "_" ] Digit } ;
+HexRun             = HexDigit { [ "_" ] HexDigit } ;
+BinaryRun          = BinaryDigit { [ "_" ] BinaryDigit } ;
+
+(* A prefix writes a whole number in another base. There is none for a real: a base
+   says how digits are written, and a point is not one of them. *)
+IntegerLiteral     = DigitRun
+                   | ( "0x" | "0X" ) HexRun
+                   | ( "0b" | "0B" ) BinaryRun ;
+
+(* An exponent names a scale rather than a count, so a literal carrying one is a real
+   whether or not a point was written: 1e3 is 1000.0. *)
+RealLiteral        = DigitRun "." DigitRun [ Exponent ]
+                   | DigitRun Exponent ;
+
+Exponent           = ( "e" | "E" ) [ "+" | "-" ] DigitRun ;
+
+FractionLiteral    = DigitRun "|" DigitRun ;
+
 Lambda         = "function" "(" [ LambdaParams ] ")" Body "end" "function"
                | "(" [ LambdaParams ] ")" "yield" Expr ;
 
@@ -251,18 +272,32 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
      -----  -----------------------------  ---------  -------------
        1    or                             infix      left
        2    and                            infix      left
-       3    not                            prefix     right
-       4    ==  !=                         infix      left
-       5    <  >  <=  >=  is  as           infix      left
-       6    +  -                           infix      left
-       7    *  /  %                        infix      left
-       8    -                              prefix     right
-       9    ^                              infix      RIGHT
-      10    (  call   [  index   .  member postfix     left
+       3    bitwise or                     infix      left
+       4    xor                            infix      left
+       5    bitwise and                    infix      left
+       6    not                            prefix     right
+       7    ==  !=                         infix      left
+       8    <  >  <=  >=  is  as           infix      left
+       9    leftshift  rightshift          infix      left
+      10    +  -                           infix      left
+      11    *  /  %                        infix      left
+      12    -                              prefix     right
+      13    ^                              infix      RIGHT
+      14    (  call   [  index   .  member postfix     left
 
    "not" sits looser than comparison, as in Python, so "not a == b" groups
    as "not (a == b)". The C-style alternative would group "(not a) == b",
    which is almost always a mistake.
+
+   The three that work on bits keep C#'s order among themselves, so a reader
+   who learned it once carries it across: "a bitwise or b bitwise and c" is
+   "a bitwise or (b bitwise and c)". A shift binds tighter than a comparison
+   and looser than arithmetic, so "x leftshift 1 + 1" shifts by two.
+
+   "bitwise" is the only operator written as two words, and its level depends
+   on which word follows, so the parser asks Operators.BitwisePower rather
+   than the table. "xor", "leftshift" and "rightshift" need no qualifier
+   because nothing else claims those words.
 
    "^" raises to a power. It is the only right-associative infix operator, so
    "2 ^ 3 ^ 2" is 2 ^ (3 ^ 2) rather than (2 ^ 3) ^ 2, matching how the

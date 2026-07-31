@@ -290,6 +290,7 @@ public enum BuiltInId
     OptionalValue,
 
     FractionToReal,
+    FractionReciprocal,
     RealToFraction,
     EnumerationToInteger,
     ExceptionMessage,
@@ -1006,6 +1007,10 @@ public static class BuiltIns
     public static IReadOnlyList<BuiltInMember> OnFraction() =>
     [
         Member(BuiltInId.FractionToReal, "ToReal", PrimitiveType.Real),
+
+        // Exact, where a real's reciprocal is only nearly one: a third turned over is three,
+        // and 1.0 / (1.0 / 3.0) is not quite one.
+        Member(BuiltInId.FractionReciprocal, "Reciprocal", PrimitiveType.Fraction),
         Member(BuiltInId.FractionFormat, "Format", PrimitiveType.String, PrimitiveType.String),
         .. OnEveryType(),
     ];

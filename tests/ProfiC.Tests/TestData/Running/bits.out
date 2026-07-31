@@ -1,0 +1,17 @@
+== putting flags together and asking about them ==
+  granted:      11
+  may read:     true
+  may delete:   false
+  added twice:  true
+== and, or, xor ==
+  1100 and 1010: 1000
+  1100 or  1010: 1110
+  1100 xor 1010: 110
+  xor undoes it: true
+  levels:        1101
+== moving the bits along ==
+  1 left 4:     10000
+  and as a number: 16
+  64 right 3:   1000
+  doubling:     true
+  precedence:   true

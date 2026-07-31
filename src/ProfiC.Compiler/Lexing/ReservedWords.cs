@@ -18,6 +18,7 @@ public static class ReservedWords
             ["as"] = TokenType.As,
             ["base"] = TokenType.Base,
             ["begin"] = TokenType.Begin,
+            ["bitwise"] = TokenType.Bitwise,
             ["boolean"] = TokenType.Boolean,
             ["break"] = TokenType.Break,
             ["case"] = TokenType.Case,
@@ -44,6 +45,7 @@ public static class ReservedWords
             ["integer"] = TokenType.Integer,
             ["internal"] = TokenType.Internal,
             ["is"] = TokenType.Is,
+            ["leftshift"] = TokenType.LeftShift,
             ["let"] = TokenType.Let,
             ["model"] = TokenType.Model,
             ["namespace"] = TokenType.Namespace,
@@ -54,6 +56,7 @@ public static class ReservedWords
             ["protected"] = TokenType.Protected,
             ["public"] = TokenType.Public,
             ["real"] = TokenType.Real,
+            ["rightshift"] = TokenType.RightShift,
             ["sealed"] = TokenType.Sealed,
             ["step"] = TokenType.Step,
             ["string"] = TokenType.String,
@@ -69,6 +72,7 @@ public static class ReservedWords
             ["using"] = TokenType.Using,
             ["virtual"] = TokenType.Virtual,
             ["while"] = TokenType.While,
+            ["xor"] = TokenType.Xor,
             ["yield"] = TokenType.Yield,
         }.ToFrozenDictionary(StringComparer.Ordinal);
 

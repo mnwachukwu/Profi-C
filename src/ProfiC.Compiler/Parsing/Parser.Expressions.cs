@@ -57,20 +57,80 @@ public sealed partial class Parser
                 continue;
             }
 
-            if (Operators.InfixBindingPower(Kind) is not { } power
-                || power.Left < minimumBindingPower)
+            if (Operators.InfixBindingPower(Kind) is not { } power)
             {
                 break;
             }
 
-            BinaryOperator op = Operators.InfixFrom(Kind)!.Value;
-            Advance();
+            // Which level "bitwise" is on depends on the word after it, which the table cannot
+            // see. Settled before the level is compared, or "bitwise and" would be turned away
+            // at the loosest of the three and never reach its own.
+            if (Check(TokenType.Bitwise))
+            {
+                power = Operators.BitwisePower(Peek().Type);
+            }
+
+            if (power.Left < minimumBindingPower)
+            {
+                break;
+            }
+
+            BinaryOperator op;
+
+            // "bitwise" says which of two words follows, so the operator is two tokens. It is
+            // the only one, and only because "and" and "or" already mean something on their
+            // own; every other bitwise word stands alone.
+            if (Check(TokenType.Bitwise))
+            {
+                Advance();
+                op = ReadWhichBitwiseOperation();
+            }
+            else
+            {
+                op = Operators.InfixFrom(Kind)!.Value;
+                Advance();
+            }
 
             Expression right = ParseExpression(power.Right);
+
             left = new BinaryExpr(Span(left.Span.Start.Offset, right), left, op, right);
         }
 
         return left;
+    }
+
+    /// <summary>
+    /// <para>Reads the word after <c>bitwise</c>, which says which operation was meant.</para>
+    /// <para>Only <c>and</c> and <c>or</c> may follow it, and only because those two already
+    /// mean something on their own — <c>xor</c> claims nothing else, so it needs no qualifier.
+    /// Anything else here is named rather than left to scan as a word out of place.</para>
+    /// </summary>
+    private BinaryOperator ReadWhichBitwiseOperation()
+    {
+        if (Match(TokenType.And))
+        {
+            return BinaryOperator.BitwiseAnd;
+        }
+
+        if (Match(TokenType.Or))
+        {
+            return BinaryOperator.BitwiseOr;
+        }
+
+        _diagnostics.Report(
+            DiagnosticDescriptors.BitwiseNeedsAndOrOr, Current.Span, Describe(Current));
+
+        // The wrong word is taken with the message rather than left to be read as the start of
+        // the right-hand side, where "1 bitwise not 2" would draw a second complaint about
+        // "not" and an integer. A word is what was written in place of one.
+        if (Kind.IsKeyword() || Check(TokenType.Identifier))
+        {
+            Advance();
+        }
+
+        // Carrying on as one of the two keeps the rest of the expression readable; which one
+        // it is cannot matter, since the program is already refused.
+        return BinaryOperator.BitwiseAnd;
     }
 
     /// <summary>A prefix operator, or a primary expression.</summary>
