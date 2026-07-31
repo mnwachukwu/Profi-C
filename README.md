@@ -4,34 +4,75 @@
 
 A teaching language that compiles to CIL and runs on .NET.
 
-The name is a nod to Profisee, the company I work for, which is pronounced "prophecy" — so
-Profi-C reads the same way out loud. It is also a pun, because I put "C" in it. Har, har.
+The name is a nod to Profisee, the company I work for. It is pronounced "prophecy" — so
+"Profi-C" reads the same way out loud. It is also a pun, because I put a "C" in it. Har, har.
+
+This project grew out of a course assignment for my Software Engineering degree where we created
+a lexer which then fed a semantic parser. We stopped short of creating an interpreter or compiler
+however, so I took it upon myself to implement AST generation in the parser then implement an 
+interpreter to walk that tree.
+
+This language is heavily influenced by and implemented in C#.
 
 ## What it is for
 
 Profi-C exists to make programming concepts legible to a beginner while staying faithful to
 the patterns a C# developer uses daily, so that what a student learns **transfers** rather
-than has to be unlearned.
+than has to be unlearned. [What it keeps and what it changes](docs/language-summary.md#5-similar-to-c)
+is set out side by side.
 
 That goal is load-bearing. Where ergonomics and pedagogy conflict, pedagogy wins:
 compile-time errors are preferred to runtime crashes, and explicitness is preferred to
-convenience. A few consequences you can see immediately:
+convenience. Six consequences follow directly.
 
+Moving mistakes from run time to build time:
+
+- **There is no `null`.** An [optional](#optionals-instead-of-null) written with a trailing `?`
+  replaces it, and reading one the compiler cannot prove is present is a compile error rather
+  than a crash. A whole class of failure stops happening at run time because it stops compiling.
 - **Every block says what it closes.** `end if`, `end while`, `end model` — and the compiler
-  verifies the qualifier, so writing `end while` to close an `if` is an error that names both.
-- **There is no `null`.** Optionals written with a trailing `?` replace it, and reading one
-  the compiler cannot prove present is a compile error rather than a crash.
-- **Nothing is abbreviated.** `boolean`, not `bool`. `enumeration`, not `enum`. `function`,
-  not `func`. You should be able to read a keyword aloud and know what it means.
-- **`and`, `or`, `not`** instead of `&&`, `||`, `!`.
-- **Fractions are exact.** `22|7` is a rational literal, so `1|3 + 1|6` is exactly `1|2` —
-  no floating-point drift.
-- **Comments are marked, not named.** `#` runs to the end of a line; `##` opens a
-  block closed by the next `##`, which takes the rest of its line with it.
+  checks the qualifier, so [closing an `if` with `end while`](samples/negatives/compile/blocks.pc)
+  is an error naming both words, rather than a missing brace reported pages away from the
+  mistake.
 
-Profi-C is deliberately full-featured rather than minimal. It has single inheritance with
-virtual dispatch, structures with value semantics, exceptions, optionals, exact rational
-arithmetic, first-class functions with closures, and compile-time definite assignment.
+Preferring explicitness to convenience:
+
+- **`this.` is mandatory.** A bare name reaches only locals and parameters, so every line that
+  touches object state says so. The alternative saves five characters and costs the reader the
+  ability to tell a field from a local without looking elsewhere.
+- **A name means one thing.** [Nothing may reuse a name a surrounding scope is already
+  using](samples/negatives/compile/shadowing.pc), so reading a name is never a search for which
+  one is meant.
+
+Keeping a line readable on its own:
+
+- **Words instead of symbols, and no abbreviations.** `and`, `or`, `not` rather than `&&`,
+  `||`, `!`; `boolean`, `enumeration`, and `function` rather than `bool`, `enum`, and `func`. A
+  line should be readable aloud and mean what it sounds like.
+- **There is no three-clause `for`.** [`for i = 1 to 10` and `for each item in items`](#loops)
+  replace it. The C-style header carried the worst teaching problem in the language: an
+  increment written before the body and executed after it.
+
+None of this makes the language small. Profi-C has single inheritance with virtual dispatch,
+structures with value semantics, exceptions, optionals, exact rational arithmetic, first-class
+functions with closures, and compile-time definite assignment.
+
+## Documentation
+
+| Document | What it is |
+|---|---|
+| [docs/language-spec.md](docs/language-spec.md) | The normative specification, plus an appendix listing every diagnostic |
+| [docs/language-summary.md](docs/language-summary.md) | A condensed reference and a full **comparison to C#** |
+| [docs/grammar.ebnf](docs/grammar.ebnf) | The surface syntax as productions, and the precedence table |
+
+The specification is written as each part of the language is implemented and covered by tests,
+so it never describes more than the compiler actually does. Where it and the other two
+disagree, it is right.
+
+The rest of this file is the tour: what the language looks like in [a taste](#a-taste) and
+[more examples](#more-examples), how far along it is in [Status](#status), how to get it going
+in [Writing and running a program](#writing-and-running-a-program), and what is worth reading
+next in [Samples](#samples).
 
 ## A taste
 
@@ -61,10 +102,11 @@ global model Program
 end model
 ```
 
-Three things a C# reader should notice. **`yield` means return** — it has nothing to do with
-iterators. **`if ... then ... else` is an expression**, filling the role of the ternary, which
-Profi-C does not have because `a ? b : c` has no reading-aloud form. And conditions take no
-parentheses, because nothing needs them once bodies have no opener.
+Four things a C# reader should notice. **`##` opens a comment** and the next `##` closes it,
+taking the rest of its own line with it; a single `#` runs to the end of a line. **`yield` means
+return** — it has nothing to do with iterators. **`if ... then ... else` is an expression**,
+filling the role of the ternary, which Profi-C does not have because `a ? b : c` has no
+reading-aloud form. And conditions don't have to take any parentheses, because nothing needs them.
 
 ## More examples
 
@@ -97,8 +139,8 @@ defaults are the same rule: a declaration with no word belongs to the smallest t
 own it, and a member's owner is its type while a type's owner is its project. There's no
 `private` keyword, because private is what writing nothing gets you.
 
-`this.` is mandatory — a bare identifier reaches only locals and parameters, which keeps the
-distinction between a local and object state visible rather than hidden.
+Every field below is reached through `this.`, which is the rule rather than a house style: a
+bare identifier reaches only locals and parameters, so there is no other way to write it.
 
 ```
 model Shape
@@ -219,13 +261,12 @@ being asked for.
 **The front end is complete.** What comes next is closure conversion, then the standard
 library, then the emitter.
 
-```bash
-dotnet run --project src/ProfiC.Cli -- run samples/hello.pc
-```
-
 The interpreter is not a stopgap. It runs the same lowered tree the emitter will, so once both
 exist it stays on as the oracle: where the two disagree about what a program means, the
 compiler has the bug.
+
+[Writing and running a program](#writing-and-running-a-program) is everything needed to try it,
+and every file in [Samples](#samples) runs today.
 
 ## Writing and running a program
 
@@ -274,10 +315,9 @@ global model Program
 end model
 ```
 
-A source file contains model declarations and nothing else — there is no top-level code. The
-entry point is a function called `Main` inside a `global model` named `Program`, which is
-Profi-C's spelling of C#'s `static class`. Members of a `global model` are already global, so
-writing `global function Main()` is allowed but adds nothing.
+Every rule it follows is the one described under [Hello, World!](#hello-world) above: model
+declarations and nothing else, no top-level code, and `Main` inside a `global model` named
+`Program`.
 
 Save something worth watching as `hello.pc`, anywhere you like:
 
@@ -324,7 +364,7 @@ scratch.pc(10,27): error PC0303: '+' is not defined for an integer? and an integ
 
 Three mistakes, three messages, one run — and each caught by a different part of the compiler.
 
-### 5. More than one file
+### More than one file
 
 A program grows out of one file eventually. Put the next model in its own file beside the
 first, and it is already visible:
@@ -414,7 +454,7 @@ end project
 Only needed where there is a choice. Namespaces make `Tools.Program` and `App.Program` two
 different types, so a compilation may hold both — and then the compiler must be told rather
 than choose, because an assembly holds one entry point in its metadata and picking by the order
-the sources were listed would make a build's behaviour depend on the order of its own file
+the sources were listed would make a build's behavior depend on the order of its own file
 list. Written where only one program exists, the line decides nothing and says so. `pc run` on
 a single file needs none of it: it runs the `Program` that file declares.
 
@@ -472,38 +512,12 @@ dest=~/.vscode/extensions/profi-c-0.1.0
 rm -rf "$dest" && mkdir -p "$dest" && cp -R "$repo/editors/vscode/." "$dest"
 ```
 
-Reload the window afterwards and open a `.pc` file. You get colour, bracket matching, `Ctrl+/`
+Reload the window afterwards and open a `.pc` file. You get color, bracket matching, `Ctrl+/`
 for comments, and indentation that follows `end`. You do not get diagnostics, completion, or
 hover — those need a language server, which is later work.
 
 [editors/vscode/README.md](editors/vscode/README.md) covers Insiders, versioning the folder,
 and linking rather than copying if you mean to edit the grammar.
-
-## Documentation
-
-| Document | What it is |
-|---|---|
-| [docs/language-spec.md](docs/language-spec.md) | The normative specification, plus an appendix listing every diagnostic |
-| [docs/language-summary.md](docs/language-summary.md) | A condensed reference and a full **comparison to C#** |
-| [docs/grammar.ebnf](docs/grammar.ebnf) | The surface syntax as productions, and the precedence table |
-
-The specification is written as each part of the language is implemented and covered by
-tests, so it never describes more than the compiler actually does. Where it and the other two
-disagree, it is right.
-
-**The grammar file is a description, not an input.** Nothing reads it — no parser is generated
-from it, and no build step checks it. Profi-C is parsed by hand-written recursive descent, one
-method per production, with expressions handled by precedence climbing against the table in
-`src/ProfiC.Compiler/Ast/Operators.cs`. So the grammar can drift from the compiler without
-anything failing; what actually pins the syntax is the sample corpus, and above all
-[samples/reference/tour.pc](samples/reference/tour.pc), which holds nearly every construct
-exactly once. Every sample is checked against a recorded token stream and a recorded tree on
-every build, and the suite asserts that between them the samples reach every node the parser
-can build.
-
-"Nearly", because the tour opens with block namespaces and so holds no file-scoped one.
-[namespaces.pc](samples/namespaces.pc) writes that form, with blocks nested inside it — which
-is how the two combine.
 
 ## Building
 
@@ -565,13 +579,27 @@ Every one of these runs. Each is a complete program, and each is there to show o
 
 `samples/reference/` holds four files that are not programs and declare no entry point:
 [tour.pc](samples/reference/tour.pc), which contains nearly every construct in the grammar
-exactly once, and `literals.pc`, `operators.pc`, and `comments.pc`, which exercise the scanner.
+exactly once, and [literals.pc](samples/reference/literals.pc),
+[operators.pc](samples/reference/operators.pc), and
+[comments.pc](samples/reference/comments.pc), which exercise the scanner.
 
 They sit in their own folder because of the rule that naming a source file also compiles the
 files beside it that declare no `Program` — which is what makes a folder of shared code work
 without a project file. All four declare none, so putting them among the programs would attach
 four hundred lines of reference material to every one of them. Apart, they compile as a unit
 with each other and with nothing else.
+
+"Nearly every construct", because the tour opens with block namespaces and so holds no
+file-scoped one. [namespaces.pc](samples/namespaces.pc) writes that form, with blocks nested
+inside it — which is how the two combine.
+
+**That corpus, not [the grammar file](docs/grammar.ebnf), is what pins the syntax.** Nothing
+reads the grammar — no parser is generated from it, and no build step checks it. Profi-C is
+parsed by hand-written recursive descent, one method per production, with expressions handled
+by precedence climbing against the table in `src/ProfiC.Compiler/Ast/Operators.cs`, so the
+grammar can drift from the compiler without anything failing. The samples cannot: each is
+checked against a recorded token stream and a recorded tree on every build, and the suite
+asserts that between them they reach every node the parser can build.
 
 Two samples are more than one file, and each shows a different way of saying so:
 
@@ -601,6 +629,7 @@ Programs the compiler rejects:
 | [definite-assignment.pc](samples/negatives/compile/definite-assignment.pc) | Reading a variable before it has a value; a constant with none |
 | [types.pc](samples/negatives/compile/types.pc) | Types that do not mix, and a division by a literal zero |
 | [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
+| [shadowing.pc](samples/negatives/compile/shadowing.pc) | Names taken again while an enclosing scope is still using them — a block's local, a lambda's parameter, a loop binding, a caught exception |
 | [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |
 | [switching.pc](samples/negatives/compile/switching.pc) | A switch on a real, a label that is not constant, one value handled twice, and a member left unhandled |
 | [results.pc](samples/negatives/compile/results.pc) | A function that never reaches the result it promises, and a call that yields nothing used as a value |
@@ -625,6 +654,7 @@ Projects that will not build:
 | Sample | Mistake |
 |---|---|
 | [two-programs.pcp](samples/negatives/project/two-programs.pcp) | Two files that each declare `Program` |
+| [ambiguous-entry.pcp](samples/negatives/project/ambiguous-entry.pcp) | Two programs in different namespaces, and no `entry` saying which one begins |
 | [unknown-entry.pcp](samples/negatives/project/unknown-entry.pcp) | Words a project file does not have |
 | [missing-source.pcp](samples/negatives/project/missing-source.pcp) | A path that is not there, and one listed twice |
 | [circular.pcp](samples/negatives/project/circular.pcp) | Two projects referencing each other, so neither can be built first |
