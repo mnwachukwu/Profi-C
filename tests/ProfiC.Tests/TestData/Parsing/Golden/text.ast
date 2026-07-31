@@ -177,6 +177,28 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           LiteralExpr """  one line, no escapes: C:\Users\Matt""" [BlockString]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== quotes inside a block ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr """She said "no" twice""" [BlockString]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr """"a block is opened with """ or more"""" [BlockString]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr """
+            and the last word is "this"
+            """ [BlockString]
     FunctionDecl 'TakingStringsApart'
       ExpressionStmt
         CallExpr

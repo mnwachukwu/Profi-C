@@ -53,6 +53,20 @@ public sealed class UninhabitableTypeTests
         Is.EqualTo(new[] { "PC0233" }));
 
     /// <summary>
+    /// <para>The declaration is wrong in one way, so it is reported once. A type nothing can be
+    /// reads as the error type afterwards, which is what keeps the value's own diagnostic from
+    /// following it.</para>
+    /// <para>Without that, the mistake a capital letter away is told to write <c>fraction</c>
+    /// and then told a fraction does not fit a <c>Fraction</c> — the second of which is only
+    /// true because of the first.</para>
+    /// </summary>
+    [TestCase("        Fraction f = 1|2;", TestName = "an initializer")]
+    [TestCase("        Fraction f;\n        f = 1|2;", TestName = "an assignment")]
+    [TestCase("        Fraction f = 1|2;\n        Console.WriteLine(f);", TestName = "and a use")]
+    public void OneMistakeIsReportedOnce(string written) =>
+        Assert.That(Check(written), Is.EqualTo(new[] { "PC0233" }));
+
+    /// <summary>
     /// The mistake this mostly catches is a capital letter, so the message names the type that
     /// was almost certainly meant rather than only refusing the one written.
     /// </summary>

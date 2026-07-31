@@ -98,6 +98,26 @@ global model Program
 
         # On one line, it is simply what lies between the quotes.
         Console.WriteLine("""  one line, no escapes: C:\Users\Matt""");
+
+        Console.WriteLine("== quotes inside a block ==");
+
+        # One or two quotes are text, because three are what close it.
+        Console.WriteLine("""She said "no" twice""");
+
+        ##
+            To hold three, open and close with four. Any run shorter than the delimiter is
+            text, so the delimiter is picked to be one longer than the longest run inside.
+        ##
+        Console.WriteLine(""""a block is opened with """ or more"""");
+
+        ##
+            Text ending in a quote has no one-line form: that last quote would sit against
+            the closing run and lengthen it, whatever length the delimiter is. Closing on
+            its own line separates the two.
+        ##
+        Console.WriteLine("""
+            and the last word is "this"
+            """);
     end function
 
     # ---- Taking a string apart ------------------------------------------------------------

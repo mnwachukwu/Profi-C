@@ -108,7 +108,36 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor UnterminatedBlockString = Error(
         "PC0013",
         "Unterminated block string",
-        "Unterminated block string; expected '\"\"\"'.");
+        "Unterminated block string; expected '{0}'.");
+
+    /// <summary>
+    /// <para>More quotes in a row than opened the block string.</para>
+    /// <para>The last of them close it and the rest are held, which is almost always what was
+    /// meant — <c>"""He said "hi""""</c> is <c>He said "hi"</c>. A warning rather than an error
+    /// because the reading is settled and is the one a reader would predict; it is worth saying
+    /// because a run of quotes against the closer is the one place the rule is not obvious.
+    /// </para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BlockStringRunIsTooLong = Warning(
+        "PC0015",
+        "More quotes in a row than close the block",
+        "{0} quotes in a row, where {1} close the block string. The last {1} end it and the "
+        + "rest are held. Open and close it with '{2}' to hold all {0}.");
+
+    /// <summary>
+    /// <para>A run of quotes that all but closed a block string, in one that never closes.</para>
+    /// <para>A run shorter than the delimiter is text, which is the rule that lets a block hold
+    /// quotes. So a closer written a quote short does not fail where it stands: the block runs
+    /// on, swallowing the rest of the file, and the only complaint is "unterminated" at an
+    /// opener pages earlier. Naming the run instead puts the message where the edit goes.</para>
+    /// <para>Reported only where the block never closes. Where it does, a shorter run inside is
+    /// exactly what it looks like and saying anything would be noise.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BlockStringDelimitersDiffer = Error(
+        "PC0016",
+        "Block string delimiters differ in length",
+        "{0} quotes do not close a block string opened with {1}, so this is text and the block "
+        + "runs on. Open it with '{2}', or close it with '{3}'.");
 
     public static readonly DiagnosticDescriptor EmptyFormatSpecifier = Error(
         "PC0014",

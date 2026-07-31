@@ -11,14 +11,60 @@ need a language server, which is a later piece of work.
 
 **This is not on the VS Code Marketplace**, and will not be for a while — Profi-C is young
 enough that publishing an extension for it would be putting up a shopfront before there is
-anything to sell. Installing it means copying this folder into your extensions directory,
-which is all the Marketplace would do anyway. There is no build step: everything here is
-declarative, so nothing is compiled and nothing is downloaded.
+anything to sell. Installing it means putting this folder where VS Code looks, which is all the
+Marketplace would do anyway. There is no build step: everything here is declarative, so nothing
+is compiled and nothing is downloaded. Once it is published, `code --install-extension` replaces
+all of this.
 
-**If you are working on the language, link it instead of copying it** — see below. A copy is a
-snapshot, and a snapshot goes stale the moment the grammar changes: the editor then colours by
-rules the repository no longer has, which looks like a bug in the highlighting and is not one.
-A link cannot go stale.
+There are two ways to do it, and which one is right depends on whether the grammar is going to
+change under you.
+
+### Linking it — for anyone editing the language
+
+The extensions directory holds a pointer to this folder, so the editor reads the very files in
+the repository. A change shows up on the next window reload and there is no copy to remember.
+
+**Windows** needs neither an elevated shell nor Developer Mode if you use a *junction*:
+
+```powershell
+$repo = "D:\Repos\Profi-C"
+$dest = "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0"
+if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+New-Item -ItemType Junction -Path $dest -Target "$repo\editors\vscode"
+```
+
+A **symbolic link** does the same job and needs an elevated shell, or Developer Mode turned on:
+
+```powershell
+New-Item -ItemType SymbolicLink -Path $dest -Target "$repo\editors\vscode"
+```
+
+The two differ in ways that do not matter here. A junction is resolved by the file system and
+works only for a directory on a local volume; a symbolic link may point at a file, at a
+relative path, or across the network, and is the more general tool. Pointing one local folder
+at another is exactly what a junction is for, so it is the one to reach for on Windows — the
+elevation a symbolic link asks for buys nothing in this case.
+
+**macOS and Linux** have one answer:
+
+```bash
+repo=~/Profi-C
+dest=~/.vscode/extensions/profi-c-0.1.0
+rm -rf "$dest" && ln -s "$repo/editors/vscode" "$dest"
+```
+
+> **Removing a link, when the time comes.** On Windows, do **not** use
+> `Remove-Item -Recurse -Force`: Windows PowerShell has been known to follow a junction and
+> delete what is on the other side of it, which here is the repository. Remove the link alone:
+>
+> ```powershell
+> (Get-Item "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0" -Force).Delete()
+> ```
+>
+> or `cmd /c rmdir "%USERPROFILE%\.vscode\extensions\profi-c-0.1.0"` with no `/s`. On macOS and
+> Linux, `rm` on the link removes the link.
+
+### Copying it — for anyone who only wants to read Profi-C
 
 Change the first line to wherever you cloned the repository, then run the rest as-is.
 
@@ -40,26 +86,30 @@ dest=~/.vscode/extensions/profi-c-0.1.0
 rm -rf "$dest" && mkdir -p "$dest" && cp -R "$repo/editors/vscode/." "$dest"
 ```
 
-Then reload the window — `Ctrl+Shift+P`, "Developer: Reload Window" — and open a `.pc` file.
+### Either way
 
-Three things worth knowing:
+Reload the window — `Ctrl+Shift+P`, "Developer: Reload Window" — and open a `.pc` file.
 
 - **VS Code Insiders** uses `.vscode-insiders` rather than `.vscode`. Everything else is the
   same.
 - **The folder name carries the version**, and VS Code will keep serving an old copy if a new
   one arrives under the same name. Bump it to match `package.json` when that changes.
-- **If you are editing the grammar, link the folder rather than copying it.** A change then
-  shows up on the next window reload, instead of after remembering to copy again. On Windows,
-  in an elevated shell:
-  `New-Item -ItemType SymbolicLink -Path $dest -Target "$repo\editors\vscode"`. Elsewhere:
-  `ln -s "$repo/editors/vscode" "$dest"`.
 
-  **How a stale copy shows itself:** the editor colours by whatever rules it has, so a
-  construct added since the copy was taken is coloured by the rules for something else. A
-  block string in a copy that predates them reads as an empty string followed by an ordinary
-  one, so the first `"` inside it ends a string that was never open and everything after it is
-  coloured as text. Nothing is wrong with the grammar; the editor is simply reading an old one.
-  Check with `grep block-string` against the installed copy before hunting for a bug.
+**How a stale copy shows itself.** The editor colours by whatever rules it has, so a construct
+the copy has never heard of is coloured by the rules for something else, and the symptom looks
+nothing like the cause. A word the copy does not know to be a keyword is caught by the rule for
+a name followed by a bracket, and reads as a function call. A block string the copy predates
+reads as an empty string followed by an ordinary one, so the first `"` inside it closes a
+string that was never open and the rest of the file is coloured as text.
+
+Nothing is wrong with the grammar in either case; the editor is reading an old one. Before
+hunting for a bug, check the installed copy holds the rule you expect:
+
+```powershell
+Select-String delegate "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0\syntaxes\profi-c.tmLanguage.json"
+```
+
+A link cannot go stale, which is the whole argument for one.
 
 ## What it colours
 

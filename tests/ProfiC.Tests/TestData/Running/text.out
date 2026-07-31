@@ -19,6 +19,10 @@ Usage: pc run <file>
 A path may hold \ and " and {{ freely,
 because nothing in here is read as anything.
   one line, no escapes: C:\Users\Matt
+== quotes inside a block ==
+She said "no" twice
+a block is opened with """ or more
+and the last word is "this"
 == apart and back together ==
   words:      4
   hyphenated: the-quick-brown-fox

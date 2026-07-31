@@ -652,30 +652,101 @@ public sealed class Lexer
     }
 
     /// <summary>
-    /// <para>Scans a block string: everything between one <c>"""</c> and the next.</para>
+    /// <para>Scans a block string: everything between an opening run of quotes and the next
+    /// run of the same length.</para>
     /// <para>Verbatim, as C#'s is. No escape is read and no hole is looked for, so a path, a
     /// brace, a backslash or a quote survives being pasted in — which is the whole reason to
     /// reach for one. It is also why the language needs no separate verbatim form: this is
     /// that form.</para>
+    /// <para>Three quotes open one, and more than three also do. Any shorter run inside is
+    /// text, so a block that has to hold three quotes of its own is opened and closed with
+    /// four, and one holding four with five. Without that there is a string no delimiter can
+    /// write.</para>
     /// </summary>
     private Token ScanBlockString()
     {
         int start = _index;
-        _index += 3;
+        int delimiter = ScanQuoteRun();
+
+        // A run of three or more that is still too short to close: text by the rule, and the
+        // closer that was meant whenever the block turns out never to close at all.
+        int nearMissAt = -1;
+        int nearMiss = 0;
 
         while (!IsAtEnd())
         {
-            if (Current() == '"' && Peek() == '"' && Peek(2) == '"')
+            if (Current() != '"')
             {
-                _index += 3;
+                _index++;
+                continue;
+            }
+
+            int at = _index;
+            int run = ScanQuoteRun();
+
+            if (run == delimiter)
+            {
                 return MakeToken(TokenType.BlockStringLiteral, start);
             }
 
+            if (run >= 3 && run < delimiter && nearMissAt < 0)
+            {
+                nearMissAt = at;
+                nearMiss = run;
+            }
+
+            if (run > delimiter)
+            {
+                // Which quotes close and which are held is unanswerable here, so the run ends
+                // the string and the message says how to write what was meant.
+                _diagnostics.Report(
+                    DiagnosticDescriptors.BlockStringRunIsTooLong,
+                    SpanOf(at, run),
+                    run,
+                    delimiter,
+                    new string('"', run + 1));
+
+                return MakeToken(TokenType.BlockStringLiteral, start);
+            }
+        }
+
+        if (nearMissAt >= 0)
+        {
+            // One mistake, so one message: a run of quotes that all but closed the block is
+            // what went wrong, and saying "unterminated" at the opener buries it.
+            _diagnostics.Report(
+                DiagnosticDescriptors.BlockStringDelimitersDiffer,
+                SpanOf(nearMissAt, nearMiss),
+                nearMiss,
+                delimiter,
+                new string('"', nearMiss),
+                new string('"', delimiter));
+        }
+        else
+        {
+            _diagnostics.Report(
+                DiagnosticDescriptors.UnterminatedBlockString,
+                SpanOf(start, delimiter),
+                new string('"', delimiter));
+        }
+
+        return MakeToken(TokenType.BlockStringLiteral, start);
+    }
+
+    /// <summary>
+    /// Consumes a run of quotes and answers how many there were. Both delimiters of a block
+    /// string are read with this, which is what makes them comparable.
+    /// </summary>
+    private int ScanQuoteRun()
+    {
+        int start = _index;
+
+        while (!IsAtEnd() && Current() == '"')
+        {
             _index++;
         }
 
-        _diagnostics.Report(DiagnosticDescriptors.UnterminatedBlockString, SpanOf(start, 3));
-        return MakeToken(TokenType.BlockStringLiteral, start);
+        return _index - start;
     }
 
     /// <summary>

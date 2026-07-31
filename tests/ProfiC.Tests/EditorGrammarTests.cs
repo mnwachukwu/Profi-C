@@ -74,8 +74,12 @@ public sealed class EditorGrammarTests : LexerTestBase
         Assert.DoesNotThrow(() => Grammar().Dispose());
 
     /// <summary>
-    /// Every pattern in the file is a working regular expression. A broken one does not stop
-    /// the editor loading the grammar; it silently colours nothing.
+    /// <para>Every pattern in the file is a working regular expression. A broken one does not
+    /// stop the editor loading the grammar; it silently colours nothing.</para>
+    /// <para>An <c>end</c> pattern is compiled behind its own <c>begin</c>, because that is the
+    /// only context it ever runs in: the editor substitutes what <c>begin</c> captured before
+    /// matching it, so a back-reference there is checked against the groups <c>begin</c>
+    /// defines rather than against nothing.</para>
     /// </summary>
     [Test]
     public void EveryPatternCompiles()
@@ -90,14 +94,23 @@ public sealed class EditorGrammarTests : LexerTestBase
             switch (element.ValueKind)
             {
                 case JsonValueKind.Object:
+                    string opener = element.TryGetProperty("begin", out JsonElement begin)
+                                    && begin.ValueKind == JsonValueKind.String
+                        ? begin.GetString()!
+                        : string.Empty;
+
                     foreach (JsonProperty property in element.EnumerateObject())
                     {
                         if (property.Value.ValueKind == JsonValueKind.String
                             && property.Name is "match" or "begin" or "end")
                         {
+                            string pattern = property.Name == "end"
+                                ? opener + property.Value.GetString()
+                                : property.Value.GetString()!;
+
                             try
                             {
-                                _ = new Regex(property.Value.GetString()!);
+                                _ = new Regex(pattern);
                             }
                             catch (ArgumentException problem)
                             {

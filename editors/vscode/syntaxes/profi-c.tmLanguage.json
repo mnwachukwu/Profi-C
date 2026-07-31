@@ -38,10 +38,10 @@
     },
 
     "block-string": {
-      "comment": "Three quotes to three quotes, holding nothing that is read. Offered before the ordinary string rule, or the first two quotes would close an empty one and leave the rest as code.",
+      "comment": "An opening run of three or more quotes to a run of the same length, holding nothing that is read. The closer is a back-reference to what opened, so a shorter run inside is text. The lookahead makes the closer the last quotes of a run rather than the first, which is where the scanner ends the string when a run is longer than the delimiter. Offered before the ordinary string rule, or the first two quotes would close an empty one and leave the rest as code.",
       "name": "string.quoted.triple.profi-c",
-      "begin": "\"\"\"",
-      "end": "\"\"\""
+      "begin": "(\"{3,})",
+      "end": "\\1(?!\")"
     },
 
     "string": {

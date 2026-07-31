@@ -203,11 +203,18 @@ InterpolatedString = '"' { StringChar | Interpolation } '"' ;
 
 Interpolation      = "{{" Expr [ ":" FormatPattern ] "}}" ;
 
-(* Three quotes to three quotes, holding whatever lies between them. No escape is
-   read and no hole is looked for, so this is also the language's verbatim form and
-   no separate one exists. Where it spans lines, the indentation of the closing
-   quotes is removed from every line and the breaks beside each pair of quotes go. *)
-BlockStringLiteral = '"""' { AnyCharacter } '"""' ;
+(* A run of three or more quotes to a run of the same length, holding whatever lies
+   between them. No escape is read and no hole is looked for, so this is also the
+   language's verbatim form and no separate one exists. Where it spans lines, the
+   indentation of the closing quotes is removed from every line and the breaks beside
+   each run of quotes go.
+
+   A run shorter than the delimiter is text, which is what a longer delimiter buys:
+   a block holding three quotes is written with four. EBNF cannot state that the two
+   runs are equal, so the equality is a rule of the scanner. *)
+BlockStringLiteral = QuoteRun { AnyCharacter } QuoteRun ;
+
+QuoteRun           = '"' '"' '"' { '"' } ;
 
 Lambda         = "function" "(" [ LambdaParams ] ")" Body "end" "function"
                | "(" [ LambdaParams ] ")" "yield" Expr ;

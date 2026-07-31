@@ -242,8 +242,9 @@ public sealed partial class Resolver
                 if (LookupQualifiedType(named.Parts) is { } declared)
                 {
                     RequireVisibleType(named, declared);
-                    RequireInhabitable(named, declared);
-                    return declared;
+                    return RequireInhabitable(named, declared)
+                        ? declared
+                        : ErrorType.Instance;
                 }
 
                 if (ReportIfAmbiguous(named, named.Text))
@@ -268,8 +269,12 @@ public sealed partial class Resolver
     /// the model beside the <c>fraction</c> type rather than that type.</para>
     /// <para>Without this each of them is a declaration every rule accepts and no value can
     /// ever fill, which runs.</para>
+    /// <para>Answers whether the type may be written here, so that one that may not reads as
+    /// the error type. The declaration is then wrong in exactly one way rather than two: the
+    /// message already names the type to write instead, and "a fraction does not fit a
+    /// Fraction" on the line below only obscures it.</para>
     /// </summary>
-    private void RequireInhabitable(NamedTypeSyntax named, DeclaredTypeSymbol declared)
+    private bool RequireInhabitable(NamedTypeSyntax named, DeclaredTypeSymbol declared)
     {
         bool empty = declared is ModelSymbol { IsGlobal: true }
                      || (ReferenceEquals(declared.Container, BuiltInTypes.Standard)
@@ -277,7 +282,7 @@ public sealed partial class Resolver
 
         if (!empty)
         {
-            return;
+            return true;
         }
 
         // A capital letter away from the type that was almost certainly meant.
@@ -286,6 +291,7 @@ public sealed partial class Resolver
             : $"Its members are reached through the name '{declared.Name}' instead.";
 
         Report(DiagnosticDescriptors.TypeHasNoValues, named, declared.Name, fix);
+        return false;
     }
 
     /// <summary>

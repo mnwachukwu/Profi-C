@@ -36,18 +36,28 @@ public static class LiteralDecoder
     }
 
     /// <summary>
-    /// <para>Reads a block string: the text between the triple quotes, taken as it stands.
-    /// </para>
+    /// <para>Reads a block string: the text between its delimiters, taken as it stands.</para>
     /// <para>Where the block spans lines, the indentation of the closing quotes is removed
-    /// from every line, and the line breaks next to each pair of quotes go. That is C#'s rule,
+    /// from every line, and the line breaks next to each delimiter go. That is C#'s rule,
     /// and it is what lets a block sit at the indentation of the code around it without
     /// carrying that indentation into what it holds — which is the difference between the
     /// feature being usable inside a function and only at the left margin.</para>
     /// <para>Written on one line, it is simply what lies between the quotes.</para>
+    /// <para>The delimiter is however many quotes opened the block, so the text says how to
+    /// read itself and nothing has to be carried here from the scanner.</para>
     /// </summary>
     private static object DecodeBlockString(string text)
     {
-        string inner = text.Length >= 6 ? text[3..^3] : string.Empty;
+        int delimiter = 0;
+
+        while (delimiter < text.Length && text[delimiter] == '"')
+        {
+            delimiter++;
+        }
+
+        string inner = text.Length >= delimiter * 2
+            ? text[delimiter..^delimiter]
+            : string.Empty;
 
         int firstBreak = inner.IndexOf('\n');
 

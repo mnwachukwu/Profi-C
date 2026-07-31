@@ -351,15 +351,46 @@ literal may not span a line terminator; an unterminated one is reported at its o
 
 **Boolean literals** are the reserved words `true` and `false`.
 
-**Block string literals** are a sequence of characters between triple quotation marks:
+**Block string literals** are a sequence of characters between runs of quotation marks:
 `"""text"""`. Nothing inside is read: no escape is recognized, no interpolation is looked for,
 and a lone quotation mark is a quotation mark. A block may span line terminators.
 
 Because nothing inside is read, this is also the language's verbatim form, and no separate one
 exists. Where a block spans lines, the indentation of the closing quotes is removed from every
-line, and the line terminators next to each pair of quotes are dropped — so a block may sit at
+line, and the line terminators next to each run of quotes are dropped — so a block may sit at
 the indentation of the code around it without carrying that indentation into what it holds.
 Written on one line, it is exactly what lies between the quotes.
+
+**The delimiter is three quotation marks or more, and the closing run must be the same length
+as the opening one.** Any shorter run inside is text, which is what lets a block hold quotes at
+all:
+
+```
+"""say "hi" now"""            →  say "hi" now
+""""holds """ here""""        →  holds """ here
+```
+
+So a block that has to hold three quotes is opened and closed with four, one holding four with
+five, and there is no sequence of characters a block string cannot express.
+
+Two lengths that do not match are reported:
+
+- **A run longer than the delimiter** ends the block, with its last quotes closing and the rest
+  held: `"""He said "hi""""` is `He said "hi"`. That is almost always what was meant, so it is a
+  warning (`PC0015`) rather than an error.
+- **A closing run shorter than the delimiter** is text by the rule above, so the block does not
+  end there and runs on to consume the rest of the file. The run that was meant as the closer is
+  reported (`PC0016`), rather than the opening quotes pages earlier.
+
+A block whose text ends in a quotation mark has no single-line form, since that quote sits
+against the closing run and lengthens it whatever the delimiter's length. Putting the closing
+run on its own line separates them:
+
+```
+"""
+say "hi"
+"""
+```
 
 ### 1.5a Interpolated strings
 
@@ -498,7 +529,7 @@ zero-width position just past the final character.
 
 ### 2.4 Recovery
 
-Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0014`,
+Scanning never stops at the first error. Each lexical diagnostic — `PC0001` through `PC0016`,
 listed in [Appendix A](#appendix-a-diagnostics) — has a defined recovery, so a file containing
 several mistakes reports all of them in one pass and still yields a usable token stream.
 
@@ -2317,6 +2348,8 @@ Warnings do not block compilation; everything else does.
 | `PC0012` | error | Nothing to interpolate |
 | `PC0013` | error | Unterminated block string |
 | `PC0014` | error | Nothing to format by |
+| `PC0015` | warning | More quotes in a row than close the block |
+| `PC0016` | error | Block string delimiters differ in length |
 
 ### PC0100 to PC0199
 
