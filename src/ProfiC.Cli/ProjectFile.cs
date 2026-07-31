@@ -110,7 +110,10 @@ public sealed class ProjectFile
 
     private static ProjectFile? Parse(SourceText source, string folder, DiagnosticBag diagnostics)
     {
-        int reportedBefore = diagnostics.Count;
+        // Errors rather than reports, because a project file may now say things that do not
+        // stop it being read: an 'ignore' line naming the wrong thing is worth hearing and
+        // leaves a perfectly good project behind it.
+        int failuresBefore = diagnostics.Errors;
 
         string? name = null;
         bool closed = false;
@@ -214,6 +217,15 @@ public sealed class ProjectFile
                     entryPoint = rest;
                     break;
 
+                // What every file the project builds should stop being told. A project file
+                // has no prose, so a word here that names neither a severity nor a diagnostic
+                // is a mistake, where the same words in a comment would be a remark.
+                // Not something to build, so it does not answer the question of whether the
+                // project names anything: one made only of these is still empty.
+                case "ignore" when name is not null:
+                    Ignore(rest, source, span, diagnostics);
+                    break;
+
                 default:
                     if (name is null)
                     {
@@ -247,13 +259,13 @@ public sealed class ProjectFile
         // whose sources were rejected, or whose entries were not understood, has already said
         // why, and saying it builds nothing on top of that explains nothing. Referencing counts
         // as naming something: a project made only of others is composition, not emptiness.
-        if (!sawEntry && diagnostics.Count == reportedBefore)
+        if (!sawEntry && diagnostics.Errors == failuresBefore)
         {
             diagnostics.Report(DiagnosticDescriptors.ProjectHasNoSources, LineSpan(source, 0));
             return null;
         }
 
-        return (files.Count == 0 && references.Count == 0) || diagnostics.Count != reportedBefore
+        return (files.Count == 0 && references.Count == 0) || diagnostics.Errors != failuresBefore
             ? null
             : new ProjectFile(name, source, files, references, entryPoint);
     }
@@ -296,6 +308,53 @@ public sealed class ProjectFile
         }
 
         references.Add(new Entry(written, combined, span));
+    }
+
+    /// <summary>
+    /// <para>Records one <c>ignore</c> entry, which reaches every file the project builds.</para>
+    /// <para>Nothing here stops a build. A project that asks to stop hearing something and
+    /// names it wrongly still compiles; it just keeps hearing it, and is told why.</para>
+    /// </summary>
+    private static void Ignore(
+        string rest,
+        SourceText source,
+        SourceSpan span,
+        DiagnosticBag diagnostics)
+    {
+        (string named, _) = SplitFirstWord(rest);
+
+        if (named.Length == 0)
+        {
+            diagnostics.Report(DiagnosticDescriptors.IgnoreNamesNeither, span, "nothing");
+            return;
+        }
+
+        if (!SuppressionDirective.TryReadTarget(
+                named, out DiagnosticSeverity? severity, out string? id))
+        {
+            diagnostics.Report(DiagnosticDescriptors.IgnoreNamesNeither, span, named);
+            return;
+        }
+
+        if (id is not null)
+        {
+            if (!DiagnosticDescriptors.ById.TryGetValue(id, out DiagnosticDescriptor? target))
+            {
+                diagnostics.Report(DiagnosticDescriptors.IgnoreNamesNoDiagnostic, span, id);
+                return;
+            }
+
+            if (target.DefaultSeverity == DiagnosticSeverity.Error)
+            {
+                diagnostics.Report(DiagnosticDescriptors.IgnoreCannotSilenceAnError, span, id);
+                return;
+            }
+        }
+
+        // The project file is carried so that a line silencing nothing is reported where it
+        // was written, even though a project-wide suppression belongs to no one file.
+        diagnostics.Suppress(
+            new Suppression(SuppressionScope.Project, source, 0, severity, id, span));
     }
 
     /// <summary>

@@ -1,0 +1,8 @@
+== a documented function ==
+1 + 1|2 + ... + 1|8 = 761|280
+
+== and another ==
+4 divides 12: true
+5 divides 12: false
+
+a plain remark stays a remark

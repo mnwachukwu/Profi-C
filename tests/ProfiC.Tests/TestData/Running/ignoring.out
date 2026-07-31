@@ -1,0 +1,10 @@
+== silencing one line ==
+
+
+
+== and prose stays prose ==
+this line is not silenced, and has nothing to silence
+== a counter that says its type ==
+  1
+  2
+  3

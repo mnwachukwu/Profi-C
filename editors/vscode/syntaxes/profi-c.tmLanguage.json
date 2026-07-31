@@ -4,6 +4,7 @@
   "scopeName": "source.profi-c",
   "patterns": [
     { "include": "#comment-block" },
+    { "include": "#comment-directive" },
     { "include": "#comment-line" },
     { "include": "#block-string" },
     { "include": "#string" },
@@ -25,16 +26,36 @@
   "repository": {
 
     "comment-block": {
-      "comment": "Opens at ## and closes at the NEXT ##, which takes the rest of its line with it. The closer must therefore match to end of line, or a line reading '## and then some' would leave the tail as code.",
+      "comment": "Opens at ## and closes at the NEXT ##, which takes the rest of its line with it. The closer must therefore match to end of line, or a line reading '## and then some' would leave the tail as code. Labels inside are picked out, which is what tells a reader at a glance whether a block is documentation or a remark — the same question the compiler asks of it.",
       "name": "comment.block.profi-c",
       "begin": "##",
-      "end": "##.*$"
+      "end": "##.*$",
+      "patterns": [{ "include": "#documentation-label" }]
+    },
+
+    "documentation-label": {
+      "comment": "A label inside a documentation comment: the mark, the name, and the colon, but not the prose after it. Matched wherever it appears rather than only above a declaration, since a grammar cannot see what follows a comment and colouring it either way says the same true thing — this line is a label. The mark is required, which is exactly the rule the scanner reads by, so prose wrapping onto a line that begins with a word and a colon is left alone.",
+      "match": "(@)([A-Za-z_][A-Za-z0-9_]*)(:)",
+      "captures": {
+        "1": { "name": "punctuation.definition.keyword.profi-c" },
+        "2": { "name": "keyword.other.documentation.profi-c" },
+        "3": { "name": "punctuation.separator.profi-c" }
+      }
+    },
+
+    "comment-directive": {
+      "comment": "A line comment the compiler heeds. It stays in the comment family, so a theme that colours all comments still colours this, but the name is its own so it can be set apart — which the extension does by default, since a line addressed to the compiler is not prose and should not read like it. Only a line comment: a block cannot carry a directive, so no block rule matches this. The pattern accepts exactly what the scanner does, so a comment merely beginning with the word is left to the ordinary rule below: 'ignore' first in the comment, then a severity or an identifier, then whitespace or the end of the line. That last part is what keeps 'ignore opinions' prose.",
+      "name": "comment.line.number-sign.directive.profi-c",
+      "match": "#\\s*ignore\\s+(?:warning|opinion|[Pp][Cc][0-9]{4})(?:\\s.*)?$"
     },
 
     "comment-line": {
-      "comment": "A single mark. Placed after the block rule so that ## is never read as two of these.",
+      "comment": "A single mark. Placed after the block rule so that ## is never read as two of these. Labels are picked out here too, since one line is enough to document something.",
       "name": "comment.line.number-sign.profi-c",
-      "match": "#.*$"
+      "match": "#.*$",
+      "captures": {
+        "0": { "patterns": [{ "include": "#documentation-label" }] }
+      }
     },
 
     "block-string": {
@@ -244,7 +265,7 @@
         {
           "comment": "Spelled out rather than punctuated, which is the point of them. The ones that work on bits are here too: 'bitwise' qualifies the 'and' or 'or' after it, and the rest stand alone.",
           "name": "keyword.operator.word.profi-c",
-          "match": "\\b(and|or|not|bitwise|xor|leftshift|rightshift)\\b"
+          "match": "\\b(and|or|not|bitwise|xor|shiftleft|shiftright)\\b"
         }
       ]
     },

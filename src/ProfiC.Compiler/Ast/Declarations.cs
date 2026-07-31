@@ -1,3 +1,4 @@
+using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Ast;
@@ -12,7 +13,8 @@ public sealed class CompilationUnit(
     IReadOnlyList<UsingDirective> usings,
     IReadOnlyList<ImportDirective> imports,
     IReadOnlyList<Declaration> declarations,
-    SourceText source) : SyntaxNode(span)
+    SourceText source,
+    IReadOnlyList<DocComment>? documentation = null) : SyntaxNode(span)
 {
     public IReadOnlyList<UsingDirective> Usings { get; } = usings;
 
@@ -26,6 +28,14 @@ public sealed class CompilationUnit(
 
     /// <summary>The file this tree was parsed from, carried for diagnostics.</summary>
     public SourceText Source { get; } = source;
+
+    /// <summary>
+    /// <para>What the file documents, beside the tree rather than in it.</para>
+    /// <para>A documentation comment is not syntax and no node holds one, so the grammar and
+    /// every visitor are untouched by it. Each says which line it documents, and matching
+    /// those to declarations is a pass of its own.</para>
+    /// </summary>
+    public IReadOnlyList<DocComment> Documentation { get; } = documentation ?? [];
 
     public override IEnumerable<SyntaxNode> Children =>
         Usings.Concat<SyntaxNode>(Imports).Concat(Declarations);

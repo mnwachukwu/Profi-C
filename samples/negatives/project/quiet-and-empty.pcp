@@ -1,0 +1,16 @@
+##
+    A project that says only what to stop hearing.
+
+    'ignore' silences a warning or an opinion across every file the project builds. It does not
+    name anything to build, so a project made of nothing else is still empty — and being told
+    it is empty is the useful thing to hear.
+
+    The word after it names a severity or a diagnostic. A comment may begin with 'ignore' and
+    stay a remark, because a comment is prose first; a project file has no prose, so the same
+    words here are a mistake. It is reported and does not stop anything, since nothing about
+    asking to hear less should be able to fail a build.
+##
+
+project QuietAndEmpty
+    ignore whatever
+end project

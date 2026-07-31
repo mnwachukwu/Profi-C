@@ -237,10 +237,10 @@ public sealed partial class Interpreter
         BinaryOperator.Xor => a ^ b,
 
         // An amount outside the width is refused rather than folded into range, which is what
-        // C# does and what makes "x leftshift 64" quietly mean "x leftshift 0" there. A literal
+        // C# does and what makes "x shiftleft 64" quietly mean "x shiftleft 0" there. A literal
         // amount is caught while compiling; this is one that arrived in a variable.
-        BinaryOperator.LeftShift => Shiftable(b) ? a << (int)b : throw OutsideTheWidth(b),
-        BinaryOperator.RightShift => Shiftable(b) ? a >> (int)b : throw OutsideTheWidth(b),
+        BinaryOperator.ShiftLeft => Shiftable(b) ? a << (int)b : throw OutsideTheWidth(b),
+        BinaryOperator.ShiftRight => Shiftable(b) ? a >> (int)b : throw OutsideTheWidth(b),
         _ => null,
     };
 

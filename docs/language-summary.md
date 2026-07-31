@@ -17,9 +17,9 @@ boolean     break       case        catch       character   constant
 continue    default     delegate    each        else        end
 enumeration extends     false       finally     for         fraction
 function    global      if          import      in          integer
-internal    is          leftshift   let         model       namespace
-new         not         or          override    protected   public
-real        rightshift  sealed      step        string      structure
+internal    is          let         model       namespace   new
+not         or          override    protected   public      real
+sealed      shiftleft   shiftright  step        string      structure
 switch      then        this        throw       to          true
 try         until       using       virtual     while       xor
 yield
@@ -250,7 +250,7 @@ The second pair is more confusable than the first, since both live near the idea
 | `3\|4` fraction literal | no equivalent |
 | `2 ^ 10` raises to a power | `^` is exclusive-or; use `Math.Pow` |
 | `a bitwise and b`, `a bitwise or b`, `a xor b` | `a & b`, `a \| b`, `a ^ b`. `\|` was unavailable — it writes a fraction — so the operations are words. `xor` needs no qualifier because nothing else claims it, and it refuses two booleans where C#'s `^` accepts them |
-| `a leftshift 2`, `a rightshift 2` | `a << 2`, `a >> 2`. The direction is in the word, and an amount below 0 or above 63 is an error where C# folds it into range |
+| `a shiftleft 2`, `a shiftright 2` | `a << 2`, `a >> 2`. The direction is in the word, and an amount below 0 or above 63 is an error where C# folds it into range |
 | `enumeration Color` | `enum Color` |
 | `global model` | `static class` |
 | a `global model` has global members | a `static class` marks each member `static` |
@@ -317,7 +317,9 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 Every stage is independently valuable as a language improvement. None is justified only by the binder, which sits several versions out.
 
-**Absent with no plans:** events, `struct`, attributes, extension methods, `async`/`await`, iterators, pattern matching, tuples, records, nullable value types, operator overloading, indexer declarations, and partial types.
+**Present under another name.** A `structure` is what C# spells `struct`. An optional covers a value type, so `integer?`, `boolean?` and `fraction?` each hold a number or nothing and nullable value types are not missing — they are the same feature reached through §8 rather than through a second kind of type. And a model already compares field by field, which is the property a `record` is usually reached for.
+
+**Planned, not yet placed in a version:** events, iterators, pattern matching, tuples, and partial types.
 
 **Direct access to the .NET BCL** is also absent in v1. Profi-C reaches .NET only through curated built-in models that wrap it; `using` imports Profi-C namespaces, not CLR ones.
 
@@ -331,8 +333,83 @@ everywhere without one. See §12.3 of the specification.
 
 ---
 
-## 7. Two details worth knowing
+## 7. Details worth knowing
 
-**Warnings are few and each one names its fix.** Sixteen exist: an unnecessary `@` on a name, more quotes in a row than close a block string, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `virtual` beside `abstract`, a type shadowing one the language provides, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, `Console.WriteLine("")` where the empty string does nothing, unreachable code, an import naming an absolute path, and imports that form a circle. Every other diagnostic is an error, and warnings do not block compilation. [Appendix A](language-spec.md#appendix-a-diagnostics) of the specification lists all of them with their ids.
+### 7.1 Diagnostics
+
+**A diagnostic carries one of three severities**, and what separates them is how much is known about what the program means. An **error** is reported where the meaning is genuinely unpredictable, and only an error blocks compilation. A **warning** is reported where the meaning is clear and unlikely to be what was intended. An **opinion** is reported where the meaning is clear, intended, and correct, and the language would still write it differently.
+
+**Warnings are few and each one names its fix.** Fourteen exist: more quotes in a row than close a block string, a type shadowing one the language provides, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, unreachable code, an import naming an absolute path, imports that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one naming a diagnostic that stops compilation, and one in a project file naming neither a severity nor a diagnostic — and three about documentation that has come apart from what it documents: one above nothing that can carry it, one naming a parameter that is not there, and one describing a value never given back.
+
+**Opinions are the language having taste, and every one says a written token has no effect.** Ten exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, `virtual` beside `abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences nothing, and a doc that says the same thing twice.
+
+Nothing is wrong with a program that has an opinion against it. Reading them in order is a reasonable way to learn what the language expects. [Appendix A](language-spec.md#appendix-a-diagnostics) of the specification lists every diagnostic with its id and severity.
+
+### 7.2 Ignoring one
+
+A warning or an opinion can be silenced; an error never can, since the mechanism that quiets the compiler must not be able to make it lie. Nothing about `ignore` stops a build — getting the line wrong is itself only a warning.
+
+A comment carries the directive, in one of three forms, and the word after `ignore` is never absent:
+
+```
+# ignore warning
+# ignore opinion
+# ignore PC0340
+```
+
+Each covers the next line carrying code, and each takes `in file` to cover the whole file instead:
+
+```
+# ignore opinion in file
+```
+
+A project file widens it again, over every file the project builds:
+
+```
+project Library
+    source Program.pc
+    ignore opinion
+end project
+```
+
+**Prose that begins with "ignore" stays prose.** `# ignore the sign for now` is a comment a person writes, so a directive is recognized only once `warning`, `opinion`, or something shaped like `PC0340` follows. Words after that are prose too, so a directive can say why it is there.
+
+Naming a diagnostic asserts that a particular one is there, so an `ignore` naming one nothing reports is itself reported (`PC0024`) — while `ignore opinion` claims nothing and stays silent with nothing to silence.
+
+### 7.3 Documenting something
+
+A comment opening `@summary:` documents whatever declaration follows it — a type, a member of one, or an enumeration's member. Nothing else is documentation, however it is placed: a block above a declaration stays an ordinary remark unless it says otherwise.
+
+```
+##
+    @summary: One person's money, and the rules about taking it out.
+##
+model Account
+
+    # @summary: Whose account this is.
+    string owner;
+```
+
+Every part is a labeled line. `@summary:` carries the first, `@remarks:` the fuller explanation a completion list has no room for, and `@yields:` and `@throws:` describe what a function gives back and what it can raise. Any other name documents the parameter it names.
+
+```
+##
+    @summary: The sum of 1|1 through 1|n.
+
+    Every partial sum is exact, so this is the true rational value rather than the
+    nearest a real could hold. A blank line keeps one label running, so a summary may
+    be as many paragraphs as it needs.
+
+    @n: how many terms to add.
+    @yields: the exact rational sum.
+##
+fraction function Harmonic(integer n)
+```
+
+**The `@` is what makes a label a label**, and it is not decoration. Prose wraps, and a wrapped line often begins with a word and a colon — *"that is why it yields an / optional: ..."* — which is what every such line in this repository's samples turned out to be. Without the mark, telling those from a label takes a rule about where a line sits, and no such rule survives ordinary formatting.
+
+The compiler holds a doc to what it documents: a parameter named that the function does not take, a `@yields:` on a function yielding nothing, and a label written twice are all reported. A *missing* doc never is — requiring one everywhere is how documentation stops being a help.
+
+### 7.4 The root of every reference type
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.

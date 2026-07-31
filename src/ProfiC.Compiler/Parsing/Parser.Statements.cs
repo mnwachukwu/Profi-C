@@ -116,7 +116,7 @@ public sealed partial class Parser
         // Read the type on a throwaway parser so that a failed guess reports nothing and
         // leaves the real cursor untouched.
         DiagnosticBag scratch = new();
-        Parser probe = new(_source, _tokens, scratch) { _position = _position };
+        Parser probe = new(_source, _tokens, scratch, []) { _position = _position };
         probe.ParseType();
 
         // A reserved word after a type is a declaration whose name is a word already taken.

@@ -118,6 +118,24 @@ including fraction literals like `22|7`, block strings, the holes in an interpol
 both comment forms, and the name a declaration introduces. A closer and what it closes read as one thing, so `end function` colours together
 rather than as a keyword beside a noun.
 
+## Comments the compiler heeds
+
+A line comment can carry an `ignore` directive, which silences a warning or an opinion:
+
+```
+# ignore opinion
+Console.WriteLine("");
+```
+
+Those read in a grey of their own rather than in whatever colour your theme gives comments,
+because a line addressed to the compiler is not prose and should not look like it. It is the
+one colour this extension sets by default, and only the comments the compiler actually acts on
+get it — a remark that merely begins with the word, like `# ignore the sign for now`, stays an
+ordinary comment. A `##` block never carries a directive, so no block is ever set apart.
+
+To change or drop it, name the scope in the block below:
+`comment.line.number-sign.directive.profi-c`.
+
 ## Tweaking the colours
 
 Every theme paints these differently, so the grammar picks scopes rather than colours. To set
@@ -127,6 +145,12 @@ whatever your theme says.
 ```jsonc
 "editor.tokenColorCustomizations": {
   "textMateRules": [
+    // A line comment the compiler acts on, such as '# ignore opinion'. Set
+    // apart from ordinary comments, since it is addressed to the compiler
+    // rather than to a reader. This is the one the extension sets by default.
+    { "scope": "comment.line.number-sign.directive.profi-c",
+      "settings": { "foreground": "#7A7A7A" } },
+
     // The primitive types: integer, real, boolean, character, string, fraction.
     { "scope": "storage.type.profi-c", "settings": { "foreground": "#569CD6" } },
 

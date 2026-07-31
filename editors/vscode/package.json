@@ -33,6 +33,16 @@
         "scopeName": "source.profi-c-project",
         "path": "./syntaxes/profi-c-project.tmLanguage.json"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "editor.tokenColorCustomizations": {
+        "textMateRules": [
+          {
+            "scope": "comment.line.number-sign.directive.profi-c",
+            "settings": { "foreground": "#7A7A7A" }
+          }
+        ]
+      }
+    }
   }
 }

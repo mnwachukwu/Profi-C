@@ -1,5 +1,6 @@
 using ProfiC.Cli;
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
@@ -66,7 +67,14 @@ public sealed class NegativeSampleTests : LexerTestBase
             SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, projects: compilation.Projects);
             TypeChecker.Check(compilation.Units, model, diagnostics);
             DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+
+            foreach (CompilationUnit documented in compilation.Units)
+            {
+                DocumentationChecker.Check(documented, diagnostics);
+            }
         }
+
+        diagnostics.ReportUnusedSuppressions();
 
         Assert.That(diagnostics.HasErrors, Is.True, $"{name} was supposed to be rejected");
 
@@ -88,6 +96,8 @@ public sealed class NegativeSampleTests : LexerTestBase
         SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
         TypeChecker.Check(unit, model, diagnostics);
         DefiniteAssignment.Analyze(unit, model, diagnostics);
+        DocumentationChecker.Check(unit, diagnostics);
+        diagnostics.ReportUnusedSuppressions();
 
         // The point of a runtime negative is that nothing was knowable earlier. One that fails
         // to compile is testing the wrong thing and belongs under compile instead.
@@ -133,7 +143,14 @@ public sealed class NegativeSampleTests : LexerTestBase
             SemanticModel model = Resolver.Resolve(compilation.Units, diagnostics, projects: compilation.Projects);
             TypeChecker.Check(compilation.Units, model, diagnostics);
             DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+
+            foreach (CompilationUnit documented in compilation.Units)
+            {
+                DocumentationChecker.Check(documented, diagnostics);
+            }
         }
+
+        diagnostics.ReportUnusedSuppressions();
 
         Assert.That(diagnostics.HasErrors, Is.True, $"{name} was supposed to be rejected");
 

@@ -1,4 +1,5 @@
 using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Lexing;
@@ -78,6 +79,21 @@ public sealed class Lexer
     /// one ending a set literal written inside it.</para>
     /// </summary>
     private readonly Stack<Hole> _holes = new();
+
+    /// <summary>
+    /// Directives read from line comments, kept until the token list can say which line each
+    /// one covers.
+    /// </summary>
+    private readonly List<(SourceSpan Span, SuppressionTarget Target)> _directives = [];
+
+    /// <summary>
+    /// Documentation comments read while scanning, told which line each documents once the
+    /// tokens are in. Read from <see cref="Documentation"/> after <see cref="Scan"/>.
+    /// </summary>
+    private readonly List<DocComment> _documentation = [];
+
+    /// <summary>What the file documents, in the order written. Empty until <see cref="Scan"/>.</summary>
+    public IReadOnlyList<DocComment> Documentation { get; private set; } = [];
 
     private sealed class Hole
     {
@@ -182,8 +198,68 @@ public sealed class Lexer
         _holes.Clear();
 
         tokens.Add(new Token(TokenType.EndOfFile, string.Empty, SpanOf(_text.Length, 0)));
+
+        RecordDirectives(tokens);
+
+        Documentation =
+            [.. _documentation.Select(d => d.Documenting(
+                NextLineCarryingCode(tokens, d.Span.Start.Line)))];
+
         return tokens;
     }
+
+    /// <summary>
+    /// <para>Turns the directives read while scanning into suppressions the bag can apply.</para>
+    /// <para>It happens here rather than where each was read because a line-scoped one covers
+    /// the next line carrying code, and which line that is takes the token list to answer.</para>
+    /// <para>An identifier is checked against the diagnostic table now, since whether it names
+    /// anything, and whether what it names can be silenced, are both answerable without seeing
+    /// what the rest of the compilation reports.</para>
+    /// </summary>
+    private void RecordDirectives(List<Token> tokens)
+    {
+        foreach ((SourceSpan span, SuppressionTarget target) in _directives)
+        {
+            if (target.Id is { } id && !Suppressible(id, span))
+            {
+                continue;
+            }
+
+            _diagnostics.Suppress(new Suppression(
+                target.WholeFile ? SuppressionScope.File : SuppressionScope.Line,
+                _source,
+                target.WholeFile ? 0 : NextLineCarryingCode(tokens, span.Start.Line),
+                target.Severity,
+                target.Id,
+                span));
+        }
+    }
+
+    /// <summary>Whether an identifier names something that exists and does not stop compilation.</summary>
+    private bool Suppressible(string id, SourceSpan span)
+    {
+        if (!DiagnosticDescriptors.ById.TryGetValue(id, out DiagnosticDescriptor? named))
+        {
+            _diagnostics.Report(DiagnosticDescriptors.IgnoreNamesNoDiagnostic, span, id);
+            return false;
+        }
+
+        if (named.DefaultSeverity == DiagnosticSeverity.Error)
+        {
+            _diagnostics.Report(DiagnosticDescriptors.IgnoreCannotSilenceAnError, span, id);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The first line below the given one that carries code, or zero where none does. Blank
+    /// lines and further comments are passed over, so a directive may be written above the
+    /// thing it is about rather than jammed against it. The end-of-file token is not code.
+    /// </summary>
+    private static int NextLineCarryingCode(List<Token> tokens, int below) =>
+        tokens.Find(t => t.Type != TokenType.EndOfFile && t.Line > below)?.Line ?? 0;
 
     /// <summary>Advances past any run of whitespace and comments.</summary>
     private void SkipTrivia()
@@ -214,14 +290,48 @@ public sealed class Lexer
             return false;
         }
 
+        int opened = _index;
+
         if (Peek() == '#')
         {
-            SkipBlockComment(_index);
+            SkipBlockComment(opened);
+            ReadDocumentation(opened);
             return true;
         }
 
         SkipToEndOfLine();
+        ReadDirective(opened);
+        ReadDocumentation(opened);
         return true;
+    }
+
+    /// <summary>
+    /// <para>Keeps a comment that documents something, and passes over one that does not.</para>
+    /// <para>Both forms carry documentation, since a one-line summary is worth writing on one
+    /// line. Which declaration each belongs to is settled once the tokens are in, for the same
+    /// reason a line-scoped directive is.</para>
+    /// </summary>
+    private void ReadDocumentation(int start)
+    {
+        if (DocComment.TryRead(_source, start, _index, out DocComment? read))
+        {
+            _documentation.Add(read);
+        }
+    }
+
+    /// <summary>
+    /// <para>Reads the one directive a line comment may carry, and keeps it if it is one.</para>
+    /// <para>This is the whole of the language talking to its own compiler, and it goes no
+    /// further than here: the parser never learns comments existed, so nothing about the
+    /// grammar changes to admit it. Only a line comment is read — a <c>##</c> block is prose,
+    /// and a directive buried in a paragraph is one nobody sees.</para>
+    /// </summary>
+    private void ReadDirective(int start)
+    {
+        if (SuppressionDirective.TryRead(_text[start.._index].TrimStart('#'), out var target))
+        {
+            _directives.Add((SpanOf(start, _index - start), target));
+        }
     }
 
     /// <summary>

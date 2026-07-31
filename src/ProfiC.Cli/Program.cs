@@ -1,5 +1,6 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
@@ -242,6 +243,15 @@ public static class Program
             compilation.EntryPoint);
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+
+        foreach (CompilationUnit unit in compilation.Units)
+        {
+            DocumentationChecker.Check(unit, diagnostics);
+        }
+
+        // Last, because whether an 'ignore' silenced anything is a question only the finished
+        // compilation can answer.
+        diagnostics.ReportUnusedSuppressions();
 
         return (compilation, model);
     }

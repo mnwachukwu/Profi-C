@@ -1,5 +1,6 @@
 using ProfiC.Cli;
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Semantics;
 
@@ -71,6 +72,13 @@ public sealed class MultiFileSampleTests : LexerTestBase
         SemanticModel model = Resolver.Resolve(compilation!.Units, diagnostics, requireEntryPoint: true, compilation.Projects);
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
+
+        foreach (CompilationUnit documented in compilation.Units)
+        {
+            DocumentationChecker.Check(documented, diagnostics);
+        }
+
+        diagnostics.ReportUnusedSuppressions();
 
         Assert.That(
             diagnostics.Sorted().Select(DiagnosticRenderer.Format),

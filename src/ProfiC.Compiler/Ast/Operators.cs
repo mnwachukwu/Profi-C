@@ -26,8 +26,8 @@ public enum BinaryOperator
     GreaterThan,
     LessThanOrEqual,
     GreaterThanOrEqual,
-    LeftShift,
-    RightShift,
+    ShiftLeft,
+    ShiftRight,
     Add,
     Subtract,
     Multiply,
@@ -71,8 +71,8 @@ public static class Operators
 
         // 'bitwise' is read with the word after it, so what arrives here is already settled.
         TokenType.Xor => BinaryOperator.Xor,
-        TokenType.LeftShift => BinaryOperator.LeftShift,
-        TokenType.RightShift => BinaryOperator.RightShift,
+        TokenType.ShiftLeft => BinaryOperator.ShiftLeft,
+        TokenType.ShiftRight => BinaryOperator.ShiftRight,
         _ => null,
     };
 
@@ -104,8 +104,8 @@ public static class Operators
         BinaryOperator.BitwiseAnd => "bitwise and",
         BinaryOperator.BitwiseOr => "bitwise or",
         BinaryOperator.Xor => "xor",
-        BinaryOperator.LeftShift => "leftshift",
-        BinaryOperator.RightShift => "rightshift",
+        BinaryOperator.ShiftLeft => "shiftleft",
+        BinaryOperator.ShiftRight => "shiftright",
         _ => op.ToString(),
     };
 
@@ -136,8 +136,8 @@ public static class Operators
             or TokenType.Is or TokenType.As => (26, 27),
 
         // A shift binds tighter than a comparison and looser than arithmetic, so
-        // "x leftshift 1 + 1" shifts by two and "x leftshift 1 < y" compares the result.
-        TokenType.LeftShift or TokenType.RightShift => (30, 31),
+        // "x shiftleft 1 + 1" shifts by two and "x shiftleft 1 < y" compares the result.
+        TokenType.ShiftLeft or TokenType.ShiftRight => (30, 31),
 
         TokenType.Plus or TokenType.Minus => (34, 35),
         TokenType.Star or TokenType.Slash or TokenType.Percent => (38, 39),

@@ -1,0 +1,4 @@
+ignoring.pc(13,1): warning PC0022: 'PC9999' is not something this compiler reports, so this line silences nothing. Check the identifier against the one in the message.
+ignoring.pc(32,9): opinion PC0024: Nothing it reaches reports 'PC0403', so this line has no effect. Remove it.
+ignoring.pc(39,9): warning PC0023: 'PC0300' stops compilation, and only a warning or an opinion can be ignored. This line cannot do anything; what it names has to be fixed.
+ignoring.pc(40,25): error PC0300: Cannot use a string where an integer is expected.

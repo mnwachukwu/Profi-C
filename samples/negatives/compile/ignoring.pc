@@ -1,0 +1,45 @@
+##
+    Directives that cannot do what they were written to do.
+
+    Every one of these is reported, and not one of them stops the build. The single error below
+    is what rejects this file, and it is here on purpose: it is the thing a directive tried to
+    silence and could not.
+##
+
+##
+    An identifier no diagnostic carries. Almost always a typo, since the alternative is having
+    invented one.
+##
+# ignore PC9999
+
+##
+    Not a directive at all. Nothing is recognized until 'warning', 'opinion', or something
+    shaped like an identifier follows, so this is a remark and draws nothing — which is the
+    point: a comment beginning with the word must stay a comment.
+##
+# ignore whatever you like
+
+global model Program
+
+    function Main()
+        ##
+            A real identifier, suppressible, and nothing this reaches reports it. The line is
+            dead weight, which is worth hearing about while it is still easy to remove.
+
+            Only naming an identifier draws this. 'ignore opinion' claims nothing is there, so
+            it stays silent with nothing to silence.
+        ##
+        # ignore PC0403
+        Console.WriteLine("nothing here is unreachable");
+
+        ##
+            An error cannot be silenced, ever. Without this being said, a reader would write
+            the line, meet the error anyway, and conclude the whole mechanism is broken.
+        ##
+        # ignore PC0300
+        integer wrong = "not a number";
+
+        Console.WriteLine(wrong);
+    end function
+
+end model

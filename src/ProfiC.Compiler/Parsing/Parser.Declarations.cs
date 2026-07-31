@@ -47,7 +47,8 @@ public sealed partial class Parser
             EnsureProgress(before);
         }
 
-        return new CompilationUnit(SpanFrom(start), usings, imports, declarations, _source);
+        return new CompilationUnit(
+            SpanFrom(start), usings, imports, declarations, _source, _documentation);
     }
 
     /// <summary>

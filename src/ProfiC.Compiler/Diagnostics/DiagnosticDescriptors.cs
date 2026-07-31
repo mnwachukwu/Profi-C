@@ -1,3 +1,6 @@
+using System.Collections.Frozen;
+using System.Reflection;
+
 namespace ProfiC.Compiler.Diagnostics;
 
 /// <summary>
@@ -19,11 +22,35 @@ namespace ProfiC.Compiler.Diagnostics;
 /// </remarks>
 public static class DiagnosticDescriptors
 {
+    private static readonly Lazy<FrozenDictionary<string, DiagnosticDescriptor>> Table =
+        new(() => typeof(DiagnosticDescriptors)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.FieldType == typeof(DiagnosticDescriptor))
+            .Select(field => (DiagnosticDescriptor)field.GetValue(null)!)
+            .ToFrozenDictionary(descriptor => descriptor.Id, StringComparer.Ordinal));
+
+    /// <summary>
+    /// <para>Every diagnostic, by the identifier it carries.</para>
+    /// <para>Read off the fields rather than listed again, so that adding one below is the
+    /// whole of adding one. An <c>ignore</c> directive naming an identifier is answered from
+    /// here: whether it names anything, and whether what it names can be silenced.</para>
+    /// <para>Built on first use rather than in a field initializer, since a field initializer
+    /// would run in declaration order and read the descriptors below it as null.</para>
+    /// </summary>
+    public static FrozenDictionary<string, DiagnosticDescriptor> ById => Table.Value;
+
     private static DiagnosticDescriptor Error(string id, string title, string format) =>
         new(id, DiagnosticSeverity.Error, title, format);
 
     private static DiagnosticDescriptor Warning(string id, string title, string format) =>
         new(id, DiagnosticSeverity.Warning, title, format);
+
+    /// <summary>
+    /// A program that compiles, runs, and does what its author meant, written a way the
+    /// language would rather it were not. Every opinion says some written token has no effect.
+    /// </summary>
+    private static DiagnosticDescriptor Opinion(string id, string title, string format) =>
+        new(id, DiagnosticSeverity.Opinion, title, format);
 
     // ---- Lexical, PC0001 to PC0099 ----------------------------------------------------
 
@@ -78,7 +105,7 @@ public static class DiagnosticDescriptors
     /// saying because the mark tells a reader "this word is otherwise taken", and one in front
     /// of a word that never was misleads them.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor UnnecessaryEscapedName = Warning(
+    public static readonly DiagnosticDescriptor UnnecessaryEscapedName = Opinion(
         "PC0009",
         "This name needs no '@'",
         "'{0}' is not a reserved word, so the '@' does nothing. Write '{0}'.");
@@ -154,6 +181,54 @@ public static class DiagnosticDescriptors
         "'{0}' is written against the number before it. A name begins with a letter or an "
         + "underscore, and nothing in the language puts two values side by side.");
 
+    // ---- Ignoring a diagnostic, PC0022 to PC0025 ------------------------------------------
+    //
+    // Nothing here is an error. A writer reaches for 'ignore' to make the compiler quieter, so
+    // a mistake in the line itself must never stop a build — a feature that turns a typo into
+    // a fatal is worse than no feature.
+
+    /// <summary>
+    /// An identifier no diagnostic carries. Almost always a typo, since the alternative is a
+    /// reader having invented one.
+    /// </summary>
+    public static readonly DiagnosticDescriptor IgnoreNamesNoDiagnostic = Warning(
+        "PC0022",
+        "This 'ignore' names no diagnostic",
+        "'{0}' is not something this compiler reports, so this line silences nothing. Check "
+        + "the identifier against the one in the message.");
+
+    /// <summary>
+    /// <para>An identifier that stops compilation.</para>
+    /// <para>This is the one of the four that most needs to exist. Without it a writer
+    /// silences an error, meets the error anyway, and concludes the mechanism is broken.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor IgnoreCannotSilenceAnError = Warning(
+        "PC0023",
+        "That diagnostic cannot be ignored",
+        "'{0}' stops compilation, and only a warning or an opinion can be ignored. This line "
+        + "cannot do anything; what it names has to be fixed.");
+
+    /// <summary>
+    /// <para>An identifier nothing within reach reports, so the line is dead weight.</para>
+    /// <para>Only the by-identifier form draws this. Naming one asserts that a particular
+    /// thing is there, and a wrong assertion is worth hearing; <c>ignore opinion</c> is a
+    /// standing preference that claims nothing and stays silent with nothing to silence.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor IgnoreSilencedNothing = Opinion(
+        "PC0024",
+        "This 'ignore' silences nothing",
+        "Nothing it reaches reports '{0}', so this line has no effect. Remove it.");
+
+    /// <summary>
+    /// <para>A word in a project file's <c>ignore</c> line that names neither.</para>
+    /// <para>A comment is prose first, so <c>#&#160;ignore whatever</c> is a remark and draws
+    /// nothing. A project file has no prose, so the same words there are a mistake.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor IgnoreNamesNeither = Warning(
+        "PC0025",
+        "This 'ignore' names neither a severity nor a diagnostic",
+        "'{0}' is not 'warning', not 'opinion', and not an identifier such as 'PC0340'.");
+
     public static readonly DiagnosticDescriptor SeparatorNeedsDigits = Error(
         "PC0020",
         "This separator has no digits after it",
@@ -207,7 +282,7 @@ public static class DiagnosticDescriptors
     /// worth saying because the argument reads as though it were doing the work, when the
     /// newline comes from <c>WriteLine</c> itself and the string is only standing there.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor EmptyLineNeedsNoArgument = Warning(
+    public static readonly DiagnosticDescriptor EmptyLineNeedsNoArgument = Opinion(
         "PC0340",
         "This empty string does nothing",
         "'WriteLine' ends the line by itself. Write 'Console.WriteLine()'.");
@@ -272,7 +347,7 @@ public static class DiagnosticDescriptors
     /// to be used either way and nothing about the program is in doubt.</para>
     /// </summary>
 
-    public static readonly DiagnosticDescriptor ParameterTypeAlreadyKnown = Warning(
+    public static readonly DiagnosticDescriptor ParameterTypeAlreadyKnown = Opinion(
         "PC0115",
         "This parameter's type is already known",
         "The surrounding code already says what '{0}' holds, so writing its type says it "
@@ -312,14 +387,14 @@ public static class DiagnosticDescriptors
     /// <para>A word after <c>bitwise</c> that is not <c>and</c> or <c>or</c>.</para>
     /// <para>Those two are the only ones that need qualifying, because they already mean
     /// something on their own. Everything else the language does to bits — <c>xor</c>,
-    /// <c>leftshift</c>, <c>rightshift</c> — is a word nothing else claims, so it stands
+    /// <c>shiftleft</c>, <c>shiftright</c> — is a word nothing else claims, so it stands
     /// alone.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor BitwiseNeedsAndOrOr = Error(
         "PC0118",
         "Only 'and' or 'or' may follow 'bitwise'",
         "'bitwise' says which of two operations follows, and {0} is neither. Write 'bitwise "
-        + "and' or 'bitwise or' — 'xor', 'leftshift' and 'rightshift' need no word before "
+        + "and' or 'bitwise or' — 'xor', 'shiftleft' and 'shiftright' need no word before "
         + "them.");
 
     /// <summary>
@@ -385,7 +460,7 @@ public static class DiagnosticDescriptors
     /// twice. Nothing about what the program means is in doubt, so the compiler corrects the
     /// spelling rather than refusing the program.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = Warning(
+    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = Opinion(
         "PC0111",
         "A range loop's counter has no written type",
         "A range loop counts with integers, so its counter takes no type. Remove the "
@@ -461,7 +536,7 @@ public static class DiagnosticDescriptors
     /// using would put it at — so this line changes no name in the file, including when
     /// another using offers the same one.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor StandardNeedsNoUsing = Warning(
+    public static readonly DiagnosticDescriptor StandardNeedsNoUsing = Opinion(
         "PC0230",
         "Standard is already in scope",
         "Every file reaches Standard without saying so, so this line brings nothing.");
@@ -497,7 +572,7 @@ public static class DiagnosticDescriptors
         "Nothing can be of this type",
         "'{0}' has no instances, so nothing can ever be held here. {1}");
 
-    public static readonly DiagnosticDescriptor NamespaceRepeatsEnclosingName = Warning(
+    public static readonly DiagnosticDescriptor NamespaceRepeatsEnclosingName = Opinion(
         "PC0232",
         "This namespace repeats one around it",
         "'{0}' already sits inside a namespace of that name, so its types are reached as "
@@ -754,7 +829,7 @@ public static class DiagnosticDescriptors
     /// An <c>entry</c> written where there is nothing to choose between. Harmless, and worth
     /// saying because it reads as though a choice were being made.
     /// </summary>
-    public static readonly DiagnosticDescriptor EntryPointUnnecessary = Warning(
+    public static readonly DiagnosticDescriptor EntryPointUnnecessary = Opinion(
         "PC0236",
         "This 'entry' decides nothing",
         "Only '{0}' declares a Program, so it begins whether or not this line is here.");
@@ -849,7 +924,7 @@ public static class DiagnosticDescriptors
     /// <c>virtual</c> beside <c>abstract</c>. A warning: abstract already offers the function
     /// for overriding, so the second word is true and adds nothing.
     /// </summary>
-    public static readonly DiagnosticDescriptor AbstractIsAlreadyVirtual = Warning(
+    public static readonly DiagnosticDescriptor AbstractIsAlreadyVirtual = Opinion(
         "PC0242",
         "An abstract function is already virtual",
         "'{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing "
@@ -871,6 +946,52 @@ public static class DiagnosticDescriptors
         "'{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Its length was "
         + "read when the loop began, so the walk would not follow. Collect what you want into "
         + "another set and change that, or count with a range loop instead.");
+
+    // ---- Documentation, PC0244 to PC0247 --------------------------------------------------
+    //
+    // A doc that has gone stale never stops a build. The first three are warnings rather than
+    // opinions all the same: each leaves a reader believing they documented something they did
+    // not, and a belief about their own work that is false is worth more than a remark about
+    // how it is written. A missing doc is not reported at all — requiring one everywhere is
+    // how documentation stops being a help and becomes a tax.
+
+    /// <summary>
+    /// A documentation comment above something that cannot carry one. It is inert rather than
+    /// merely redundant: the reader wrote documentation and there is nothing holding it.
+    /// </summary>
+    public static readonly DiagnosticDescriptor DocumentsNothing = Warning(
+        "PC0244",
+        "This documentation has nothing to document",
+        "An '@summary:' comment goes above a type, a member of one, or an enumeration's "
+        + "member, and none of those follows this one. Nothing will show it.");
+
+    /// <summary>
+    /// A documented parameter the function does not take, which is where documentation and
+    /// code most often come apart: a parameter is renamed and the line describing it is not.
+    /// </summary>
+    public static readonly DiagnosticDescriptor DocumentsUnknownParameter = Warning(
+        "PC0245",
+        "This documents a parameter that is not there",
+        "'{0}' is documented, but '{1}' takes {2}. Rename the line or take it out.");
+
+    /// <summary>Describing what is given back, where nothing is.</summary>
+    public static readonly DiagnosticDescriptor DocumentsNothingYielded = Warning(
+        "PC0246",
+        "This describes a value that is never given back",
+        "'{0}' yields nothing, so there is no value for '@yields:' to describe.");
+
+    /// <summary>
+    /// <para>The same label twice, whichever it is: a parameter, the summary, or one of the
+    /// other fixed parts.</para>
+    /// <para>An opinion rather than a warning, since the reader documented what they meant to
+    /// and the second line is the one saying nothing new. A summary running to several
+    /// paragraphs needs no second 'summary:' — a blank line inside one continues it.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor DocumentsTheSameThingTwice = Opinion(
+        "PC0247",
+        "This is documented twice",
+        "'{0}' already has a line above this one, and the first is the one that shows. For a "
+        + "second paragraph, leave a blank line and keep writing.");
 
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 

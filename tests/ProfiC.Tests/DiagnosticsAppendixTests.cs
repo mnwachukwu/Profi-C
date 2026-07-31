@@ -62,36 +62,44 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
         Is.Empty,
         "diagnostics Appendix A lists that the compiler cannot report");
 
+    /// <summary>The word the appendix and the renderer both use for a severity.</summary>
+    private static string Spelled(DiagnosticSeverity severity) => severity switch
+    {
+        DiagnosticSeverity.Error => "error",
+        DiagnosticSeverity.Warning => "warning",
+        _ => "opinion",
+    };
+
     /// <summary>
-    /// Each severity is stated in the appendix, and a diagnostic changing from a warning to an
-    /// error is exactly the kind of change a reader consults the appendix about.
+    /// <para>Each severity is stated in the appendix, and a diagnostic moving between them is
+    /// exactly the kind of change a reader consults the appendix about.</para>
+    /// <para>A row whose second cell holds no severity the compiler knows is a failure rather
+    /// than a row to pass over. Skipping it would mean a misspelled severity — or one the
+    /// alternation below was never widened for — reads as agreement.</para>
     /// </summary>
     [Test]
-    public void TheAppendixAgreesAboutWhichAreWarnings()
+    public void TheAppendixAgreesAboutEverySeverity()
     {
         string specification = File.ReadAllText(SpecificationPath);
         List<string> wrong = [];
 
-        foreach (FieldInfo field in typeof(DiagnosticDescriptors)
-                     .GetFields(BindingFlags.Public | BindingFlags.Static)
-                     .Where(f => f.FieldType == typeof(DiagnosticDescriptor)))
+        foreach (DiagnosticDescriptor descriptor in Descriptors())
         {
-            DiagnosticDescriptor descriptor = (DiagnosticDescriptor)field.GetValue(null)!;
-
             Match row = Regex.Match(
                 specification,
-                $@"^\| `{descriptor.Id}` \| (warning|error) \|",
+                $@"^\| `{descriptor.Id}` \| (opinion|warning|error) \|",
                 RegexOptions.Multiline);
+
+            string actual = Spelled(descriptor.DefaultSeverity);
 
             if (!row.Success)
             {
+                wrong.Add($"{descriptor.Id} is a{(actual == "warning" ? "" : "n")} {actual}, "
+                          + "but its appendix row states no severity the compiler knows");
                 continue;
             }
 
             string documented = row.Groups[1].Value;
-            string actual = descriptor.DefaultSeverity == DiagnosticSeverity.Warning
-                ? "warning"
-                : "error";
 
             if (!string.Equals(documented, actual, StringComparison.Ordinal))
             {
@@ -99,17 +107,22 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
             }
         }
 
-        Assert.That(wrong, Is.Empty);
+        Assert.That(wrong.Order(StringComparer.Ordinal), Is.Empty);
     }
 
     /// <summary>
-    /// <para>The summary counts the warnings in a sentence, and says the number in words.</para>
+    /// <para>The summary counts the warnings and the opinions in two sentences, each saying its
+    /// number in words.</para>
     /// <para>It is a third hand-written list of the same thing, and the only one nothing checks
     /// — which is why it was the one that drifted. A count is also the claim a reader is least
     /// likely to verify and most likely to repeat.</para>
+    /// <para>Each count is read from its own sentence rather than looked for anywhere in the
+    /// file. The two happen to be equal, so a search of the whole document would find the other
+    /// one's number and agree with itself.</para>
     /// </summary>
-    [Test]
-    public void TheSummaryCountsTheWarningsCorrectly()
+    [TestCase(DiagnosticSeverity.Warning, "Warnings are few")]
+    [TestCase(DiagnosticSeverity.Opinion, "Opinions are the language")]
+    public void TheSummaryCountsThemCorrectly(DiagnosticSeverity severity, string opening)
     {
         string[] words =
         [
@@ -118,15 +131,22 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
             "Seventeen", "Eighteen", "Nineteen", "Twenty",
         ];
 
-        int warnings = Descriptors()
-            .Count(d => d.DefaultSeverity == DiagnosticSeverity.Warning);
+        int reported = Descriptors().Count(d => d.DefaultSeverity == severity);
 
-        Assert.That(warnings, Is.LessThan(words.Length), "this table needs more number words");
+        Assert.That(reported, Is.LessThan(words.Length), "this table needs more number words");
+
+        Match sentence = Regex.Match(
+            File.ReadAllText(SummaryPath),
+            $@"\*\*{Regex.Escape(opening)}[^*]*\*\* (\w+) exist");
 
         Assert.That(
-            File.ReadAllText(SummaryPath),
-            Does.Contain($"{words[warnings]} exist"),
-            $"the compiler has {warnings} warnings, so the summary should say "
-            + $"'{words[warnings]} exist'");
+            sentence.Success,
+            $"the summary should carry a sentence opening '{opening}' and counting them");
+
+        Assert.That(
+            sentence.Groups[1].Value,
+            Is.EqualTo(words[reported]),
+            $"the compiler has {reported} of {Spelled(severity)} severity, so the sentence "
+            + $"opening '{opening}' should say '{words[reported]} exist'");
     }
 }

@@ -566,6 +566,8 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
 | [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
 | [bits.pc](samples/bits.pc) | **Working on the bits of a whole number.** Flags combined and asked about, `bitwise and`/`or`/`xor`, and the two shifts — the one part of the language aimed past a first program |
+| [ignoring.pc](samples/ignoring.pc) | **Telling the compiler to stop saying something.** The three severities, the three forms of `# ignore`, how far each reaches, and why a comment beginning with the word stays a comment |
+| [documenting.pc](samples/documenting.pc) | **Writing down what a thing is.** `@summary:` and the labels beside it, how a summary runs to several paragraphs, and why a remark above a declaration stays a remark |
 | [mathematics.pc](samples/mathematics.pc) | **Every member of `Math`.** Constants, roots, logarithms, angles, rounding, and why `Log` is the natural one |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
@@ -641,6 +643,8 @@ Programs the compiler rejects:
 | [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
 | [bits.pc](samples/negatives/compile/bits.pc) | `xor` on two booleans, bit operations on a real and a fraction, a shift past the width of an integer, and a word after `bitwise` that is neither `and` nor `or` |
 | [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `for each` is walking |
+| [ignoring.pc](samples/negatives/compile/ignoring.pc) | An `ignore` naming no diagnostic, one naming a diagnostic nothing here reports, and one trying to silence an error — which fires anyway |
+| [documenting.pc](samples/negatives/compile/documenting.pc) | A documented parameter the function does not take, `@yields:` on a function that yields nothing, a label written twice, and a doc above a statement |
 | [abstract.pc](samples/negatives/compile/abstract.pc) | A function left open on a model that can be constructed, a body where there should be none and none where there should be one, and a model that never writes what it inherited |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
@@ -665,6 +669,7 @@ Projects that will not build:
 | [unknown-entry.pcp](samples/negatives/project/unknown-entry.pcp) | Words a project file does not have |
 | [missing-source.pcp](samples/negatives/project/missing-source.pcp) | A path that is not there, and one listed twice |
 | [circular.pcp](samples/negatives/project/circular.pcp) | Two projects referencing each other, so neither can be built first |
+| [quiet-and-empty.pcp](samples/negatives/project/quiet-and-empty.pcp) | An `ignore` naming neither a severity nor a diagnostic, in a project that names nothing to build |
 
 How each one fails is recorded under `tests/ProfiC.Tests/TestData/Negatives/` and asserted on
 every build, holding the wording as well as the outcome. A compile sample must be rejected

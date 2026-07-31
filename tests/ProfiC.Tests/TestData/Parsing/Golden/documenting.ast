@@ -1,0 +1,99 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Harmonic' [global]
+      NamedTypeSyntax 'fraction'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 0 [Integer]
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        IdentifierExpr 'n'
+        AssignmentStmt
+          IdentifierExpr 'total'
+          BinaryExpr '+'
+            IdentifierExpr 'total'
+            BinaryExpr '/'
+              LiteralExpr 1|1 [Fraction]
+              IdentifierExpr 'i'
+      YieldStmt
+        IdentifierExpr 'total'
+    FunctionDecl 'Divides' [global]
+      NamedTypeSyntax 'boolean'
+      ParameterDecl 'value'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'by'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr 'and'
+          UnaryExpr 'not'
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'by'
+                LiteralExpr 0 [Integer]
+          BinaryExpr '=='
+            BinaryExpr '%'
+              IdentifierExpr 'value'
+              IdentifierExpr 'by'
+            LiteralExpr 0 [Integer]
+    FieldDecl 'Terms' [global constant]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 8 [Integer]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a documented function ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "1 + 1|2 + ... + 1|8 = " [String]
+            CallExpr
+              MemberExpr 'Harmonic'
+                IdentifierExpr 'Program'
+              MemberExpr 'Terms'
+                IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== and another ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "4 divides 12: " [String]
+            CallExpr
+              MemberExpr 'Divides'
+                IdentifierExpr 'Program'
+              LiteralExpr 12 [Integer]
+              LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "5 divides 12: " [String]
+            CallExpr
+              MemberExpr 'Divides'
+                IdentifierExpr 'Program'
+              LiteralExpr 12 [Integer]
+              LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "a plain remark stays a remark" [String]

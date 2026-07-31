@@ -24,7 +24,13 @@ public static class DiagnosticRenderer
         ArgumentNullException.ThrowIfNull(diagnostic);
 
         SourcePosition start = diagnostic.Span.Start;
-        string severity = diagnostic.Severity == DiagnosticSeverity.Error ? "error" : "warning";
+
+        string severity = diagnostic.Severity switch
+        {
+            DiagnosticSeverity.Error => "error",
+            DiagnosticSeverity.Warning => "warning",
+            _ => "opinion",
+        };
 
         return $"{diagnostic.FileName}({start.Line},{start.Column}): {severity} {diagnostic.Id}: {diagnostic.Message}";
     }

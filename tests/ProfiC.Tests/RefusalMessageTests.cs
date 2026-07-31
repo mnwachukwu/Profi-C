@@ -70,7 +70,7 @@ public sealed class RefusalMessageTests : LexerTestBase
 
         // The amount arrived in a variable, so nothing could judge it while compiling. Written
         // down, it is PC0343 instead.
-        ("integer places = 64;\n        Console.WriteLine(1 leftshift places);",
+        ("integer places = 64;\n        Console.WriteLine(1 shiftleft places);",
          typeof(ArgumentException),
          "A shift of 64 places is outside an integer, which holds 64 bits. An amount from 0 to "
          + "63 is what there is to move."),

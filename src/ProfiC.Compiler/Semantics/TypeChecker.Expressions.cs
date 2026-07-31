@@ -291,7 +291,7 @@ public sealed partial class TypeChecker
         }
 
         if (binary.Operator is BinaryOperator.BitwiseAnd or BinaryOperator.BitwiseOr
-                or BinaryOperator.Xor or BinaryOperator.LeftShift or BinaryOperator.RightShift)
+                or BinaryOperator.Xor or BinaryOperator.ShiftLeft or BinaryOperator.ShiftRight)
         {
             return CheckBitwise(binary, left, right);
         }
@@ -349,7 +349,7 @@ public sealed partial class TypeChecker
     /// </summary>
     private TypeSymbol CheckBitwise(BinaryExpr binary, TypeSymbol left, TypeSymbol right)
     {
-        bool shift = binary.Operator is BinaryOperator.LeftShift or BinaryOperator.RightShift;
+        bool shift = binary.Operator is BinaryOperator.ShiftLeft or BinaryOperator.ShiftRight;
 
         if (!ReferenceEquals(left, PrimitiveType.Integer)
             || !ReferenceEquals(right, PrimitiveType.Integer))

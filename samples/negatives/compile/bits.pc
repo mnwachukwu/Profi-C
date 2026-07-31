@@ -33,7 +33,7 @@ global model Program
         fraction third = 1|3;
 
         Console.WriteLine(measured bitwise and 3);
-        Console.WriteLine(third leftshift 1);
+        Console.WriteLine(third shiftleft 1);
     end function
 
     ##
@@ -41,8 +41,8 @@ global model Program
         the amount into range and quietly shifts by none; here the amount is read as written.
     ##
     function ShiftingTooFar()
-        Console.WriteLine(1 leftshift 64);
-        Console.WriteLine(1 rightshift -1);
+        Console.WriteLine(1 shiftleft 64);
+        Console.WriteLine(1 shiftright -1);
     end function
 
     # Only 'and' and 'or' need qualifying, because only those two already mean something.

@@ -1,5 +1,6 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
@@ -50,6 +51,8 @@ public sealed class SampleProgramTests : LexerTestBase
         SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
         TypeChecker.Check(unit, model, diagnostics);
         DefiniteAssignment.Analyze(unit, model, diagnostics);
+        DocumentationChecker.Check(unit, diagnostics);
+        diagnostics.ReportUnusedSuppressions();
 
         Assert.That(
             diagnostics.Select(d => $"{d.Id}: {d.Message}"),

@@ -210,12 +210,98 @@ to disagree, the rule governs and the explanation is at fault.
 
 A **diagnostic** is a message a conforming implementation produces about a source program.
 Diagnostics carry an identifier of the form `PC` followed by four digits, a severity, and a
-source span. Two severities exist: **error**, which prevents compilation, and **warning**,
-which does not.
+source span. Three severities exist, and what separates them is how much is known about what
+the program means. An **error** is reported where the meaning is genuinely unpredictable, and
+is the only severity that prevents compilation. A **warning** is reported where the meaning is
+clear and unlikely to be what was intended. An **opinion** is reported where the meaning is
+clear, intended, and correct, and the language would still write it differently; every opinion
+says that some written token has no effect.
 
 Identifiers are stable from v1 onward: one that has been published keeps its meaning, and one
 that is withdrawn is not reissued. Before v1 they may be renumbered freely, since nothing
 depends on them yet.
+
+**A warning or an opinion may be silenced. An error may not**, ever and by any means, because
+the mechanism that quiets a compiler must not be able to make it lie. Nothing about silencing
+one stops compilation either: a directive that cannot work is reported and the program builds,
+since a feature reached for to make the compiler quieter would be worse than useless if getting
+it slightly wrong made the compiler fatal.
+
+A **line comment** carries the directive, in one of three forms. The word after `ignore` is
+never absent:
+
+```
+# ignore warning
+# ignore opinion
+# ignore PC0340
+```
+
+Each covers the next line carrying code below it, passing over blank lines and further
+comments, and covers a diagnostic whose span begins on that line. So a directive above a
+`switch` covers `PC0337` however far the switch runs. Each also takes `in file`, which widens
+it to every line of the file it is written in, wherever in that file it sits:
+
+```
+# ignore opinion in file
+```
+
+A project file widens it once more, over every file the project builds
+([§12.1](#121-what-a-compilation-is-made-of)):
+
+```
+project Library
+    source Program.pc
+    ignore opinion
+end project
+```
+
+**Prose beginning with the word `ignore` is prose.** `# ignore the sign for now` is a remark a
+reader writes, and a language that turned it into a diagnostic would be worse than one that
+occasionally passes over a typo. A directive is therefore recognized only once `warning`,
+`opinion`, or something shaped like an identifier follows; anything else is a comment and draws
+nothing. Words after the target are prose too, so a directive may say why it is there. A `##`
+block is always prose: a directive nobody sees is not one.
+
+Naming an identifier asserts that a particular diagnostic is there, so one that reaches nothing
+reporting it is itself reported (`PC0024`). Naming a severity claims nothing, and stays silent
+where there is nothing to silence. An identifier no diagnostic carries is `PC0022`; one naming
+a diagnostic that stops compilation is `PC0023`, which exists so that a reader who silences an
+error and meets it anyway is told why rather than concluding the mechanism is broken.
+
+**A comment may document a declaration**, and one that does opens with `@summary:`. Both comment
+forms carry documentation, since a one-line summary is worth writing on one line:
+
+```
+##
+    @summary: One person's money, and the rules about taking it out.
+##
+model Account
+
+    # @summary: Whose account this is.
+    string owner;
+```
+
+Documentation sits above what it documents, and what it may document is a type, a member of
+one, or an enumeration's member. Position alone never makes a comment documentation: a block
+above a declaration is an ordinary remark unless it says otherwise, for the same reason a
+comment beginning with the word `ignore` is not a directive.
+
+**Every part is a labeled line**, opening with `@`. `@summary:` carries the first part,
+`@remarks:` a fuller explanation, and `@yields:` and `@throws:` describe what a function gives
+back and what it can raise. Any other name documents the parameter of that name. A line with no
+label continues the one above it, and a blank line between them is a paragraph break rather than
+an ending — so one label may run to several paragraphs.
+
+The mark is what distinguishes a label from prose that happens to begin with a word and a colon,
+which wrapped text frequently does. No rule about where a line sits does that job: one that
+reads a label only at the start of a paragraph refuses labels written on consecutive lines, and
+one that also accepts a line following a label refuses the label after a wrapped one.
+
+A conforming implementation holds documentation to what it documents. A comment above something
+that cannot carry one is `PC0244`; a parameter documented but not taken is `PC0245`; `@yields:`
+on a function yielding nothing is `PC0246`; a label written twice is `PC0247`. **A missing doc
+is never reported**, since requiring one everywhere is how documentation becomes a tax rather
+than a help.
 
 ### 0.6 Versioning
 
@@ -491,9 +577,9 @@ boolean      break        case         catch        character    constant
 continue     default      delegate     each         else         end
 enumeration  extends      false        finally      for          fraction
 function     global       if           import       in           integer
-internal     is           leftshift    let          model        namespace
-new          not          or           override     protected    public
-real         rightshift   sealed       step         string       structure
+internal     is           let          model        namespace    new
+not          or           override     protected    public       real
+sealed       shiftleft    shiftright   step         string       structure
 switch       then         this         throw        to           true
 try          until        using        virtual      while        xor
 yield
@@ -533,7 +619,7 @@ where `10 ^ 2` evaluates to 8, so the meaning does not carry across — the oper
 there is spelled `xor` here.
 
 The boolean operators are the reserved words `and`, `or`, and `not`, not symbols. So are the
-ones that work on bits: `bitwise and`, `bitwise or`, `xor`, `leftshift` and `rightshift`
+ones that work on bits: `bitwise and`, `bitwise or`, `xor`, `shiftleft` and `shiftright`
 ([§5.2](#52-operators)).
 
 There is **no** ternary conditional, no compound assignment (`+=` and its family), and no
@@ -1045,14 +1131,14 @@ there is spelled `xor` here.
 flags bitwise and mask      the bits both have
 flags bitwise or mask       the bits either has
 flags xor mask              the bits exactly one has
-flags leftshift 2           every bit two places up, so the value quadruples
-flags rightshift 2          every bit two places down
+flags shiftleft 2           every bit two places up, so the value quadruples
+flags shiftright 2          every bit two places down
 ```
 
 `&` and `|` were not available to be borrowed: `|` already writes a fraction, and adding
 punctuation for the rest would have been the only symbol operators in a language that spells
 `and`, `or` and `not`. So `bitwise` qualifies the two words that already mean something.
-Nothing else claims `xor`, `leftshift` or `rightshift`, so those stand alone, and a word after
+Nothing else claims `xor`, `shiftleft` or `shiftright`, so those stand alone, and a word after
 `bitwise` that is not `and` or `or` is reported (`PC0118`).
 
 The three sit on three levels, in C#'s order among themselves — `or` loosest, then `xor`, then
@@ -1356,7 +1442,7 @@ function. The narrowest reach the word admits is the type and everything extendi
 is what silence means. `public` and `internal` still say so where they are wanted.
 
 `abstract` is what offers the function for overriding, so `virtual` beside it says nothing
-further and is a warning (`PC0242`).
+further and is an opinion (`PC0242`).
 
 **`this.` is required to reach an instance member.** `name` and `this.name` are not two ways
 to write one thing — the first is a local and the second is a field, and the difference is
@@ -1668,7 +1754,7 @@ yield (n) yield n + by;                                      # result
 An optional function type is a target like any other, since the lambda is wrapped on the way
 in and what it has to be is the type underneath.
 
-**Where the type is already said, writing it again is reported.** `PC0115` is a warning: the
+**Where the type is already said, writing it again is reported.** `PC0115` is an opinion: the
 program says one thing and says it twice, which is the same argument `PC0111` makes about a
 range loop's counter.
 
@@ -1770,8 +1856,8 @@ be extended.
 
 **`Standard` is in scope in every file with nothing written**, so the library is reached
 without importing anything, and `Standard.Math` is legal without a `using` too — qualifying a
-name never needed one. Writing `using Standard;` is legal and warned (`PC0230`): it brings
-nothing that is not already there.
+name never needed one. Writing `using Standard;` is legal and reported (`PC0230`, an opinion):
+it brings nothing that is not already there.
 
 It sits at the same rank a `using` would put it at, rather than beneath. That matters only
 once a second namespace can offer one of these names — .NET interop, in a later version —
@@ -2367,7 +2453,7 @@ end project
 ```
 
 Written where the sources declare exactly one `Program`, the line decides nothing and is
-warned about (`PC0236`). Left out where they declare several, the compilation is rejected and
+reported as an opinion (`PC0236`). Left out where they declare several, the compilation is rejected and
 the programs are named (`PC0234`). Naming something that is not one of them is `PC0235`, which
 lists what was there. A project starts in one place, so a second `entry` is `PC0627`.
 
@@ -2468,9 +2554,9 @@ whole file — which names it reaches, and which files are compiled with it — 
 narrows to part of one, so writing one inside a namespace would say something the language has
 no way to mean.
 
-**A namespace repeating a name it sits inside is warned about** (`PC0232`), whether written as
+**A namespace repeating a name it sits inside is reported** (`PC0232`), whether written as
 a nested block or as a dotted name repeating itself. `Shapes.Shapes.Circle` is what a reader
-has to write afterwards, and it reads as a slip rather than a distinction. A warning rather
+has to write afterwards, and it reads as a slip rather than a distinction. An opinion rather
 than an error, because it is only a name and a program that means it works.
 
 **A `using` cannot form a circle, and will not be made to.** Two namespaces whose types name
@@ -2491,7 +2577,18 @@ nothing is spelled first.
 Every identifier the compiler reports. Identifiers are stable: once assigned, one is never
 reused for a different rule, so a link or a note written today keeps its meaning.
 
-Warnings do not block compilation; everything else does.
+Each carries one of three severities, and what separates them is how much is known about what
+the program means.
+
+| Severity | The program's meaning | Blocks compilation |
+|---|---|---|
+| `error` | genuinely unpredictable without the diagnostic | yes |
+| `warning` | clear, and unlikely to be what was intended | no |
+| `opinion` | clear, intended, and correct — and the language would write it differently | no |
+
+An opinion always says that some written token has no effect. Nothing is wrong with a program
+that has one, and reading them in order is a reasonable way to learn what the language expects
+of a reader.
 
 ### PC0000 to PC0099
 
@@ -2505,7 +2602,7 @@ Warnings do not block compilation; everything else does.
 | `PC0006` | error | Not an operator in Profi-C |
 | `PC0007` | error | Unrecognized escape sequence |
 | `PC0008` | error | Malformed Unicode escape sequence |
-| `PC0009` | warning | This name needs no '@' |
+| `PC0009` | opinion | This name needs no '@' |
 | `PC0010` | error | Nothing to escape |
 | `PC0011` | error | Unterminated interpolation |
 | `PC0012` | error | Nothing to interpolate |
@@ -2518,6 +2615,10 @@ Warnings do not block compilation; everything else does.
 | `PC0019` | error | This exponent has no digits |
 | `PC0020` | error | This separator has no digits after it |
 | `PC0021` | error | A name cannot begin with a digit |
+| `PC0022` | warning | This 'ignore' names no diagnostic |
+| `PC0023` | warning | That diagnostic cannot be ignored |
+| `PC0024` | opinion | This 'ignore' silences nothing |
+| `PC0025` | warning | This 'ignore' names neither a severity nor a diagnostic |
 
 ### PC0100 to PC0199
 
@@ -2534,11 +2635,11 @@ Warnings do not block compilation; everything else does.
 | `PC0108` | error | Expected a declaration |
 | `PC0109` | error | Cannot assign to this expression |
 | `PC0110` | error | Type declared inside a function |
-| `PC0111` | warning | A range loop's counter has no written type |
+| `PC0111` | opinion | A range loop's counter has no written type |
 | `PC0112` | error | An if expression has no 'else' |
 | `PC0113` | error | Too many problems |
 | `PC0114` | error | This word is reserved |
-| `PC0115` | warning | This parameter's type is already known |
+| `PC0115` | opinion | This parameter's type is already known |
 | `PC0116` | error | A function's type is written with 'delegate' |
 | `PC0117` | error | A function's type is written with 'delegate' |
 | `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' |
@@ -2577,20 +2678,24 @@ Warnings do not block compilation; everything else does.
 | `PC0227` | error | No such namespace |
 | `PC0228` | error | This namespace is already used here |
 | `PC0229` | error | Standard belongs to the language |
-| `PC0230` | warning | Standard is already in scope |
+| `PC0230` | opinion | Standard is already in scope |
 | `PC0231` | error | This belongs above any namespace |
-| `PC0232` | warning | This namespace repeats one around it |
+| `PC0232` | opinion | This namespace repeats one around it |
 | `PC0233` | error | Nothing can be of this type |
 | `PC0234` | error | Which program starts? |
 | `PC0235` | error | No such program |
-| `PC0236` | warning | This 'entry' decides nothing |
+| `PC0236` | opinion | This 'entry' decides nothing |
 | `PC0237` | error | This name is already in use here |
 | `PC0238` | error | This function needs a body |
 | `PC0239` | error | An abstract function has no body |
 | `PC0240` | error | Only an abstract model may leave a function open |
 | `PC0241` | error | An inherited function is still open |
-| `PC0242` | warning | An abstract function is already virtual |
+| `PC0242` | opinion | An abstract function is already virtual |
 | `PC0243` | error | This changes the sequence being walked |
+| `PC0244` | warning | This documentation has nothing to document |
+| `PC0245` | warning | This documents a parameter that is not there |
+| `PC0246` | warning | This describes a value that is never given back |
+| `PC0247` | opinion | This is documented twice |
 
 ### PC0300 to PC0399
 
@@ -2636,7 +2741,7 @@ Warnings do not block compilation; everything else does.
 | `PC0337` | warning | Not every member is handled |
 | `PC0338` | error | This member is a value |
 | `PC0339` | error | Member cannot be reached from here |
-| `PC0340` | warning | This empty string does nothing |
+| `PC0340` | opinion | This empty string does nothing |
 | `PC0341` | error | This cannot be formatted |
 | `PC0342` | error | This works on bits, not on booleans |
 | `PC0343` | error | This shift is outside the width of an integer |

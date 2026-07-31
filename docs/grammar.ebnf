@@ -278,7 +278,7 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
        6    not                            prefix     right
        7    ==  !=                         infix      left
        8    <  >  <=  >=  is  as           infix      left
-       9    leftshift  rightshift          infix      left
+       9    shiftleft  shiftright          infix      left
       10    +  -                           infix      left
       11    *  /  %                        infix      left
       12    -                              prefix     right
@@ -292,11 +292,11 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    The three that work on bits keep C#'s order among themselves, so a reader
    who learned it once carries it across: "a bitwise or b bitwise and c" is
    "a bitwise or (b bitwise and c)". A shift binds tighter than a comparison
-   and looser than arithmetic, so "x leftshift 1 + 1" shifts by two.
+   and looser than arithmetic, so "x shiftleft 1 + 1" shifts by two.
 
    "bitwise" is the only operator written as two words, and its level depends
    on which word follows, so the parser asks Operators.BitwisePower rather
-   than the table. "xor", "leftshift" and "rightshift" need no qualifier
+   than the table. "xor", "shiftleft" and "shiftright" need no qualifier
    because nothing else claims those words.
 
    "^" raises to a power. It is the only right-associative infix operator, so

@@ -88,19 +88,19 @@ global model Program
 
         integer one = 0b0001;
 
-        Console.WriteLine("  1 left 4:     " + (one leftshift 4).Format("B"));
-        Console.WriteLine("  and as a number: " + (one leftshift 4));
+        Console.WriteLine("  1 left 4:     " + (one shiftleft 4).Format("B"));
+        Console.WriteLine("  and as a number: " + (one shiftleft 4));
 
         integer sixty4 = 0b1000000;
 
-        Console.WriteLine("  64 right 3:   " + (sixty4 rightshift 3).Format("B"));
+        Console.WriteLine("  64 right 3:   " + (sixty4 shiftright 3).Format("B"));
 
         # Shifting left by one doubles, which is the same arithmetic said another way.
-        Console.WriteLine("  doubling:     " + ((5 leftshift 1) == 5 * 2));
+        Console.WriteLine("  doubling:     " + ((5 shiftleft 1) == 5 * 2));
 
         # A shift binds tighter than a comparison and looser than arithmetic, so the amount
         # here is 2 + 1 and the whole thing is compared afterwards.
-        Console.WriteLine("  precedence:   " + ((1 leftshift 2 + 1) == 8));
+        Console.WriteLine("  precedence:   " + ((1 shiftleft 2 + 1) == 8));
     end function
 
 end model

@@ -1,0 +1,80 @@
+##
+    Telling the compiler to stop saying something.
+
+    A diagnostic carries one of three severities. An error means the program's meaning is
+    genuinely unpredictable, and it stops compilation. A warning means the meaning is clear and
+    probably not what was intended. An opinion means the meaning is clear, intended and
+    correct, and the language would still write it differently.
+
+    Only the last two can be silenced. An error never can — the whole point of a mechanism that
+    quiets the compiler is that it must not be able to make it lie. And nothing here stops a
+    build: getting one of these lines wrong is itself only a warning, because a feature reached
+    for to hear less would be worse than useless if a typo in it were fatal.
+
+    This program compiles with nothing said about it. Delete any of the 'ignore' lines and the
+    thing below it has something to say.
+##
+
+global model Program
+
+    function Main()
+        Console.WriteLine("== silencing one line ==");
+
+        ##
+            'Console.WriteLine("")' writes an empty line, and so does 'Console.WriteLine()'
+            with nothing at all. Writing the empty string says a thing the call already does,
+            which is PC0340, an opinion.
+
+            The directive covers the next line carrying code, so it may sit above the line it
+            is about rather than jammed against it. A blank line between them changes nothing.
+        ##
+        # ignore opinion
+        Console.WriteLine("");
+
+        ##
+            Naming the identifier instead says which one is expected. It is the narrower of the
+            two, and the one to reach for where a line might grow a second diagnostic later
+            that should still be heard.
+        ##
+        # ignore PC0340
+        Console.WriteLine("");
+
+        ##
+            Words after the target are prose, so a directive can say why it is there. This is
+            the form worth writing: a reader who meets it a year later learns the reason
+            without having to guess it.
+        ##
+        # ignore opinion deliberate, to show the blank line above the total
+        Console.WriteLine("");
+
+        Console.WriteLine("== and prose stays prose ==");
+
+        ##
+            A comment beginning with the word 'ignore' is a remark, not a directive. Nothing is
+            recognized until 'warning', 'opinion', or something shaped like an identifier
+            follows, so an ordinary sentence is read the way it was written.
+        ##
+        # ignore the fractions for now, they come later
+        Console.WriteLine("this line is not silenced, and has nothing to silence");
+
+        Program.Counting();
+    end function
+
+    ##
+        A range loop counts with integers, so writing 'integer' on its counter says a thing the
+        loop already said. That is PC0111, and it is the same shape of remark as the empty
+        string: nothing is wrong, and a word could go.
+
+        Here it is kept, because the point of the section is that it can be — and the directive
+        above it records the choice.
+    ##
+    global function Counting()
+        Console.WriteLine("== a counter that says its type ==");
+
+        # ignore PC0111 kept deliberately, to show a directive inside a function
+        for integer i = 1 to 3
+            Console.WriteLine("  " + i);
+        end for
+    end function
+
+end model

@@ -1,0 +1,72 @@
+##
+    @summary: Writing down what a thing is, where the tooling can find it.
+
+    @remarks: An ordinary comment explains code to whoever is reading the file. Documentation
+    is different: it is meant to reach someone who is not reading the file at all, but calling
+    the thing from somewhere else and asking their editor what it does.
+
+    So a comment becomes documentation only by saying so. A block sitting above a declaration
+    is a remark like any other unless it opens with '@summary:', because a language that
+    promoted prose to documentation purely by where it sat would end up publishing sentences
+    nobody meant that way.
+
+    Nothing here is checked for existing. A thing with no documentation is reported by nothing,
+    since demanding it everywhere is how documentation stops being a help and turns into a form
+    to fill in. What is checked is documentation that has come apart from what it describes.
+##
+
+global model Program
+
+    ##
+        @summary: The sum of 1|1 through 1|n.
+
+        A blank line does not end a label, so this paragraph is still the summary. That is how
+        a summary runs as long as it needs to without saying '@summary:' twice.
+
+        @n: how many terms to add. Its own text wraps the same way, and this second line
+        belongs to 'n' rather than starting anything new.
+        @yields: the exact rational sum, in lowest terms.
+    ##
+    global fraction function Harmonic(integer n)
+        fraction total = 0;
+
+        for i = 1 to n
+            total = total + 1|1 / i;
+        end for
+
+        yield total;
+    end function
+
+    ##
+        @summary: Whether a whole number divides another exactly.
+        @value: the number being divided.
+        @by: the number to divide it by.
+        @yields: true when nothing is left over.
+        @throws: nothing. A divisor of zero is refused before this is reached.
+    ##
+    global boolean function Divides(integer value, integer by)
+        yield not (by == 0) and value % by == 0;
+    end function
+
+    # @summary: A one-line comment documents just as well, where one line is enough.
+    global constant integer Terms = 8;
+
+    function Main()
+        Console.WriteLine("== a documented function ==");
+        Console.WriteLine("1 + 1|2 + ... + 1|8 = " + Program.Harmonic(Program.Terms));
+
+        Console.WriteLine();
+        Console.WriteLine("== and another ==");
+        Console.WriteLine("4 divides 12: " + Program.Divides(12, 4));
+        Console.WriteLine("5 divides 12: " + Program.Divides(12, 5));
+
+        ##
+            This block is a remark, not documentation. It opens with no label, so nothing
+            reads it and nothing checks it — which is exactly what a note to a reader of this
+            file should be.
+        ##
+        Console.WriteLine();
+        Console.WriteLine("a plain remark stays a remark");
+    end function
+
+end model

@@ -191,7 +191,7 @@ CompilationUnit
             CallExpr
               MemberExpr 'Format'
                 ParenthesizedExpr
-                  BinaryExpr 'leftshift'
+                  BinaryExpr 'shiftleft'
                     IdentifierExpr 'one'
                     LiteralExpr 4 [Integer]
               LiteralExpr "B" [String]
@@ -202,7 +202,7 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "  and as a number: " [String]
             ParenthesizedExpr
-              BinaryExpr 'leftshift'
+              BinaryExpr 'shiftleft'
                 IdentifierExpr 'one'
                 LiteralExpr 4 [Integer]
       VarDeclStmt 'sixty4'
@@ -217,7 +217,7 @@ CompilationUnit
             CallExpr
               MemberExpr 'Format'
                 ParenthesizedExpr
-                  BinaryExpr 'rightshift'
+                  BinaryExpr 'shiftright'
                     IdentifierExpr 'sixty4'
                     LiteralExpr 3 [Integer]
               LiteralExpr "B" [String]
@@ -230,7 +230,7 @@ CompilationUnit
             ParenthesizedExpr
               BinaryExpr '=='
                 ParenthesizedExpr
-                  BinaryExpr 'leftshift'
+                  BinaryExpr 'shiftleft'
                     LiteralExpr 5 [Integer]
                     LiteralExpr 1 [Integer]
                 BinaryExpr '*'
@@ -245,7 +245,7 @@ CompilationUnit
             ParenthesizedExpr
               BinaryExpr '=='
                 ParenthesizedExpr
-                  BinaryExpr 'leftshift'
+                  BinaryExpr 'shiftleft'
                     LiteralExpr 1 [Integer]
                     BinaryExpr '+'
                       LiteralExpr 2 [Integer]

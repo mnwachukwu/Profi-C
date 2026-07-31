@@ -243,4 +243,124 @@ public sealed class EditorGrammarTests : LexerTestBase
 
         Assert.That(unknown, Is.Empty, "words the grammar colours that the language does not reserve");
     }
+
+    /// <summary>
+    /// <para>The directive rule sets apart exactly the comments the compiler heeds.</para>
+    /// <para>Two ways to be wrong, and the second is the one that matters. Missing a real
+    /// directive leaves it looking like prose, which is untidy. Colouring a comment that is
+    /// <i>not</i> one tells a reader the compiler is acting on a sentence it is ignoring, and
+    /// they would have no way to find out otherwise. So the rows below are the scanner's own
+    /// edges: the word must come first, the target must be whole, and a near miss is prose.
+    /// </para>
+    /// </summary>
+    [TestCase("# ignore warning", true)]
+    [TestCase("# ignore opinion", true)]
+    [TestCase("# ignore PC0340", true)]
+    [TestCase("# ignore pc0340", true, TestName = "an identifier is read whatever its case")]
+    [TestCase("# ignore opinion in file", true)]
+    [TestCase("# ignore opinion because the blank line is the point", true)]
+    [TestCase("#ignore opinion", true, TestName = "no space after the mark")]
+    [TestCase("Console.WriteLine(x); # ignore opinion", true, TestName = "after code on the line")]
+    [TestCase("# ignore opinions", false, TestName = "a near miss is prose")]
+    [TestCase("# ignore PC03400", false, TestName = "an identifier is four digits")]
+    [TestCase("# ignore the sign for now", false)]
+    [TestCase("# ignore", false, TestName = "the target is never absent")]
+    [TestCase("# please ignore opinion", false, TestName = "the word comes first or not at all")]
+    [TestCase("# a remark", false)]
+    public void TheDirectiveRuleMatchesWhatTheScannerReads(string line, bool directive)
+    {
+        string pattern = Grammar().RootElement
+                                  .GetProperty("repository")
+                                  .GetProperty("comment-directive")
+                                  .GetProperty("match")
+                                  .GetString()!;
+
+        Assert.That(new Regex(pattern).IsMatch(line), Is.EqualTo(directive));
+    }
+
+    /// <summary>
+    /// The directive rule is offered before the ordinary line rule, which would otherwise take
+    /// every comment first and leave the directive rule matching nothing at all.
+    /// </summary>
+    [Test]
+    public void TheDirectiveRuleIsTriedBeforeTheLineRule()
+    {
+        string[] order = [.. Grammar().RootElement
+                                      .GetProperty("patterns")
+                                      .EnumerateArray()
+                                      .Select(p => p.GetProperty("include").GetString()!)];
+
+        Assert.That(
+            Array.IndexOf(order, "#comment-directive"),
+            Is.LessThan(Array.IndexOf(order, "#comment-line")));
+    }
+
+    /// <summary>
+    /// <para>The colour is the extension's, since a grammar names meaning and a theme chooses
+    /// what it looks like.</para>
+    /// <para>A directive is addressed to the compiler rather than to a reader, so it is set
+    /// apart from the prose around it rather than sharing its colour. Shipped as a default, so
+    /// anyone who disagrees overrides it the ordinary way.</para>
+    /// </summary>
+    [Test]
+    public void TheExtensionGivesTheDirectiveItsOwnColour()
+    {
+        using JsonDocument manifest = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(
+                RepositoryRoot, "editors", "vscode", "package.json")));
+
+        string[] scopes = [.. manifest.RootElement
+            .GetProperty("contributes")
+            .GetProperty("configurationDefaults")
+            .GetProperty("editor.tokenColorCustomizations")
+            .GetProperty("textMateRules")
+            .EnumerateArray()
+            .Select(rule => rule.GetProperty("scope").GetString()!)];
+
+        Assert.That(scopes, Does.Contain("comment.line.number-sign.directive.profi-c"));
+    }
+
+    /// <summary>
+    /// <para>The label rule picks out what the scanner reads as a label, and nothing else.</para>
+    /// <para>The mark is the whole of it. Colouring a wrapped line beginning with a word and a
+    /// colon would tell a reader the compiler is acting on prose it is passing over, and they
+    /// would have no way to find out otherwise.</para>
+    /// </summary>
+    [TestCase("@summary: A thing.", true)]
+    [TestCase("@remarks: At greater length.", true)]
+    [TestCase("@n: how many terms.", true)]
+    [TestCase("@yields: the total.", true)]
+    [TestCase("optional: nothing more to read is an answer.", false, TestName = "wrapped prose")]
+    [TestCase("summary: without the mark", false, TestName = "the mark is required")]
+    [TestCase("@ n: a space after the mark", false)]
+    [TestCase("@1st: a name cannot begin with a digit", false)]
+    public void TheLabelRuleMatchesWhatTheScannerReads(string line, bool label)
+    {
+        string pattern = Grammar().RootElement
+                                  .GetProperty("repository")
+                                  .GetProperty("documentation-label")
+                                  .GetProperty("match")
+                                  .GetString()!;
+
+        Assert.That(new Regex(pattern).IsMatch(line), Is.EqualTo(label));
+    }
+
+    /// <summary>
+    /// Both comment forms carry labels, since one line is enough to document something and a
+    /// block is what a longer one needs. A rule reaching only into blocks would leave the line
+    /// form looking like prose while the compiler read it as documentation.
+    /// </summary>
+    [TestCase("comment-block")]
+    [TestCase("comment-line")]
+    public void BothCommentFormsReachTheLabelRule(string rule)
+    {
+        JsonElement comment = Grammar().RootElement
+                                       .GetProperty("repository")
+                                       .GetProperty(rule);
+
+        Assert.That(
+            comment.GetRawText(),
+            Does.Contain("#documentation-label"),
+            $"{rule} should pick out documentation labels");
+    }
 }

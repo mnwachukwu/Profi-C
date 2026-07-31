@@ -18,10 +18,10 @@ public sealed class ReservedWordTests : LexerTestBase
         "character", "constant", "continue", "default", "delegate", "each", "else", "end",
         "enumeration",
         "extends", "false", "finally", "for", "fraction", "function", "global", "if", "import", "in",
-        "integer", "internal", "is", "leftshift", "let", "model", "namespace", "new", "not", "or",
+        "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or",
         "override",
-        "protected", "public", "real", "rightshift", "sealed", "step", "string", "structure",
-        "switch",
+        "protected", "public", "real", "sealed", "shiftleft", "shiftright", "step", "string",
+        "structure", "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
         "xor", "yield",
     ];
@@ -78,7 +78,7 @@ public sealed class ReservedWordTests : LexerTestBase
         Assert.Multiple(() =>
         {
             Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "PC0009" }));
-            Assert.That(diagnostics.Single().Severity, Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(diagnostics.Single().Severity, Is.EqualTo(DiagnosticSeverity.Opinion));
             Assert.That(tokens[0].Name, Is.EqualTo("total"), "and it still means that name");
         });
     }

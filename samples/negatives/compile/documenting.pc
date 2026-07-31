@@ -1,0 +1,45 @@
+##
+    Documentation that has come apart from what it documents.
+
+    None of this stops a build on its own. The single error at the bottom is what rejects the
+    file — it is here because a sample under 'compile' has to be rejected, and a stale doc is
+    never reason enough.
+##
+
+global model Program
+
+    ##
+        @summary: Adds up to a limit.
+        @limit: what to count to.
+        @yields: the total.
+        @summary: and the summary again, which the first one already carried.
+    ##
+    global integer function Total(integer n)
+        integer sum = 0;
+
+        for i = 1 to n
+            sum = sum + i;
+        end for
+
+        yield sum;
+    end function
+
+    ##
+        @summary: Writes a line and gives nothing back.
+        @yields: a value that does not exist.
+    ##
+    global function Announce(string text)
+        Console.WriteLine(text);
+    end function
+
+    function Main()
+        ##
+            @summary: a statement cannot be documented, so this reaches nothing.
+        ##
+        Console.WriteLine(Program.Total(4));
+
+        integer wrong = "not a number";
+        Console.WriteLine(wrong);
+    end function
+
+end model
