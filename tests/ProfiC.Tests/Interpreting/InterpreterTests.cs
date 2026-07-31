@@ -56,8 +56,7 @@ public sealed class InterpreterTests
     /// calls in a row.</para>
     /// <para>Each one means the parent of the type whose constructor wrote it. Read off the
     /// instance instead, it would mean the parent of what is being made — the same answer at
-    /// every level — and the second call would run the constructor that made it, forever. One
-    /// level worked, so nothing caught this until a sample wanted two.</para>
+    /// every level — and the second call would run the constructor that made it, forever.</para>
     /// </summary>
     [Test]
     public void ConstructionWalksUpADeclaredChain() => Assert.That(
@@ -380,7 +379,7 @@ public sealed class InterpreterTests
     public void AndShortCircuits() => Assert.That(
         RunBody("""
                 integer calls = 0;
-                boolean function(integer) note = (n) yield n > 0;
+                boolean delegate(integer) note = (n) yield n > 0;
                 if false and note(1)
                     Console.WriteLine("unreachable");
                 end if
@@ -708,7 +707,7 @@ public sealed class InterpreterTests
     [Test]
     public void AnExpressionLambdaIsCalledLikeAFunction() => Assert.That(
         RunBody("""
-                integer function(integer, integer) add = (a, b) yield a + b;
+                integer delegate(integer, integer) add = (a, b) yield a + b;
                 Console.WriteLine(add(2, 3));
         """),
         Is.EqualTo("5\n"));
@@ -720,8 +719,8 @@ public sealed class InterpreterTests
     [Test]
     public void ALambdaWithBareParameterNamesRuns() => Assert.That(
         RunBody("""
-                integer function(integer, integer) add = (a, b) yield a + b;
-                string function(string, integer) tag = function(text, count)
+                integer delegate(integer, integer) add = (a, b) yield a + b;
+                string delegate(string, integer) tag = function(text, count)
                     yield text + ":" + count;
                 end function;
 
@@ -733,7 +732,7 @@ public sealed class InterpreterTests
     [Test]
     public void ABlockLambdaYieldsAValue() => Assert.That(
         RunBody("""
-                integer function(integer) square = function(n)
+                integer delegate(integer) square = function(n)
                     yield n * n;
                 end function;
                 Console.WriteLine(square(7));
@@ -744,7 +743,7 @@ public sealed class InterpreterTests
     public void CaptureIsByReferenceNotByValue() => Assert.That(
         RunBody("""
                 integer captured = 10;
-                integer function(integer) add = (n) yield n + captured;
+                integer delegate(integer) add = (n) yield n + captured;
                 Console.WriteLine(add(5));
                 captured = 100;
                 Console.WriteLine(add(5));
@@ -760,7 +759,7 @@ public sealed class InterpreterTests
                     Console.WriteLine(Program.Apply((n) yield n * 3, 5));
                 end function
 
-                integer function Apply(integer function(integer) f, integer n)
+                integer function Apply(integer delegate(integer) f, integer n)
                     yield f(n);
                 end function
             end model

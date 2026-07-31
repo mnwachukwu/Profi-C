@@ -72,6 +72,16 @@ public enum TokenType
     Constant,
     Continue,
     Default,
+
+    /// <summary>
+    /// <para>Writes the type of a function, where <c>function</c> declares one.</para>
+    /// <para>Two words rather than one because a type may follow a type: with only
+    /// <c>function</c>, a parser meeting it after a result could not tell a nested type from
+    /// the start of a declaration, and a function yielding a function had a type nothing could
+    /// write down.</para>
+    /// </summary>
+    Delegate,
+
     Each,
     Else,
     End,

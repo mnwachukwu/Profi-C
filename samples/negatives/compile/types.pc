@@ -34,5 +34,14 @@ global model Program
 
         # Division by a literal zero is refused before the program runs.
         Console.WriteLine(1 / 0);
+
+        # 'function' declares one or makes one on the spot; 'delegate' writes the type of one.
+        # Reaching for the declaring word here is the most natural mistake in the language,
+        # and it is read as the type meant so that only the one thing is reported.
+        integer function(integer) twice = (n) yield n * 2;
+
+        # And 'Function' is the root every one of them descends from, not a way to spell a
+        # particular shape, so it takes no parentheses.
+        Function(integer) thrice = (n) yield n * 3;
     end function
 end model

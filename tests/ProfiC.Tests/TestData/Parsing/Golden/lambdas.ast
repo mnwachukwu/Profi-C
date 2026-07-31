@@ -19,6 +19,10 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
+          MemberExpr 'OneAtATime'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
           MemberExpr 'Remembering'
             IdentifierExpr 'Program'
       ExpressionStmt
@@ -329,6 +333,118 @@ CompilationUnit
                   IdentifierExpr 'Program'
                 LiteralExpr 6 [Integer]
               LiteralExpr 6 [Integer]
+      VarDeclStmt 'maker'
+        FunctionTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+            NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        MemberExpr 'AdderOf'
+          IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "through maker:    " [String]
+            CallExpr
+              CallExpr
+                IdentifierExpr 'maker'
+                LiteralExpr 5 [Integer]
+              LiteralExpr 3 [Integer]
+      VarDeclStmt 'shapeless'
+        NamedTypeSyntax 'Function'
+        IdentifierExpr 'maker'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "still the same:   " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'shapeless'
+              IdentifierExpr 'maker'
+    FunctionDecl 'SumOf'
+      FunctionTypeSyntax
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        LambdaExpr inline
+          ParameterDecl 'b'
+          LambdaExpr inline
+            ParameterDecl 'c'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                IdentifierExpr 'a'
+                IdentifierExpr 'b'
+              IdentifierExpr 'c'
+    FunctionDecl 'OneAtATime'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "1 + 2 + 3:        " [String]
+            CallExpr
+              CallExpr
+                CallExpr
+                  MemberExpr 'SumOf'
+                    IdentifierExpr 'Program'
+                  LiteralExpr 1 [Integer]
+                LiteralExpr 2 [Integer]
+              LiteralExpr 3 [Integer]
+      VarDeclStmt 'fromTen'
+        FunctionTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+            NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'SumOf'
+            IdentifierExpr 'Program'
+          LiteralExpr 10 [Integer]
+      VarDeclStmt 'tenAndTwenty'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        CallExpr
+          IdentifierExpr 'fromTen'
+          LiteralExpr 20 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "10 + 20 + 30:     " [String]
+            CallExpr
+              IdentifierExpr 'tenAndTwenty'
+              LiteralExpr 30 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "10 + 20 + 70:     " [String]
+            CallExpr
+              IdentifierExpr 'tenAndTwenty'
+              LiteralExpr 70 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "10 + 5 + 5:       " [String]
+            CallExpr
+              CallExpr
+                IdentifierExpr 'fromTen'
+                LiteralExpr 5 [Integer]
+              LiteralExpr 5 [Integer]
     FunctionDecl 'Remembering'
       VarDeclStmt 'reporters'
         SetTypeSyntax

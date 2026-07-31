@@ -143,8 +143,7 @@ public sealed class ParsedCorpusTests : LexerTestBase
     /// <para>Both ways of declaring a namespace, which the check above cannot see.</para>
     /// <para>The two forms are one node kind told apart by a property, so the set of kinds is
     /// the same whichever a sample writes. Without this, the file-scoped form could leave the
-    /// corpus and nothing would fail — and it is the form no sample wrote for as long as
-    /// namespaces went unscoped.</para>
+    /// corpus and nothing would fail.</para>
     /// </summary>
     [Test]
     public void Corpus_WritesBothNamespaceForms()

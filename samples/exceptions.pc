@@ -208,11 +208,11 @@ global model Program
     ##
         Runs something and says which exception came out, if any.
 
-        The parameter is written 'function()' rather than 'Function'. Function is the root
+        The parameter is written 'delegate()' rather than 'Function'. Function is the root
         every function type descends from — it says a value is a function without saying what
         shape, and a shape is exactly what calling one needs.
     ##
-    function Show(function() attempt)
+    function Show(delegate() attempt)
         try
             attempt();
             Console.WriteLine("  nothing went wrong");

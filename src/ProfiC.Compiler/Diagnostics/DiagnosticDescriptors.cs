@@ -204,10 +204,24 @@ public static class DiagnosticDescriptors
     /// </summary>
     public static readonly DiagnosticDescriptor FunctionTypeIsLowercase = Error(
         "PC0116",
-        "A function type is spelled in lowercase",
+        "A function's type is written with 'delegate'",
         "'Function' is the type every function descends from and takes no parentheses. For a "
-        + "function of a particular shape write 'function(...)', with a result before it if it "
-        + "has one, as in 'integer function(string)'.");
+        + "function of a particular shape write 'delegate(...)', with a result before it if it "
+        + "has one, as in 'integer delegate(string)'.");
+
+    /// <summary>
+    /// <para><c>function</c> written where a type belongs.</para>
+    /// <para>The mistake anyone will make who learned the language before <c>delegate</c>
+    /// existed, or who reasons that the word declaring a function ought to describe one. It is
+    /// read as the type that was meant, so the rest of the declaration is checked normally and
+    /// this is said once rather than as the wreckage of parsing a declaration that never
+    /// arrives.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor FunctionTypeIsDelegate = Error(
+        "PC0117",
+        "A function's type is written with 'delegate'",
+        "'function' declares a function or makes one on the spot. To write the type of one, "
+        + "use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.");
 
     /// <summary>
     /// The diagnostic qualified <c>end</c> exists to produce. Naming both the closer written
@@ -616,10 +630,11 @@ public static class DiagnosticDescriptors
 
     /// <summary>
     /// <para>Several <c>Program</c>s and nothing saying which one begins.</para>
-    /// <para>Reachable only since namespaces began to scope: before that a second
-    /// <c>Program</c> was a second type of a name already taken and was reported as one. Once
-    /// <c>Tools.Program</c> and <c>App.Program</c> stopped colliding, nothing was left to
-    /// report, and which one ran came down to the order the sources were listed in.</para>
+    /// <para>Namespaces make <c>Tools.Program</c> and <c>App.Program</c> two types rather than
+    /// one name used twice, so both may sit in one compilation without colliding. The choice
+    /// between them is the build's to make: an assembly holds one entry point in its metadata,
+    /// and picking by the order the sources are listed would make a program's behavior depend
+    /// on the order of its own file list.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor EntryPointAmbiguous = Error(
         "PC0234",

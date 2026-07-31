@@ -10,6 +10,12 @@ step of 7: 70
 add five to 1:    6
 add hundred to 1: 101
 twice of 6:       12
+through maker:    8
+still the same:   true
+1 + 2 + 3:        6
+10 + 20 + 30:     60
+10 + 20 + 70:     100
+10 + 5 + 5:       20
 1 2 3 
 tripled: {3, 6, 9}
 counting: 11 12 13

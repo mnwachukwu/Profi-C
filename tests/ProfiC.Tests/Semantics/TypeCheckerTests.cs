@@ -1250,9 +1250,9 @@ public sealed class TypeCheckerTests
     /// one idea in two forms and never match — which left every void function type declarable
     /// and unusable.</para>
     /// </summary>
-    [TestCase("        function() f = () yield Console.WriteLine(\"x\");")]
-    [TestCase("        function(string) f = (s) yield Console.WriteLine(s);")]
-    [TestCase("        function() f = () yield Console.Write(\"x\");")]
+    [TestCase("        delegate() f = () yield Console.WriteLine(\"x\");")]
+    [TestCase("        delegate(string) f = (s) yield Console.WriteLine(s);")]
+    [TestCase("        delegate() f = () yield Console.Write(\"x\");")]
     public void ALambdaThatProducesNoValueFitsAFunctionTypeThatYieldsNothing(string body) =>
         Assert.That(IdsOf(CheckBody(body)), Is.Empty);
 
@@ -1261,7 +1261,7 @@ public sealed class TypeCheckerTests
         Assert.That(
             IdsOf(Check("""
                 global model Program
-                    function Run(function() action)
+                    function Run(delegate() action)
                         action();
                     end function
 
@@ -1276,7 +1276,7 @@ public sealed class TypeCheckerTests
     [Test]
     public void AFunctionThatYieldsAValueDoesNotFitOneThatYieldsNothing() =>
         Assert.That(
-            IdsOf(CheckBody("        function() f = () yield 1;")),
+            IdsOf(CheckBody("        delegate() f = () yield 1;")),
             Is.EqualTo(new[] { "PC0300" }));
 
     // ---- A lambda parameter written without a type -------------------------------------------
@@ -1286,11 +1286,11 @@ public sealed class TypeCheckerTests
     /// type, the element type of a set being built, a parameter of the function being called,
     /// and the result of the function doing the yielding.
     /// </summary>
-    [TestCase("        integer function(integer) f = (a) yield a + 1;")]
-    [TestCase("        integer function(integer, integer) f = (a, b) yield a + b;")]
-    [TestCase("        integer function(integer) f = function(a) yield a + 1; end function;")]
-    [TestCase("        integer function(integer)[] fs = { (a) yield a + 1 };")]
-    [TestCase("        integer function(integer) f = (a) yield a; f = (a) yield a * 2;")]
+    [TestCase("        integer delegate(integer) f = (a) yield a + 1;")]
+    [TestCase("        integer delegate(integer, integer) f = (a, b) yield a + b;")]
+    [TestCase("        integer delegate(integer) f = function(a) yield a + 1; end function;")]
+    [TestCase("        integer delegate(integer)[] fs = { (a) yield a + 1 };")]
+    [TestCase("        integer delegate(integer) f = (a) yield a; f = (a) yield a * 2;")]
     public void ABareParameterNameTakesItsTypeFromTheSurroundingCode(string body) =>
         Assert.That(IdsOf(CheckBody(body)), Is.Empty);
 
@@ -1299,7 +1299,7 @@ public sealed class TypeCheckerTests
         Assert.That(
             IdsOf(Check("""
                 global model Program
-                    integer function Apply(integer function(integer) f, integer n)
+                    integer function Apply(integer delegate(integer) f, integer n)
                         yield f(n);
                     end function
 
@@ -1318,7 +1318,7 @@ public sealed class TypeCheckerTests
     public void EachBareNameTakesTheTypeOfItsOwnPosition() =>
         Assert.That(
             IdsOf(CheckBody("""
-                    string function(string, integer) f = (text, times) yield text + times;
+                    string delegate(string, integer) f = (text, times) yield text + times;
                     Console.WriteLine(f("x", 3));
             """)),
             Is.Empty);
@@ -1340,7 +1340,7 @@ public sealed class TypeCheckerTests
     [Test]
     public void AMismatchedParameterCountNamesEachParameterAndStopsThere() =>
         Assert.That(
-            IdsOf(CheckBody("        integer function(integer) f = (a, b) yield a;")),
+            IdsOf(CheckBody("        integer delegate(integer) f = (a, b) yield a;")),
             Is.EqualTo(new[] { "PC0336", "PC0336" }));
 
     /// <summary>
@@ -1349,10 +1349,10 @@ public sealed class TypeCheckerTests
     /// yielded.</para>
     /// <para>One per parameter, since each is a type that could come out on its own.</para>
     /// </summary>
-    [TestCase("        integer function(integer) f = (integer a) yield a;", 1)]
-    [TestCase("        integer function(integer, integer) f = (integer a, integer b) yield a;", 2)]
-    [TestCase("        integer function(integer) f = function(integer a) yield a; end function;", 1)]
-    [TestCase("        integer function(integer)[] fs = { (integer a) yield a };", 1)]
+    [TestCase("        integer delegate(integer) f = (integer a) yield a;", 1)]
+    [TestCase("        integer delegate(integer, integer) f = (integer a, integer b) yield a;", 2)]
+    [TestCase("        integer delegate(integer) f = function(integer a) yield a; end function;", 1)]
+    [TestCase("        integer delegate(integer)[] fs = { (integer a) yield a };", 1)]
     public void AWrittenTypeTheSurroundingCodeAlreadyGaveIsReported(string body, int count) =>
         Assert.That(
             IdsOf(CheckBody(body)),
@@ -1367,7 +1367,7 @@ public sealed class TypeCheckerTests
     public void AMixedListIsReportedOnlyForTheTypeThatWasWritten()
     {
         DiagnosticBag diagnostics =
-            CheckBody("        integer function(integer, integer) f = (integer a, b) yield a + b;");
+            CheckBody("        integer delegate(integer, integer) f = (integer a, b) yield a + b;");
 
         Assert.Multiple(() =>
         {
@@ -1381,8 +1381,8 @@ public sealed class TypeCheckerTests
     /// An optional function type says what the parameters hold just as plainly as the bare
     /// form: the lambda is wrapped on the way in, so what it has to be is the type underneath.
     /// </summary>
-    [TestCase("        integer function(integer)? f = (n) yield n + 1;", new string[0])]
-    [TestCase("        integer function(integer)? f = (integer n) yield n + 1;", new[] { "PC0115" })]
+    [TestCase("        integer delegate(integer)? f = (n) yield n + 1;", new string[0])]
+    [TestCase("        integer delegate(integer)? f = (integer n) yield n + 1;", new[] { "PC0115" })]
     public void AnOptionalFunctionTypeIsStillATarget(string body, string[] expected) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(expected));
 

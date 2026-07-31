@@ -677,7 +677,7 @@
  215:5    Function             'function'
  215:14   Identifier           'Show'
  215:18   LeftParen            '('
- 215:19   Function             'function'
+ 215:19   Delegate             'delegate'
  215:27   LeftParen            '('
  215:28   RightParen           ')'
  215:30   Identifier           'attempt'

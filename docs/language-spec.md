@@ -39,7 +39,7 @@ This document is the normative one: where they disagree, this is right.
   - [1.5 Literals](#15-literals)
   - [1.5a Interpolated strings](#15a-interpolated-strings)
   - [1.6 Escape sequences](#16-escape-sequences)
-- [2. Tokens and reserved words](#2-tokens-and-reserved-words) — the 56 words, the operators, end of file
+- [2. Tokens and reserved words](#2-tokens-and-reserved-words) — the 57 words, the operators, end of file
   - [2.1 Reserved words](#21-reserved-words)
   - [2.2 Operators and punctuation](#22-operators-and-punctuation)
   - [2.3 End of file](#23-end-of-file)
@@ -557,17 +557,32 @@ node, and `Node?` is the type that may not. [§8](#8-optionals) gives the rules.
 
 ### 3.3 Function types
 
-A function type is written the way a declaration is — the result, then `function`, then what
-it takes:
+A function type is written with **`delegate`** — the result, then `delegate`, then what it
+takes:
 
 ```
-integer function(integer)             takes an integer, yields an integer
-integer function(integer, integer)    takes two, yields one
-function(string)                      takes a string, yields nothing
-string function()                     takes nothing, yields a string
-integer function(integer)?            an optional one
-function(string)[]                    a set of them
+integer delegate(integer)             takes an integer, yields an integer
+integer delegate(integer, integer)    takes two, yields one
+delegate(string)                      takes a string, yields nothing
+string delegate()                     takes nothing, yields a string
+integer delegate(integer)?            an optional one
+delegate(string)[]                    a set of them
 ```
+
+**Two words, two jobs.** `function` declares a function or makes one on the spot; `delegate`
+writes the type of one and does nothing else. Writing `function` where a type belongs is
+`PC0117`, which names the fix.
+
+The split is what lets these nest. A result may itself be a function type, and since only
+`delegate` may follow a result, each one plainly begins another type rather than a
+declaration:
+
+```
+integer delegate(integer) delegate(integer)    takes an integer, yields a function
+```
+
+`delegate` builds a type, as `[]` and `?` do, rather than naming one. It is the third such
+mark and the only one spelled as a word.
 
 Omitting the result means the function yields nothing. A type that yields nothing and a type
 whose result is some "void type" are not two ideas here — there is only the first, and
@@ -1374,10 +1389,10 @@ a set, passed to another function, and handed back from one.
 A function that already has a name is already a value and needs no lambda around it:
 
 ```
-integer function(integer) tripled = Program.Triple;
+integer delegate(integer) tripled = Program.Triple;
 
 Counter counter = new Counter(10);
-integer function() advance = counter.Next;
+integer delegate() advance = counter.Next;
 ```
 
 A member reached through an instance is that member *bound to that instance*, so calling it
@@ -1387,10 +1402,30 @@ later still knows which one it belongs to.
 `by`, which belonged to the call that made it:
 
 ```
-integer function(integer) function AdderOf(integer by)
+integer delegate(integer) function AdderOf(integer by)
     yield (n) yield n + by;
 end function
+
+let addFive = Program.AdderOf(5);
+
+Console.WriteLine(addFive(3));            8
 ```
+
+**That first line comes apart in four pieces**, and each word says which:
+
+```
+integer delegate(integer)   function   AdderOf   (integer by)
+└──── the result type ───┘  └keyword┘  └─name─┘  └parameter─┘
+```
+
+Every declaration is *result*, then `function`, then the name, then what it takes — the same
+shape as `integer function Twice(integer n)`. The result here happens to be a function type,
+which `delegate` writes ([§3.3](#33-function-types)), so the line stays readable left to right:
+`delegate` can only be building a type, and `function` can only be starting the declaration.
+
+**The lambda has no name.** `(n) yield n + by;` is a value, as `42` is a value; it is handed
+back, and whoever receives it decides what to call it. `addFive` is not the lambda's name, it
+is the name of a local that holds one.
 
 **A loop variable is fresh on every turn**, so a function made inside a loop closes over that
 turn's variable rather than a shared one. Three functions made in three turns report three
@@ -1406,9 +1441,9 @@ can convert to. Two versions reachable only by conversion is a tie, and a tie is
 A function value is written in one of two forms, and both say what they produce with `yield`:
 
 ```
-integer function(integer) increment = (integer a) yield a + 1;
+integer delegate(integer) increment = (integer a) yield a + 1;
 
-integer function(integer, integer) larger = function(integer a, integer b)
+integer delegate(integer, integer) larger = function(integer a, integer b)
     if a > b
         yield a;
     else
@@ -1425,7 +1460,7 @@ declared function is, and may hold as many statements as it needs.
 A lambda's parameter is a bare name where the surrounding code already says what it holds:
 
 ```
-integer function(integer) increment = (a) yield a + 1;
+integer delegate(integer) increment = (a) yield a + 1;
 ```
 
 Four things say it, and between them they cover every place a lambda can be written: a
@@ -1433,7 +1468,7 @@ declared type, the element type of a set being built, the parameter of the funct
 called, and the result of the function doing the yielding.
 
 ```
-integer function(integer)[] steps = { (n) yield n + 1 };     # element type
+integer delegate(integer)[] steps = { (n) yield n + 1 };     # element type
 Console.WriteLine(Program.Apply(numbers, (n) yield n * 2));  # parameter
 yield (n) yield n + by;                                      # result
 ```
@@ -1453,7 +1488,7 @@ its own types — a `let`, where nothing on the left says anything:
 
 ```
 let halve = (integer n) yield n / 2;              # nothing else says it, so this does
-integer function(integer) double = (n) yield n * 2;   # the declared type says it
+integer delegate(integer) double = (n) yield n * 2;   # the declared type says it
 ```
 
 So a lambda always has exactly one spelling that says nothing twice and leaves nothing unsaid.
@@ -1758,11 +1793,8 @@ was typed read. Neither can be skipped, because an optional cannot be used until
 is proven.
 
 **`Math.Log` of one number is the natural logarithm** — log to base `e`, what mathematicians
-write as `ln`. That is what C#, Java and C all mean by the name, and Profi-C means it too, so
-a program moved between them gives the same answer. For base ten, write `Math.Log10(x)`, or
-`Math.Log(x, 10)`. This is the one place in the library where the obvious reading of a name
-is not the right one, and it is spelled this way because the alternative — agreeing with the
-guess and disagreeing with every other language — is worse.
+write as `ln`. C#, Java and C all mean the same by the name, so a program moved between them
+gives the same answer. For base ten, write `Math.Log10(x)`, or `Math.Log(x, 10)`.
 
 **A root, a power and a logarithm leave the rationals**, so all of them answer in reals
 whatever they were given: the square root of a fraction is usually irrational. Everything else
@@ -1851,9 +1883,7 @@ Date.FromDateTime(moment)         and a moment comes apart
 Time.FromDateTime(moment)
 ```
 
-.NET calls these two `DateOnly` and `TimeOnly`, having given the plain names away to
-`DateTime` twenty years earlier. Nothing here is committed to that history, so each takes the
-name that says what it is.
+.NET calls these two `DateOnly` and `TimeOnly`.
 
 A `Time` is not a `TimeSpan`, though both are written with colons. A span is how long something
 lasted, may exceed a day, and may run backwards; a `Time` is a reading on a clock and always
@@ -2308,7 +2338,8 @@ Warnings do not block compilation; everything else does.
 | `PC0113` | error | Too many problems |
 | `PC0114` | error | This word is reserved |
 | `PC0115` | warning | This parameter's type is already known |
-| `PC0116` | error | A function type is spelled in lowercase |
+| `PC0116` | error | A function's type is written with 'delegate' |
+| `PC0117` | error | A function's type is written with 'delegate' |
 
 ### PC0200 to PC0299
 

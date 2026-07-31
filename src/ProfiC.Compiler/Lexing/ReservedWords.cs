@@ -26,6 +26,7 @@ public static class ReservedWords
             ["constant"] = TokenType.Constant,
             ["continue"] = TokenType.Continue,
             ["default"] = TokenType.Default,
+            ["delegate"] = TokenType.Delegate,
             ["each"] = TokenType.Each,
             ["else"] = TokenType.Else,
             ["end"] = TokenType.End,

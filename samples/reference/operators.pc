@@ -55,7 +55,7 @@ global model Operators
     function OptionalAndLambda()
         # The question mark is a type suffix; a lambda's body follows "yield".
         integer? maybe;
-        integer function(integer, integer) add = (a, b) yield a + b;
+        integer delegate(integer, integer) add = (a, b) yield a + b;
         let recovered = maybe.Or(0);
     end function
 

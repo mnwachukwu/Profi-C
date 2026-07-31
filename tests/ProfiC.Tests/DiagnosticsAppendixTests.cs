@@ -10,8 +10,7 @@ namespace ProfiC.Tests;
 /// <para>The appendix is a second, hand-written list of the same thing, and adding a
 /// descriptor does nothing to it. Drift here is quiet in a way most drift is not: nothing
 /// fails, no colour changes, and the only sign is a reader meeting an id the document has
-/// never heard of — at the moment they most need it to have. <c>PC0116</c> sat missing until
-/// 2026-07-30 for exactly that reason.</para>
+/// never heard of — at the moment they most need it to have.</para>
 /// <para>The same argument as <see cref="EditorGrammarTests"/>, applied to prose.</para>
 /// </summary>
 [TestFixture]

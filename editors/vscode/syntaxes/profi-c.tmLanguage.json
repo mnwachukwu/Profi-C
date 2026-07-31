@@ -247,9 +247,9 @@
     },
 
     "type": {
-      "comment": "The primitive types, which are reserved words rather than names.",
+      "comment": "The primitive types, and the word that writes the type of a function. 'delegate' sits here rather than with the declaring words because that is what it does: it builds a type, as '[]' and '?' do, and never declares anything.",
       "name": "storage.type.profi-c",
-      "match": "\\b(integer|real|boolean|character|string|fraction)\\b"
+      "match": "\\b(integer|real|boolean|character|string|fraction|delegate)\\b"
     },
 
     "reserved-type": {

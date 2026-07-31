@@ -6,12 +6,17 @@ namespace ProfiC.Compiler.Parsing;
 
 public sealed partial class Parser
 {
-    /// <summary>True if a token can begin a type.</summary>
+    /// <summary>
+    /// <para>True if a token can begin a type.</para>
+    /// <para><c>function</c> is in the list although it is not one: it is what a reader writes
+    /// reaching for a function type, and letting it begin one here is what buys a single
+    /// message saying so instead of a cascade about a type that never arrived.</para>
+    /// </summary>
     private static bool StartsType(TokenType type) => type switch
     {
         TokenType.Integer or TokenType.Real or TokenType.Character or TokenType.Boolean
             or TokenType.String or TokenType.Fraction or TokenType.Identifier
-            or TokenType.Function => true,
+            or TokenType.Delegate or TokenType.Function => true,
         _ => false,
     };
 
@@ -20,8 +25,11 @@ public sealed partial class Parser
     /// <para>Order matters and the two arrangements differ: <c>Node?[]</c> builds a set
     /// wrapping an optional, while <c>Node[]?</c> builds an optional wrapping a set. Reading
     /// the suffixes in the order written produces that naturally.</para>
-    /// <para>A function type may be preceded by its return type, so a name followed by
-    /// <c>function</c> turns out to have been a return type rather than the whole thing.</para>
+    /// <para>A delegate type may be preceded by its result, so a name followed by
+    /// <c>delegate</c> turns out to have been a result rather than the whole thing — and since
+    /// a result may itself be a delegate type, that repeats. <c>integer delegate(integer)
+    /// delegate(integer)</c> is a function yielding a function, and the loop below is the only
+    /// reason it can be written at all.</para>
     /// </summary>
     private TypeSyntax ParseType()
     {
@@ -33,36 +41,30 @@ public sealed partial class Parser
             return new MissingType(EmptySpanHere());
         }
 
-        TypeSyntax type;
+        TypeSyntax type = AtDelegateType()
+            ? ParseDelegateType(start, result: null)
+            : ApplySuffixes(ParseBaseType(), start);
 
-        if (AtFunctionType())
+        // Each turn takes what has been read so far as the result of the next. One word tells
+        // the two apart, so no lookahead is needed and nesting has no depth limit.
+        while (AtDelegateType())
         {
-            type = ParseFunctionType(start, returnType: null);
-        }
-        else
-        {
-            type = ApplySuffixes(ParseBaseType(), start);
-
-            // "integer function(...)" — what was read is the return type, not the whole type.
-            if (AtFunctionType())
-            {
-                type = ParseFunctionType(start, type);
-            }
+            type = ApplySuffixes(ParseDelegateType(start, type), start);
         }
 
         return ApplySuffixes(type, start);
     }
 
     /// <summary>
-    /// <para>True when <c>function</c> here begins a function <em>type</em> rather than a
-    /// function <em>declaration</em>.</para>
-    /// <para>The word has three jobs: <c>function Name(</c> declares one, <c>function(</c> in
-    /// type position describes one, and <c>function(</c> in expression position is a lambda.
-    /// A single token of lookahead separates the first from the other two, and position
-    /// separates those two from each other.</para>
+    /// <para>True where a delegate type begins.</para>
+    /// <para>Written <c>function</c> it is the mistake this reads as the type meant, so that
+    /// the declaration around it is checked normally and the one thing wrong with it is said
+    /// once. That is also why no lookahead is needed: <c>delegate</c> only ever writes a type,
+    /// where <c>function</c> also declares one and also makes a lambda.</para>
     /// </summary>
-    private bool AtFunctionType() =>
-        Check(TokenType.Function) && !CheckNext(TokenType.Identifier);
+    private bool AtDelegateType() =>
+        Check(TokenType.Delegate)
+        || (Check(TokenType.Function) && !CheckNext(TokenType.Identifier));
 
     /// <summary>True when <c>function</c> here begins a function declaration.</summary>
     private bool AtFunctionDeclaration() =>
@@ -102,7 +104,7 @@ public sealed partial class Parser
             _ => token.Type.Text() ?? token.Lexeme,
         };
 
-        // "Function(string)" is the shape someone writes reaching for a function type, having
+        // "Function(string)" is the shape someone writes reaching for a delegate type, having
         // met Function as the root and taken it for the way one is spelled. It is read as the
         // type they meant, so the declaration around it goes on to be checked normally and
         // the one thing wrong with it is said once.
@@ -126,17 +128,22 @@ public sealed partial class Parser
     }
 
     /// <summary>
-    /// Reads <c>function ( types )</c>, given whatever return type preceded it.
+    /// Reads <c>delegate ( types )</c>, given whatever result preceded it.
     /// </summary>
-    private FunctionTypeSyntax ParseFunctionType(Token start, TypeSyntax? returnType)
+    private FunctionTypeSyntax ParseDelegateType(Token start, TypeSyntax? result)
     {
-        Expect(TokenType.Function);
+        if (Check(TokenType.Function))
+        {
+            _diagnostics.Report(DiagnosticDescriptors.FunctionTypeIsDelegate, Current.Span);
+        }
+
+        Advance();
 
         // Read before the span is taken: the span runs to the last token consumed, and an
         // argument written inline would be measured before the parameters were read.
         List<TypeSyntax> parameters = ParseTypeList();
 
-        return new FunctionTypeSyntax(SpanFrom(start), returnType, parameters);
+        return new FunctionTypeSyntax(SpanFrom(start), result, parameters);
     }
 
     /// <summary>The parenthesized types a function type takes, which may be none.</summary>

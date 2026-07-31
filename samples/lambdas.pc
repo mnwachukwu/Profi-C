@@ -6,8 +6,13 @@
     below is that one idea in different shapes.
 
     A function's type is written the way its declaration is: the result, then 'function', then
-    what it takes. So 'integer function(integer)' takes an integer and yields one, and
-    'function(string)' takes a string and yields nothing.
+    what it takes. So 'integer delegate(integer)' takes an integer and yields one, and
+    'delegate(string)' takes a string and yields nothing.
+
+    Two words, two jobs: 'function' declares one or makes one on the spot, and 'delegate'
+    writes the type of one. That is why 'integer delegate(integer) function AdderOf(...)'
+    below reads without doubling back — the first word says what comes out, the second says
+    that a function is being declared.
 ##
 
 global model Program
@@ -17,6 +22,7 @@ global model Program
         Program.WhereTheTypesGo();
         Program.PassingThemAlong();
         Program.HandingThemBack();
+        Program.OneAtATime();
         Program.Remembering();
         Program.NamingOneThatAlreadyExists();
         Program.HoldingAnyFunctionAtAll();
@@ -33,9 +39,9 @@ global model Program
         to be learned to read the short form.
     ##
     function WritingThemDown()
-        integer function(integer) increment = (a) yield a + 1;
+        integer delegate(integer) increment = (a) yield a + 1;
 
-        integer function(integer, integer) larger = function(a, b)
+        integer delegate(integer, integer) larger = function(a, b)
             if a > b
                 yield a;
             else
@@ -44,8 +50,8 @@ global model Program
         end function;
 
         # One that takes nothing, and one that yields nothing.
-        string function() greet = () yield "hello";
-        function(string) announce = (what) yield Console.WriteLine("* " + what);
+        string delegate() greet = () yield "hello";
+        delegate(string) announce = (what) yield Console.WriteLine("* " + what);
 
         announce(greet() + ", " + increment(41) + ", " + larger(3, 9));
     end function
@@ -54,7 +60,7 @@ global model Program
 
     ##
         A parameter is a bare name wherever the surrounding code already says what it holds.
-        Above, 'integer function(integer)' on the left says 'a' is an integer, so writing it
+        Above, 'integer delegate(integer)' on the left says 'a' is an integer, so writing it
         again on the right would say the same thing twice — and the compiler says so.
 
         Four things say it, and between them they cover every place a lambda can be written:
@@ -70,10 +76,10 @@ global model Program
         let halve = (integer n) yield n / 2;
 
         # The declared type says it, so the lambda does not.
-        integer function(integer) double = (n) yield n * 2;
+        integer delegate(integer) double = (n) yield n * 2;
 
         # The element type says it.
-        integer function(integer)[] steps = { (n) yield n + 1, (n) yield n - 1 };
+        integer delegate(integer)[] steps = { (n) yield n + 1, (n) yield n - 1 };
 
         Console.WriteLine("halved:  " + halve(10));
         Console.WriteLine("doubled: " + double(10));
@@ -86,7 +92,7 @@ global model Program
         A function that takes a function is the whole point of them being values. Apply does
         not know what it is applying, which is what lets one function serve every caller.
     ##
-    integer[] function Apply(integer[] values, integer function(integer) transform)
+    integer[] function Apply(integer[] values, integer delegate(integer) transform)
         integer[] results = {};
 
         for each value in values
@@ -113,7 +119,7 @@ global model Program
         end function));
 
         # A set of them, since a function is a value and a set holds values.
-        integer function(integer)[] steps =
+        integer delegate(integer)[] steps =
         {
             (n) yield n + 10,
             (n) yield n * 10
@@ -131,19 +137,71 @@ global model Program
         the call that made it — that is what closing over a value means. The declared result
         says what 'n' holds, so the lambda being yielded leaves it out.
     ##
-    integer function(integer) function AdderOf(integer by)
+    integer delegate(integer) function AdderOf(integer by)
         yield (n) yield n + by;
     end function
 
     function HandingThemBack()
-        integer function(integer) addFive = Program.AdderOf(5);
-        integer function(integer) addHundred = Program.AdderOf(100);
+        integer delegate(integer) addFive = Program.AdderOf(5);
+        integer delegate(integer) addHundred = Program.AdderOf(100);
 
         Console.WriteLine("add five to 1:    " + addFive(1));
         Console.WriteLine("add hundred to 1: " + addHundred(1));
 
         # One made and called on the spot, which needs no name at all.
         Console.WriteLine("twice of 6:       " + Program.AdderOf(6)(6));
+
+        ##
+            AdderOf's own type, written out. It takes an integer and yields
+            'integer delegate(integer)', so the whole thing is that with another
+            'delegate(integer)' around it — a result may be a function type like any other,
+            and 'delegate' says so as many times as it needs to.
+
+            Only 'delegate' can appear after a result, so a reader and a parser both know that
+            each one begins another type rather than a declaration. That is what lets these
+            nest at all.
+        ##
+        integer delegate(integer) delegate(integer) maker = Program.AdderOf;
+
+        Console.WriteLine("through maker:    " + maker(5)(3));
+
+        # Held without its shape. Function is the root of every one of them, so anything goes
+        # in — but nothing comes out callable, since calling needs a shape.
+        Function shapeless = maker;
+
+        Console.WriteLine("still the same:   " + Reference.Equals(shapeless, maker));
+    end function
+
+    # ---- One number at a time -------------------------------------------------------
+
+    ##
+        Three numbers added, taken one at a time. Each call hands back something that is still
+        waiting for the next, so the nesting goes as deep as there are numbers:
+
+            integer                                                    what comes out
+            integer delegate(integer)                                  after two
+            integer delegate(integer) delegate(integer)                after one
+            integer delegate(integer) delegate(integer) delegate(integer)   SumOf itself
+
+        Only the declared result is written. The lambdas inside say nothing about what they
+        hold, because the type on the outside already did — it says what 'b' is, and what the
+        thing yielded from it must be, which in turn says what 'c' is.
+    ##
+    integer delegate(integer) delegate(integer) function SumOf(integer a)
+        yield (b) yield (c) yield a + b + c;
+    end function
+
+    function OneAtATime()
+        Console.WriteLine("1 + 2 + 3:        " + Program.SumOf(1)(2)(3));
+
+        # Stopping part way keeps the rest waiting, and what is waiting can be kept and
+        # used more than once.
+        integer delegate(integer) delegate(integer) fromTen = Program.SumOf(10);
+        integer delegate(integer) tenAndTwenty = fromTen(20);
+
+        Console.WriteLine("10 + 20 + 30:     " + tenAndTwenty(30));
+        Console.WriteLine("10 + 20 + 70:     " + tenAndTwenty(70));
+        Console.WriteLine("10 + 5 + 5:       " + fromTen(5)(5));
     end function
 
     # ---- What a function remembers -------------------------------------------------
@@ -154,7 +212,7 @@ global model Program
         shared: there, every function would report the last value.
     ##
     function Remembering()
-        integer function()[] reporters = {};
+        integer delegate()[] reporters = {};
 
         for i = 1 to 3
             reporters.Insert(() yield i);
@@ -179,12 +237,12 @@ global model Program
         later still knows which one it belongs to.
     ##
     function NamingOneThatAlreadyExists()
-        integer function(integer) tripled = Program.Triple;
+        integer delegate(integer) tripled = Program.Triple;
 
         Console.WriteLine("tripled: " + Program.Apply({1, 2, 3}, tripled));
 
         Counter counter = new Counter(10);
-        integer function() advance = counter.Next;
+        integer delegate() advance = counter.Next;
 
         Console.WriteLine("counting: " + advance() + " " + advance() + " " + counter.Next());
     end function

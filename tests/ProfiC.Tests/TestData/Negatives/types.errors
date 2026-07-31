@@ -6,3 +6,6 @@ types.pc(27,20): error PC0300: Cannot use a Shape where a Circle is expected.
 types.pc(30,19): error PC0300: Cannot use an integer where a Model is expected.
 types.pc(33,24): error PC0305: The branches of an if expression must have the same type, and these are an integer and a string.
 types.pc(36,31): error PC0324: This divides by zero.
+types.pc(41,17): error PC0117: 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.
+types.pc(45,9): error PC0116: 'Function' is the type every function descends from and takes no parentheses. For a function of a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'.
+types.pc(45,36): error PC0300: Cannot use an integer function(integer) where a function(integer) is expected.

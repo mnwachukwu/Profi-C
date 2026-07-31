@@ -156,13 +156,19 @@ ExprStmt       = Expr [ "=" Expr ] ";" ;
 
 (* ---- Types -------------------------------------------------------------- *)
 
-Type           = ( BaseType | FunctionType ) { TypeSuffix } ;
+Type           = ( BaseType | DelegateType ) { TypeSuffix } ;
 TypeSuffix     = "[" "]" | "?" ;
 
 BaseType       = "integer" | "real" | "character" | "boolean" | "string"
                | "fraction" | Identifier ;
 
-FunctionType   = [ Type ] "function" "(" [ TypeList ] ")" ;
+(* The result may itself be one, and "delegate" only ever builds a type, so this
+   right-recurses without a delimiter and needs no lookahead:
+
+     integer delegate(integer) delegate(integer)
+
+   is a function taking an integer and yielding a function. *)
+DelegateType   = [ Type ] "delegate" "(" [ TypeList ] ")" ;
 TypeList       = Type { "," Type } ;
 
 

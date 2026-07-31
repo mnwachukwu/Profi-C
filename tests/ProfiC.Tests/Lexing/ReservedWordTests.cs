@@ -11,11 +11,12 @@ namespace ProfiC.Tests.Lexing;
 [TestFixture]
 public sealed class ReservedWordTests : LexerTestBase
 {
-    /// <summary>The 56 reserved words, written out rather than derived from the table.</summary>
+    /// <summary>The 57 reserved words, written out rather than derived from the table.</summary>
     private static readonly string[] Expected =
     [
         "abstract", "and", "as", "base", "begin", "boolean", "break", "case", "catch",
-        "character", "constant", "continue", "default", "each", "else", "end", "enumeration",
+        "character", "constant", "continue", "default", "delegate", "each", "else", "end",
+        "enumeration",
         "extends", "false", "finally", "for", "fraction", "function", "global", "if", "import", "in",
         "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or", "override",
         "protected", "public", "real", "sealed", "step", "string", "structure", "switch",
@@ -87,7 +88,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_ContainsExactlyFiftySixWords()
     {
-        Assert.That(ReservedWords.Count, Is.EqualTo(56));
+        Assert.That(ReservedWords.Count, Is.EqualTo(57));
     }
 
     [Test]
@@ -100,7 +101,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_MapsEachWordToADistinctTokenType()
     {
-        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(56));
+        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(57));
     }
 
     [Test]
@@ -172,5 +173,58 @@ public sealed class ReservedWordTests : LexerTestBase
     {
         Assert.That(ScanSingle("Model").Type, Is.EqualTo(TokenType.Identifier));
         Assert.That(ScanSingle("model").Type, Is.EqualTo(TokenType.Model));
+    }
+
+    // ---- What the summary tells a reader ---------------------------------------------
+
+    /// <summary>
+    /// <para>The list printed in the language summary is the list the compiler has.</para>
+    /// <para>It is written out by hand, in a grid, so a word added to the language reaches it
+    /// only if somebody remembers — and the grid has to be reflowed to stay square, which is
+    /// the sort of edit that drops one.</para>
+    /// </summary>
+    [Test]
+    public void TheSummaryListsEveryReservedWord()
+    {
+        string[] listed = WordsInTheSummary();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                listed.Except(ReservedWords.Keywords.Keys),
+                Is.Empty,
+                "the summary lists words the language does not reserve");
+
+            Assert.That(
+                ReservedWords.Keywords.Keys.Except(listed),
+                Is.Empty,
+                "the language reserves words the summary does not list");
+        });
+    }
+
+    /// <summary>And the heading counts them, since a reader takes the number on trust.</summary>
+    [Test]
+    public void TheSummarySaysHowManyThereAre() => Assert.That(
+        File.ReadAllText(SummaryPath),
+        Does.Contain($"### 1.1 The {ReservedWords.Count} reserved words"));
+
+    private static string SummaryPath =>
+        Path.Combine(RepositoryRootForTests, "docs", "language-summary.md");
+
+    /// <summary>The words in the summary's fenced block, whatever shape the grid is in.</summary>
+    private static string[] WordsInTheSummary()
+    {
+        string[] lines = File.ReadAllLines(SummaryPath);
+
+        int heading = Array.FindIndex(
+            lines, l => l.StartsWith("### 1.1 ", StringComparison.Ordinal));
+
+        Assert.That(heading, Is.GreaterThanOrEqualTo(0), "the summary has no reserved-word list");
+
+        int open = Array.FindIndex(lines, heading, l => l.StartsWith("```", StringComparison.Ordinal));
+        int close = Array.FindIndex(lines, open + 1, l => l.StartsWith("```", StringComparison.Ordinal));
+
+        return [.. lines[(open + 1)..close]
+            .SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))];
     }
 }

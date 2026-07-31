@@ -33,8 +33,8 @@ global model Program
         Console.WriteLine(2 ** 8);
 
         # A lambda's body follows 'yield', not an arrow.
-        integer function(integer) twice = (integer n) => n * 2;
-        integer function(integer) thrice = (integer n) -> n * 3;
+        integer delegate(integer) twice = (integer n) => n * 2;
+        integer delegate(integer) thrice = (integer n) -> n * 3;
 
         # Leaving a type out asks the surrounding code, and 'let' has nothing to say.
         let unknown = (n) yield n + 1;

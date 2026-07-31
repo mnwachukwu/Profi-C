@@ -212,7 +212,7 @@ public sealed class ResolverTests
         (_, DiagnosticBag diagnostics) = ResolveBody(
             """
                     let captured = 1;
-                    integer function(integer) add = (integer a) yield a + captured;
+                    integer delegate(integer) add = (integer a) yield a + captured;
             """);
 
         Assert.That(IdsOf(diagnostics), Is.Empty);

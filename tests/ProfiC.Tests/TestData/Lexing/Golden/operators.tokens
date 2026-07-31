@@ -235,7 +235,7 @@
   57:18   Identifier           'maybe'
   57:23   Semicolon            ';'
   58:9    Integer              'integer'
-  58:17   Function             'function'
+  58:17   Delegate             'delegate'
   58:25   LeftParen            '('
   58:26   Integer              'integer'
   58:33   Comma                ','

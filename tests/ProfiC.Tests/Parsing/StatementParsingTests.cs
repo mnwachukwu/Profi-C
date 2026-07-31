@@ -286,8 +286,8 @@ public sealed class StatementParsingTests : ParserTestBase
     [Test]
     public void FunctionTypesParseWithAndWithoutAReturnType()
     {
-        TypeSyntax withReturn = ParseType("integer function(integer, integer)");
-        TypeSyntax withoutReturn = ParseType("function(string)");
+        TypeSyntax withReturn = ParseType("integer delegate(integer, integer)");
+        TypeSyntax withoutReturn = ParseType("delegate(string)");
 
         Assert.Multiple(() =>
         {
@@ -302,8 +302,8 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         Assert.Multiple(() =>
         {
-            Assert.That(ParseType("integer function(integer)?"), Is.TypeOf<OptionalTypeSyntax>());
-            Assert.That(ParseType("function(string)[]"), Is.TypeOf<SetTypeSyntax>());
+            Assert.That(ParseType("integer delegate(integer)?"), Is.TypeOf<OptionalTypeSyntax>());
+            Assert.That(ParseType("delegate(string)[]"), Is.TypeOf<SetTypeSyntax>());
         });
     }
 
@@ -321,10 +321,10 @@ public sealed class StatementParsingTests : ParserTestBase
                     yield "a";
                 end function
 
-                function(string)[] handlers = {};
+                delegate(string)[] handlers = {};
 
                 function Main()
-                    integer function(integer, integer) add = (integer a, integer b) yield a + b;
+                    integer delegate(integer, integer) add = (integer a, integer b) yield a + b;
                 end function
             end model
             """);

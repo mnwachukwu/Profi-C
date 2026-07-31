@@ -90,7 +90,7 @@ public sealed class TypeSyntaxTests : AstTestBase
     [Test]
     public void FunctionType_MayItselfBeOptional()
     {
-        // integer function(integer, integer)?
+        // integer delegate(integer, integer)?
         TypeSyntax type = OptionalOf(
             new FunctionTypeSyntax(NextSpan(), Named("integer"), [Named("integer")]));
 

@@ -107,9 +107,9 @@ namespace Tour
             Shape? maybeShape;
             Shape?[] optionalShapes = {};
             Shape[]? maybeShapes;
-            integer function(integer, integer) comparator;
-            integer function(integer, integer)? maybeComparator;
-            function(string)[] handlers = {};
+            integer delegate(integer, integer) comparator;
+            integer delegate(integer, integer)? maybeComparator;
+            delegate(string)[] handlers = {};
 
             # An anonymous block introduces a scope and closes with a bare end.
             begin

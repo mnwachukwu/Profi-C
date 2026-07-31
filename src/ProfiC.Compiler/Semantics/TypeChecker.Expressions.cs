@@ -35,6 +35,16 @@ public sealed partial class TypeChecker
 
             case LambdaExpr lambda when TargetFor(expected) is { } wanted:
                 MatchParametersToTarget(lambda, wanted);
+
+                // What the target expects back, kept for the body. Without it, a lambda that
+                // yields a lambda leaves the inner one with nothing to take its parameter
+                // types from, and a reader who said what the whole thing is has to say it
+                // again inside — which is the one thing writing the type was meant to avoid.
+                if (wanted.ReturnType is { } result)
+                {
+                    _wantedResults[lambda] = result;
+                }
+
                 break;
         }
 
@@ -811,7 +821,12 @@ public sealed partial class TypeChecker
 
         if (lambda.ExpressionBody is not null)
         {
-            TypeSymbol result = CheckExpression(lambda.ExpressionBody);
+            // Checked against what the surrounding type wants back, where it said. That is
+            // what carries a target through a chain of them, so 'integer delegate(integer)
+            // delegate(integer)' says what both lambdas hold rather than only the outer one.
+            TypeSymbol result = _wantedResults.TryGetValue(lambda, out TypeSymbol? wanted)
+                ? CheckExpressionAgainst(lambda.ExpressionBody, wanted)
+                : CheckExpression(lambda.ExpressionBody);
 
             // A lambda whose expression produces no value yields nothing, which a function type
             // spells as a null result rather than as a result of the void type. Both say the

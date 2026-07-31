@@ -9,23 +9,43 @@ A condensed reference and a full comparison to C#. For the normative definition 
 
 ## 1. Reserved words
 
-### 1.1 The 56 reserved words
+### 1.1 The 57 reserved words
 
 ```
-abstract     and          as           base         begin        boolean
-break        case         catch        character    constant     continue
-default      each         else         end          enumeration  extends
-false        finally      for          fraction     function     global
-if           import       in           integer      internal     is
-let          model        namespace    new          not          or
-override     protected    public       real         sealed       step
-string       structure    switch       then         this         throw
-to           true         try          until        using        virtual
-while        yield
+abstract    and         as          base        begin       boolean
+break       case        catch       character   constant    continue
+default     delegate    each        else        end         enumeration
+extends     false       finally     for         fraction    function
+global      if          import      in          integer     internal
+is          let         model       namespace   new         not
+or          override    protected   public      real        sealed
+step        string      structure   switch      then        this
+throw       to          true        try         until       using
+virtual     while       yield
 ```
 
 A name may take one back by writing `@` in front of it — `@end`, `@step` — which is the only
 place a name may begin with something other than a letter.
+
+### 1.1a How many words that is
+
+| | Profi-C | C# |
+|---|---|---|
+| Reserved everywhere | **57** | 77 |
+| Contextual — reserved only in one position | **0** | 46 |
+| Words that are special somewhere | **57** | 123 |
+
+C#'s figures are Roslyn's own, from `SyntaxFacts.GetReservedKeywordKinds` and
+`GetContextualKeywordKinds`, minus four undocumented `__`-prefixed ones it also counts.
+
+**The second row is the difference that shows up while writing.** In C#, `value`, `var`,
+`record`, `await` and forty-odd others are keywords in one position and ordinary names
+everywhere else, so whether a word is reserved depends on where it sits.
+
+In Profi-C a word is reserved everywhere or nowhere, and `@` takes one back as a name — one
+rule, written at the point it applies.
+
+The count is asserted by a test, so the numbers above cannot drift from the compiler.
 
 ### 1.2 Comments
 

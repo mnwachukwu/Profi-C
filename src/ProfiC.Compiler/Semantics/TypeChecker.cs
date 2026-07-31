@@ -15,6 +15,14 @@ namespace ProfiC.Compiler.Semantics;
 public sealed partial class TypeChecker
 {
     private readonly SemanticModel _model;
+
+    /// <summary>
+    /// <para>What the surrounding type wants each lambda to hand back, where it said.</para>
+    /// <para>Kept beside the lambda rather than passed down, because a lambda's body is
+    /// reached through the ordinary expression walk and threading an expected type through
+    /// every node would say something about all of them to serve one.</para>
+    /// </summary>
+    private readonly Dictionary<LambdaExpr, TypeSymbol> _wantedResults = [];
     private readonly DiagnosticBag _diagnostics;
 
     /// <summary>The function being checked, for deciding what <c>yield</c> may carry.</summary>
