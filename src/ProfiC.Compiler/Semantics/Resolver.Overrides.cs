@@ -99,8 +99,9 @@ public sealed partial class Resolver
         string declaredBy = overridden.DeclaringType!.Name;
 
         // An override may itself be overridden, so the word passes down a chain without every
-        // link having to repeat "virtual".
-        if (!overridden.IsVirtual && !overridden.IsOverride)
+        // link having to repeat "virtual"; and an abstract function is offered by being
+        // abstract, since a descendant is obliged to write it.
+        if (!overridden.IsOverridable)
         {
             ReportAt(
                 DiagnosticDescriptors.BaseIsNotVirtual,

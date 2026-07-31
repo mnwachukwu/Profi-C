@@ -19,6 +19,15 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
     private static string SpecificationPath =>
         Path.Combine(RepositoryRoot, "docs", "language-spec.md");
 
+    private static string SummaryPath =>
+        Path.Combine(RepositoryRoot, "docs", "language-summary.md");
+
+    private static IEnumerable<DiagnosticDescriptor> Descriptors() =>
+        typeof(DiagnosticDescriptors)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.FieldType == typeof(DiagnosticDescriptor))
+            .Select(field => (DiagnosticDescriptor)field.GetValue(null)!);
+
     /// <summary>Every id the compiler can report, read off the descriptors themselves.</summary>
     private static SortedSet<string> Declared()
     {
@@ -91,5 +100,33 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
         }
 
         Assert.That(wrong, Is.Empty);
+    }
+
+    /// <summary>
+    /// <para>The summary counts the warnings in a sentence, and says the number in words.</para>
+    /// <para>It is a third hand-written list of the same thing, and the only one nothing checks
+    /// — which is why it was the one that drifted. A count is also the claim a reader is least
+    /// likely to verify and most likely to repeat.</para>
+    /// </summary>
+    [Test]
+    public void TheSummaryCountsTheWarningsCorrectly()
+    {
+        string[] words =
+        [
+            "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+            "Seventeen", "Eighteen", "Nineteen", "Twenty",
+        ];
+
+        int warnings = Descriptors()
+            .Count(d => d.DefaultSeverity == DiagnosticSeverity.Warning);
+
+        Assert.That(warnings, Is.LessThan(words.Length), "this table needs more number words");
+
+        Assert.That(
+            File.ReadAllText(SummaryPath),
+            Does.Contain($"{words[warnings]} exist"),
+            $"the compiler has {warnings} warnings, so the summary should say "
+            + $"'{words[warnings]} exist'");
     }
 }

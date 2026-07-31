@@ -233,8 +233,28 @@ public sealed class FunctionSymbol(
 
     public bool IsOverride => Modifiers.Has(DeclarationModifiers.Override);
 
-    /// <summary>How far this function can be seen. Silence means the type that declares it.</summary>
-    public Visibility Visibility => Modifiers.OfMember();
+    /// <summary>
+    /// Declared without a body, for a descendant to supply. An abstract function is offered for
+    /// overriding by being abstract, so it needs no <c>virtual</c> beside it.
+    /// </summary>
+    public bool IsAbstract => Modifiers.Has(DeclarationModifiers.Abstract);
+
+    /// <summary>Whether a descendant may override this. Three words say so, and any one is enough.</summary>
+    public bool IsOverridable => IsVirtual || IsOverride || IsAbstract;
+
+    /// <summary>
+    /// <para>How far this function can be seen. Silence means the type that declares it — or,
+    /// where the function is abstract, that type and everything extending it.</para>
+    /// <para>A declaration with no visibility on it belongs to the smallest thing that could
+    /// own it. For an abstract function the declaring type is not that thing: nothing there
+    /// writes the function, so a descendant has to, and one that cannot see it could never
+    /// oblige. Protected is the narrowest reach the word admits, which makes it what the word
+    /// means rather than something to write beside it.</para>
+    /// </summary>
+    public Visibility Visibility =>
+        IsAbstract && Modifiers.OfMember() == Visibility.Private
+            ? Visibility.Protected
+            : Modifiers.OfMember();
 
     /// <summary>
     /// True when this is a constructor: its name matches its type and it declares no return

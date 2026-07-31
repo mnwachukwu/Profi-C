@@ -151,9 +151,9 @@ type. A bare identifier reaches only locals and parameters.
 what it means without a glossary.
 
 **What the language borrows keeps its source spelling.** The library surface mirrors .NET:
-`Math.Sqrt` stays `Math.Sqrt` rather than becoming `Mathematics.SquareRoot`. Profi-C is
-expected to gain real .NET imports eventually, and renaming now would create two spellings
-for one function.
+`Math.Sqrt` is `Math.Sqrt`, not `Mathematics.SquareRoot`. Anything Profi-C defines is spelled
+out; anything it borrows is written the way its source writes it, so a name a reader already
+knows is the name they type.
 
 **Every construct says what it closes.** `end if`, `end while`, `end model`. The compiler
 verifies the qualifier and reports a mismatch by name, so a beginner who loses track of
@@ -1245,7 +1245,36 @@ end model
 
 `extends` names the parent, and there is one. `base(...)` runs the parent's constructor and
 `base.Member()` reaches its members. `sealed` forbids extending; `abstract` forbids
-constructing and permits a member with no body.
+constructing.
+
+**An `abstract` function is declared and left open**, ending at a semicolon where a body would
+begin:
+
+```
+abstract model Shape
+    public abstract real function Area();
+end model
+```
+
+It closes no block, so it takes no `end function`, and it is asked for no result here — that
+is the obligation of whatever writes it. Four rules follow, each with its own diagnostic:
+
+- Only an **abstract model** may carry one (`PC0240`). An instance of a model that could be
+  constructed would reach a function nobody wrote.
+- A model that **can** be constructed must write every function still open above it
+  (`PC0241`), reported once on the model and naming each. An abstract descendant passes the
+  obligation down instead; a descendant that writes one discharges it for everything below.
+- It carries **no body** (`PC0239`), and a function without `abstract` must have one
+  (`PC0238`).
+
+Written with no visibility beside it, an abstract function is **protected** rather than
+private. [§4.6](#46-visibility) gives a declaration with no word to the smallest thing that
+could own it, and the declaring type is not that thing here — nothing in it writes the
+function. The narrowest reach the word admits is the type and everything extending it, so that
+is what silence means. `public` and `internal` still say so where they are wanted.
+
+`abstract` is what offers the function for overriding, so `virtual` beside it says nothing
+further and is a warning (`PC0242`).
 
 **`this.` is required to reach an instance member.** `name` and `this.name` are not two ways
 to write one thing — the first is a local and the second is a field, and the difference is
@@ -1276,8 +1305,8 @@ repeating it. Four ways it can fail, and each is an error:
 | An `override` yielding something else | `PC0225` |
 
 An unchecked `override` fails quietly, which is why it is checked: a base function renamed, or
-a parameter type that drifted, leaves a function still marked `override` and now overriding
-nothing. It compiles, it runs, and every call through the base type reaches the old one.
+a parameter type that drifted, leaves a function still marked `override` and overriding
+nothing. It compiles, it runs, and every call through the base type reaches the base's.
 
 A function differing in **parameter types** is an overload rather than an override, and
 overloading across a base and a derived model is ordinary. `PC0222` is what tells the two apart
@@ -2466,6 +2495,11 @@ Warnings do not block compilation; everything else does.
 | `PC0235` | error | No such program |
 | `PC0236` | warning | This 'entry' decides nothing |
 | `PC0237` | error | This name is already in use here |
+| `PC0238` | error | This function needs a body |
+| `PC0239` | error | An abstract function has no body |
+| `PC0240` | error | Only an abstract model may leave a function open |
+| `PC0241` | error | An inherited function is still open |
+| `PC0242` | warning | An abstract function is already virtual |
 
 ### PC0300 to PC0399
 

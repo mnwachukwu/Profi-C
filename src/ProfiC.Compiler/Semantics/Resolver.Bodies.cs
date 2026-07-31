@@ -163,7 +163,7 @@ public sealed partial class Resolver
                     _model.Bind(parameter, parameterSymbol);
                 }
 
-                BindStatements(function.Body);
+                BindStatements(function.Body ?? []);
             });
         }
         finally

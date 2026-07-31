@@ -67,7 +67,11 @@ public sealed class AstPrinter(bool includePositions = false)
         EnumerationDecl n => Name(n.Name, n.Modifiers),
         EnumMemberDecl n => Quote(n.Name),
         FieldDecl n => Name(n.Name, n.Modifiers),
-        FunctionDecl n => Name(n.Name, n.Modifiers),
+        // A function left open prints the fact. Without it a declaration ending at a semicolon
+        // and one with an empty body are the same tree, and the golden files could not tell a
+        // dropped body from a body that was never there.
+        FunctionDecl n => Name(n.Name, n.Modifiers)
+                          + (n.IsBodiless ? " [no body]" : string.Empty),
         ParameterDecl n => Quote(n.Name),
 
         NamedTypeSyntax n => Quote(n.Text),

@@ -81,7 +81,7 @@ public sealed class Lowering
                     function.ReturnType,
                     function.Name,
                     function.Parameters,
-                    LowerStatements(function.Body)));
+                    function.Body is { } body ? LowerStatements(body) : null));
 
             case FieldDecl field:
                 return Carry(declaration, new FieldDecl(

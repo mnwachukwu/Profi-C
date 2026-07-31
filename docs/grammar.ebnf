@@ -99,8 +99,11 @@ TypeModifiers  = [ Visibility ] [ "global" ] [ "sealed" | "abstract" ] ;
 FieldDecl      = [ Visibility ] [ "global" ] [ "constant" ]
                  Type Identifier [ "=" Expr ] ";" ;
 
+(* A semicolon in place of a body leaves the function open for a descendant to write,
+   which only 'abstract' permits. It closes no block, so it takes no 'end function'. *)
 FunctionDecl   = Modifiers [ Type ] "function" Identifier
-                 "(" [ ParamList ] ")" Body "end" "function" ;
+                 "(" [ ParamList ] ")"
+                 ( Body "end" "function" | ";" ) ;
 
 ParamList      = Param { "," Param } ;
 Param          = Type Identifier ;

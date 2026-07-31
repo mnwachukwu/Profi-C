@@ -143,16 +143,16 @@ Every field below is reached through `this.`, which is the rule rather than a ho
 bare identifier reaches only locals and parameters, so there is no other way to write it.
 
 ```
-model Shape
+abstract model Shape
     protected string Name;
 
     public function Shape(string name)
         this.Name = name;
     end function
 
-    public virtual real function Area()
-        yield 0.0;
-    end function
+    # Declared and left open: every shape has an area, and there is no answer
+    # right for shapes in general. Anything built from Shape must write it.
+    public abstract real function Area();
 end model
 
 model Circle extends Shape
@@ -636,6 +636,7 @@ Programs the compiler rejects:
 | [imports.pc](samples/negatives/compile/imports.pc) | Imports naming a file that is not there, and one that is not Profi-C |
 | [visibility.pc](samples/negatives/compile/visibility.pc) | Reaching a private and a protected member from outside, two visibilities on one declaration, and `protected` on a type |
 | [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
+| [abstract.pc](samples/negatives/compile/abstract.pc) | A function left open on a model that can be constructed, a body where there should be none and none where there should be one, and a model that never writes what it inherited |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
 see:

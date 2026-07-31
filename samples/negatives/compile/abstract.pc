@@ -1,0 +1,49 @@
+##
+    Functions left open, and the promises that go with them.
+
+    This program does not compile. An 'abstract' function is a name and a signature with
+    nothing behind them, so it only means something if nobody can construct the model carrying
+    it, and if the obligation to write it eventually reaches a model somebody can construct.
+
+    Every mistake here is one of those two rules breaking, plus the two that keep a body and
+    the word 'abstract' agreeing with each other.
+##
+
+##
+    A model anyone can construct, holding a function nobody wrote. Constructing it would reach
+    Area and find nothing there.
+##
+model Loose
+    public abstract real function Area();
+end model
+
+##
+    The two directions of the same rule. A function without 'abstract' has to say what it does,
+    because nothing obliges anyone else to; a function with it must not, because every model
+    below writes its own and this one would never run.
+##
+abstract model Muddled
+    public real function Perimeter();
+
+    public abstract real function Area()
+        yield 0.0;
+    end function
+end model
+
+##
+    The obligation arriving somewhere it is not met. Solid can be constructed, so it has to
+    write both of the functions Shape left open, and it writes neither.
+##
+abstract model Shape
+    public abstract real function Area();
+    public abstract string function Name();
+end model
+
+model Solid extends Shape
+end model
+
+global model Program
+    function Main()
+        Console.WriteLine(new Loose().Area());
+    end function
+end model

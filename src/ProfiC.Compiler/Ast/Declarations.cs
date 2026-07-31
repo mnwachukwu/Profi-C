@@ -240,7 +240,7 @@ public sealed class FunctionDecl(
     TypeSyntax? returnType,
     string name,
     IReadOnlyList<ParameterDecl> parameters,
-    IReadOnlyList<Statement> body) : Declaration(span)
+    IReadOnlyList<Statement>? body) : Declaration(span)
 {
     public DeclarationModifiers Modifiers { get; } = modifiers;
 
@@ -250,10 +250,20 @@ public sealed class FunctionDecl(
 
     public IReadOnlyList<ParameterDecl> Parameters { get; } = parameters;
 
-    public IReadOnlyList<Statement> Body { get; } = body;
+    /// <summary>
+    /// <para>The statements between the signature and <c>end function</c>, or null where the
+    /// declaration ended at a semicolon and there is no body at all.</para>
+    /// <para>Null and empty are different answers. An empty body is a function that does
+    /// nothing; no body is a function whose descendants supply one, which only an
+    /// <c>abstract</c> function may be.</para>
+    /// </summary>
+    public IReadOnlyList<Statement>? Body { get; } = body;
+
+    /// <summary>True when the declaration ended at a semicolon, leaving the body to a descendant.</summary>
+    public bool IsBodiless => Body is null;
 
     public override IEnumerable<SyntaxNode> Children =>
-        NonNull(ReturnType).Concat(Parameters).Concat(Body);
+        NonNull(ReturnType).Concat(Parameters).Concat(Body ?? []);
 
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitFunctionDecl(this);
 

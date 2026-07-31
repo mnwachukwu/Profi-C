@@ -53,6 +53,8 @@ CompilationUnit
         YieldStmt
           MemberExpr 'name'
             ThisExpr
+      FunctionDecl 'Area' [public abstract] [no body]
+        NamedTypeSyntax 'real'
     ModelDecl 'Square' [public sealed] extends Shape
       FieldDecl 'edge'
         NamedTypeSyntax 'real'
@@ -73,6 +75,14 @@ CompilationUnit
           CallExpr
             MemberExpr 'Describe'
               BaseExpr
+      FunctionDecl 'Area' [public override]
+        NamedTypeSyntax 'real'
+        YieldStmt
+          BinaryExpr '*'
+            MemberExpr 'edge'
+              ThisExpr
+            MemberExpr 'edge'
+              ThisExpr
       ModelDecl 'Corner' [public]
         FieldDecl 'owner'
           NamedTypeSyntax 'Shape'

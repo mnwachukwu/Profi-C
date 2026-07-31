@@ -42,7 +42,7 @@ public abstract class ParserTestBase
             """);
 
         ModelDecl model = (ModelDecl)unit.Declarations[0];
-        return ((FunctionDecl)model.Members[0]).Body;
+        return ((FunctionDecl)model.Members[0]).Body!;
     }
 
     /// <summary>Parses a single expression by way of a variable initializer.</summary>
@@ -65,7 +65,7 @@ public abstract class ParserTestBase
             """);
 
         ModelDecl model = (ModelDecl)unit.Declarations[0];
-        Statement statement = ((FunctionDecl)model.Members[0]).Body[0];
+        Statement statement = ((FunctionDecl)model.Members[0]).Body![0];
 
         return (((VarDeclStmt)statement).Initializer!, diagnostics);
     }

@@ -18,10 +18,14 @@ abstract model Shape
         this.name = label;
     end function
 
-    # A default worth overriding. Every shape below does.
-    public virtual real function Area()
-        yield 0.0;
-    end function
+    ##
+        Left open. A shape has an area, but there is no answer that would be right for shapes
+        in general, so this says the name and the result type and stops at the semicolon.
+
+        Every model built from Shape has to write it — the compiler refuses one that does not —
+        and 'abstract' is what offers it for overriding, so no 'virtual' is wanted beside it.
+    ##
+    public abstract real function Area();
 
     public virtual string function Describe()
         yield this.name + " with area " + this.Area();

@@ -197,7 +197,7 @@ public sealed partial class TypeChecker
 
         try
         {
-            CheckStatements(function.Body);
+            CheckStatements(function.Body ?? []);
         }
         finally
         {

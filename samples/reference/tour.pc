@@ -57,6 +57,9 @@ namespace Tour
         public virtual string function Describe()
             yield this.name;
         end function
+
+        # Left open: declared, and ended at a semicolon for a descendant to write.
+        public abstract real function Area();
     end model
 
     public sealed model Square extends Shape
@@ -69,6 +72,10 @@ namespace Tour
 
         public override string function Describe()
             yield base.Describe();
+        end function
+
+        public override real function Area()
+            yield this.edge * this.edge;
         end function
 
         # A nested model, which holds no reference to the model it sits inside.

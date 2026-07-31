@@ -176,6 +176,13 @@ public sealed class DefiniteAssignment
 
     private void AnalyzeFunction(FunctionDecl function, DeclaredTypeSymbol? owner)
     {
+        // An abstract function has no body to walk, and nothing to answer for: reaching a
+        // result is the obligation of whatever writes it.
+        if (function.Body is not { } body)
+        {
+            return;
+        }
+
         FlowState state = FlowState.Empty();
 
         // Parameters arrive holding values.
@@ -187,7 +194,7 @@ public sealed class DefiniteAssignment
             }
         }
 
-        state = AnalyzeStatements(function.Body, state);
+        state = AnalyzeStatements(body, state);
 
         if (_model.GetSymbol(function) is not FunctionSymbol declared)
         {

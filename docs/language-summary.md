@@ -186,7 +186,7 @@ are cannot be asked; `CompareTo` answers which came first.
 
 **Nothing at the language level is abbreviated.** `boolean` not `bool`, `enumeration` not `enum`, `function` not `func`, `integer` not `int`. A keyword should be readable aloud without a glossary.
 
-**Library surface is exempt and keeps .NET spellings.** `Math.Sqrt` stays as-is rather than becoming `Mathematics.SquareRoot`, because Profi-C is expected to gain real .NET imports eventually; renaming now would leave two spellings for one function once that lands. The line: anything Profi-C defines is spelled out, anything it borrows keeps its source spelling.
+**Library surface is exempt and keeps .NET spellings.** `Math.Sqrt` is `Math.Sqrt`, not `Mathematics.SquareRoot`. The line: anything Profi-C defines is spelled out, anything it borrows is written the way its source writes it, so a name a reader already knows is the name they type.
 
 **Keywords are lowercase. Built-ins are PascalCase.** The casing tells a reader at a glance what is language and what is library.
 
@@ -205,6 +205,9 @@ The second pair is more confusable than the first, since both live near the idea
 |---|---|
 | Single inheritance | one base type, no multiple inheritance |
 | Explicit `virtual` and `override` | opt-in dispatch, not Java's opt-out |
+| `sealed` | a model no other may extend, as a sealed class |
+| `abstract` | a model that cannot be constructed, and a function ending at `;` that every model built from it must write. `abstract` implies `virtual`, and only an abstract model may carry one — all as in C# |
+| Block strings with `"""` | the same rule as a C# raw string literal, longer runs of quotes included. There is no separate verbatim form, because nothing inside a block is read |
 | `base(...)` and `base.Method()` | constructor chaining and parent calls |
 | Exceptions | `try` / `catch` / `finally` / `throw`, matched by type |
 | Overloading | including constructors |
@@ -226,9 +229,9 @@ The second pair is more confusable than the first, since both live near the idea
 
 | Profi-C | C# |
 |---|---|
-| `end if`, `end while`, `end model` | `}` for everything |
-| no opener; `end if` closes it | `{` opens, `}` closes |
+| `end if`, `end while`, `end model`, and no opener at all | `{` opens, `}` closes, and one `}` closes everything |
 | `begin` is only an anonymous scope | bare `{ }` for the same job |
+| `#` to end of line, `##` to the next `##` | `//` and `/* */` |
 | `case 1:` with no `break` | `break` required on every case |
 | `{1, 2, 3}` is a set literal | `{ }` is a block or initializer |
 | `and`, `or`, `not` | `&&`, `\|\|`, `!` |
@@ -238,14 +241,14 @@ The second pair is more confusable than the first, since both live near the idea
 | `for i = 0 until n` | `for (int i = 0; i < n; i++)` |
 | `if c ... end if`, no parens | `if (c) { ... }` |
 | `if c then a else b` expression | `c ? a : b` |
-| `x as Dog` yields `Dog?` | `x as Dog` yields null on failure |
+| `"{{name}} is {{age}}"` | `$"{name} is {age}"` |
+| `integer delegate(integer)` names a function type | `Func<int, int>` |
 | `global` | `static` |
 | `3\|4` fraction literal | no equivalent |
 | `2 ^ 10` raises to a power | `^` is exclusive-or; use `Math.Pow` |
 | `enumeration Color` | `enum Color` |
 | `global model` | `static class` |
 | a `global model` has global members | a `static class` marks each member `static` |
-| `sealed`, `abstract` | identical |
 | `structure Point ... end structure` | `struct Point { }` |
 | `boolean` | `bool` |
 
@@ -270,7 +273,13 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **`==` on models and sets is deep by default**, comparing fields and elements recursively with cycle-safe bisimulation. C# gives reference equality unless you override. `Reference.Equals(a, b)` is the C# default behavior, spelled explicitly.
 
-**Deferred to v2:** generics, interfaces, and properties. `abstract` exists in v1 but is a marker only; with no bodiless functions, contracts wait for interfaces. Every C# property becomes a method here, which is why `Count()` has parentheses.
+**An `abstract` function with no visibility written is `protected`.** A declaration with no word belongs to the smallest thing that could own it, and the declaring type is not that thing here — nothing in it writes the function, so a descendant must. C# leaves such a member private and then rejects it (`CS0621`); Profi-C reads the word instead, so `abstract real function Area();` needs nothing beside it.
+
+**`virtual` beside `abstract` is a warning rather than an error.** Being abstract is what offers a function for overriding, so the second word is true and adds nothing; C# rejects the pair.
+
+**`x as Dog` yields `Dog?`**, an empty optional where C# yields `null`. The two spellings agree and the results do not, so a C# reader carries the syntax across and has to leave the habit of a null check behind: what comes back is proved present or it is not read at all.
+
+**Deferred to v2:** generics, interfaces, and properties. Every C# property becomes a method here, which is why `Count()` has parentheses.
 
 **Fractions are a primitive** with exact rational arithmetic. `fraction` and `real` never implicitly convert in either direction; both are explicit.
 
@@ -315,6 +324,6 @@ everywhere without one. See §12.3 of the specification.
 
 ## 7. Two details worth knowing
 
-**Warnings are few and each one names its fix.** Thirteen exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, a type test whose answer is fixed either way, unreachable code, an import naming an absolute path, imports that form a circle, a `switch` leaving enumeration members unhandled, a type shadowing one the language provides, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, and `Console.WriteLine("")` where the empty string does nothing. Every other diagnostic is an error. Warnings do not block compilation.
+**Warnings are few and each one names its fix.** Sixteen exist: an unnecessary `@` on a name, more quotes in a row than close a block string, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `virtual` beside `abstract`, a type shadowing one the language provides, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, `Console.WriteLine("")` where the empty string does nothing, unreachable code, an import naming an absolute path, and imports that form a circle. Every other diagnostic is an error, and warnings do not block compilation. [Appendix A](language-spec.md#appendix-a-diagnostics) of the specification lists all of them with their ids.
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.

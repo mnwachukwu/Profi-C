@@ -245,6 +245,15 @@ public sealed partial class Parser
         List<ParameterDecl> parameters = ParseParameterList();
         Expect(TokenType.RightParen);
 
+        // A semicolon in place of a body: the function is declared and left to a descendant.
+        // Nothing else can follow a parameter list, so this needs no lookahead — and it closes
+        // no block, which is why it does not want an 'end function' the way a body does.
+        if (Match(TokenType.Semicolon))
+        {
+            return new FunctionDecl(
+                SpanFrom(start), modifiers, returnType, name, parameters, body: null);
+        }
+
         List<Statement> body = ParseBody(TokenType.Function);
         ExpectEnd(TokenType.Function, "function", start);
 

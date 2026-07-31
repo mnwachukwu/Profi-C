@@ -298,7 +298,16 @@ public sealed partial class Interpreter
                 return Evaluate(function.ExpressionBody, scope, function.Receiver);
             }
 
-            ExecutionResult result = ExecuteStatements(function.Body ?? [], scope, function.Receiver);
+            if (function.Body is not { } body)
+            {
+                // An abstract function reached at run time. The checker refuses to let a model
+                // that can be constructed leave one open, so arriving here means it let one
+                // through — say so rather than returning nothing and calling it an answer.
+                throw new InvalidOperationException(
+                    "an abstract function was reached with nothing written for it");
+            }
+
+            ExecutionResult result = ExecuteStatements(body, scope, function.Receiver);
             return result.Completion == Completion.Yield ? result.Value : null;
         }
         finally

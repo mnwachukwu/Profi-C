@@ -124,6 +124,7 @@ public sealed partial class Resolver
         resolver.LinkInheritance();
         resolver.SettleMemberSignatures();
         resolver.CheckOverrides();
+        resolver.CheckAbstractFunctions();
 
         if (units.Count > 0)
         {

@@ -1,0 +1,4 @@
+abstract.pc(17,5): error PC0240: 'Area' is abstract, but 'Loose' can be constructed — so an instance of it would reach a function nothing ever wrote. Mark 'Loose' abstract too.
+abstract.pc(26,5): error PC0238: 'Perimeter' ends at the semicolon, so nothing says what it does. Give it a body, or mark it 'abstract' to leave it to whatever extends this model.
+abstract.pc(28,5): error PC0239: 'Area' is abstract, so every model extending this one writes what it does and this body would never run. End the declaration at ';', or drop the 'abstract'.
+abstract.pc(42,1): error PC0241: 'Solid' can be constructed, so every function left open above it has to be written here. Still open: 'Area' from 'Shape', 'Name' from 'Shape'. Write an override for each, or mark 'Solid' abstract and leave them to whatever extends it.

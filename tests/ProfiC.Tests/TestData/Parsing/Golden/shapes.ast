@@ -9,10 +9,8 @@ CompilationUnit
         MemberExpr 'name'
           ThisExpr
         IdentifierExpr 'label'
-    FunctionDecl 'Area' [public virtual]
+    FunctionDecl 'Area' [public abstract] [no body]
       NamedTypeSyntax 'real'
-      YieldStmt
-        LiteralExpr 0.0 [Real]
     FunctionDecl 'Describe' [public virtual]
       NamedTypeSyntax 'string'
       YieldStmt

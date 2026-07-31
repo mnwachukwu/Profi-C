@@ -475,6 +475,6 @@ public sealed class StatementParsingTests : ParserTestBase
 
         FunctionDecl main = (FunctionDecl)((ModelDecl)unit.Declarations[0]).Members[0];
 
-        Assert.That(main.Body[0], Is.TypeOf<LocalDeclStmt>());
+        Assert.That(main.Body![0], Is.TypeOf<LocalDeclStmt>());
     }
 }

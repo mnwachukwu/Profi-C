@@ -707,6 +707,60 @@ public static class DiagnosticDescriptors
         "'{0}' is already the name of something in an enclosing scope, so this one would hide "
         + "it. Give it a name of its own.");
 
+    /// <summary>
+    /// A function declared without a body where nothing is going to supply one. Only an
+    /// <c>abstract</c> function may be left open, since only it obliges a descendant to fill it.
+    /// </summary>
+    public static readonly DiagnosticDescriptor BodyIsMissing = Error(
+        "PC0238",
+        "This function needs a body",
+        "'{0}' ends at the semicolon, so nothing says what it does. Give it a body, or mark it "
+        + "'abstract' to leave it to whatever extends this model.");
+
+    /// <summary>
+    /// The other direction. An <c>abstract</c> function is the one every descendant must write,
+    /// so a body on it is one nothing would ever run.
+    /// </summary>
+    public static readonly DiagnosticDescriptor AbstractHasABody = Error(
+        "PC0239",
+        "An abstract function has no body",
+        "'{0}' is abstract, so every model extending this one writes what it does and this "
+        + "body would never run. End the declaration at ';', or drop the 'abstract'.");
+
+    /// <summary>
+    /// <para>An <c>abstract</c> function on a model that can be constructed.</para>
+    /// <para>An abstract function is a promise that a descendant fills it, and an instance of
+    /// the model itself would be one on which the promise was never kept.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor AbstractInConcreteModel = Error(
+        "PC0240",
+        "Only an abstract model may leave a function open",
+        "'{0}' is abstract, but '{1}' can be constructed — so an instance of it would reach a "
+        + "function nothing ever wrote. Mark '{1}' abstract too.");
+
+    /// <summary>
+    /// <para>A model that can be constructed and has inherited a function nobody wrote.</para>
+    /// <para>Reported on the model rather than at each function, since one message naming all
+    /// of them is what a reader acts on. This is the whole point of the word: the obligation
+    /// travels down until a model that can be built discharges it.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor AbstractIsNotOverridden = Error(
+        "PC0241",
+        "An inherited function is still open",
+        "'{0}' can be constructed, so every function left open above it has to be written "
+        + "here. Still open: {1}. Write an override for each, or mark '{0}' abstract and leave "
+        + "them to whatever extends it.");
+
+    /// <summary>
+    /// <c>virtual</c> beside <c>abstract</c>. A warning: abstract already offers the function
+    /// for overriding, so the second word is true and adds nothing.
+    /// </summary>
+    public static readonly DiagnosticDescriptor AbstractIsAlreadyVirtual = Warning(
+        "PC0242",
+        "An abstract function is already virtual",
+        "'{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing "
+        + "further. Remove it.");
+
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(
