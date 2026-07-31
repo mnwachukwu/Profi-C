@@ -29,6 +29,37 @@ public sealed class EmptyOptionalException : InvalidOperationException
 }
 
 /// <summary>
+/// <para>Thrown when a set is changed while a <c>for each</c> is walking it.</para>
+/// <para>A walk reads the set's length once, when it begins, so a change made during one does
+/// not move with it: inserting leaves elements never reached, and removing leaves the walk
+/// running past the end. The second used to arrive as an index out of range, several frames
+/// from the line responsible and saying nothing about the walk.</para>
+/// <para>Most of these are refused while compiling (`PC0243`). This catches the rest — a set
+/// reached under a second name, or handed to a function that changes it — which no local rule
+/// can see. The same division as dividing by zero: refused when it is visible, raised when it
+/// is not.</para>
+/// </summary>
+public sealed class SequenceChangedException : InvalidOperationException
+{
+    public SequenceChangedException()
+        : base("This set was changed while a 'for each' was walking it. A walk reads the set's "
+               + "length when it begins, so it cannot follow a change made during one. Collect "
+               + "what you want into another set, or count with a range loop instead.")
+    {
+    }
+
+    public SequenceChangedException(string message)
+        : base(message)
+    {
+    }
+
+    public SequenceChangedException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
+
+/// <summary>
 /// <para>The exceptions a Profi-C program can name, and what each is at run time.</para>
 /// <para>Recorded here so that one place answers the question, rather than the mapping being
 /// implicit in the emitter.</para>
@@ -46,6 +77,7 @@ public static class BuiltInExceptions
         ("DivideByZeroException", typeof(DivideByZeroException)),
         ("IndexOutOfRangeException", typeof(IndexOutOfRangeException)),
         ("EmptyOptionalException", typeof(EmptyOptionalException)),
+        ("SequenceChangedException", typeof(SequenceChangedException)),
         ("InvalidCastException", typeof(InvalidCastException)),
         ("FormatException", typeof(FormatException)),
         ("ArgumentException", typeof(ArgumentException)),

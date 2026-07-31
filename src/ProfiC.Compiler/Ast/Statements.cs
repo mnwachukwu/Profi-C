@@ -6,6 +6,31 @@ namespace ProfiC.Compiler.Ast;
 /// An anonymous scope, written <c>begin</c> … <c>end</c>. This is the only construct
 /// <c>begin</c> introduces: it is never a body opener.
 /// </summary>
+/// <summary>
+/// <para>A loop marked as walking a sequence, so the sequence can refuse to be changed while
+/// it runs.</para>
+/// <para>Built by lowering and never by the parser. A <c>for each</c> becomes an index loop
+/// over a held count, and by the time it does nothing left in the tree says a walk is
+/// happening — this is what says it. Most changes to a walked sequence are refused while
+/// compiling (`PC0243`); this is what catches the rest, where the set was reached under
+/// another name or handed to a function.</para>
+/// </summary>
+public sealed class WalkStmt(SourceSpan span, Expression sequence, Statement body)
+    : Statement(span)
+{
+    /// <summary>The sequence being walked, as a name lowering can evaluate cheaply.</summary>
+    public Expression Sequence { get; } = sequence;
+
+    public Statement Body { get; } = body;
+
+    public override IEnumerable<SyntaxNode> Children => [Sequence, Body];
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitWalkStmt(this);
+
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+        visitor.VisitWalkStmt(this);
+}
+
 public sealed class BlockStmt(SourceSpan span, IReadOnlyList<Statement> statements)
     : Statement(span)
 {

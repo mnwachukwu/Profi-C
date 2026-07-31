@@ -1,0 +1,123 @@
+##
+    Where a name lives, and how long it lives there.
+
+    Three things that shape a program without appearing in its output: a block that exists only
+    to bound a name, a function declared inside another and able to see what surrounds it, and
+    the word that says how far a type can be seen.
+
+    Nothing here is exotic. It is the machinery every other sample sits on, gathered in one
+    place so it can be watched.
+##
+
+##
+    'internal' is what a type says when it should be reachable anywhere in its project and
+    nowhere beyond it. A type that says nothing is internal already — writing it is for when a
+    reader should not have to know the default.
+##
+internal model Ledger
+
+    integer[] amounts;
+
+    public function Ledger()
+        this.amounts = {};
+    end function
+
+    public function Add(integer amount)
+        this.amounts.Insert(amount);
+    end function
+
+    public integer function Total()
+        integer running = 0;
+
+        for each amount in this.amounts
+            running = running + amount;
+        end for
+
+        yield running;
+    end function
+end model
+
+global model Program
+
+    function Main()
+        Program.Blocks();
+        Program.NestedFunctions();
+        Program.Capturing();
+
+        Ledger ledger = new Ledger();
+
+        ledger.Add(40);
+        ledger.Add(2);
+
+        Console.WriteLine("== a type only this project can see ==");
+        Console.WriteLine("  total: " + ledger.Total());
+    end function
+
+    ##
+        'begin' opens a scope and nothing else. It runs no loop and asks no question — it draws
+        a line around a name so the name ends at the line.
+
+        Useful when two stretches of a function each want a working value and neither should
+        reach the other's. Outside the block that name is free again.
+    ##
+    function Blocks()
+        Console.WriteLine("== a block that only bounds a name ==");
+
+        begin
+            integer scratch = 6 * 7;
+            Console.WriteLine("  inside:  " + scratch);
+        end
+
+        begin
+            string scratch = "a different one entirely";
+            Console.WriteLine("  inside:  " + scratch);
+        end
+
+        # Neither 'scratch' reaches here, and the two never met each other.
+        Console.WriteLine("  outside: neither name survives the block");
+    end function
+
+    ##
+        A function may be declared inside another. Its name is reachable only within the
+        function that holds it, which is what to reach for when a helper is meaningful to one
+        caller and to nothing else.
+
+        Both forms are here: one that yields a result, and one that yields nothing.
+    ##
+    function NestedFunctions()
+        Console.WriteLine("== a function inside a function ==");
+
+        integer function Doubled(integer value)
+            yield value * 2;
+        end function
+
+        function Announce(string label, integer value)
+            Console.WriteLine("  " + label + ": " + value);
+        end function
+
+        Announce("doubled 4", Doubled(4));
+        Announce("doubled 21", Doubled(21));
+    end function
+
+    ##
+        A nested function sees the locals around it, and sees them as they are rather than as
+        they were when it was written. The counter below is read at each call, not copied at
+        the declaration.
+    ##
+    function Capturing()
+        Console.WriteLine("== what a nested function can see ==");
+
+        integer counted = 0;
+
+        function Count()
+            counted = counted + 1;
+        end function
+
+        Count();
+        Count();
+        Count();
+
+        Console.WriteLine("  counted: " + counted);
+    end function
+
+end model

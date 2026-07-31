@@ -1,0 +1,2 @@
+1
+sequence-changed.pc: unhandled SequenceChangedException: This set was changed while a 'for each' was walking it. A walk reads the set's length when it begins, so it cannot follow a change made during one. Collect what you want into another set, or count with a range loop instead.

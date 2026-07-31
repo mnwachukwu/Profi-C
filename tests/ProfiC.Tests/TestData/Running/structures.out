@@ -7,5 +7,7 @@ one marker:     true
 points equal:   true
 markers equal:  true
 same object:    false
+one differs:    true
+and by value:   true
 point kept 1, marker became changed
 distance:   7

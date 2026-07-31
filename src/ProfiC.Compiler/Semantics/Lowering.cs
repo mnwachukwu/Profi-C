@@ -223,6 +223,16 @@ public sealed class Lowering
         CallExpr count = new(span, countMember, []);
         _model.BindType(count, PrimitiveType.Integer);
 
+        // let <count> = <source>.Count();
+        //
+        // Held rather than asked for again on every turn. A range loop reads its bound each
+        // time, and leaving the call there would make "for each" follow whatever the sequence
+        // grew to mid-loop; a sequence is taken as it stands when the loop begins. Writing the
+        // snapshot into the lowered tree is what makes that visible rather than a rule.
+        LocalSymbol limit = NewTemporary("count", PrimitiveType.Integer);
+        VarDeclStmt limitDecl = new(span, null, limit.Name, count, false);
+        _model.Bind(limitDecl, limit);
+
         LiteralExpr zero = new(span, LiteralKind.Integer, "0");
         _model.BindType(zero, PrimitiveType.Integer);
 
@@ -244,15 +254,20 @@ public sealed class Lowering
             span,
             index.Name,
             zero,
-            count,
+            Reference(span, limit),
             isInclusive: false,
             step: null,
             body: [elementDecl, .. LowerStatements(loop.Body)]);
 
         _model.Bind(indexLoop, index);
 
-        // Both temporaries live in a block of their own, so neither escapes the loop.
-        return new BlockStmt(span, [sourceDecl, indexLoop]);
+        // The loop is marked as a walk, which is what lets the sequence refuse to be changed
+        // while it runs. Nothing else in the lowered tree says a walk is happening: by this
+        // point a "for each" is an index loop like any other.
+        WalkStmt walk = new(span, Reference(span, source), indexLoop);
+
+        // The temporaries live in a block of their own, so none escapes the loop.
+        return new BlockStmt(span, [sourceDecl, limitDecl, walk]);
     }
 
     // ---- Expressions ------------------------------------------------------------------------

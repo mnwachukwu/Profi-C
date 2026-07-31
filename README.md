@@ -558,6 +558,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [primes.pc](samples/primes.pc) | The Sieve of Eratosthenes; sets used as a workspace |
 | [sorting.pc](samples/sorting.pc) | Insertion sort, and why `and` short-circuiting matters |
 | [scanning.pc](samples/scanning.pc) | `break` and `continue`, and which loop a `break` leaves |
+| [looping.pc](samples/looping.pc) | **How far a loop counts, and when it decides.** `to` against `until`, a bound and a step that move while the loop runs, and why `for each` is the one that does not |
 | [card-table.pc](samples/card-table.pc) | **`switch`.** Grouped labels, `default`, and the warning for a member left unhandled |
 | [structures.pc](samples/structures.pc) | **Values against references.** What copying changes, and what a structure holding a model shares |
 | [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
@@ -575,6 +576,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [sets.pc](samples/sets.pc) | **Rows of things.** Building, asking, taking a run out, `Union`/`Intersect`/`Except` — and the same words on a string, where the difference is that a set changes and a string does not |
 | [text.pc](samples/text.pc) | **Building text.** Values written into a sentence with `{{ }}`, a pattern after the colon saying how, block strings that read nothing they hold, and taking a string apart with `Split` and `Join` |
 | [dates-and-times.pc](samples/dates-and-times.pc) | **Four types, four questions.** Which day, what time of day, how long, which moment — why 23:30 plus an hour is 00:30 on a clock but the next day as a moment, and writing one out by a pattern and reading it back |
+| [scopes.pc](samples/scopes.pc) | **How far a name reaches.** A `begin` block that exists only to bound one, a function declared inside another and what it can see, and `internal` on a type |
 | [namespaces.pc](samples/namespaces.pc) | **Where a name sits.** Two namespaces each holding a `Circle`, both forms of declaring one, what a `using` decides, and what qualifying reaches past it |
 
 `samples/reference/` holds four files that are not programs and declare no entry point:
@@ -636,6 +638,7 @@ Programs the compiler rejects:
 | [imports.pc](samples/negatives/compile/imports.pc) | Imports naming a file that is not there, and one that is not Profi-C |
 | [visibility.pc](samples/negatives/compile/visibility.pc) | Reaching a private and a protected member from outside, two visibilities on one declaration, and `protected` on a type |
 | [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
+| [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `for each` is walking |
 | [abstract.pc](samples/negatives/compile/abstract.pc) | A function left open on a model that can be constructed, a body where there should be none and none where there should be one, and a model that never writes what it inherited |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
@@ -646,6 +649,7 @@ see:
 | [divide-by-zero.pc](samples/negatives/runtime/divide-by-zero.pc) | `DivideByZeroException` — a divisor that arrived in a variable |
 | [index-out-of-range.pc](samples/negatives/runtime/index-out-of-range.pc) | `IndexOutOfRangeException` — one index past the end |
 | [empty-optional.pc](samples/negatives/runtime/empty-optional.pc) | `EmptyOptionalException` — `Value()` on an optional that turned out empty |
+| [sequence-changed.pc](samples/negatives/runtime/sequence-changed.pc) | `SequenceChangedException` — a set cleared during its own `for each`, reached through a parameter where no compile-time rule could see it |
 | [overflow.pc](samples/negatives/runtime/overflow.pc) | `OverflowException` — a factorial too large for an integer |
 | [runaway-recursion.pc](samples/negatives/runtime/runaway-recursion.pc) | Recursion with no base case |
 | [uncaught-exception.pc](samples/negatives/runtime/uncaught-exception.pc) | A declared exception no catch clause matches |

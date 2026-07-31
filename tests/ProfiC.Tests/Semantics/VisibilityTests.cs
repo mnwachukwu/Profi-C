@@ -48,11 +48,105 @@ public sealed class VisibilityTests
         return [.. diagnostics.Sorted().Select(d => d.Id)];
     }
 
+    /// <summary>
+    /// <para>Runs files placed in named projects and returns what they printed.</para>
+    /// <para>Accepting a program and running it correctly are different claims, and a
+    /// visibility rule is only worth having if the second holds: a member the compiler agrees
+    /// may be reached must actually carry its value when the program reaches it.</para>
+    /// </summary>
+    private static string RunAcrossProjects(
+        IReadOnlyDictionary<string, string> filesByProject,
+        params string[] sources)
+    {
+        DiagnosticBag diagnostics = new();
+        List<CompilationUnit> units = [];
+        Dictionary<SourceText, string> projects = [];
+
+        foreach ((string file, string project) in filesByProject)
+        {
+            CompilationUnit unit = Parser.Parse(
+                new SourceText(sources[units.Count], file), diagnostics);
+
+            units.Add(unit);
+            projects[unit.Source] = project;
+        }
+
+        SemanticModel model = Resolver.Resolve(
+            units, diagnostics, projects: projects, requireEntryPoint: true);
+
+        TypeChecker.Check(units, model, diagnostics);
+        DefiniteAssignment.Analyze(units, model, diagnostics);
+
+        Assert.That(
+            diagnostics.Select(d => $"{d.Id}: {d.Message}"),
+            Is.Empty,
+            "the program should check cleanly before it is run");
+
+        StringWriter output = new();
+        ProfiC.Interpreter.Interpreter.Run(Lowering.Lower(units, model), model, output);
+
+        return output.ToString().ReplaceLineEndings("\n");
+    }
+
+    // ---- What internal reaches, and what it carries when it gets there ----------------------
+
+    /// <summary>
+    /// The value arrives. Accepting the read is half the rule; the other half is that the
+    /// member holds what it was given, across a file boundary the compiler had to allow.
+    /// </summary>
+    [Test]
+    public void AnInternalMemberCarriesItsValueAcrossFilesInOneProject() => Assert.That(
+        RunAcrossProjects(
+            new Dictionary<string, string> { ["Box.pc"] = "Core", ["Program.pc"] = "Core" },
+            """
+            public model Box
+                internal integer count;
+
+                public function Box(integer count)
+                    this.count = count;
+                end function
+            end model
+            """,
+            """
+            global model Program
+                function Main()
+                    Console.WriteLine(new Box(3).count);
+                end function
+            end model
+            """),
+        Is.EqualTo("3\n"));
+
+    /// <summary>
+    /// <para>With no project file there is nothing to be inside of, so every file belongs to
+    /// the one unnamed project a compilation always has and <c>internal</c> reaches all of
+    /// them.</para>
+    /// <para>This is what keeps the default from costing a beginner anything: a folder of
+    /// files nobody divided meets no boundary, because none was drawn.</para>
+    /// </summary>
+    [Test]
+    public void WithNoProjectFileInternalReachesEveryFile() => Assert.That(
+        RunAcrossProjects(
+            new Dictionary<string, string> { ["Helper.pc"] = "", ["Program.pc"] = "" },
+            """
+            internal model Helper
+                internal global integer function Twice(integer n)
+                    yield n * 2;
+                end function
+            end model
+            """,
+            """
+            global model Program
+                function Main()
+                    Console.WriteLine(Helper.Twice(21));
+                end function
+            end model
+            """),
+        Is.EqualTo("42\n"));
+
     // ---- A member reaches its own type by default -------------------------------------------
 
     /// <summary>
     /// A field with no word written is private, and reaching one from elsewhere is reported.
-    /// Before anything enforced this, the word said nothing and the read simply worked.
     /// </summary>
     [Test]
     public void AFieldWithNoWordIsPrivate() => Assert.That(

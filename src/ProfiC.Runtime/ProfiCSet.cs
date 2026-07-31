@@ -12,6 +12,16 @@ public interface IProfiCSet
 
     /// <summary>One element, by position.</summary>
     object? GetElement(int index);
+
+    /// <summary>
+    /// Marks a <c>for each</c> walk as begun over this set, so that a change made during one
+    /// is refused rather than left to mean something the walk cannot follow. Paired with
+    /// <see cref="EndWalk"/> in a finally, and counted so nested walks do not unmark each other.
+    /// </summary>
+    void BeginWalk();
+
+    /// <summary>Marks a walk as finished, however it finished.</summary>
+    void EndWalk();
 }
 
 /// <summary>
@@ -58,8 +68,38 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
         }
     }
 
+    /// <summary>
+    /// <para>How many <c>for each</c> walks are in progress over this set.</para>
+    /// <para>A count rather than a flag, because a set may be walked inside its own walk —
+    /// two nested loops over one set is ordinary and neither changes it. The walk that ends
+    /// first must not unmark the one still running.</para>
+    /// </summary>
+    private int _walks;
+
+    /// <summary>Marks a walk as begun. Paired with <see cref="EndWalk"/> in a finally.</summary>
+    public void BeginWalk() => _walks++;
+
+    /// <summary>Marks a walk as finished, however it finished.</summary>
+    public void EndWalk() => _walks--;
+
+    /// <summary>
+    /// Refuses a change while the set is being walked. A walk reads the length once, so a
+    /// change made during one cannot move with it — see <see cref="SequenceChangedException"/>.
+    /// </summary>
+    private void RequireNotBeingWalked()
+    {
+        if (_walks > 0)
+        {
+            throw new SequenceChangedException();
+        }
+    }
+
     /// <summary>Appends an element.</summary>
-    public void Insert(T value) => _items.Add(value);
+    public void Insert(T value)
+    {
+        RequireNotBeingWalked();
+        _items.Add(value);
+    }
 
     /// <summary>
     /// Inserts an element at a position, shifting the rest along.
@@ -67,6 +107,8 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
     /// <exception cref="IndexOutOfRangeException">The index is outside the set.</exception>
     public void InsertAt(int index, T value)
     {
+        RequireNotBeingWalked();
+
         // Inserting at the end is legal, so the bound here is one past the last element.
         if (index < 0 || index > _items.Count)
         {
@@ -83,6 +125,8 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
     /// </summary>
     public bool Remove(T value)
     {
+        RequireNotBeingWalked();
+
         int index = IndexOf(value);
 
         if (index < 0)
@@ -100,6 +144,7 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
     /// <exception cref="IndexOutOfRangeException">The index is outside the set.</exception>
     public void RemoveAt(int index)
     {
+        RequireNotBeingWalked();
         CheckIndex(index);
         _items.RemoveAt(index);
     }
@@ -128,7 +173,11 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
     }
 
     /// <summary>Removes every element.</summary>
-    public void Clear() => _items.Clear();
+    public void Clear()
+    {
+        RequireNotBeingWalked();
+        _items.Clear();
+    }
 
     private void CheckIndex(int index)
     {

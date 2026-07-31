@@ -260,6 +260,32 @@ CompilationUnit
                 IdentifierExpr 'Reference'
               IdentifierExpr 'one'
               IdentifierExpr 'other'
+      VarDeclStmt 'renamed'
+        NamedTypeSyntax 'Marker'
+        NewExpr 'Marker'
+          LiteralExpr "y" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "one differs:    " [String]
+            ParenthesizedExpr
+              BinaryExpr '!='
+                IdentifierExpr 'one'
+                IdentifierExpr 'renamed'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "and by value:   " [String]
+            ParenthesizedExpr
+              BinaryExpr '!='
+                IdentifierExpr 'here'
+                NewExpr 'Point'
+                  LiteralExpr 3 [Integer]
+                  LiteralExpr 5 [Integer]
     FunctionDecl 'MoveIt'
       ParameterDecl 'point'
         NamedTypeSyntax 'Point'

@@ -229,7 +229,70 @@ public sealed partial class TypeChecker
         }
 
         CheckStatements(loop.Body);
+
+        // After the body, not before: which member a call reaches is settled by checking it,
+        // and nothing in the body is bound to a built-in until then.
+        RequireSequenceLeftAlone(loop);
     }
+
+    /// <summary>The set members that change what a set holds, rather than yielding a new one.</summary>
+    private static readonly BuiltInId[] Mutating =
+    [
+        BuiltInId.SetInsert,
+        BuiltInId.SetInsertAt,
+        BuiltInId.SetRemove,
+        BuiltInId.SetRemoveAt,
+        BuiltInId.SetClear,
+    ];
+
+    /// <summary>
+    /// <para>Refuses a change to the sequence a <c>for each</c> is walking.</para>
+    /// <para>Matched by the name written: the loop's sequence has to be a plain name or a
+    /// field, and a call in the body has to be on that same symbol. A set reached through
+    /// something else — handed to a function, or held under a second name — is not caught, and
+    /// nothing here claims otherwise. What this catches is the case a reader writes by
+    /// accident, which is the one worth a message.</para>
+    /// </summary>
+    private void RequireSequenceLeftAlone(ForEachStmt loop)
+    {
+        if (SymbolOf(loop.Sequence) is not { } walked)
+        {
+            return;
+        }
+
+        IEnumerable<SyntaxNode> body = loop.Body
+            .SelectMany(statement => new[] { (SyntaxNode)statement }.Concat(statement.Descendants()));
+
+        foreach (SyntaxNode node in body)
+        {
+            if (node is not CallExpr { Callee: MemberExpr member } call
+                || _model.GetBuiltIn(member) is not { } which
+                || !Mutating.Contains(which)
+                || SymbolOf(member.Receiver) is not { } receiver
+                || !ReferenceEquals(receiver, walked))
+            {
+                continue;
+            }
+
+            Report(
+                DiagnosticDescriptors.SequenceChangedWhileWalked,
+                call,
+                walked.Name,
+                member.MemberName);
+        }
+    }
+
+    /// <summary>
+    /// The symbol a plain name or a field access denotes, or null for anything else. Anything
+    /// else cannot be compared for sameness by looking at it, which is the whole basis of the
+    /// check above.
+    /// </summary>
+    private Symbol? SymbolOf(Expression expression) => expression switch
+    {
+        IdentifierExpr identifier => _model.GetSymbol(identifier),
+        MemberExpr { Receiver: ReceiverExpr } member => _model.GetSymbol(member),
+        _ => null,
+    };
 
     private TypeSymbol ReportNotIterable(ForEachStmt loop, TypeSymbol sequence)
     {

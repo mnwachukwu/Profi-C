@@ -254,6 +254,7 @@ public sealed partial class Interpreter
         BinaryOperator.Subtract => a - b,
         BinaryOperator.Multiply => a * b,
         BinaryOperator.Divide => a / b,
+        BinaryOperator.Remainder => a % b,
         BinaryOperator.LessThan => a < b,
         BinaryOperator.GreaterThan => a > b,
         BinaryOperator.LessThanOrEqual => a <= b,

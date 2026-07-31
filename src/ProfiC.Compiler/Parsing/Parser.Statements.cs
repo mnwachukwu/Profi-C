@@ -153,6 +153,18 @@ public sealed partial class Parser
         Token start = Current;
         bool isConstant = Match(TokenType.Constant);
 
+        // A local function that yields nothing, which opens with the word itself. Settled
+        // before a type is read, because reading one first would take "function" for the name
+        // of a type and report that instead. Only a name may follow the word here; "function("
+        // is a delegate type, and falls through to be read as one.
+        if (AtFunctionDeclaration())
+        {
+            Advance();
+
+            FunctionDecl bare = ParseFunctionRest(start, DeclarationModifiers.None, null);
+            return new LocalDeclStmt(bare.Span, bare);
+        }
+
         TypeSyntax type = ParseType();
 
         // A local function, which captures the enclosing locals.

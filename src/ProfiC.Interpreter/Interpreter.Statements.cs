@@ -1,5 +1,6 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
+using ProfiC.Runtime;
 
 namespace ProfiC.Interpreter;
 
@@ -34,6 +35,7 @@ public sealed partial class Interpreter
         IfStmt branch => ExecuteIf(branch, scope, receiver),
         WhileStmt loop => ExecuteWhile(loop, scope, receiver),
         ForStmt loop => ExecuteFor(loop, scope, receiver),
+        WalkStmt walk => ExecuteWalk(walk, scope, receiver),
         SwitchStmt switchStmt => ExecuteSwitch(switchStmt, scope, receiver),
         TryStmt tryStmt => ExecuteTry(tryStmt, scope, receiver),
         ThrowStmt throwStmt => ExecuteThrow(throwStmt, scope, receiver),
@@ -137,6 +139,32 @@ public sealed partial class Interpreter
     /// <para>Each iteration gets a fresh scope, so a lambda made inside the body captures that
     /// iteration's variable rather than one shared by all of them.</para>
     /// </summary>
+    /// <summary>
+    /// <para>Runs a loop that is walking a sequence, with the sequence marked for as long as it
+    /// runs.</para>
+    /// <para>Unmarked in a finally, so a <c>break</c>, a <c>yield</c>, or an exception leaves
+    /// the set usable again. A string is walked too and cannot be changed at all, so only a set
+    /// has anything to mark.</para>
+    /// </summary>
+    private ExecutionResult ExecuteWalk(WalkStmt walk, Environment scope, Instance? receiver)
+    {
+        if (Evaluate(walk.Sequence, scope, receiver) is not IProfiCSet sequence)
+        {
+            return ExecuteStatement(walk.Body, scope, receiver);
+        }
+
+        sequence.BeginWalk();
+
+        try
+        {
+            return ExecuteStatement(walk.Body, scope, receiver);
+        }
+        finally
+        {
+            sequence.EndWalk();
+        }
+    }
+
     private ExecutionResult ExecuteFor(ForStmt loop, Environment scope, Instance? receiver)
     {
         if (_model.GetSymbol(loop) is not { } variable)
@@ -145,13 +173,17 @@ public sealed partial class Interpreter
         }
 
         long current = AsInteger(Evaluate(loop.Start, scope, receiver));
-        long bound = AsInteger(Evaluate(loop.Bound, scope, receiver));
-        long step = loop.Step is null ? 1 : AsInteger(Evaluate(loop.Step, scope, receiver));
-
-        bool ascending = step >= 0;
 
         while (true)
         {
+            // The header is read again at the top of every turn, so a loop counts as far as
+            // what it says now rather than as far as what it said when it began. The step is
+            // read here rather than at the bottom so that one turn reads the header once.
+            long bound = AsInteger(Evaluate(loop.Bound, scope, receiver));
+            long step = loop.Step is null ? 1 : AsInteger(Evaluate(loop.Step, scope, receiver));
+
+            bool ascending = step >= 0;
+
             bool inRange = loop.IsInclusive
                 ? (ascending ? current <= bound : current >= bound)
                 : (ascending ? current < bound : current > bound);

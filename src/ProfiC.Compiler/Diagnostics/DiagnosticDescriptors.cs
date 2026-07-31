@@ -761,6 +761,23 @@ public static class DiagnosticDescriptors
         "'{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing "
         + "further. Remove it.");
 
+    /// <summary>
+    /// <para>Inserting into or removing from the very sequence a <c>for each</c> is walking.
+    /// </para>
+    /// <para>A <c>for each</c> reads its sequence's length once, when the loop begins, so a
+    /// change made inside it does not lengthen the walk — and one that shortens the sequence
+    /// leaves the loop reaching past the end. Neither is what the line looks like it does.</para>
+    /// <para>Refused rather than given a rule, because there is no reading of it worth
+    /// teaching. A range loop is the construct for a count that moves, and building a second
+    /// set is the answer when the walk itself must not.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor SequenceChangedWhileWalked = Error(
+        "PC0243",
+        "This changes the sequence being walked",
+        "'{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Its length was "
+        + "read when the loop began, so the walk would not follow. Collect what you want into "
+        + "another set and change that, or count with a range loop instead.");
+
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(

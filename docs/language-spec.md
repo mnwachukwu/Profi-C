@@ -1180,6 +1180,32 @@ element's type from the sequence. Both are fixed by the construct rather than in
 value, which is why neither needs `let`. A range loop's bounds and step must themselves be
 integers (`PC0317`), and its counter cannot be assigned to inside the loop (`PC0206`).
 
+**A range loop reads its header on every turn.** The starting value is read once, because
+there is nothing else it could mean; the bound and the step are read again at the top of each
+turn, so `until x` is a condition about `x` as it stands rather than as it was:
+
+```
+integer limit = 10;
+
+for i = 1 until limit    three turns: the bound moves down to meet the counter
+    limit = limit - 2;
+end for
+```
+
+A bound that moves the other way never ends the loop, which is allowed and is the same thing
+`while true` is. Both are the program saying so.
+
+The step is read at the same moment as the bound, so one turn reads the header once: whatever
+decided that this turn runs is what advances to the next. Only the counter is out of reach —
+it belongs to the loop and cannot be assigned to (`PC0206`).
+
+This matches a C-style `for`, whose condition and increment are both live:
+`for (int i = 0; i < x; i++) x++;` never finishes there either.
+
+**A `for each` takes its sequence as it stands.** It names a sequence rather than a bound, so
+its length is read once, when the loop begins. Modifying the sequence inside its own loop is
+refused (`PC0243`) rather than left to mean something subtle.
+
 **A loop variable is fresh on every turn.** A function made inside a loop closes over that
 turn's variable, so three functions made in three turns report three values. This is the trap
 that catches people in languages where the variable is shared and every function reports the
@@ -1623,6 +1649,7 @@ Eight exception types, and every one descends from `Exception`:
 | `DivideByZeroException` | Dividing by a value that turned out to be zero |
 | `IndexOutOfRangeException` | Indexing a set or string outside it |
 | `EmptyOptionalException` | `Value()` on an optional holding nothing |
+| `SequenceChangedException` | a set changed while a `for each` was walking it |
 | `InvalidCastException` | A conversion that could not be made |
 | `FormatException` | Text that could not be read as what was wanted |
 | `ArgumentException` | An argument a function will not accept |
@@ -2500,6 +2527,7 @@ Warnings do not block compilation; everything else does.
 | `PC0240` | error | Only an abstract model may leave a function open |
 | `PC0241` | error | An inherited function is still open |
 | `PC0242` | warning | An abstract function is already virtual |
+| `PC0243` | error | This changes the sequence being walked |
 
 ### PC0300 to PC0399
 

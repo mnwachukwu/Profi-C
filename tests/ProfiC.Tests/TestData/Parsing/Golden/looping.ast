@@ -1,0 +1,266 @@
+CompilationUnit
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Counting'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ALiveBound'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ALiveStep'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WalkingASequence'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AFreshVariableEachTurn'
+            IdentifierExpr 'Program'
+    FunctionDecl 'Counting'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== to includes, until stops short ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  to 5:    " [String]
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 5 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'i'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  until 5: " [String]
+      ForStmt 'i' until
+        LiteralExpr 1 [Integer]
+        LiteralExpr 5 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'i'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+    FunctionDecl 'ALiveBound'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a bound that moves ==" [String]
+      VarDeclStmt 'limit'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 10 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  counted: " [String]
+      ForStmt 'i' until
+        LiteralExpr 1 [Integer]
+        IdentifierExpr 'limit'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'i'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+        AssignmentStmt
+          IdentifierExpr 'limit'
+          BinaryExpr '-'
+            IdentifierExpr 'limit'
+            LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  limit ended at " [String]
+            IdentifierExpr 'limit'
+    FunctionDecl 'ALiveStep'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a step that grows ==" [String]
+      VarDeclStmt 'by'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  counted: " [String]
+      ForStmt 'i' until
+        LiteralExpr 0 [Integer]
+        LiteralExpr 20 [Integer]
+        IdentifierExpr 'by'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'i'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+        AssignmentStmt
+          IdentifierExpr 'by'
+          BinaryExpr '*'
+            IdentifierExpr 'by'
+            LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  down:    " [String]
+      ForStmt 'i' until
+        LiteralExpr 5 [Integer]
+        LiteralExpr 0 [Integer]
+        UnaryExpr '-'
+          LiteralExpr 1 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'i'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+    FunctionDecl 'WalkingASequence'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== walking a sequence ==" [String]
+      VarDeclStmt 'amounts'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 3 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 9 [Integer]
+      VarDeclStmt 'doubled'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForEachStmt 'amount'
+        IdentifierExpr 'amounts'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'doubled'
+            BinaryExpr '*'
+              IdentifierExpr 'amount'
+              LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  original: " [String]
+            CallExpr
+              MemberExpr 'Join'
+                IdentifierExpr 'amounts'
+              LiteralExpr ", " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  doubled:  " [String]
+            CallExpr
+              MemberExpr 'Join'
+                IdentifierExpr 'doubled'
+              LiteralExpr ", " [String]
+    FunctionDecl 'AFreshVariableEachTurn'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a fresh counter every turn ==" [String]
+      VarDeclStmt 'remembered'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 3 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'remembered'
+            LambdaExpr inline
+              IdentifierExpr 'i'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  remembered: " [String]
+      ForEachStmt 'made'
+        IdentifierExpr 'remembered'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            CallExpr
+              IdentifierExpr 'made'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'

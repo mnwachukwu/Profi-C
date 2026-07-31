@@ -109,6 +109,29 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
             left.Denominator * right.Numerator));
     }
 
+    /// <summary>
+    /// <para>What is left after taking out whole copies of the right operand.</para>
+    /// <para>The same question <c>%</c> asks of two integers, answered exactly: one third goes
+    /// into one half once, and one sixth is left. A real would answer this with whatever the
+    /// nearest double is, which is the difference the type exists for.</para>
+    /// <para>Truncated rather than floored, matching <c>%</c> on integers and reals, so the
+    /// result carries the sign of the left operand.</para>
+    /// </summary>
+    /// <exception cref="DivideByZeroException">The right operand is zero.</exception>
+    public static Fraction operator %(Fraction left, Fraction right)
+    {
+        if (right.Numerator == 0)
+        {
+            throw new DivideByZeroException("Cannot take the remainder of a fraction by zero.");
+        }
+
+        // How many whole copies of the right fit, toward zero.
+        long whole = checked(
+            (left.Numerator * right.Denominator) / (left.Denominator * right.Numerator));
+
+        return checked(left - (right * new Fraction(whole, 1)));
+    }
+
     public static Fraction operator -(Fraction value) =>
         new(checked(-value.Numerator), value.Denominator, alreadyNormalized: true);
 

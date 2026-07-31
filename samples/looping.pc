@@ -1,0 +1,143 @@
+##
+    How far a loop counts, and when it decides.
+
+    There are three ways to repeat: a range loop that counts, a 'for each' that walks a
+    sequence, and a 'while' that asks a question. This is about the difference between the
+    first two, which is the one that surprises people.
+
+    A range loop reads its header on every turn. A 'for each' reads its sequence once. Both
+    answers are defensible and the language could not have both, so the rule is drawn where the
+    line reads: 'until limit' is a question about limit, and 'in items' is a sequence to walk.
+##
+
+global model Program
+
+    function Main()
+        Program.Counting();
+        Program.ALiveBound();
+        Program.ALiveStep();
+        Program.WalkingASequence();
+        Program.AFreshVariableEachTurn();
+    end function
+
+    ##
+        'to' includes the bound it names and 'until' stops short of it, which is the
+        distinction other languages leave to remembering whether '<' or '<=' was written.
+    ##
+    function Counting()
+        Console.WriteLine("== to includes, until stops short ==");
+
+        Console.Write("  to 5:    ");
+        for i = 1 to 5
+            Console.Write(i);
+            Console.Write(" ");
+        end for
+        Console.WriteLine();
+
+        Console.Write("  until 5: ");
+        for i = 1 until 5
+            Console.Write(i);
+            Console.Write(" ");
+        end for
+        Console.WriteLine();
+    end function
+
+    ##
+        The bound is read again at the top of every turn, so it is a question about the value
+        as it stands rather than as it was.
+
+        Here the bound walks down to meet the counter and the loop ends in the middle. A bound
+        that walked the other way would never end it at all — which is allowed, and is the same
+        thing 'while true' is. The program said so.
+    ##
+    function ALiveBound()
+        Console.WriteLine("== a bound that moves ==");
+
+        integer limit = 10;
+
+        Console.Write("  counted: ");
+        for i = 1 until limit
+            Console.Write(i);
+            Console.Write(" ");
+            limit = limit - 2;
+        end for
+
+        Console.WriteLine();
+        Console.WriteLine("  limit ended at " + limit);
+    end function
+
+    ##
+        The step is read at the same moment as the bound, so a turn reads the header once:
+        whatever decided this turn runs is what advances to the next.
+    ##
+    function ALiveStep()
+        Console.WriteLine("== a step that grows ==");
+
+        integer by = 1;
+
+        Console.Write("  counted: ");
+        for i = 0 until 20 step by
+            Console.Write(i);
+            Console.Write(" ");
+            by = by * 2;
+        end for
+
+        Console.WriteLine();
+
+        # A negative step counts down, and 'until' still stops short of its bound.
+        Console.Write("  down:    ");
+        for i = 5 until 0 step -1
+            Console.Write(i);
+            Console.Write(" ");
+        end for
+        Console.WriteLine();
+    end function
+
+    ##
+        A 'for each' names a sequence rather than a bound, so its length is read once, when the
+        loop begins. Changing that sequence inside its own loop is refused rather than left to
+        mean something subtle — see samples/negatives/compile/looping.pc.
+
+        Building a second set is the way to say it, and it reads better than the thing it
+        replaces.
+    ##
+    function WalkingASequence()
+        Console.WriteLine("== walking a sequence ==");
+
+        integer[] amounts = {3, 8, 2, 9};
+        integer[] doubled = {};
+
+        for each amount in amounts
+            doubled.Insert(amount * 2);
+        end for
+
+        Console.WriteLine("  original: " + amounts.Join(", "));
+        Console.WriteLine("  doubled:  " + doubled.Join(", "));
+    end function
+
+    ##
+        The counter belongs to the loop. It cannot be assigned to inside the body, and each
+        turn gets its own — so a function made during a turn remembers that turn's value rather
+        than whatever the counter finished at.
+
+        This is the trap that catches people in languages where one variable is shared and
+        every function made in the loop reports the last number.
+    ##
+    function AFreshVariableEachTurn()
+        Console.WriteLine("== a fresh counter every turn ==");
+
+        integer delegate()[] remembered = {};
+
+        for i = 1 to 3
+            remembered.Insert(() yield i);
+        end for
+
+        Console.Write("  remembered: ");
+        for each made in remembered
+            Console.Write(made());
+            Console.Write(" ");
+        end for
+        Console.WriteLine();
+    end function
+
+end model

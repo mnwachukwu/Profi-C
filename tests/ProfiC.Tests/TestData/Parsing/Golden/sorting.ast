@@ -36,6 +36,19 @@ CompilationUnit
                 MemberExpr 'Sorted'
                   IdentifierExpr 'Program'
                 IdentifierExpr 'values'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "back:   " [String]
+            CallExpr
+              MemberExpr 'RenderBackwards'
+                IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Sorted'
+                  IdentifierExpr 'Program'
+                IdentifierExpr 'values'
     FunctionDecl 'Sorted'
       SetTypeSyntax
         NamedTypeSyntax 'integer'
@@ -118,6 +131,45 @@ CompilationUnit
           BinaryExpr '>'
             IdentifierExpr 'i'
             LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'text'
+            BinaryExpr '+'
+              IdentifierExpr 'text'
+              LiteralExpr ", " [String]
+        AssignmentStmt
+          IdentifierExpr 'text'
+          BinaryExpr '+'
+            IdentifierExpr 'text'
+            IndexExpr
+              IdentifierExpr 'values'
+              IdentifierExpr 'i'
+      YieldStmt
+        IdentifierExpr 'text'
+    FunctionDecl 'RenderBackwards'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'text'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      ForStmt 'i' to
+        BinaryExpr '-'
+          CallExpr
+            MemberExpr 'Count'
+              IdentifierExpr 'values'
+          LiteralExpr 1 [Integer]
+        LiteralExpr 0 [Integer]
+        UnaryExpr '-'
+          LiteralExpr 1 [Integer]
+        IfStmt
+          BinaryExpr '<'
+            IdentifierExpr 'i'
+            BinaryExpr '-'
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'values'
+              LiteralExpr 1 [Integer]
           AssignmentStmt
             IdentifierExpr 'text'
             BinaryExpr '+'

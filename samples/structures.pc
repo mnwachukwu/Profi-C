@@ -118,6 +118,13 @@ global model Program
 
         Console.WriteLine("markers equal:  " + (one == other));
         Console.WriteLine("same object:    " + Reference.Equals(one, other));
+
+        # '!=' asks the opposite of '=='. Changing one field is enough to separate two values
+        # that were equal a moment before, since the comparison reaches all the way down.
+        Marker renamed = new Marker("y");
+
+        Console.WriteLine("one differs:    " + (one != renamed));
+        Console.WriteLine("and by value:   " + (here != new Point(3, 5)));
     end function
 
     # ---- Across a function call ----------------------------------------------------

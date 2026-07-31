@@ -1,0 +1,57 @@
+##
+    Changing a sequence while walking it.
+
+    This program does not compile. A 'for each' reads its sequence's length once, when the loop
+    begins, so inserting into it does not lengthen the walk and removing from it leaves the
+    walk reaching past the end. Neither is what the line looks like it does.
+
+    A range loop is the opposite and says so: its bound is read on every turn, so a bound that
+    moves is a bound that moves. That is why only 'for each' is refused here.
+##
+
+global model Program
+
+    function Main()
+        Program.Growing();
+        Program.Shrinking();
+        Program.EmptyingIt();
+    end function
+
+    # Inserting. The walk was already measured, so the new element is never reached.
+    function Growing()
+        integer[] amounts = {1, 2, 3};
+
+        for each amount in amounts
+            amounts.Insert(amount * 10);
+        end for
+
+        Console.WriteLine(amounts.Count());
+    end function
+
+    # Removing. The walk still runs to the length the set had, which is now past its end.
+    function Shrinking()
+        integer[] amounts = {1, 2, 3};
+
+        for each amount in amounts
+            amounts.Remove(amount);
+        end for
+
+        Console.WriteLine(amounts.Count());
+    end function
+
+    ##
+        The same rule reaches a field, and reaches whichever member changes the set — Insert,
+        InsertAt, Remove, RemoveAt, and Clear. A member that yields a new set instead leaves
+        the original alone and is not in question.
+    ##
+    function EmptyingIt()
+        integer[] amounts = {1, 2, 3};
+
+        for each amount in amounts
+            amounts.Clear();
+        end for
+
+        Console.WriteLine(amounts.Count());
+    end function
+
+end model

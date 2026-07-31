@@ -172,10 +172,17 @@ public sealed class LoweringTests
 
         Assert.Multiple(() =>
         {
-            // A block holding the temporary, then the loop, so neither escapes.
-            Assert.That(wrapper.Statements, Has.Count.EqualTo(2));
+            // A block holding both temporaries, then the loop, so none escapes. The second is
+            // the count: a range loop reads its bound on every turn, so leaving the call in
+            // the header would make the walk follow a sequence that grew underneath it.
+            Assert.That(wrapper.Statements, Has.Count.EqualTo(3));
             Assert.That(wrapper.Statements[0], Is.TypeOf<VarDeclStmt>());
-            Assert.That(wrapper.Statements[1], Is.SameAs(loop));
+            Assert.That(wrapper.Statements[1], Is.TypeOf<VarDeclStmt>());
+
+            // The loop is wrapped in a walk, which is what marks the sequence for as long as
+            // it runs. Nothing else in the lowered tree says a walk is happening.
+            Assert.That(wrapper.Statements[2], Is.TypeOf<WalkStmt>());
+            Assert.That(((WalkStmt)wrapper.Statements[2]).Body, Is.SameAs(loop));
         });
     }
 
@@ -216,13 +223,21 @@ public sealed class LoweringTests
             """);
 
         ForStmt loop = lowered.Descendants().OfType<ForStmt>().Single();
+        BlockStmt wrapper = lowered.Descendants().OfType<BlockStmt>().Single();
+        VarDeclStmt countDecl = (VarDeclStmt)wrapper.Statements[1];
 
         Assert.Multiple(() =>
         {
             Assert.That(loop.IsInclusive, Is.False, "an index runs up to the count, not through it");
             Assert.That(((LiteralExpr)loop.Start).Text, Is.EqualTo("0"));
-            Assert.That(loop.Bound, Is.TypeOf<CallExpr>());
-            Assert.That(((MemberExpr)((CallExpr)loop.Bound).Callee).MemberName, Is.EqualTo("Count"));
+
+            // The bound is a name, and the call it holds was made once above the loop.
+            Assert.That(loop.Bound, Is.TypeOf<IdentifierExpr>());
+            Assert.That(((IdentifierExpr)loop.Bound).Name, Is.EqualTo(countDecl.Name));
+            Assert.That(countDecl.Initializer, Is.TypeOf<CallExpr>());
+            Assert.That(
+                ((MemberExpr)((CallExpr)countDecl.Initializer!).Callee).MemberName,
+                Is.EqualTo("Count"));
         });
     }
 

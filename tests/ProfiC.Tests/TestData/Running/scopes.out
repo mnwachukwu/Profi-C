@@ -1,0 +1,11 @@
+== a block that only bounds a name ==
+  inside:  42
+  inside:  a different one entirely
+  outside: neither name survives the block
+== a function inside a function ==
+  doubled 4: 8
+  doubled 21: 42
+== what a nested function can see ==
+  counted: 3
+== a type only this project can see ==
+  total: 42

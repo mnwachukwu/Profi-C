@@ -88,6 +88,7 @@ Members are private by default, so `protected`, `internal`, and `public` opt out
 | `DivideByZeroException` | thrown on runtime division by zero |
 | `IndexOutOfRangeException` | thrown on out-of-bounds set or string access |
 | `EmptyOptionalException` | thrown when an empty optional is unwrapped |
+| `SequenceChangedException` | thrown when a set is changed while a `for each` is walking it, where the change was not visible to `PC0243` |
 | `InvalidCastException` | thrown when a forced cast fails |
 | `FormatException` | thrown when a parse or format operation fails |
 | `ArgumentException` | thrown when an argument is invalid |
@@ -291,7 +292,11 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **No local types.** A model, structure, or enumeration may be declared at namespace level or inside a model, but not inside a function. C# has no local classes either. A type introduced by a statement would entangle name resolution with statement order, which is a cost with very little to buy it.
 
-**Loop variables are fresh per iteration** and read-only inside the body. C# only did this for `foreach`, leaving the `for` capture trap intact. Profi-C has no three-clause `for` at all; `for i = 0 until n` and `for each` are the two forms.
+**Loop variables are fresh per iteration** and read-only inside the body. C# does this for `foreach` only, leaving the `for` capture trap intact. Profi-C has no three-clause `for` at all; `for i = 0 until n` and `for each` are the two forms.
+
+**A range loop's header is live, as C#'s is.** The bound and the step are read again at the top of every turn, so `for i = 1 until x` follows `x` as it moves and a bound that grows never ends the loop — exactly as `for (int i = 0; i < x; i++) x++;` never ends. Only the counter is out of reach, where C# lets the body assign to it.
+
+**A `for each` is the opposite, and says so at compile time.** It names a sequence rather than a bound, so the length is read once when the loop begins. Changing that sequence inside its own loop is an error (`PC0243`) naming the member that would have changed it. C# permits the same code and throws `InvalidOperationException` partway through instead.
 
 **Every construct closes with a qualified `end`**, and the compiler verifies the match. `end while` closing an `if` is an error naming both. C# has one `}` for everything and cannot check intent.
 

@@ -1,0 +1,41 @@
+##
+    A set changed while a 'for each' was walking it, reached under a second name.
+
+    This program compiles and then fails. Changing the sequence a 'for each' names is refused
+    while compiling — see samples/negatives/compile/looping.pc — but that refusal matches the
+    name the loop wrote, and here the set is reached through a parameter instead.
+
+    No local rule can see that: what Drain does with what it is handed is Drain's business, and
+    the set could equally be stored in a field or handed on again. So the set itself knows a
+    walk is running, and refuses whatever path the change arrives by.
+
+    The same division as dividing by zero, which is a compile error where the zero is visible
+    and an exception where it is not.
+##
+
+model Basket
+
+    public integer[] contents;
+
+    public function Basket()
+        this.contents = {1, 2, 3};
+    end function
+
+    # Innocent enough on its own. What makes it a mistake is where it is called from.
+    public function Drain(integer[] items)
+        items.Clear();
+    end function
+end model
+
+global model Program
+    function Main()
+        Basket basket = new Basket();
+
+        for each item in basket.contents
+            Console.WriteLine(item);
+            basket.Drain(basket.contents);
+        end for
+
+        Console.WriteLine("never reached");
+    end function
+end model

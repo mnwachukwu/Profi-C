@@ -1,0 +1,14 @@
+== to includes, until stops short ==
+  to 5:    1 2 3 4 5 
+  until 5: 1 2 3 4 
+== a bound that moves ==
+  counted: 1 2 3 
+  limit ended at 4
+== a step that grows ==
+  counted: 0 1 3 7 15 
+  down:    5 4 3 2 1 
+== walking a sequence ==
+  original: 3, 8, 2, 9
+  doubled:  6, 16, 4, 18
+== a fresh counter every turn ==
+  remembered: 1 2 3 

@@ -52,6 +52,8 @@ public abstract class SyntaxVisitor
 
     // ---- Statements ---------------------------------------------------------------------
 
+    public virtual void VisitWalkStmt(WalkStmt node) => DefaultVisit(node);
+
     public virtual void VisitBlockStmt(BlockStmt node) => DefaultVisit(node);
     public virtual void VisitVarDeclStmt(VarDeclStmt node) => DefaultVisit(node);
     public virtual void VisitLocalDeclStmt(LocalDeclStmt node) => DefaultVisit(node);
@@ -142,6 +144,8 @@ public abstract class SyntaxVisitor<TResult>
     public virtual TResult VisitFunctionType(FunctionTypeSyntax node) => DefaultVisit(node);
 
     // ---- Statements ---------------------------------------------------------------------
+
+    public virtual TResult VisitWalkStmt(WalkStmt node) => DefaultVisit(node);
 
     public virtual TResult VisitBlockStmt(BlockStmt node) => DefaultVisit(node);
     public virtual TResult VisitVarDeclStmt(VarDeclStmt node) => DefaultVisit(node);

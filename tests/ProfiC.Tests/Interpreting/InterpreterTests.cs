@@ -489,6 +489,109 @@ public sealed class InterpreterTests
         """),
         Is.EqualTo("321\n"));
 
+    /// <summary>
+    /// <para>The bound is read again at the top of every turn, so a loop counts as far as its
+    /// header says now rather than as far as it said when the loop began.</para>
+    /// <para>The bound here shrinks, which ends the loop early. A bound that grows never ends
+    /// it at all, exactly as a C-style <c>for (int i = 0; i &lt; x; i++) x++;</c> never ends —
+    /// which is the point: a header that reads as a condition behaves as one.</para>
+    /// </summary>
+    [Test]
+    public void TheBoundIsReadAgainOnEveryTurn() => Assert.That(
+        RunBody("""
+                integer limit = 10;
+
+                for i = 1 until limit
+                    Console.Write(i);
+                    limit = limit - 2;
+                end for
+
+                Console.WriteLine();
+                Console.WriteLine("limit " + limit);
+        """),
+        Is.EqualTo("123\nlimit 4\n"));
+
+    /// <summary>
+    /// And so is the step, at the same moment. One turn reads the header once: the step that
+    /// decided whether this turn runs is the step that advances to the next.
+    /// </summary>
+    [Test]
+    public void SoIsTheStep() => Assert.That(
+        RunBody("""
+                integer by = 2;
+
+                for i = 0 until 10 step by
+                    Console.Write(i);
+                    Console.Write(" ");
+                    by = by + 5;
+                end for
+
+                Console.WriteLine();
+        """),
+        Is.EqualTo("0 2 9 \n"));
+
+    /// <summary>
+    /// <para>A sequence is taken as it stands when the loop begins, so changing it during the
+    /// walk is refused — through a second name as much as through the one the loop wrote.
+    /// </para>
+    /// <para><c>PC0243</c> catches the name the loop names, and stops at the first thing it
+    /// cannot see through. This is what catches the rest: the set itself knows a walk is
+    /// running, so no path to it matters.</para>
+    /// </summary>
+    [Test]
+    public void ChangingAWalkedSequenceThroughAnotherNameIsRefusedAtRunTime() => Assert.That(
+        Assert.Throws<SequenceChangedException>(() => RunBody("""
+                integer[] items = {1, 2, 3};
+                integer[] alias = items;
+
+                for each item in items
+                    alias.Insert(99);
+                end for
+        """))!.Message,
+        Does.Contain("walking it"));
+
+    /// <summary>
+    /// The mark is lifted however the walk ends, so a set left early by <c>break</c> can be
+    /// changed straight afterwards.
+    /// </summary>
+    [Test]
+    public void TheMarkIsLiftedWhenTheWalkEnds() => Assert.That(
+        RunBody("""
+                integer[] items = {1, 2, 3};
+
+                for each item in items
+                    Console.Write(item);
+                    break;
+                end for
+
+                items.Insert(99);
+
+                Console.WriteLine();
+                Console.WriteLine("count " + items.Count());
+        """),
+        Is.EqualTo("1\ncount 4\n"));
+
+    /// <summary>
+    /// Two walks over one set are ordinary, and neither changes it. The mark is counted so the
+    /// inner one ending does not leave the outer unguarded.
+    /// </summary>
+    [Test]
+    public void ASetMayBeWalkedInsideItsOwnWalk() => Assert.That(
+        RunBody("""
+                integer[] items = {1, 2};
+
+                for each left in items
+                    for each right in items
+                        Console.Write(left);
+                        Console.Write(right);
+                        Console.Write(" ");
+                    end for
+                end for
+
+                Console.WriteLine();
+        """),
+        Is.EqualTo("11 12 21 22 \n"));
+
     [Test]
     public void ALoopWhoseBoundIsAlreadyPassedNeverRuns() => Assert.That(
         RunBody("""
