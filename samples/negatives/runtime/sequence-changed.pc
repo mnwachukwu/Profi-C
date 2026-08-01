@@ -27,7 +27,7 @@ model Basket
     end function
 end model
 
-global model Program
+shared model Program
     function Main()
         Basket basket = new Basket();
 

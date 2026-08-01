@@ -108,7 +108,7 @@ public sealed class VisibilityTests
             end model
             """,
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box(3).count);
                 end function
@@ -129,13 +129,13 @@ public sealed class VisibilityTests
             new Dictionary<string, string> { ["Helper.pc"] = "", ["Program.pc"] = "" },
             """
             internal model Helper
-                internal global integer function Twice(integer n)
+                internal shared integer function Twice(integer n)
                     yield n * 2;
                 end function
             end model
             """,
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Helper.Twice(21));
                 end function
@@ -159,7 +159,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Box b = new Box();
                     Console.WriteLine(b.hidden);
@@ -177,7 +177,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box().Secret());
                 end function
@@ -205,7 +205,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box().Read());
                 end function
@@ -236,7 +236,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Dog().Speak());
                 end function
@@ -259,7 +259,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Animal("cat").name);
                 end function
@@ -284,7 +284,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box().count);
                 end function
@@ -305,7 +305,7 @@ public sealed class VisibilityTests
             end model
             """,
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box().count);
                 end function
@@ -326,7 +326,7 @@ public sealed class VisibilityTests
             end model
             """,
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box().count);
                 end function
@@ -345,13 +345,13 @@ public sealed class VisibilityTests
         CheckAcrossProjects(
             """
             model Helper
-                public global integer function Twice(integer n)
+                public shared integer function Twice(integer n)
                     yield n * 2;
                 end function
             end model
             """,
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Helper.Twice(21));
                 end function
@@ -373,13 +373,13 @@ public sealed class VisibilityTests
                 public function Helper()
                 end function
 
-                public global integer function Twice(integer n)
+                public shared integer function Twice(integer n)
                     yield n * 2;
                 end function
             end model
             """,
             $$"""
-            global model Program
+            shared model Program
                 function Main()
                     {{written}}
                 end function
@@ -392,13 +392,13 @@ public sealed class VisibilityTests
         CheckAcrossProjects(
             """
             public model Helper
-                public global integer function Twice(integer n)
+                public shared integer function Twice(integer n)
                     yield n * 2;
                 end function
             end model
             """,
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Helper.Twice(21));
                 end function
@@ -414,12 +414,12 @@ public sealed class VisibilityTests
     public void OneUndividedCompilationIsOneProject() => Assert.That(
         Check("""
             model Helper
-                public global integer function Twice(integer n)
+                public shared integer function Twice(integer n)
                     yield n * 2;
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Helper.Twice(21));
                 end function
@@ -459,7 +459,7 @@ public sealed class VisibilityTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Box b = new Box();
                 end function

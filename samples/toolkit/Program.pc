@@ -16,7 +16,7 @@
 
 import "shared/Tally.pc";
 
-global model Program
+shared model Program
 
     function Main()
         string[] fruit = {"apples", "pears", "figs"};

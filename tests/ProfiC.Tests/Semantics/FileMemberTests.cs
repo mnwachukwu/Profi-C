@@ -60,7 +60,7 @@ public sealed class FileMemberTests
     private static string Run(string body)
     {
         string source = $$"""
-            global model Program
+            shared model Program
                 function Main()
             {{body}}
                 end function

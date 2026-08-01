@@ -37,7 +37,7 @@ public sealed class DocumentationTests : LexerTestBase
 
     /// <summary>Wraps a member in the smallest program that holds one.</summary>
     private static string Program(string member) => $$"""
-        global model Program
+        shared model Program
         {{member}}
             function Main()
             end function
@@ -54,7 +54,7 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                     @summary: Counts up to a limit.
                 ##
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -76,7 +76,7 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                     Counts up to a limit. Written as prose, so it documents nothing.
                 ##
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -101,7 +101,7 @@ public sealed class DocumentationTests : LexerTestBase
                 # @a: the first.
                 # @b: the second.
                 # @yields: their sum.
-                global integer function Add(integer a, integer b)
+                shared integer function Add(integer a, integer b)
                     yield a + b;
                 end function
             """),
@@ -124,7 +124,7 @@ public sealed class DocumentationTests : LexerTestBase
         Report(Program("""
             # @summary: Adds two numbers.
             # @first: not what it is called.
-            global integer function Add(integer a, integer b)
+            shared integer function Add(integer a, integer b)
                 yield a + b;
             end function
         """)),
@@ -139,7 +139,7 @@ public sealed class DocumentationTests : LexerTestBase
                 # @summary: One comment.
 
                 # @summary: And a second, which is not part of the first.
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -157,7 +157,7 @@ public sealed class DocumentationTests : LexerTestBase
                 integer a;
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                 end function
             end model
@@ -171,7 +171,7 @@ public sealed class DocumentationTests : LexerTestBase
         CompilationUnit unit = Compile(
             Program("""
                 # @summary: How many terms to add.
-                global constant integer Terms = 8;
+                shared constant integer Terms = 8;
             """),
             out _);
 
@@ -196,7 +196,7 @@ public sealed class DocumentationTests : LexerTestBase
 
                     And the second, which is still the summary.
                 ##
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -217,7 +217,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @summary: One sentence
                     across two lines.
                 ##
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -239,7 +239,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @yields: the total.
                     @throws: nothing.
                 ##
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -271,7 +271,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @summary: That is why it yields an
                     optional: nothing more to read is an answer, not a fault.
                 ##
-                global integer function Total(integer n)
+                shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -293,7 +293,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Adds.
                 @count: how many.
             ##
-            global integer function Total(integer n)
+            shared integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -306,7 +306,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Says something.
                 @yields: a value that is not there.
             ##
-            global function Speak()
+            shared function Speak()
                 Console.WriteLine("hi");
             end function
         """)),
@@ -320,7 +320,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @n: how many.
                 @n: and again.
             ##
-            global integer function Total(integer n)
+            shared integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -330,7 +330,7 @@ public sealed class DocumentationTests : LexerTestBase
     [Test]
     public void DocumentationAboveAStatementIsReported() => Assert.That(
         Report("""
-            global model Program
+            shared model Program
                 function Main()
                     ##
                         @summary: this documents nothing.
@@ -348,7 +348,7 @@ public sealed class DocumentationTests : LexerTestBase
     [Test]
     public void NothingIsReportedForDocumentationThatWasNeverWritten() => Assert.That(
         Report(Program("""
-            global integer function Total(integer n)
+            shared integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -365,7 +365,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Adds two numbers.
                 @a: the first.
             ##
-            global integer function Add(integer a, integer b)
+            shared integer function Add(integer a, integer b)
                 yield a + b;
             end function
         """)),
@@ -383,7 +383,7 @@ public sealed class DocumentationTests : LexerTestBase
             ##
             {declaration}
 
-            global model Program
+            shared model Program
                 function Main()
                 end function
             end model
@@ -391,7 +391,7 @@ public sealed class DocumentationTests : LexerTestBase
         Is.Empty);
 
     [TestCase("integer count;", TestName = "a field")]
-    [TestCase("global integer Total = 0;", TestName = "a global field")]
+    [TestCase("shared integer Total = 0;", TestName = "a shared field")]
     [TestCase("public function Speak()\n    end function", TestName = "a function")]
     public void AMemberCanBeDocumented(string member) => Assert.That(
         Report($"""
@@ -402,7 +402,7 @@ public sealed class DocumentationTests : LexerTestBase
                 {member}
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                 end function
             end model
@@ -425,7 +425,7 @@ public sealed class DocumentationTests : LexerTestBase
                 end model
             end namespace
 
-            global model Program
+            shared model Program
                 function Main()
                 end function
             end model
@@ -444,7 +444,7 @@ public sealed class DocumentationTests : LexerTestBase
                 Spades
             end enumeration
 
-            global model Program
+            shared model Program
                 function Main()
                 end function
             end model

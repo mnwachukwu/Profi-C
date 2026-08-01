@@ -130,7 +130,7 @@
   72:9    Function             'function'
   73:1    End                  'end'
   73:5    Structure            'structure'
-  75:1    Global               'global'
+  75:1    Shared               'shared'
   75:8    Model                'model'
   75:14   Identifier           'Program'
   77:5    Function             'function'

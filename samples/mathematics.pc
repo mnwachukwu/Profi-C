@@ -10,7 +10,7 @@
     has a version for every number the language has.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.Constants();

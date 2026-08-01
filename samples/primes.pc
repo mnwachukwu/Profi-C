@@ -6,7 +6,7 @@
     by everything below it, which is why the sieve is the one everybody still teaches.
 ##
 
-global model Program
+shared model Program
 
     constant integer Limit = 60;
 

@@ -10,7 +10,7 @@
     **a set changes, and a string does not.**
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.BuildingOne();

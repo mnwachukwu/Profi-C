@@ -53,7 +53,7 @@ public sealed class SyntaxVisitorTests : AstTestBase
     {
         CompilationUnit unit = Unit(
             Model("Program",
-                DeclarationModifiers.Global,
+                DeclarationModifiers.Shared,
                 members: [Function("Main", body: [new ExpressionStmt(NextSpan(), Id("x"))])]));
 
         RecordingVisitor visitor = new();

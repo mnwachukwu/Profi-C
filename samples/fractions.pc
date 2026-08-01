@@ -10,7 +10,7 @@
     than about arithmetic, and having both types is what makes the difference visible.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Console.WriteLine("== thirds ==");

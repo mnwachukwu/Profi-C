@@ -31,7 +31,7 @@ public sealed class SuppressionTests : LexerTestBase
 
     /// <summary>Wraps statements in the smallest program that runs them.</summary>
     private static string Program(string body) => $$"""
-        global model Program
+        shared model Program
             function Main()
         {{body}}
             end function
@@ -85,7 +85,7 @@ public sealed class SuppressionTests : LexerTestBase
         Report("""
             # ignore opinion in file
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine("");
                     Console.WriteLine("");

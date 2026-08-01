@@ -6,7 +6,7 @@
     Console.WriteLine, which takes a value of any kind but still takes a value.
 ##
 
-global model Program
+shared model Program
 
     # This says it yields a string and never yields at all.
     string function Describe()

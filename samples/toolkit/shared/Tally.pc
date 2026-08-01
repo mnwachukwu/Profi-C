@@ -9,7 +9,7 @@ import "Text.pc";
 
 model Tally
 
-    public global string function Bar(string label, integer count)
+    public shared string function Bar(string label, integer count)
         yield Text.Pad(label, 8) + Text.Repeat("#", count);
     end function
 

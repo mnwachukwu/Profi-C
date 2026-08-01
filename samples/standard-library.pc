@@ -10,7 +10,7 @@
     this program prints is compared against a recording on every build.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.ShowConsole();

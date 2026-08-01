@@ -1,6 +1,6 @@
 # Every literal form Profi-C can write.
 
-global model Literals
+shared model Literals
 
     # ---- Integers ----------------------------------------------------------------
 

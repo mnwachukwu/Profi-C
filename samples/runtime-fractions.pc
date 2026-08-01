@@ -9,7 +9,7 @@
     and every operator works on it.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Console.WriteLine("== a table of unit fractions ==");

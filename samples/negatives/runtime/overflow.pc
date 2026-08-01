@@ -7,7 +7,7 @@
     20 factorial is the largest that fits in an integer. 21 factorial is not.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         for n = 18 to 21

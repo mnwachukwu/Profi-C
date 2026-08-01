@@ -30,7 +30,7 @@ public sealed class FlowAnalysisTests
 
     private static DiagnosticBag CheckBody(string body) =>
         Check($$"""
-            global model Program
+            shared model Program
                 function Main(boolean flag)
             {{body}}
                 end function
@@ -570,7 +570,7 @@ public sealed class FlowAnalysisTests
             "model M function F() integer x; end function end model",
             "model M function F() try finally end try end function end model",
             "model M function F() switch 1 end switch end function end model",
-            "global model Program function Main() let x = ; end function end model",
+            "shared model Program function Main() let x = ; end function end model",
         ];
 
         foreach (string source in hostile)
@@ -584,7 +584,7 @@ public sealed class FlowAnalysisTests
     /// <summary>Wraps a member in a program, for the cases about one function's shape.</summary>
     private static DiagnosticBag CheckMember(string member) =>
         Check($$"""
-            global model Program
+            shared model Program
             {{member}}
                 function Main()
                 end function
@@ -672,7 +672,7 @@ public sealed class FlowAnalysisTests
     public void ACallThatProducedNothingCannotBeWritten() =>
         Assert.That(
             IdsOf(Check("""
-                global model Program
+                shared model Program
                     function Main()
                         integer[] xs = {1, 2};
                         Console.WriteLine(xs.InsertAt(0, 9));
@@ -685,7 +685,7 @@ public sealed class FlowAnalysisTests
     public void ACallThatProducedNothingCannotBeAnArgument() =>
         Assert.That(
             IdsOf(Check("""
-                global model Program
+                shared model Program
                     function Shout()
                     end function
 

@@ -104,22 +104,22 @@ sealed model Square extends Rectangle
 
 end model
 
-# @summary: A round shape, measured from its centre.
+# @summary: A round shape, measured from its center.
 model Circle extends Shape
 
     ##
         @summary: The ratio of a circle's circumference to its diameter.
 
-        @remarks: 'constant' says it never changes; 'global' says there is one of it rather
+        @remarks: 'constant' says it never changes; 'shared' says there is one of it rather
         than one per circle. Both are needed to reach it as Circle.Pi.
     ##
-    global constant real Pi = 3.14159265358979;
+    shared constant real Pi = 3.14159265358979;
 
-    # @summary: How far it reaches from its centre.
+    # @summary: How far it reaches from its center.
     real radius;
 
     # @summary: A circle of the given radius.
-    # @r: how far it reaches from its centre.
+    # @r: how far it reaches from its center.
     public function Circle(real r)
         base("circle");
         this.radius = r;
@@ -133,7 +133,7 @@ model Circle extends Shape
 
 end model
 
-global model Program
+shared model Program
 
     function Main()
         ##

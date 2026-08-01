@@ -1,6 +1,6 @@
 model Report
 
-    public global string function Heading()
+    public shared string function Heading()
         yield "Report";
     end function
 

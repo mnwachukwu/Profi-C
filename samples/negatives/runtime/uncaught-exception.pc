@@ -11,7 +11,7 @@ model InsufficientFundsException extends Exception
     end function
 end model
 
-global model Program
+shared model Program
 
     function Main()
         Program.Withdraw(100, 250);

@@ -83,7 +83,7 @@ next in [Samples](#samples).
 
 namespace Examples;
 
-global model Program
+shared model Program
 
     constant integer PassingScore = 60;
 
@@ -113,22 +113,22 @@ reading-aloud form. And conditions don't have to take any parentheses, because n
 ### Hello, World!
 
 A source file contains model declarations and nothing else. The entry point is a
-`global model` named `Program` holding a function called `Main`.
+`shared model` named `Program` holding a function called `Main`.
 
 ```
-global model Program
+shared model Program
     function Main()
         Console.WriteLine("Hello, World!");
     end function
 end model
 ```
 
-`global model` is Profi-C's spelling of C#'s `static class`: it cannot be instantiated or
+`shared model` is Profi-C's spelling of C#'s `static class`: it cannot be instantiated or
 extended, which is exactly what a running program wants — there is no such thing as an
 instance of it.
 
-A `global model` has global members; in C#, a `static class` must mark each of its members
-`static`. So `function Main()` and `global function Main()` mean the same thing here — write
+A `shared model` has shared members; in C#, a `static class` must mark each of its members
+`static`. So `function Main()` and `shared function Main()` mean the same thing here — write
 the word if you like it, but it adds nothing.
 
 ### Models and inheritance
@@ -175,7 +175,7 @@ An optional is written with a trailing `?`. You cannot read one without proving 
 
 ```
 model Greeter
-    global function Greet(string? nickname)
+    shared function Greet(string? nickname)
         # Or supplies a fallback, and does not evaluate it unless it is needed
         Console.WriteLine(nickname.Or("Hello, stranger"));
 
@@ -194,7 +194,7 @@ increment clause written before the body but executed after it.
 
 ```
 model Counting
-    global integer function SumTo(integer limit)
+    shared integer function SumTo(integer limit)
         integer total = 0;
 
         for i = 1 to limit
@@ -204,7 +204,7 @@ model Counting
         yield total;
     end function
 
-    global integer function CountDown()
+    shared integer function CountDown()
         integer total = 0;
 
         for i = 10 until 0 step -1
@@ -214,7 +214,7 @@ model Counting
         yield total;
     end function
 
-    global integer function CountLetters(string word)
+    shared integer function CountLetters(string word)
         integer seen = 0;
 
         for each letter in word
@@ -309,20 +309,20 @@ Prefer to skip PATH entirely? Every command below also works as
 This is the smallest legal Profi-C program. It compiles, runs, and does nothing:
 
 ```
-global model Program
+shared model Program
     function Main()
     end function
 end model
 ```
 
 Every rule it follows is the one described under [Hello, World!](#hello-world) above: model
-declarations and nothing else, no top-level code, and `Main` inside a `global model` named
+declarations and nothing else, no top-level code, and `Main` inside a `shared model` named
 `Program`.
 
 Save something worth watching as `hello.pc`, anywhere you like:
 
 ```
-global model Program
+shared model Program
     function Main()
         Console.WriteLine("Hello, World!");
 
@@ -568,7 +568,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [bits.pc](samples/bits.pc) | **Working on the bits of a whole number.** Flags combined and asked about, `bitwise and`/`or`/`xor`, and the two shifts — the one part of the language aimed past a first program |
 | [ignoring.pc](samples/ignoring.pc) | **Telling the compiler to stop saying something.** The three severities, the three forms of `# ignore`, how far each reaches, and why a comment beginning with the word stays a comment |
 | [documenting.pc](samples/documenting.pc) | **Writing down what a thing is.** `@summary:` and the labels beside it, how a summary runs to several paragraphs, and why a remark above a declaration stays a remark |
-| [visibility.pc](samples/visibility.pc) | **`global` is not `public`.** One asks how many there are, the other who can reach it — a global model's members are private until they say otherwise |
+| [visibility.pc](samples/visibility.pc) | **`shared` and `public` answer different questions.** One asks how many there are, the other who can reach it — a shared model's members are private until they say otherwise |
 | [mathematics.pc](samples/mathematics.pc) | **Every member of `Math`.** Constants, roots, logarithms, angles, rounding, and why `Log` is the natural one |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |

@@ -680,9 +680,9 @@ public sealed partial class TypeChecker
             return type;
         }
 
-        if (type is ModelSymbol { IsGlobal: true } globalModel)
+        if (type is ModelSymbol { IsShared: true } sharedModel)
         {
-            Report(DiagnosticDescriptors.CannotInstantiate, construction, globalModel.Name, "a global model");
+            Report(DiagnosticDescriptors.CannotInstantiate, construction, sharedModel.Name, "a shared model");
             return type;
         }
 

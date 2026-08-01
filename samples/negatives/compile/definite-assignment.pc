@@ -6,7 +6,7 @@
     for a program to stumble into.
 ##
 
-global model Program
+shared model Program
     function Main(boolean flag)
         # Never assigned at all.
         integer total;

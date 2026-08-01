@@ -40,7 +40,7 @@
   26:24   Identifier           'Ace'
   27:1    End                  'end'
   27:5    Enumeration          'enumeration'
-  29:1    Global               'global'
+  29:1    Shared               'shared'
   29:8    Model                'model'
   29:14   Identifier           'Program'
   31:5    Function             'function'

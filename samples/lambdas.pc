@@ -15,7 +15,7 @@
     that a function is being declared.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.WritingThemDown();

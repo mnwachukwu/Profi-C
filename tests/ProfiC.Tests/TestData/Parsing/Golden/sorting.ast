@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       VarDeclStmt 'values'
         SetTypeSyntax

@@ -6,7 +6,7 @@
     are the two ways to ask instead of insist.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         integer[] scores = {2, 5, 8};

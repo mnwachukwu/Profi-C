@@ -16,7 +16,7 @@ model Wording
     # @title: what the book is called.
     # @author: who wrote it.
     # @yields: the two joined with "by".
-    public global string function Join(string title, string author)
+    public shared string function Join(string title, string author)
         yield title + " by " + author;
     end function
 

@@ -28,7 +28,7 @@ public sealed class LoweringTests
     private static CompilationUnit LowerBody(string body)
     {
         (CompilationUnit lowered, _, DiagnosticBag diagnostics) = Lower($$"""
-            global model Program
+            shared model Program
                 function Main()
             {{body}}
                 end function
@@ -81,7 +81,7 @@ public sealed class LoweringTests
     {
         (CompilationUnit lowered, SemanticModel model, _) = Lower(
             """
-            global model Program
+            shared model Program
                 function Main()
                     real r = 1;
                 end function
@@ -105,7 +105,7 @@ public sealed class LoweringTests
             model Square extends Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape s = new Square();
                 end function
@@ -120,7 +120,7 @@ public sealed class LoweringTests
     {
         (CompilationUnit lowered, _, _) = Lower(
             """
-            global model Program
+            shared model Program
                 function Take(real value)
                 end function
 

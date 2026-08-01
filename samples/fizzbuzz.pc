@@ -6,7 +6,7 @@
     that yields a string.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         for n = 1 to 20

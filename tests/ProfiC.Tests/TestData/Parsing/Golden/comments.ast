@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Comments' [global]
+  ModelDecl 'Comments' [shared]
     FieldDecl 'Answer' [constant]
       NamedTypeSyntax 'integer'
       LiteralExpr 42 [Integer]

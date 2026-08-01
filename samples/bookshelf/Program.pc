@@ -7,7 +7,7 @@
         pc run samples/bookshelf/Program.pc
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Shelf shelf = new Shelf();

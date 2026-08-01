@@ -16,7 +16,7 @@ public enum DeclarationModifiers
     Public = 1 << 0,
     Protected = 1 << 1,
     Internal = 1 << 8,
-    Global = 1 << 2,
+    Shared = 1 << 2,
     Virtual = 1 << 3,
     Override = 1 << 4,
     Sealed = 1 << 5,
@@ -36,7 +36,7 @@ public static class DeclarationModifiersExtensions
         TokenType.Public => DeclarationModifiers.Public,
         TokenType.Protected => DeclarationModifiers.Protected,
         TokenType.Internal => DeclarationModifiers.Internal,
-        TokenType.Global => DeclarationModifiers.Global,
+        TokenType.Shared => DeclarationModifiers.Shared,
         TokenType.Virtual => DeclarationModifiers.Virtual,
         TokenType.Override => DeclarationModifiers.Override,
         TokenType.Sealed => DeclarationModifiers.Sealed,
@@ -58,7 +58,7 @@ public static class DeclarationModifiersExtensions
         if (modifiers.Has(DeclarationModifiers.Public)) { words.Add("public"); }
         if (modifiers.Has(DeclarationModifiers.Protected)) { words.Add("protected"); }
         if (modifiers.Has(DeclarationModifiers.Internal)) { words.Add("internal"); }
-        if (modifiers.Has(DeclarationModifiers.Global)) { words.Add("global"); }
+        if (modifiers.Has(DeclarationModifiers.Shared)) { words.Add("shared"); }
         if (modifiers.Has(DeclarationModifiers.Constant)) { words.Add("constant"); }
         if (modifiers.Has(DeclarationModifiers.Virtual)) { words.Add("virtual"); }
         if (modifiers.Has(DeclarationModifiers.Override)) { words.Add("override"); }

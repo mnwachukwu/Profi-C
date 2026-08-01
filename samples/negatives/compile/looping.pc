@@ -9,7 +9,7 @@
     moves is a bound that moves. That is why only 'for each' is refused here.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.Growing();

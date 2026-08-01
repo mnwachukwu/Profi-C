@@ -184,7 +184,7 @@
  119:9    Model                'model'
  121:1    End                  'end'
  121:5    Namespace            'namespace'
- 123:1    Global               'global'
+ 123:1    Shared               'shared'
  123:8    Model                'model'
  123:14   Identifier           'Program'
  125:5    Function             'function'

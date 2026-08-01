@@ -14,7 +14,7 @@
         echo 7 | pc run samples/asking.pc
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.AskingForAName();

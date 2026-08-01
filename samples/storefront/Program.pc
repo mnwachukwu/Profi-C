@@ -7,7 +7,7 @@
         pc run samples/storefront/storefront.pcp
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Product[] basket =

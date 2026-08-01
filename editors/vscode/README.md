@@ -1,6 +1,6 @@
 # Profi-C for VS Code
 
-Syntax highlighting for `.pc` programs and `.pcp` project files, and the editor behaviour that
+Syntax highlighting for `.pc` programs and `.pcp` project files, and the editor behavior that
 comes with knowing the language: bracket matching, `Ctrl+/` inserting `#`, auto-closing quotes,
 and indentation that follows `end`.
 
@@ -101,12 +101,12 @@ Reload the window — `Ctrl+Shift+P`, "Developer: Reload Window" — and open a 
   it recorded — silently, with the file on disk plainly saying otherwise. Deleting that cache
   and restarting forces a rescan if a bump ever fails to take.
 
-**How a stale copy shows itself.** The editor colours by whatever rules it has, so a construct
-the copy has never heard of is coloured by the rules for something else, and the symptom looks
+**How a stale copy shows itself.** The editor colors by whatever rules it has, so a construct
+the copy has never heard of is colored by the rules for something else, and the symptom looks
 nothing like the cause. A word the copy does not know to be a keyword is caught by the rule for
 a name followed by a bracket, and reads as a function call. A block string the copy predates
 reads as an empty string followed by an ordinary one, so the first `"` inside it closes a
-string that was never open and the rest of the file is coloured as text.
+string that was never open and the rest of the file is colored as text.
 
 Nothing is wrong with the grammar in either case; the editor is reading an old one. Before
 hunting for a bug, check the installed copy holds the rule you expect:
@@ -117,11 +117,11 @@ Select-String delegate "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0\syntax
 
 A link cannot go stale, which is the whole argument for one.
 
-## What it colours
+## What it colors
 
 Reserved words, the primitive types, the types the language provides, literals of every form
 including fraction literals like `22|7`, block strings, the holes in an interpolated string,
-both comment forms, and the name a declaration introduces. A closer and what it closes read as one thing, so `end function` colours together
+both comment forms, and the name a declaration introduces. A closer and what it closes read as one thing, so `end function` colors together
 rather than as a keyword beside a noun.
 
 ## Comments the compiler heeds
@@ -137,7 +137,7 @@ Only the comments the compiler acts on are set apart — a remark that merely be
 word, like `# ignore the sign for now`, stays an ordinary comment, and a `##` block never
 carries a directive at all. The scope is `comment.line.number-sign.directive.profi-c`.
 
-A comment can also document what follows it, and the label inside one is coloured apart from
+A comment can also document what follows it, and the label inside one is colored apart from
 the prose:
 
 ```
@@ -148,28 +148,28 @@ the prose:
 model Account
 ```
 
-Only the label is coloured — the mark, the name and the colon together — never the prose after
+Only the label is colored — the mark, the name and the colon together — never the prose after
 it. The scope is `constant.language.documentation.profi-c`.
 
-## Where the colours come from
+## Where the colors come from
 
-**This extension sets no colours, and none of the ones above come from it.** An extension can
-offer token colours through `configurationDefaults`, and the editor accepts the manifest and
-then ignores them. There is no error and no warning; the manifest sits there naming a colour
+**This extension sets no colors, and none of the ones above come from it.** An extension can
+offer token colors through `configurationDefaults`, and the editor accepts the manifest and
+then ignores them. There is no error and no warning; the manifest sits there naming a color
 nobody ever sees, which is why this extension no longer carries one.
 
-So every colour on a Profi-C file comes from one of two places:
+So every color on a Profi-C file comes from one of two places:
 
 1. **A `textMateRules` entry**, in your user or workspace settings. This repository has one in
-   `.vscode/settings.json`, which is what colours these files while working on the language.
+   `.vscode/settings.json`, which is what colors these files while working on the language.
 2. **Your theme**, for any scope no rule names.
 
 That second case is where the confusion lives. A theme knows nothing about `.profi-c` scopes,
 so it falls back on the general part of the name — `constant.language.documentation.profi-c`
 is painted as whatever the theme does with `constant.language`. In several dark themes that is
-the same colour as `keyword`, so a scope that looks wrong may simply be a scope with no rule.
+the same color as `keyword`, so a scope that looks wrong may simply be a scope with no rule.
 
-**When a colour will not take, it is nearly always a missing rule rather than a broken one.**
+**When a color will not take, it is nearly always a missing rule rather than a broken one.**
 Put the cursor on the token and run:
 
 ```
@@ -201,14 +201,14 @@ echo '["# @summary: A thing."]' | node tools/scopes.js
 
 ## The Profi-C palette
 
-Everything above is already coloured by whatever theme you use, because the grammar names its
+Everything above is already colored by whatever theme you use, because the grammar names its
 scopes the way every other language does and a theme's rule for `keyword` reaches
 `keyword.declaration.profi-c`. Nothing has to be installed for a `.pc` file to read properly.
 
 What a theme cannot do is tell one Profi-C construct from another where it has no reason to.
 A primitive type and a visibility word are both `storage`, so most themes paint them alike; a
 documentation label inherits from `constant.language`, which several dark themes paint the same
-colour as a keyword. **A palette written for the language does better**, because it can separate
+color as a keyword. **A palette written for the language does better**, because it can separate
 the things a reader of *this* language wants separated.
 
 That palette lives in [`.vscode/settings.json`](../../.vscode/settings.json) at the root of
@@ -217,7 +217,7 @@ in your own projects, copy its `editor.tokenColorCustomizations` block into your
 `settings.json`. It applies as soon as it is saved — no reload, and nothing to install.
 
 It is the only copy, deliberately: two palettes in two files drift, and the one in this README
-had already gone stale on three colours before it was removed. A shortened version, to show the
+had already gone stale on three colors before it was removed. A shortened version, to show the
 shape:
 
 ```jsonc
@@ -231,13 +231,13 @@ shape:
 
     // The label in a documentation comment: '@summary:', '@yields:', or a
     // parameter's name, mark and colon together. Worth setting rather than
-    // leaving to the theme, which paints a language constant the same colour
+    // leaving to the theme, which paints a language constant the same color
     // as a keyword in several of the dark ones.
     { "scope": "constant.language.documentation.profi-c",
       "settings": { "foreground": "#00E5FF" } },
 
     // Both comment forms together. A comment is a comment whichever mark
-    // opened it, and naming only one leaves the other whatever grey the
+    // opened it, and naming only one leaves the other whatever gray the
     // theme had in mind.
     { "scope": ["comment.block.profi-c", "comment.line.number-sign.profi-c"],
       "settings": { "foreground": "#4C9A5A" } }
@@ -248,19 +248,19 @@ shape:
 ```
 
 A workspace `settings.json` is scoped to the folder it sits in: it changes nothing about any
-other project, and a colour edited there applies at once with no reload. A user
+other project, and a color edited there applies at once with no reload. A user
 `settings.json` does the same for everything you open.
 
 **Inside an interpolated string**, the hole is `meta.interpolation`, its doubled braces are
 `punctuation.section.interpolation.begin` and `.end`, and a pattern after the colon is
-`constant.other.format`. What sits between the braces is code and is coloured as code — a call
+`constant.other.format`. What sits between the braces is code and is colored as code — a call
 reads as a call, an operator as an operator. A block string written with `"""` is
 `string.quoted.triple` and holds nothing else, since nothing inside one is read.
 
-**Give `meta.interpolation` a colour, even the plain one.** A hole is scanned inside the string
+**Give `meta.interpolation` a color, even the plain one.** A hole is scanned inside the string
 rule, so `string.quoted.double` stays on the scope stack while it is read, and anything in
 there without a scope of its own — a local's name, a bracket, a comma — falls back to the
-deepest scope that has a colour. Leave `meta.interpolation` out and that is the string, so the
+deepest scope that has a color. Leave `meta.interpolation` out and that is the string, so the
 hole reads as the text around it. Naming it gives those tokens something nearer to fall back
 to, which is what makes a hole look like code.
 
@@ -274,16 +274,16 @@ A type name is `entity.name.type.profi-c` wherever it appears: after `model`, af
 `extends`, after `new`, after `catch`, after `is` and `as`, and standing in front of the field,
 local, or parameter it describes.
 
-**Only the type's own name is coloured.** In `Geometry.Solid.Circle`, `Circle` is the type and
+**Only the type's own name is colored.** In `Geometry.Solid.Circle`, `Circle` is the type and
 `Geometry.Solid` says where to find it, so the namespace part is left plain — the same as the
 name after `namespace` and after `using`, which are namespaces and nothing else. `Standard` is
 left plain for the same reason, being the namespace the language provides rather than a type in
 it.
 
 Where a name is written to reach a member rather than to name a type — `Console.WriteLine`,
-`Math.Pi`, `Color.Green` — the part before the dot is coloured as a type. A grammar cannot tell
+`Math.Pi`, `Color.Green` — the part before the dot is colored as a type. A grammar cannot tell
 `Namespace.Type` from `Type.Member` when both are capitalized, and a program's own namespace in
-that position will be coloured as though it were a type. That is the same limit that makes a
+that position will be colored as though it were a type. That is the same limit that makes a
 local called `Total` look like one, and it goes away when the compiler is the thing answering.
 
 ## Keeping it honest
@@ -291,7 +291,7 @@ local called `Total` look like one, and it goes away when the compiler is the th
 A TextMate grammar is a second, hand-written description of the same language, and adding a
 keyword to the compiler does nothing to this file. `EditorGrammarTests` in the test project
 reads this grammar and asserts that every reserved word and every type the language provides
-appears in it, and that nothing it colours is a word the language dropped — so the two cannot
+appears in it, and that nothing it colors is a word the language dropped — so the two cannot
 drift without a test failing at the moment they do.
 
 The same tests check that the block comment rule closes where the scanner closes, including

@@ -16,10 +16,10 @@ abstract    and         as          base        begin       bitwise
 boolean     break       case        catch       character   constant
 continue    default     delegate    each        else        end
 enumeration extends     false       finally     for         fraction
-function    global      if          import      in          integer
-internal    is          let         model       namespace   new
-not         or          override    protected   public      real
-sealed      shiftleft   shiftright  step        string      structure
+function    if          import      in          integer     internal
+is          let         model       namespace   new         not
+or          override    protected   public      real        sealed
+shared      shiftleft   shiftright  step        string      structure
 switch      then        this        throw       to          true
 try         until       using       virtual     while       xor
 yield
@@ -71,7 +71,7 @@ A run of marks is a heading rather than an error, the extra ones being comment t
 
 `private`, `static`, `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`, `select`, `when`, `const`.
 
-Members are private by default, so `protected`, `internal`, and `public` opt out and `private` is unnecessary. `global` fills the role of `static`. There is no `null` at all. And note the spellings: `enumeration`, not `enum`; `constant`, not `const`.
+Members are private by default, so `protected`, `internal`, and `public` opt out and `private` is unnecessary. `shared` fills the role of `static`. There is no `null` at all. And note the spellings: `enumeration`, not `enum`; `constant`, not `const`.
 
 **Types default to `internal`, exactly as in C#** — and for the same reason members default to private: a declaration with no word belongs to the smallest thing that could own it. A member's owner is its type; a type's owner is its project. A compilation nobody divided into projects is one project, so the default costs a single-file program nothing and starts to matter when one project references another.
 
@@ -82,9 +82,9 @@ Members are private by default, so `protected`, `internal`, and `public` opt out
 | Model | Role |
 |---|---|
 | `Model` | the root of **every** type, values included; extended implicitly |
-| `Program` | `global model`; the entry point container |
-| `Console` | `global model`; holds `Write` and `Read` |
-| `Reference` | `global model`; holds `Equals` for reference identity |
+| `Program` | `shared model`; the entry point container |
+| `Console` | `shared model`; holds `Write` and `Read` |
+| `Reference` | `shared model`; holds `Equals` for reference identity |
 | `Exception` | root of the throwable hierarchy |
 | `DivideByZeroException` | thrown on runtime division by zero |
 | `IndexOutOfRangeException` | thrown on out-of-bounds set or string access |
@@ -96,7 +96,7 @@ Members are private by default, so `protected`, `internal`, and `public` opt out
 | `OverflowException` | thrown when an arithmetic result does not fit its type |
 | `IOException` | thrown when a file operation fails for any reason other than the file not being there |
 
-Users may extend `Exception` and its subtypes. `Model` **is** extendable and is extended implicitly by everything, exactly as `object` is in C#; what cannot be done is redeclaring the name. `Console` and `Reference` are `global model`s, so neither can be extended or instantiated.
+Users may extend `Exception` and its subtypes. `Model` **is** extendable and is extended implicitly by everything, exactly as `object` is in C#; what cannot be done is redeclaring the name. `Console` and `Reference` are `shared model`s, so neither can be extended or instantiated.
 
 **`Model` roots the value types too.** Structures and enumerations inherit its members, which is where their `ToString()` and `Equals()` come from, exactly as a C# struct inherits from `object`. What they cannot do — **permanently, not merely for now** — is be *assigned* to a `Model` variable. That conversion is boxing, and Profi-C does not have it.
 
@@ -112,12 +112,12 @@ Generics do not change this. .NET generics are reified, so `Set<Point>` stores i
 
 ### 3.1 Entry point
 
-A `global model` named `Program`, holding `Main()` or `Main(string[] args)`. There is no such
+A `shared model` named `Program`, holding `Main()` or `Main(string[] args)`. There is no such
 thing as an instance of a running program, so the entry point cannot be instantiated and
 cannot hold instance state.
 
-A `global model` has global members; in C#, a `static class` must mark each of its members
-`static`. So `function Main()` and `global function Main()` are the same declaration — the
+A `shared model` has shared members; in C#, a `static class` must mark each of its members
+`static`. So `function Main()` and `shared function Main()` are the same declaration — the
 explicit form is legal and redundant.
 
 ### 3.2 Built-in model functions
@@ -246,14 +246,14 @@ The second pair is more confusable than the first, since both live near the idea
 | `if c then a else b` expression | `c ? a : b` |
 | `"{{name}} is {{age}}"` | `$"{name} is {age}"` |
 | `integer delegate(integer)` names a function type | `Func<int, int>` |
-| `global` | `static` |
+| `shared` | `static`. One of it, shared by everything, which is what the C# word does not say |
 | `3\|4` fraction literal | no equivalent |
 | `2 ^ 10` raises to a power | `^` is exclusive-or; use `Math.Pow` |
 | `a bitwise and b`, `a bitwise or b`, `a xor b` | `a & b`, `a \| b`, `a ^ b`. `\|` was unavailable — it writes a fraction — so the operations are words. `xor` needs no qualifier because nothing else claims it, and it refuses two booleans where C#'s `^` accepts them |
 | `a shiftleft 2`, `a shiftright 2` | `a << 2`, `a >> 2`. The direction is in the word, and an amount below 0 or above 63 is an error where C# folds it into range |
 | `enumeration Color` | `enum Color` |
-| `global model` | `static class` |
-| a `global model` has global members | a `static class` marks each member `static` |
+| `shared model` | `static class` |
+| a `shared model` has shared members | a `static class` marks each member `static` |
 | `structure Point ... end structure` | `struct Point { }` |
 | `boolean` | `bool` |
 
@@ -292,7 +292,7 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **Assignment is a statement.** `if (x = 5)` is a syntax error rather than a warning.
 
-**`this.` is mandatory**, not conventional, and so is `ModelName.` for `global` members. Bare identifiers reach only locals and parameters. This makes the local-versus-state distinction visible at every use, which is the distinction a beginner most needs to see.
+**`this.` is mandatory**, not conventional, and so is `ModelName.` for `shared` members. Bare identifiers reach only locals and parameters. This makes the local-versus-state distinction visible at every use, which is the distinction a beginner most needs to see.
 
 **No local types.** A model, structure, or enumeration may be declared at namespace level or inside a model, but not inside a function. C# has no local classes either. A type introduced by a statement would entangle name resolution with statement order, which is a cost with very little to buy it.
 

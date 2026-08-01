@@ -31,7 +31,7 @@ CompilationUnit
         CallExpr
           BaseExpr
           LiteralExpr "the oven will not light" [String]
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       ExpressionStmt
         CallExpr

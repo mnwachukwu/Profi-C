@@ -27,7 +27,7 @@ public sealed class ResolverTests
         Resolve($$"""
             model Holder
                 integer count;
-                global integer total;
+                shared integer total;
                 constant integer Limit = 10;
 
                 function Run(integer parameter)
@@ -43,7 +43,7 @@ public sealed class ResolverTests
     {
         (SemanticModel model, DiagnosticBag diagnostics) = Resolve(
             """
-            global model Program
+            shared model Program
                 function Main()
                     let x = 1;
                 end function
@@ -103,7 +103,7 @@ public sealed class ResolverTests
     }
 
     [Test]
-    public void ABareNameMatchingAGlobalMemberNamesItsType()
+    public void ABareNameMatchingASharedMemberNamesItsType()
     {
         (_, DiagnosticBag diagnostics) = ResolveBody("        total = 1;");
 
@@ -223,7 +223,7 @@ public sealed class ResolverTests
     /// </para>
     /// </summary>
     [TestCase("        let count = 2;", TestName = "an instance field")]
-    [TestCase("        let total = 2;", TestName = "a global field")]
+    [TestCase("        let total = 2;", TestName = "a shared field")]
     [TestCase("        let Limit = 2;", TestName = "a constant")]
     public void ALocalMayStillCarryAFieldsName(string written)
     {
@@ -557,7 +557,7 @@ public sealed class ResolverTests
     public void MainYieldsNothingOrAnInteger(string result, string? expected)
     {
         (_, DiagnosticBag diagnostics) = Resolve($$"""
-            global model Program
+            shared model Program
                 {{result}}function Main()
                 end function
             end model
@@ -583,7 +583,7 @@ public sealed class ResolverTests
     }
 
     [Test]
-    public void ProgramMustBeAGlobalModel()
+    public void ProgramMustBeASharedModel()
     {
         (_, DiagnosticBag diagnostics) = Resolve(
             """
@@ -601,7 +601,7 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = Resolve(
             """
-            global model Program
+            shared model Program
                 function Other()
                 end function
             end model
@@ -631,14 +631,14 @@ public sealed class ResolverTests
     }
 
     [Test]
-    public void ThisIsRejectedInAGlobalMember()
+    public void ThisIsRejectedInASharedMember()
     {
         (_, DiagnosticBag diagnostics) = Resolve(
             """
             model Holder
                 integer count;
 
-                global function Run()
+                shared function Run()
                     this.count = 1;
                 end function
             end model
@@ -663,9 +663,9 @@ public sealed class ResolverTests
     }
 
     [Test]
-    public void AGlobalModelCannotHaveInstanceMembers()
+    public void ASharedModelCannotHaveInstanceMembers()
     {
-        // Members of a global model are implicitly global, so this only fires where the
+        // Members of a shared model are implicitly shared, so this only fires where the
         // author wrote something that contradicts that.
         (_, DiagnosticBag diagnostics) = Resolve(
             """
@@ -702,7 +702,7 @@ public sealed class ResolverTests
         string[] hostile =
         [
             "", "model", "model X end model", "model A extends A end model",
-            "global model Program end model", "model X model X end model end model",
+            "shared model Program end model", "model X model X end model end model",
             "model X function F() this.y = 1; end function end model",
         ];
 

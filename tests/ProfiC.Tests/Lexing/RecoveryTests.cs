@@ -243,7 +243,7 @@ public sealed class RecoveryTests : LexerTestBase
         CompilationUnit unit = Parser.Parse(
             new SourceText(
                 $$"""
-                global model Program
+                shared model Program
                     function Main()
                         {{body}}
                     end function

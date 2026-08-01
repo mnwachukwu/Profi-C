@@ -61,7 +61,7 @@ public sealed partial class Resolver
     private DeclaredTypeSymbol? _currentType;
 
     /// <summary>True while resolving a member that has no instance, so <c>this</c> is absent.</summary>
-    private bool _inGlobalMember;
+    private bool _inSharedMember;
 
     /// <summary>The innermost run of locals and parameters.</summary>
     private Scope _scope = new(parent: null);
@@ -281,7 +281,7 @@ public sealed partial class Resolver
 
     /// <summary>
     /// <para>Rejects a type nothing can be, written where a value's type belongs.</para>
-    /// <para>Two kinds reach here. A <c>global model</c> has no instances by definition, which
+    /// <para>Two kinds reach here. A <c>shared model</c> has no instances by definition, which
     /// is what the word means. And four the language provides are names to reach members
     /// through — <c>Console</c>, <c>Math</c>, <c>Reference</c>, and <c>Fraction</c>, which is
     /// the model beside the <c>fraction</c> type rather than that type.</para>
@@ -294,7 +294,7 @@ public sealed partial class Resolver
     /// </summary>
     private bool RequireInhabitable(NamedTypeSyntax named, DeclaredTypeSymbol declared)
     {
-        bool empty = declared is ModelSymbol { IsGlobal: true }
+        bool empty = declared is ModelSymbol { IsShared: true }
                      || (ReferenceEquals(declared.Container, BuiltInTypes.Standard)
                          && BuiltIns.HasNoInstances(declared.Name));
 
@@ -319,7 +319,7 @@ public sealed partial class Resolver
     /// falling back to the file being collected from, which covers a name written before any
     /// type has been entered.</para>
     /// <para>Called from every place a type name is read — in a signature, as the receiver of
-    /// a global member, and after <c>new</c> — because a boundary that holds in one of the
+    /// a shared member, and after <c>new</c> — because a boundary that holds in one of the
     /// three and not the others is not a boundary.</para>
     /// </summary>
     private void RequireVisibleType(SyntaxNode where, DeclaredTypeSymbol declared)

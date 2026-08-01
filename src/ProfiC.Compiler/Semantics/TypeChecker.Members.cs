@@ -9,7 +9,7 @@ public sealed partial class TypeChecker
     /// <para>The type a receiver names, or null where it is a value.</para>
     /// <para>Only a written name can name a type: an identifier, or a run of them joined by
     /// dots. <c>this</c> is bound to the type around it and is still a value rather than that
-    /// type's name, which is the difference between reading a field and reaching a global one.
+    /// type's name, which is the difference between reading a field and reaching a shared one.
     /// </para>
     /// </summary>
     private DeclaredTypeSymbol? TypeNamedBy(Expression receiver) =>
@@ -20,11 +20,11 @@ public sealed partial class TypeChecker
     /// <summary>
     /// <para>Works out what a member access denotes.</para>
     /// <para>Two shapes reach here: a member of a value, and a member of a type. The second is
-    /// how a global member is reached, since a bare name never finds one.</para>
+    /// how a shared member is reached, since a bare name never finds one.</para>
     /// </summary>
     private TypeSymbol CheckMember(MemberExpr member)
     {
-        // A type name on the left means a global member, so the receiver is not a value.
+        // A type name on the left means a shared member, so the receiver is not a value.
         // Asked of the receiver whatever shape it is: a qualified name is a run of member
         // accesses that the resolver already settled onto one type, and it names that type
         // exactly as a bare identifier does.
@@ -95,7 +95,7 @@ public sealed partial class TypeChecker
         return type;
     }
 
-    /// <summary>A member reached through a type name: a global member, or an enumeration's.</summary>
+    /// <summary>A member reached through a type name: a shared member, or an enumeration's.</summary>
     private TypeSymbol CheckStaticMember(MemberExpr member, DeclaredTypeSymbol type)
     {
         if (BuiltInMembers.Find(type, member.MemberName) is { } builtIn)
@@ -109,7 +109,7 @@ public sealed partial class TypeChecker
 
         if (found.Count > 0)
         {
-            RequireGlobal(member, type, found[0]);
+            RequireShared(member, type, found[0]);
             return BindMember(member, found);
         }
 
@@ -124,12 +124,12 @@ public sealed partial class TypeChecker
     /// appears. Enumeration members and nested types belong to the type itself, so they pass.
     /// </para>
     /// </summary>
-    private void RequireGlobal(MemberExpr member, DeclaredTypeSymbol type, Symbol found)
+    private void RequireShared(MemberExpr member, DeclaredTypeSymbol type, Symbol found)
     {
         bool needsInstance = found switch
         {
-            FieldSymbol field => !field.IsGlobal,
-            FunctionSymbol function => !function.IsGlobal && !function.IsConstructor,
+            FieldSymbol field => !field.IsShared,
+            FunctionSymbol function => !function.IsShared && !function.IsConstructor,
             _ => false,
         };
 
@@ -366,7 +366,7 @@ public sealed partial class TypeChecker
         MemberExpr member,
         List<TypeSymbol> arguments)
     {
-        // A type name on the left reaches a global member, however that name was written.
+        // A type name on the left reaches a shared member, however that name was written.
         DeclaredTypeSymbol? named = TypeNamedBy(member.Receiver);
         bool onType = named is not null;
 
@@ -467,7 +467,7 @@ public sealed partial class TypeChecker
 
         if (onType)
         {
-            RequireGlobal(member, declared, chosen);
+            RequireShared(member, declared, chosen);
         }
 
         RequireVisible(member, chosen, member.MemberName);

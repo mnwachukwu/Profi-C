@@ -17,7 +17,7 @@ model Counter
     end function
 end model
 
-global model Program
+shared model Program
 
     function Report()
         Console.WriteLine("reporting");

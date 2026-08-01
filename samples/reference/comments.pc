@@ -21,7 +21,7 @@
 #  ones are simply part of the comment.                                 #
 #########################################################################
 
-global model Comments
+shared model Comments
 
     # A comment may sit on its own line inside a model,
 

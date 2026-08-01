@@ -19,7 +19,7 @@ CompilationUnit
     EnumMemberDecl 'Queen'
     EnumMemberDecl 'King'
     EnumMemberDecl 'Ace'
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       ExpressionStmt
         CallExpr

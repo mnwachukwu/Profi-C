@@ -226,7 +226,7 @@
   94:13   Model                'model'
   95:5    End                  'end'
   95:9    Model                'model'
-  99:5    Global               'global'
+  99:5    Shared               'shared'
   99:12   Model                'model'
   99:18   Identifier           'Tour'
  101:9    Constant             'constant'

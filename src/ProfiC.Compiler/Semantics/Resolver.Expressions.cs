@@ -164,7 +164,7 @@ public sealed partial class Resolver
             return;
         }
 
-        // A type name is legal here: it is how a global member is reached, as in
+        // A type name is legal here: it is how a shared member is reached, as in
         // "Program.Describe(x)".
         if (LookupType(identifier.Name) is { } type)
         {
@@ -215,16 +215,16 @@ public sealed partial class Resolver
 
         Symbol member = members[0];
 
-        bool isGlobal = member switch
+        bool isShared = member switch
         {
-            FieldSymbol field => field.IsGlobal,
-            FunctionSymbol function => function.IsGlobal,
+            FieldSymbol field => field.IsShared,
+            FunctionSymbol function => function.IsShared,
             _ => false,
         };
 
-        // A global member is reached through its type's name; an instance member through
+        // A shared member is reached through its type's name; an instance member through
         // "this". Naming the right one is the whole point of the message.
-        string receiver = isGlobal ? _currentType.Name : "this";
+        string receiver = isShared ? _currentType.Name : "this";
 
         Report(
             DiagnosticDescriptors.MemberNeedsReceiver,
@@ -243,7 +243,7 @@ public sealed partial class Resolver
 
         // "this" belongs to any declared type with instances, structures included; only
         // "base" needs a model, since only a model has a parent.
-        if (_currentType is null || _inGlobalMember)
+        if (_currentType is null || _inSharedMember)
         {
             Report(DiagnosticDescriptors.ThisOutsideModel, receiver, word);
             return;

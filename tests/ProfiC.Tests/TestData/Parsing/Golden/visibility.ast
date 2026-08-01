@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Tally' [global]
+  ModelDecl 'Tally' [shared]
     FieldDecl 'counted'
       NamedTypeSyntax 'integer'
       LiteralExpr 0 [Integer]
@@ -34,7 +34,7 @@ CompilationUnit
       YieldStmt
         MemberExpr 'counted'
           IdentifierExpr 'Tally'
-    FunctionDecl 'Reset' [global]
+    FunctionDecl 'Reset' [shared]
       AssignmentStmt
         MemberExpr 'counted'
           IdentifierExpr 'Tally'
@@ -59,7 +59,7 @@ CompilationUnit
       YieldStmt
         MemberExpr 'value'
           ThisExpr
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       ExpressionStmt
         CallExpr
@@ -101,7 +101,7 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
-          LiteralExpr "== global says how many, not who ==" [String]
+          LiteralExpr "== shared says how many, not who ==" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

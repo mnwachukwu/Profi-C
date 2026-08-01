@@ -58,7 +58,7 @@ public sealed class QualifiedNameTests
             end model
 
             public model Sphere
-                public global string function Describe() yield "a sphere"; end function
+                public shared string function Describe() yield "a sphere"; end function
             end model
         end namespace
         """;
@@ -73,7 +73,7 @@ public sealed class QualifiedNameTests
     public void TwoTypesOfOneNameAreBothReachable() => Assert.That(
         Run(TwoNamespaces + """
 
-            global model Program
+            shared model Program
                 function Main()
                     Shapes.Circle flat = new Shapes.Circle();
                     Solids.Circle round = new Solids.Circle();
@@ -84,13 +84,13 @@ public sealed class QualifiedNameTests
             """),
         Is.EqualTo("flat and round\n"));
 
-    /// <summary>A qualified name reaching a global member, which is a run of member accesses
+    /// <summary>A qualified name reaching a shared member, which is a run of member accesses
     /// the resolver has to read as one name before any of it is an expression.</summary>
     [Test]
-    public void AQualifiedNameReachesAGlobalMember() => Assert.That(
+    public void AQualifiedNameReachesASharedMember() => Assert.That(
         Run(TwoNamespaces + """
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Solids.Sphere.Describe());
                 end function
@@ -103,7 +103,7 @@ public sealed class QualifiedNameTests
     public void AQualifiedNameWorksInASignature() => Assert.That(
         Run(TwoNamespaces + """
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Program.NameOf(new Shapes.Circle()));
                 end function
@@ -125,10 +125,10 @@ public sealed class QualifiedNameTests
     public void StandardIsReachablePastATypeThatShadowsIt() => Assert.That(
         Run("""
             model Math
-                public global string function Sqrt(integer n) yield "mine"; end function
+                public shared string function Sqrt(integer n) yield "mine"; end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Math.Sqrt(9));
                     Console.WriteLine(Standard.Math.Sqrt(9.0));
@@ -141,7 +141,7 @@ public sealed class QualifiedNameTests
     [Test]
     public void StandardQualifiesATypeWhereverOneIsWritten() => Assert.That(
         Check("""
-            global model Program
+            shared model Program
                 function Main()
                     Standard.Random chance = new Standard.Random();
                     Console.WriteLine(Program.Roll(chance));
@@ -166,7 +166,7 @@ public sealed class QualifiedNameTests
                 end model
             end namespace
 
-            global model Program
+            shared model Program
                 function Main()
                     {{written}}
                 end function
@@ -182,7 +182,7 @@ public sealed class QualifiedNameTests
 
         CompilationUnit unit = Parser.Parse(
             new SourceText("""
-                global model Program
+                shared model Program
                     function Main()
                         Shapes.Circle a;
                     end function
@@ -221,13 +221,13 @@ public sealed class QualifiedNameTests
 
             namespace Tour
                 public model Asking
-                    public global string function Which()
+                    public shared string function Which()
                         yield new Shapes.Circle().Name();
                     end function
                 end model
             end namespace
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Tour.Asking.Which());
                     Console.WriteLine(new Shapes.Circle().Name());
@@ -252,7 +252,7 @@ public sealed class QualifiedNameTests
                 public function Outer() this.held = new Inner(); end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Outer o = new Outer();
                     Console.WriteLine(o.held.Say());

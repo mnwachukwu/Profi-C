@@ -19,7 +19,7 @@
     actually happen".
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.FourQuestions();

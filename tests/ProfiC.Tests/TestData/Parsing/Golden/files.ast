@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FieldDecl 'Folder' [constant]
       NamedTypeSyntax 'string'
       LiteralExpr "profi-c-sample-files" [String]

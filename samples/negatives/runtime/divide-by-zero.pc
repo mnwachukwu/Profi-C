@@ -6,7 +6,7 @@
     this one throws.
 ##
 
-global model Program
+shared model Program
     function Main()
         integer[] divisors = {4, 2, 0};
 

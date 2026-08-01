@@ -24,7 +24,7 @@ public sealed class TypeCheckerTests
     /// <summary>Wraps statements in a program, which is the shape most cases need.</summary>
     private static DiagnosticBag CheckBody(string body) =>
         Check($$"""
-            global model Program
+            shared model Program
                 function Main()
             {{body}}
                 end function
@@ -141,7 +141,7 @@ public sealed class TypeCheckerTests
             model Square extends Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Square? square = new Square();
                     Shape? shape = square;
@@ -173,7 +173,7 @@ public sealed class TypeCheckerTests
             model Square extends Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape s = new Square();
                 end function
@@ -192,7 +192,7 @@ public sealed class TypeCheckerTests
             model Square extends Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Square q = new Shape();
                 end function
@@ -220,7 +220,7 @@ public sealed class TypeCheckerTests
                 Red
             end enumeration
 
-            global model Program
+            shared model Program
                 function Main()
                     Model a = new Point();
                     Model b = Color.Red;
@@ -241,7 +241,7 @@ public sealed class TypeCheckerTests
         IdsOf(Check($$"""
             {{declaration}}
 
-            global model Program
+            shared model Program
                 function Main()
                     Model held = new Thing();
                     Console.WriteLine(Program.Describe(new Thing()));
@@ -545,7 +545,7 @@ public sealed class TypeCheckerTests
                     High = 2
                 end enumeration
 
-                global model Program
+                shared model Program
                     function Main()
                         Level level = Level.Low;
                         switch level
@@ -584,7 +584,7 @@ public sealed class TypeCheckerTests
             Hearts, Diamonds, Clubs, Spades
         end enumeration
 
-        global model Program
+        shared model Program
             function Main()
                 Suit s = Suit.Hearts;
         {{body}}
@@ -703,7 +703,7 @@ public sealed class TypeCheckerTests
             model Dog
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     constant Dog Pet = new Dog();
                 end function
@@ -725,7 +725,7 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(Check(
             """
-            global model Program
+            shared model Program
                 function Take(integer value)
                 end function
 
@@ -741,7 +741,7 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(Check(
             """
-            global model Program
+            shared model Program
                 function Take(integer value)
                 end function
 
@@ -757,7 +757,7 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(Check(
             """
-            global model Program
+            shared model Program
                 function Take(integer value)
                 end function
 
@@ -781,7 +781,7 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(Check(
             """
-            global model Program
+            shared model Program
                 function Take(real value)
                 end function
 
@@ -843,7 +843,7 @@ public sealed class TypeCheckerTests
             abstract model Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     let s = new Shape();
                 end function
@@ -852,14 +852,14 @@ public sealed class TypeCheckerTests
     }
 
     [Test]
-    public void AGlobalModelCannotBeInstantiated()
+    public void ASharedModelCannotBeInstantiated()
     {
         Assert.That(IdsOf(Check(
             """
-            global model Utility
+            shared model Utility
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     let u = new Utility();
                 end function
@@ -880,7 +880,7 @@ public sealed class TypeCheckerTests
             model Square extends Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main(Shape s)
                     Square? maybe = s as Square;
                     let test = s is Square;
@@ -900,7 +900,7 @@ public sealed class TypeCheckerTests
             model Fish
             end model
 
-            global model Program
+            shared model Program
                 function Main(Dog d)
                     let x = d is Fish;
                 end function
@@ -1131,8 +1131,8 @@ public sealed class TypeCheckerTests
                 model Circle extends Shape
                 end model
 
-                global model Program
-                    global Shape[] Known = {new Rectangle(), new Circle()};
+                shared model Program
+                    shared Shape[] Known = {new Rectangle(), new Circle()};
 
                     function Main()
                         Shape[] shapes = {new Rectangle(), new Circle()};
@@ -1177,7 +1177,7 @@ public sealed class TypeCheckerTests
                 model Circle extends Shape
                 end model
 
-                global model Program
+                shared model Program
                     function Main()
                         let guessed = {new Rectangle(), new Circle()};
                     end function
@@ -1229,7 +1229,7 @@ public sealed class TypeCheckerTests
                 model NotFoundException extends Exception
                 end model
 
-                global model Program
+                shared model Program
                     function Main()
                         try
                             yield;
@@ -1260,7 +1260,7 @@ public sealed class TypeCheckerTests
     public void AVoidFunctionTypeWorksAsAParameter() =>
         Assert.That(
             IdsOf(Check("""
-                global model Program
+                shared model Program
                     function Run(delegate() action)
                         action();
                     end function
@@ -1298,7 +1298,7 @@ public sealed class TypeCheckerTests
     public void AParameterOfTheFunctionBeingCalledSaysWhatABareNameHolds() =>
         Assert.That(
             IdsOf(Check("""
-                global model Program
+                shared model Program
                     integer function Apply(integer delegate(integer) f, integer n)
                         yield f(n);
                     end function
@@ -1408,7 +1408,7 @@ public sealed class TypeCheckerTests
     public void ADeclaredFunctionStillRequiresEveryParameterType() =>
         Assert.That(
             IdsOf(Check("""
-                global model Program
+                shared model Program
                     integer function Twice(n)
                         yield n * 2;
                     end function
@@ -1472,7 +1472,7 @@ public sealed class TypeCheckerTests
         Assert.That(IdsOf(Check($$"""
             {{declaration}}
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine("x");
                 end function
@@ -1567,7 +1567,7 @@ public sealed class TypeCheckerTests
             public integer v;
         end model
 
-        global model Program
+        shared model Program
             function Main()
         {{body}}
             end function
@@ -1588,7 +1588,7 @@ public sealed class TypeCheckerTests
     public void AWrongArgumentCountReadsAsASentence(string call, string expected)
     {
         DiagnosticBag diagnostics = Check($$"""
-            global model Program
+            shared model Program
                 function None()
                 end function
 
@@ -1625,7 +1625,7 @@ public sealed class TypeCheckerTests
                     end function
                 end model
 
-                global model Program
+                shared model Program
                     function Take(Item held)
                     end function
 
@@ -1645,7 +1645,7 @@ public sealed class TypeCheckerTests
                     end function
                 end model
 
-                global model Program
+                shared model Program
                     Item function Make()
                         yield new Item();
                     end function
@@ -1748,7 +1748,7 @@ public sealed class TypeCheckerTests
         string[] hostile =
         [
             "", "model M end model", "model M function F() yield; end function end model",
-            "global model Program function Main() let x = ; end function end model",
+            "shared model Program function Main() let x = ; end function end model",
             "model M function F() this.x.y.z(); end function end model",
             "model M function F() let a = {}.Count(); end function end model",
         ];

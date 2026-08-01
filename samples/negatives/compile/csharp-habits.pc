@@ -6,7 +6,7 @@
     confusing parse error further down the file.
 ##
 
-global model Program
+shared model Program
     function Main()
         integer count = 1;
         boolean ready = true;

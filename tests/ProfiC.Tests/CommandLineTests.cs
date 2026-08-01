@@ -107,7 +107,7 @@ public sealed class CommandLineTests : LexerTestBase
             being checked is the command rather than the corpus beside it.
         ##
 
-        global model Program
+        shared model Program
             function Main()
                 Console.WriteLine("Hello, World!");
             end function
@@ -148,7 +148,7 @@ public sealed class CommandLineTests : LexerTestBase
     public void CheckingABadProgramFails(string command)
     {
         string path = Write("Program.pc", """
-            global model Program
+            shared model Program
                 function Main()
                     integer n = "not a number";
                 end function
@@ -178,7 +178,7 @@ public sealed class CommandLineTests : LexerTestBase
             ##
                 a block comment, whose text is not code
             ##
-            global model Program
+            shared model Program
                 function Main()          # and one at the end of a line
                     Console.WriteLine("read");
                 end function

@@ -87,7 +87,7 @@ CompilationUnit
                   ThisExpr
               MemberExpr 'radius'
                 ThisExpr
-    ModelDecl 'Program' [global]
+    ModelDecl 'Program' [shared]
       FunctionDecl 'Main'
         ExpressionStmt
           CallExpr

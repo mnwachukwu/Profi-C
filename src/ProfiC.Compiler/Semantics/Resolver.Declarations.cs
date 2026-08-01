@@ -206,7 +206,7 @@ public sealed partial class Resolver
         IReadOnlyList<Declaration> members,
         NamespaceSymbol enclosing)
     {
-        bool ownerIsGlobal = owner is ModelSymbol { IsGlobal: true };
+        bool ownerIsShared = owner is ModelSymbol { IsShared: true };
 
         foreach (Declaration member in members)
         {
@@ -217,7 +217,7 @@ public sealed partial class Resolver
                     FieldSymbol symbol = new(
                         field.Name,
                         ResolveTypePlaceholder(field.Type),
-                        EffectiveModifiers(field.Modifiers, ownerIsGlobal))
+                        EffectiveModifiers(field.Modifiers, ownerIsShared))
                     {
                         Declaration = field,
                     };
@@ -238,7 +238,7 @@ public sealed partial class Resolver
                             {
                                 Declaration = p,
                             })],
-                        EffectiveModifiers(function.Modifiers, ownerIsGlobal))
+                        EffectiveModifiers(function.Modifiers, ownerIsShared))
                     {
                         Declaration = function,
 
@@ -360,13 +360,13 @@ public sealed partial class Resolver
     }
 
     /// <summary>
-    /// Members of a global model are implicitly global, because a global model has no
+    /// Members of a shared model are implicitly shared, because a shared model has no
     /// instances for an instance member to belong to.
     /// </summary>
     private static DeclarationModifiers EffectiveModifiers(
         DeclarationModifiers written,
-        bool ownerIsGlobal) =>
-        ownerIsGlobal ? written | DeclarationModifiers.Global : written;
+        bool ownerIsShared) =>
+        ownerIsShared ? written | DeclarationModifiers.Shared : written;
 
     /// <summary>
     /// <para>Settles every member's declared types, once all of them are known.</para>
@@ -562,7 +562,7 @@ public sealed partial class Resolver
 
     /// <summary>
     /// Finds <c>Program.Main</c>, and checks the rules around it: exactly one Program, always
-    /// a global model.
+    /// a shared model.
     /// </summary>
     private void CheckEntryPoint(CompilationUnit unit, bool required)
     {
@@ -587,11 +587,11 @@ public sealed partial class Resolver
             return;
         }
 
-        if (program is not ModelSymbol { IsGlobal: true } model)
+        if (program is not ModelSymbol { IsShared: true } model)
         {
             if (program.Declaration is not null)
             {
-                Report(DiagnosticDescriptors.EntryPointNotGlobalModel, program.Declaration);
+                Report(DiagnosticDescriptors.EntryPointNotSharedModel, program.Declaration);
             }
 
             return;

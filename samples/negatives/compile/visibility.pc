@@ -38,7 +38,7 @@ protected model Confused
     public internal integer count;
 end model
 
-global model Program
+shared model Program
 
     function Main()
         # The constructor is private, so this type makes its own instances and no one else can.

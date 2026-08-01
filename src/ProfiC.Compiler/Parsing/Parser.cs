@@ -252,7 +252,7 @@ public sealed partial class Parser
 
     private static bool StartsMember(TokenType type) => type switch
     {
-        TokenType.Public or TokenType.Protected or TokenType.Global or TokenType.Virtual
+        TokenType.Public or TokenType.Protected or TokenType.Shared or TokenType.Virtual
             or TokenType.Override or TokenType.Sealed or TokenType.Abstract
             or TokenType.Function or TokenType.Model or TokenType.Structure
             or TokenType.Enumeration or TokenType.Namespace or TokenType.Using => true,

@@ -67,7 +67,7 @@ CompilationUnit
         MemberExpr 'Tag'
           ThisExpr
         IdentifierExpr 'tag'
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       ExpressionStmt
         CallExpr

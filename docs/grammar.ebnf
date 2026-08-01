@@ -90,13 +90,13 @@ ModelMember    = FieldDecl | FunctionDecl | ModelDecl | StructureDecl
    omission: a member with no word reaches its own type, and a type with no
    word reaches its own project. "protected" is a member's word only. *)
 Visibility     = "public" | "protected" | "internal" ;
-Modifiers      = [ Visibility ] [ "global" ] [ "virtual" | "override" ] ;
-TypeModifiers  = [ Visibility ] [ "global" ] [ "sealed" | "abstract" ] ;
+Modifiers      = [ Visibility ] [ "shared" ] [ "virtual" | "override" ] ;
+TypeModifiers  = [ Visibility ] [ "shared" ] [ "sealed" | "abstract" ] ;
 
 
 (* ---- Members ------------------------------------------------------------ *)
 
-FieldDecl      = [ Visibility ] [ "global" ] [ "constant" ]
+FieldDecl      = [ Visibility ] [ "shared" ] [ "constant" ]
                  Type Identifier [ "=" Expr ] ";" ;
 
 (* A semicolon in place of a body leaves the function open for a descendant to write,

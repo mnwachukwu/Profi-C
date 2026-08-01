@@ -9,7 +9,7 @@
     manners — it is the only way to get at the value.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         integer[] sorted = {2, 5, 8, 12, 16, 23, 38, 56, 72, 91};

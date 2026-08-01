@@ -1,6 +1,6 @@
 model Money
 
-    public global integer function Cents(integer dollars)
+    public shared integer function Cents(integer dollars)
         yield dollars * 100;
     end function
 

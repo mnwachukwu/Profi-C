@@ -576,7 +576,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 
 ### 2.1 Reserved words
 
-Profi-C has **56** reserved words. A name may take one back by writing `@` in front of it —
+Profi-C has **61** reserved words. A name may take one back by writing `@` in front of it —
 `@end`, `@step` — which is the only place a name may begin with something other than a letter.
 
 ```
@@ -584,10 +584,10 @@ abstract     and          as           base         begin        bitwise
 boolean      break        case         catch        character    constant
 continue     default      delegate     each         else         end
 enumeration  extends      false        finally      for          fraction
-function     global       if           import       in           integer
-internal     is           let          model        namespace    new
-not          or           override     protected    public       real
-sealed       shiftleft    shiftright   step         string       structure
+function     if           import       in           integer      internal
+is           let          model        namespace    new          not
+or           override     protected    public       real         sealed
+shared       shiftleft    shiftright   step         string       structure
 switch       then         this         throw        to           true
 try          until        using        virtual      while        xor
 yield
@@ -599,7 +599,7 @@ rather than named ([§1.3](#13-comments)), so it takes no word away from a progr
 Words a C# author might expect to be reserved and which are **not**: `private`, `static`,
 `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`,
 `const`, `bool`, `int`. Members are private by default, so `public` and `protected` opt out
-rather than `private` opting in; `global` fills the role of `static`; there is no `null`; and
+rather than `private` opting in; `shared` fills the role of `static`; there is no `null`; and
 nothing the language defines is abbreviated.
 
 ### 2.2 Operators and punctuation
@@ -945,7 +945,7 @@ in an enclosing scope is always a few lines above, in the same body.
 
 ```
 constant integer maxScore = 100;
-global constant real Pi = 3.14159;
+shared constant real Pi = 3.14159;
 ```
 
 A constant requires an explicit type — `let` and `constant` do not combine — and an
@@ -969,14 +969,14 @@ model Account
     protected integer limit;            and anything extending Account
     internal integer revision;          and anything in this project
     public string owner;                and anywhere at all
-    global integer opened;              one per program, not one per account
+    shared integer opened;              one per program, not one per account
 end model
 ```
 
 There is no `private` keyword, because private is what you get by writing nothing. `protected`,
 `internal`, and `public` each widen that, and only one of them may be written on a declaration
-(`PC0219`). `global` is what other languages call `static`: the member belongs to the type
-rather than to an instance, and says nothing about who may reach it.
+(`PC0219`). `shared` is what other languages call `static`: there is one of the member for the
+whole program rather than one per instance, and it says nothing about who may reach it.
 
 Reaching a member from further away than it reaches is an error (`PC0339`), reported where the
 member is named. See [§4.6](#46-visibility) for what each word means and where a project comes from.
@@ -1006,7 +1006,7 @@ model Account
 end model
 ```
 
-Modifiers are `public`, `protected`, `internal`, `global`, and `virtual` or `override`. [§7.2](#72-virtual-dispatch)
+Modifiers are `public`, `protected`, `internal`, `shared`, and `virtual` or `override`. [§7.2](#72-virtual-dispatch)
 covers the last two. **A function that declares a result must reach a `yield` on every path** — `PC0404`
 — so a function cannot promise an integer and fall off the end without one. A constructor
 must leave every field assigned (`PC0402`).
@@ -1887,7 +1887,7 @@ rather than something the language does, and must be declared exactly once ([§1
 
 **Four of them hold no values** — `Console`, `Math`, `Reference`, and `Fraction`. They are
 names to reach members through, and naming one where a value's type belongs is an error
-(`PC0233`), as it is for any `global model`, which has no instances by definition:
+(`PC0233`), as it is for any `shared model`, which has no instances by definition:
 
 ```
 Math m;              PC0233: nothing can be of this type
@@ -2311,7 +2311,7 @@ which [§12.1](#121-what-a-compilation-is-made-of) explains. The extension may b
 for the extension only where both a `.pc` and a `.pcp` of that name exist.
 
 **`Program` may be declared exactly once in a compilation, and must be
-`global model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
+`shared model Program` containing `Main`.** This differs from `Model`, `Exception`, `Console`,
 and `Reference`, which may not be declared at all — every program must declare `Program`, but
 may not declare a second one, and may not use the name for an ordinary model.
 
@@ -2447,7 +2447,7 @@ A compilation may hold more than one `Program`, since namespaces make `Tools.Pro
 `App.Program` two types rather than one name used twice. Something then has to say which one
 the build begins at, and it is not the compiler's to decide: an assembly holds one entry point
 in its metadata, so the choice is made when the thing is built however it is spelled, and
-picking by the order files were listed would make a build's behaviour depend on the order of
+picking by the order files were listed would make a build's behavior depend on the order of
 its own file list.
 
 **A project names it**, and only needs to where there is a choice:
@@ -2524,7 +2524,7 @@ Solids.Circle round = new Solids.Circle();
 ```
 
 A qualified name works in every position a type appears — a variable's type, a parameter, a
-result, after `new`, and as the receiver of a global member — and needs **no `using`**, since a
+result, after `new`, and as the receiver of a shared member — and needs **no `using`**, since a
 using shortens a name and a qualified one already says where to look. That is what makes
 `Standard.Math` reachable from a program that declared a `Math` of its own.
 
@@ -2668,9 +2668,9 @@ of a reader.
 | `PC0208` | error | Cannot extend a sealed model |
 | `PC0209` | error | Cannot extend this type |
 | `PC0210` | error | Sealed and abstract together |
-| `PC0211` | error | Instance member on a global model |
+| `PC0211` | error | Instance member on a shared model |
 | `PC0212` | error | No entry point |
-| `PC0213` | error | Program must be a global model |
+| `PC0213` | error | Program must be a shared model |
 | `PC0214` | error | '{0}' used outside a model |
 | `PC0215` | error | No parent to reach |
 | `PC0216` | error | Cannot extend a built-in type |

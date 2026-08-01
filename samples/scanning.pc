@@ -9,7 +9,7 @@
     to keep true.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.StoppingAtTheFirstMatch();

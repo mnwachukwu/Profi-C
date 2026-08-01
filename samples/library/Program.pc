@@ -6,7 +6,7 @@
     build is made of, and changes nothing about how a type is named or used.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Book[] shelf =

@@ -24,7 +24,7 @@ public sealed class DiagnosticSeverityTests : LexerTestBase
     private const string OnlyOpinions = """
         using Standard;
 
-        global model Program
+        shared model Program
             function Main()
                 Console.WriteLine("");
                 Console.WriteLine("it ran");

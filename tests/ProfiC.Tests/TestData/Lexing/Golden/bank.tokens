@@ -160,7 +160,7 @@
   95:9    Function             'function'
   97:1    End                  'end'
   97:5    Model                'model'
-  99:1    Global               'global'
+  99:1    Shared               'shared'
   99:8    Model                'model'
   99:14   Identifier           'Program'
  101:5    Function             'function'

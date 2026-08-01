@@ -62,7 +62,7 @@ model Tag
 
 end model
 
-global model Program
+shared model Program
 
     function Main()
         Console.WriteLine(new Square().Describe());

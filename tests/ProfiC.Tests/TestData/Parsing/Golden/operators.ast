@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Operators' [global]
+  ModelDecl 'Operators' [shared]
     FunctionDecl 'Arithmetic'
       ParameterDecl 'a'
         NamedTypeSyntax 'integer'

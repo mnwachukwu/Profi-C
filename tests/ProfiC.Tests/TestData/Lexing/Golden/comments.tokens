@@ -1,4 +1,4 @@
-  24:1    Global               'global'
+  24:1    Shared               'shared'
   24:8    Model                'model'
   24:14   Identifier           'Comments'
   28:5    Constant             'constant'

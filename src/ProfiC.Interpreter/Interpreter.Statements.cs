@@ -350,7 +350,7 @@ public sealed partial class Interpreter
             case IdentifierExpr identifier
                 when _model.GetSymbol(identifier) is { } symbol:
             {
-                Cell? cell = scope.Lookup(symbol) ?? _globals.Lookup(symbol);
+                Cell? cell = scope.Lookup(symbol) ?? _shared.Lookup(symbol);
 
                 if (cell is not null)
                 {
@@ -364,17 +364,17 @@ public sealed partial class Interpreter
                 break;
             }
 
-            // A global field, written through the name of the model that holds it.
+            // A shared field, written through the name of the model that holds it.
             case MemberExpr member
-                when _model.GetSymbol(member) is FieldSymbol { IsGlobal: true } globalField:
+                when _model.GetSymbol(member) is FieldSymbol { IsShared: true } sharedField:
             {
-                if (_globals.Lookup(globalField) is { } cell)
+                if (_shared.Lookup(sharedField) is { } cell)
                 {
                     cell.Value = value;
                 }
                 else
                 {
-                    _globals.Declare(globalField, value);
+                    _shared.Declare(sharedField, value);
                 }
 
                 break;

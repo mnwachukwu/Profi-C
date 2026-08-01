@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace ProfiC.Tests;
 
 /// <summary>
-/// <para>What a reader's editor actually colours, run through the engine it runs.</para>
+/// <para>What a reader's editor actually colors, run through the engine it runs.</para>
 /// <para><see cref="EditorGrammarTests"/> reads the grammar's JSON and holds what it
 /// <i>says</i> to what the language is. That is worth having and it is not this. "The file
 /// names this scope" and "a reader sees this scope" are different claims, and only the second
@@ -88,7 +88,7 @@ public sealed class TokenizationTests : LexerTestBase
     // ---- Documentation labels ---------------------------------------------------------
 
     /// <summary>
-    /// A label is coloured whole — the mark, the name and the colon together — because the
+    /// A label is colored whole — the mark, the name and the colon together — because the
     /// thing acting on the documentation is the word, not the punctuation around it.
     /// </summary>
     [Test]
@@ -101,8 +101,8 @@ public sealed class TokenizationTests : LexerTestBase
         Carried(Scopes("# @summary: Whose account this is."), "@summary:"),
         Does.Contain("constant.language.documentation.profi-c"));
 
-    /// <summary>A label keeps the comment scope under its own, so a theme colouring all
-    /// comments still colours the line it sits on.</summary>
+    /// <summary>A label keeps the comment scope under its own, so a theme coloring all
+    /// comments still colors the line it sits on.</summary>
     [Test]
     public void ALabelStaysInsideItsComment() => Assert.That(
         Carried(Scopes("##", "    @summary: A thing.", "##"), "@summary:"),
@@ -110,7 +110,7 @@ public sealed class TokenizationTests : LexerTestBase
 
     /// <summary>
     /// <para>The case that decided the design, checked where it counts.</para>
-    /// <para>Prose wraps, and a wrapped line often begins with a word and a colon. Colouring
+    /// <para>Prose wraps, and a wrapped line often begins with a word and a colon. Coloring
     /// one would tell a reader the compiler is acting on a sentence it passes over.</para>
     /// </summary>
     [Test]
@@ -129,7 +129,7 @@ public sealed class TokenizationTests : LexerTestBase
 
     /// <summary>
     /// A remark opening with the word stays a remark, which is the rule the scanner reads by
-    /// and the one a reader would have no way to check if the colouring disagreed.
+    /// and the one a reader would have no way to check if the coloring disagreed.
     /// </summary>
     [Test]
     public void ProseBeginningWithTheWordIsNotADirective() => Assert.That(

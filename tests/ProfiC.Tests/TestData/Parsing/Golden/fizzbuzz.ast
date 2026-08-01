@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       ForStmt 'n' to
         LiteralExpr 1 [Integer]

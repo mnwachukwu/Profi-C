@@ -32,11 +32,11 @@ end model
 
 # @summary: A round shape, to be found among shapes with 'is' and reached with 'as'.
 model Circle extends Shape
-    # @summary: How far it reaches from its centre.
+    # @summary: How far it reaches from its center.
     real radius;
 
     # @summary: A circle of the given radius.
-    # @r: how far it reaches from its centre.
+    # @r: how far it reaches from its center.
     public function Circle(real r)
         this.radius = r;
     end function
@@ -47,7 +47,7 @@ model Circle extends Shape
         yield "circle";
     end function
 
-    # @summary: How far it reaches from its centre.
+    # @summary: How far it reaches from its center.
     # @yields: the radius, which only a Circle has.
     public real function Radius()
         yield this.radius;
@@ -67,7 +67,7 @@ model Square extends Shape
     end function
 end model
 
-global model Program
+shared model Program
 
     function Main()
         Program.HowANumberIsWritten();

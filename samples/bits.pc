@@ -11,7 +11,7 @@
     'and' and 'or' that already mean something, and the rest stand alone.
 ##
 
-global model Program
+shared model Program
 
     ##
         @summary: A row of switches, each standing for one thing that is on or off.

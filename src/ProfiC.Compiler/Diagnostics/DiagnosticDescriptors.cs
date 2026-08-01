@@ -576,7 +576,7 @@ public static class DiagnosticDescriptors
     /// </summary>
     /// <summary>
     /// <para>A type nothing can ever be, written where a value's type belongs.</para>
-    /// <para>A global model has no instances, and four of the language's own are names to
+    /// <para>A shared model has no instances, and four of the language's own are names to
     /// reach members through rather than things to hold. Declaring one is accepted by every
     /// rule taken singly and produces a variable that can never be filled: nothing assigns to
     /// it, nothing reads from it, and the program runs.</para>
@@ -638,20 +638,20 @@ public static class DiagnosticDescriptors
         "'{0}' cannot be both sealed and abstract; it could then be neither extended nor "
         + "instantiated, so nothing could use it.");
 
-    public static readonly DiagnosticDescriptor GlobalModelMemberNotGlobal = Error(
+    public static readonly DiagnosticDescriptor SharedModelMemberNotShared = Error(
         "PC0211",
-        "Instance member on a global model",
-        "'{0}' cannot have instance members, because a global model is never instantiated.");
+        "Instance member on a shared model",
+        "'{0}' cannot have instance members, because a shared model is never instantiated.");
 
     public static readonly DiagnosticDescriptor EntryPointMissing = Error(
         "PC0212",
         "No entry point",
-        "A program needs a 'global model Program' containing a function named 'Main'.");
+        "A program needs a 'shared model Program' containing a function named 'Main'.");
 
-    public static readonly DiagnosticDescriptor EntryPointNotGlobalModel = Error(
+    public static readonly DiagnosticDescriptor EntryPointNotSharedModel = Error(
         "PC0213",
-        "Program must be a global model",
-        "'Program' must be declared 'global model', since there is no such thing as an "
+        "Program must be a shared model",
+        "'Program' must be declared 'shared model', since there is no such thing as an "
         + "instance of a running program.");
 
     public static readonly DiagnosticDescriptor ThisOutsideModel = Error(
@@ -1289,14 +1289,14 @@ public static class DiagnosticDescriptors
     /// <summary>
     /// <para>An instance member reached through the name of its type.</para>
     /// <para>There is no instance for it to belong to, so there is nothing to read. Marking
-    /// the member <c>global</c> is usually what was meant — a <c>constant</c> is not global on
-    /// its own, exactly as it is written <c>global constant</c> when it should be.</para>
+    /// the member <c>shared</c> is usually what was meant — a <c>constant</c> is not shared on
+    /// its own, exactly as it is written <c>shared constant</c> when it should be.</para>
     /// </summary>
     public static readonly DiagnosticDescriptor MemberNeedsInstance = Error(
         "PC0331",
         "Member needs an instance",
         "'{0}' belongs to each {1} rather than to the {1} type, so it cannot be reached "
-        + "through the name '{1}'. Mark it 'global', or read it from a value.");
+        + "through the name '{1}'. Mark it 'shared', or read it from a value.");
 
     /// <summary>
     /// <para>The result of a function that yields nothing, used where a value is wanted.</para>

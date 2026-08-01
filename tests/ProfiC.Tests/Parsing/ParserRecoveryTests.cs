@@ -14,7 +14,7 @@ namespace ProfiC.Tests.Parsing;
 public sealed class ParserRecoveryTests : ParserTestBase
 {
     private const string Shell = """
-        global model Program
+        shared model Program
             function Main()
         {0}
             end function
@@ -30,7 +30,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
         string[] hostile =
         [
             "", "model", "model X", "end", "end model", "function", "function (",
-            "global model P function M() end function", "if", "while", "for", "switch",
+            "shared model P function M() end function", "if", "while", "for", "switch",
             "try", "let", "let x", "let x =", "yield", "{", "}", "(", ")", ";;;",
             "model X model Y model Z", "end end end end",
         ];
@@ -97,7 +97,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
     {
         (_, DiagnosticBag diagnostics) = ParseRaw(
             """
-            global model Program
+            shared model Program
                 function Main()
                     if x
                         yield;

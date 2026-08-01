@@ -5,7 +5,7 @@
     end it is missing. The failure names the cause rather than exhausting the stack.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Console.WriteLine(Program.Countdown(10));

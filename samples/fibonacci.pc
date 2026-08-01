@@ -10,7 +10,7 @@
     where it stops being instant.
 ##
 
-global model Program
+shared model Program
 
     constant integer Limit = 15;
 

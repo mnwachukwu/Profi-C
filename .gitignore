@@ -26,7 +26,7 @@ coverage*.json
 !.vscode/extensions.json
 !.vscode/tasks.json
 
-# Colours for Profi-C source. Committed because they are about the language rather than
+# Colors for Profi-C source. Committed because they are about the language rather than
 # about anyone's setup: a .pc file should read the same for whoever opens this repository.
 !.vscode/settings.json
 .idea/

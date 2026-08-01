@@ -26,7 +26,7 @@ enumeration Rank
     Jack, Queen, King, Ace
 end enumeration
 
-global model Program
+shared model Program
 
     function Main()
         Program.NamingEachOne();
@@ -76,7 +76,7 @@ global model Program
     # ---- Grouping labels ------------------------------------------------------------
 
     ##
-        @summary: Which colour a suit is printed in.
+        @summary: Which color a suit is printed in.
 
         @remarks: Several labels may share one group. This is the case other languages need
         'break' for; here a group ends where the next label begins.

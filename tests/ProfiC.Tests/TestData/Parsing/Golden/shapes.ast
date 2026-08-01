@@ -76,7 +76,7 @@ CompilationUnit
             MemberExpr 'Area'
               ThisExpr
   ModelDecl 'Circle' extends Shape
-    FieldDecl 'Pi' [global constant]
+    FieldDecl 'Pi' [shared constant]
       NamedTypeSyntax 'real'
       LiteralExpr 3.14159265358979 [Real]
     FieldDecl 'radius'
@@ -103,7 +103,7 @@ CompilationUnit
               ThisExpr
           MemberExpr 'radius'
             ThisExpr
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       VarDeclStmt 'shapes'
         SetTypeSyntax

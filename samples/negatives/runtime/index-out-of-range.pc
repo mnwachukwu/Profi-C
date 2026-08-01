@@ -5,7 +5,7 @@
     index that is too large is caught at the moment it is used.
 ##
 
-global model Program
+shared model Program
     function Main()
         integer[] scores = {90, 72, 88};
 

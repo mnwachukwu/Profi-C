@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       ExpressionStmt
         CallExpr
@@ -35,7 +35,7 @@ CompilationUnit
         CallExpr
           MemberExpr 'Counting'
             IdentifierExpr 'Program'
-    FunctionDecl 'Counting' [global]
+    FunctionDecl 'Counting' [shared]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

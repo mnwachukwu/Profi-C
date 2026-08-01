@@ -34,7 +34,7 @@
     },
 
     "documentation-label": {
-      "comment": "A label inside a documentation comment: the mark, the name and the colon together, but not the prose after it. Matched wherever it appears rather than only above a declaration, since a grammar cannot see what follows a comment and colouring it either way says the same true thing — this line is a label. The mark is required, which is exactly the rule the scanner reads by, so prose wrapping onto a line that begins with a word and a colon is left alone.\n\nScoped as a language constant rather than a keyword, and the choice is about what a reader sees. An extension cannot set a colour: 'configurationDefaults' does not reach editor.tokenColorCustomizations, so whatever scope is chosen here is what the theme paints. Keyword scopes are painted in a theme's loudest colour, which is wrong for a line addressed to tooling; constant scopes are painted in a cool one. The names are a fixed set the language defines, so the scope is honest as well as legible.",
+      "comment": "A label inside a documentation comment: the mark, the name and the colon together, but not the prose after it. Matched wherever it appears rather than only above a declaration, since a grammar cannot see what follows a comment and coloring it either way says the same true thing — this line is a label. The mark is required, which is exactly the rule the scanner reads by, so prose wrapping onto a line that begins with a word and a colon is left alone.\n\nScoped as a language constant rather than a keyword, and the choice is about what a reader sees. An extension cannot set a color: 'configurationDefaults' does not reach editor.tokenColorCustomizations, so whatever scope is chosen here is what the theme paints. Keyword scopes are painted in a theme's loudest color, which is wrong for a line addressed to tooling; constant scopes are painted in a cool one. The names are a fixed set the language defines, so the scope is honest as well as legible.",
       "match": "(@[A-Za-z_][A-Za-z0-9_]*:)",
       "captures": {
         "1": { "name": "constant.language.documentation.profi-c" }
@@ -42,7 +42,7 @@
     },
 
     "comment-directive": {
-      "comment": "A line comment the compiler heeds. It stays in the comment family, so a theme that colours all comments still colours this, but the name is its own so it can be set apart — which the extension does by default, since a line addressed to the compiler is not prose and should not read like it. Only a line comment: a block cannot carry a directive, so no block rule matches this. The pattern accepts exactly what the scanner does, so a comment merely beginning with the word is left to the ordinary rule below: 'ignore' first in the comment, then a severity or an identifier, then whitespace or the end of the line. That last part is what keeps 'ignore opinions' prose.",
+      "comment": "A line comment the compiler heeds. It stays in the comment family, so a theme that colors all comments still colors this, but the name is its own so it can be set apart — which the extension does by default, since a line addressed to the compiler is not prose and should not read like it. Only a line comment: a block cannot carry a directive, so no block rule matches this. The pattern accepts exactly what the scanner does, so a comment merely beginning with the word is left to the ordinary rule below: 'ignore' first in the comment, then a severity or an identifier, then whitespace or the end of the line. That last part is what keeps 'ignore opinions' prose.",
       "name": "comment.line.number-sign.directive.profi-c",
       "match": "#\\s*ignore\\s+(?:warning|opinion|[Pp][Cc][0-9]{4})(?:\\s.*)?$"
     },
@@ -112,7 +112,7 @@
 
     "number": {
       "patterns": [
-        { "comment": "A base is offered first, or the leading 0 colours as an integer and the rest as a name.", "name": "constant.numeric.integer.profi-c", "match": "\\b0[xX][0-9a-fA-F_]+\\b" },
+        { "comment": "A base is offered first, or the leading 0 colors as an integer and the rest as a name.", "name": "constant.numeric.integer.profi-c", "match": "\\b0[xX][0-9a-fA-F_]+\\b" },
         { "comment": "Binary, for the same reason.", "name": "constant.numeric.integer.profi-c", "match": "\\b0[bB][01_]+\\b" },
         { "comment": "A real, with or without a point, so long as it carries an exponent.", "name": "constant.numeric.real.profi-c", "match": "\\b[0-9][0-9_]*(\\.[0-9][0-9_]*)?[eE][+-]?[0-9][0-9_]*\\b" },
         { "name": "constant.numeric.real.profi-c", "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*\\b" },
@@ -133,7 +133,7 @@
       "comment": "A word and the name after it, wherever that name can only be a type or a function. Each rule captures the word too, and so has to be offered before the plain keyword rules: a keyword matched on its own consumes itself, and the name beside it is then reached with nothing left to say what it is.",
       "patterns": [
         {
-          "comment": "Held apart from 'namespace' below so it can be coloured with 'function' and 'let': the words that introduce a thing which then holds something. A model, a structure, and an enumeration hold members; a function holds a body; a let holds a value. A namespace holds none of those — it only says where a name sits.",
+          "comment": "Held apart from 'namespace' below so it can be colored with 'function' and 'let': the words that introduce a thing which then holds something. A model, a structure, and an enumeration hold members; a function holds a body; a let holds a value. A namespace holds none of those — it only says where a name sits.",
           "match": "\\b(model|structure|enumeration)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*)",
           "captures": {
             "1": { "name": "keyword.declaration.profi-c" },
@@ -141,7 +141,7 @@
           }
         },
         {
-          "comment": "A namespace's own name is left plain. It names a place rather than a thing, and colouring it as a type made 'Tour.Shapes' read as though Shapes were declared inside a Tour. The whole dotted name is consumed here even though nothing is said about it, so that the qualifier rule below cannot take the first segment and leave the rest — which is what made these render half one colour and half another.",
+          "comment": "A namespace's own name is left plain. It names a place rather than a thing, and coloring it as a type made 'Tour.Shapes' read as though Shapes were declared inside a Tour. The whole dotted name is consumed here even though nothing is said about it, so that the qualifier rule below cannot take the first segment and leave the rest — which is what made these render half one color and half another.",
           "match": "\\b(namespace)\\s+@?[\\p{L}_][\\p{L}\\p{Nd}_]*(?:\\.@?[\\p{L}_][\\p{L}\\p{Nd}_]*)*",
           "captures": {
             "1": { "name": "keyword.other.declaration.profi-c" }
@@ -197,18 +197,18 @@
     },
 
     "qualified-type": {
-      "comment": "A type name with wherever it lives written in front of it. Only the last part names the type; the rest says where to look, and a place is not a thing. Reached through 'patterns' on a capture rather than as a rule of its own, so that every rule which already knows it is holding a type hands the whole run over and gets the split for free — and so that a namespace looks the same here as it does after 'namespace' and 'using', which colour nothing.",
+      "comment": "A type name with wherever it lives written in front of it. Only the last part names the type; the rest says where to look, and a place is not a thing. Reached through 'patterns' on a capture rather than as a rule of its own, so that every rule which already knows it is holding a type hands the whole run over and gets the split for free — and so that a namespace looks the same here as it does after 'namespace' and 'using', which color nothing.",
       "match": "(?:@?[\\p{L}_][\\p{L}\\p{Nd}_]*\\.)*(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)",
       "captures": { "1": { "name": "entity.name.type.profi-c" } }
     },
 
     "standard-namespace": {
-      "comment": "Standard is the namespace the language owns, not a type inside it. Consumed here, before the provided types and the qualifier rule below, so that neither takes it for one; whatever follows the dot is still coloured by whichever of them applies. Named alone among namespaces because it is the only one whose name the language knows — a program's own namespace in this position cannot be told from a type, and is left to the qualifier rule's guess.",
+      "comment": "Standard is the namespace the language owns, not a type inside it. Consumed here, before the provided types and the qualifier rule below, so that neither takes it for one; whatever follows the dot is still colored by whichever of them applies. Named alone among namespaces because it is the only one whose name the language knows — a program's own namespace in this position cannot be told from a type, and is left to the qualifier rule's guess.",
       "match": "\\bStandard(?=\\s*\\.)"
     },
 
     "typed-name": {
-      "comment": "A type standing in front of the name it describes, with no keyword to announce it: a field, a local, or a parameter. Offered after the primitive and provided types so those keep their own colour, and requiring a leading capital, which is convention rather than rule and so is the one thing here that can quietly miss.",
+      "comment": "A type standing in front of the name it describes, with no keyword to announce it: a field, a local, or a parameter. Offered after the primitive and provided types so those keep their own color, and requiring a leading capital, which is convention rather than rule and so is the one thing here that can quietly miss.",
       "patterns": [
         {
           "match": "^\\s*([\\p{Lu}][\\p{L}\\p{Nd}_]*(?:\\.[\\p{Lu}][\\p{L}\\p{Nd}_]*)*)((?:\\[\\])?\\??)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)\\s*(?=[;=])",
@@ -222,7 +222,7 @@
           }
         },
         {
-          "comment": "A parameter whose type is a primitive. The type has to be captured here rather than left for the rule that usually colours it: this match begins at the bracket or comma, one character earlier, and the engine takes whichever match starts first — so leaving the word alone would mean consuming it with nothing said about it.",
+          "comment": "A parameter whose type is a primitive. The type has to be captured here rather than left for the rule that usually colors it: this match begins at the bracket or comma, one character earlier, and the engine takes whichever match starts first — so leaving the word alone would mean consuming it with nothing said about it.",
           "match": "([(,])\\s*(integer|real|boolean|character|string|fraction)((?:\\[\\])?\\??)\\s+(@?[\\p{L}_][\\p{L}\\p{Nd}_]*)\\s*(?=[,)])",
           "captures": {
             "2": { "name": "storage.type.profi-c" },
@@ -233,7 +233,7 @@
     },
 
     "qualifier": {
-      "comment": "A name with a dot after it: the type a global member is reached through, or the namespace a type is. Told from a value's member by the leading capital, which is convention rather than rule — a local named Total would be coloured as though it were a type. That is the cost of having no semantic model, and it is a smaller one than leaving every 'Program.Run()' and 'Circle.Pi' unlit.",
+      "comment": "A name with a dot after it: the type a shared member is reached through, or the namespace a type is. Told from a value's member by the leading capital, which is convention rather than rule — a local named Total would be colored as though it were a type. That is the cost of having no semantic model, and it is a smaller one than leaving every 'Program.Run()' and 'Circle.Pi' unlit.",
       "match": "\\b([\\p{Lu}][\\p{L}\\p{Nd}_]*)\\s*(?=\\.)",
       "captures": { "1": { "name": "entity.name.type.profi-c" } }
     },
@@ -248,7 +248,7 @@
         {
           "comment": "Words that say what something is or how far it reaches. Kept apart from the primitive types below: a reader telling a modifier from a type at a glance is worth more than the two matching.",
           "name": "storage.modifier.profi-c",
-          "match": "\\b(public|protected|internal|global|constant|virtual|override|abstract|sealed|extends)\\b"
+          "match": "\\b(public|protected|internal|shared|constant|virtual|override|abstract|sealed|extends)\\b"
         },
         {
           "comment": "The same words, where no name follows: a lambda written 'function(a, b)', and 'let' anywhere.",

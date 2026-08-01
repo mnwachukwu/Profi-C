@@ -1,11 +1,11 @@
 {
-  // Colours for Profi-C source, applied to this repository only.
+  // Colors for Profi-C source, applied to this repository only.
   //
-  // A TextMate grammar picks scopes rather than colours; a theme picks the colours. These
+  // A TextMate grammar picks scopes rather than colors; a theme picks the colors. These
   // rules sit between the two, so the language reads the same whichever theme is on, and
   // nobody has to change their theme to read a .pc file.
   //
-  // Editing a colour here applies the moment the file is saved. Editing the grammar under
+  // Editing a color here applies the moment the file is saved. Editing the grammar under
   // editors/vscode does not: a grammar is read once when the extension loads, so a change
   // there needs the window reloaded.
   //
@@ -16,7 +16,7 @@
       // ---- What a thing is -------------------------------------------------------------
 
       // The primitive types: integer, real, boolean, character, string, fraction. Their own
-      // colour, held apart from the types a program declares as well as from the words
+      // color, held apart from the types a program declares as well as from the words
       // around them, since which primitive a thing is tends to be the question being asked.
       //
       // 'model', 'function', and 'let' share it: those three introduce a thing that then
@@ -27,13 +27,13 @@
       },
 
       // Words that say how far something reaches, words that build a program's shape, and
-      // the three spelled-out operators: public, protected, internal, global, constant,
+      // the three spelled-out operators: public, protected, internal, shared, constant,
       // virtual, override, abstract, sealed, extends, namespace, using, import, new, as, is,
       // base, this, and 'and', 'or', 'not'.
       //
       // The operators belong here rather than with flow because they are read rather than
       // followed: 'not ready' is a thing you evaluate, where 'if' is a thing that happens.
-      // Spelling them as words was the point, and this is the colour words get.
+      // Spelling them as words was the point, and this is the color words get.
       {
         "scope": [
           "storage.modifier.profi-c",
@@ -44,7 +44,7 @@
         "settings": { "foreground": "#569CD6" }
       },
 
-      // A type a program declares, and one the language provides. The same colour: which of
+      // A type a program declares, and one the language provides. The same color: which of
       // the two a name is matters far less than that it is a type.
       {
         "scope": ["entity.name.type.profi-c", "support.class.profi-c"],
@@ -78,12 +78,12 @@
       // A parameter, where it is declared. Light, and in the same family as the word that
       // declared it: a parameter belongs to its function more than to the body reading it.
       //
-      // This marks the signature and nothing else. Colouring a parameter where it is *used*
+      // This marks the signature and nothing else. Coloring a parameter where it is *used*
       // would mean knowing that a name in the body is bound to one, which is a question about
       // meaning rather than about shape, and no grammar can answer it — the compiler can, and
       // will, once the editor is able to ask. The scope name will not change when it does.
       //
-      // Members are deliberately left alone: 'this.' already marks them, and a colour on top
+      // Members are deliberately left alone: 'this.' already marks them, and a color on top
       // of a prefix the language requires would be saying the same thing twice.
       {
         "scope": "variable.parameter.profi-c",
@@ -109,12 +109,12 @@
       // leaving it out. A hole is written inside the string rule, so 'string.quoted.double'
       // stays on the scope stack while it is scanned, and anything in there without a scope
       // of its own — a local's name, a bracket, a comma — falls back to the deepest scope
-      // that has a colour, which was the string's. That is what made a hole look like the
+      // that has a color, which was the string's. That is what made a hole look like the
       // text around it. Naming the hole's own scope gives it something nearer to fall back
       // to, and code inside it goes back to looking like code.
       //
       // The braces themselves are plain for the same reason: they are punctuation in code,
-      // and the string on either side of them is already a different colour, so nothing has
+      // and the string on either side of them is already a different color, so nothing has
       // to be spent making the boundary visible.
       {
         "scope": [
@@ -126,7 +126,7 @@
       },
 
       // The pattern after the colon is not code — it is text handed to the value — so it
-      // keeps the colour an escape takes: a place inside a string where what is written is
+      // keeps the color an escape takes: a place inside a string where what is written is
       // not what is meant.
       {
         "scope": "constant.other.format.profi-c",

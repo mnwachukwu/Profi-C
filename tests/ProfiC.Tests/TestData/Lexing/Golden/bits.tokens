@@ -1,4 +1,4 @@
-  14:1    Global               'global'
+  14:1    Shared               'shared'
   14:8    Model                'model'
   14:14   Identifier           'Program'
   21:5    Constant             'constant'

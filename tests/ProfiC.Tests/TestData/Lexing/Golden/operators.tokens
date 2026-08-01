@@ -1,4 +1,4 @@
-   4:1    Global               'global'
+   4:1    Shared               'shared'
    4:8    Model                'model'
    4:14   Identifier           'Operators'
    6:5    Function             'function'

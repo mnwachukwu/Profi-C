@@ -10,7 +10,7 @@
     'until limit' is a question about limit, and 'in items' is a sequence to walk.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.Counting();

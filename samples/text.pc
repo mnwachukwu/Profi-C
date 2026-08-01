@@ -6,7 +6,7 @@
     string apart to put it back together differently.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.Interpolation();

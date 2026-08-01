@@ -100,7 +100,7 @@ CompilationUnit
               MemberExpr 'Describe'
                 MemberExpr 'owner'
                   ThisExpr
-    ModelDecl 'Tour' [global]
+    ModelDecl 'Tour' [shared]
       FieldDecl 'Limit' [constant]
         NamedTypeSyntax 'integer'
         LiteralExpr 10 [Integer]

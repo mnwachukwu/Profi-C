@@ -106,7 +106,7 @@ public sealed class OperatorResultTests
 
     private static string Program(string expression) =>
         $$"""
-        global model Program
+        shared model Program
             function Main()
                 Console.WriteLine({{expression}});
             end function

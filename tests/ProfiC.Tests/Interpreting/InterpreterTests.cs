@@ -73,7 +73,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     try
                         throw new WayTooBig("far too big");
@@ -111,7 +111,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Leaf().Trail);
                 end function
@@ -131,7 +131,7 @@ public sealed class InterpreterTests
     public void ReadGivesBackTheLineThatWasTyped() => Assert.That(
         RunReading(
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Console.Read().Or("nothing"));
                     Console.WriteLine(Console.Read().Or("nothing"));
@@ -145,7 +145,7 @@ public sealed class InterpreterTests
     public void ReadGivesNothingOnceTheInputHasRunOut() => Assert.That(
         RunReading(
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Console.Read().HasValue());
                     Console.WriteLine(Console.Read().HasValue());
@@ -159,7 +159,7 @@ public sealed class InterpreterTests
     public void ReadGivesNothingWhenThereWasNeverAnything() => Assert.That(
         Run(
             """
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Console.Read().HasValue());
                 end function
@@ -175,7 +175,7 @@ public sealed class InterpreterTests
     public void WhatWasTypedIsReadIntoANumber() => Assert.That(
         RunReading(
             """
-            global model Program
+            shared model Program
                 function Main()
                     integer? first = Console.Read().Or("").ToInteger();
                     integer? second = Console.Read().Or("").ToInteger();
@@ -215,7 +215,7 @@ public sealed class InterpreterTests
 
     /// <summary>Runs statements inside <c>Main</c>, which is what most of these tests want.</summary>
     private static string RunBody(string body) => Run($$"""
-        global model Program
+        shared model Program
             function Main()
         {{body}}
             end function
@@ -705,7 +705,7 @@ public sealed class InterpreterTests
     [Test]
     public void TheInterpreterRunsTheLoweredTreeInsideEveryFunction() => Assert.That(
         Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Program.Sum());
                 end function
@@ -728,7 +728,7 @@ public sealed class InterpreterTests
     [Test]
     public void AFunctionYieldsAValueToItsCaller() => Assert.That(
         Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Program.Double(21));
                 end function
@@ -743,7 +743,7 @@ public sealed class InterpreterTests
     [Test]
     public void RecursionTerminatesAtItsBaseCase() => Assert.That(
         Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Program.Factorial(5));
                 end function
@@ -761,7 +761,7 @@ public sealed class InterpreterTests
     [Test]
     public void RunawayRecursionFailsWithAnExplanationRatherThanAStackOverflow() => Assert.That(
         () => Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Program.Forever(1);
                 end function
@@ -788,7 +788,7 @@ public sealed class InterpreterTests
     [Test]
     public void OverloadsAreSelectedByArgumentType() => Assert.That(
         Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Program.Name(1));
                     Console.WriteLine(Program.Name("x"));
@@ -857,7 +857,7 @@ public sealed class InterpreterTests
     [Test]
     public void ALambdaCanBePassedToAFunction() => Assert.That(
         Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(Program.Apply((n) yield n * 3, 5));
                 end function
@@ -890,7 +890,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Counter c = new Counter(5);
                     c.Bump();
@@ -916,7 +916,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Box().Value());
                 end function
@@ -952,7 +952,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape s = new Square(4);
                     Console.WriteLine(s.Describe());
@@ -969,7 +969,7 @@ public sealed class InterpreterTests
                 public integer value;
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Holder a = new Holder();
                     Holder b = a;
@@ -982,10 +982,10 @@ public sealed class InterpreterTests
         Is.EqualTo("9\ntrue\n"));
 
     [Test]
-    public void AGlobalModelHoldsStateAcrossCalls() => Assert.That(
+    public void ASharedModelHoldsStateAcrossCalls() => Assert.That(
         Run("""
-            global model Program
-                global integer seen = 0;
+            shared model Program
+                shared integer seen = 0;
 
                 function Main()
                     Program.Note();
@@ -1010,7 +1010,7 @@ public sealed class InterpreterTests
                 public integer y;
             end structure
 
-            global model Program
+            shared model Program
                 function Main()
                     Point a = new Point();
                     a.x = 1;
@@ -1031,7 +1031,7 @@ public sealed class InterpreterTests
                 public integer x;
             end structure
 
-            global model Program
+            shared model Program
                 function Main()
                     Point p = new Point();
                     p.x = 1;
@@ -1057,7 +1057,7 @@ public sealed class InterpreterTests
                 Blue
             end enumeration
 
-            global model Program
+            shared model Program
                 function Main()
                     Color c = Color.Green;
                     Console.WriteLine(c);
@@ -1125,7 +1125,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Counter c = new Counter(7);
                     Console.WriteLine(c.Value());
@@ -1154,7 +1154,7 @@ public sealed class InterpreterTests
             model Cat extends Animal
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Animal a = new Dog();
                     Animal b = new Cat();
@@ -1189,7 +1189,7 @@ public sealed class InterpreterTests
                 public integer y;
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Point a = new Point();
                     Point b = new Point();
@@ -1210,7 +1210,7 @@ public sealed class InterpreterTests
                 public Node? next;
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Node a = new Node();
                     Node b = new Node();
@@ -1288,7 +1288,7 @@ public sealed class InterpreterTests
                     end function
                 end model
 
-                global model Program
+                shared model Program
                     function Main()
                         try
                             throw new NotFoundException("the key");
@@ -1306,7 +1306,7 @@ public sealed class InterpreterTests
             model NotFoundException extends Exception
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     try
                         throw new NotFoundException();
@@ -1387,7 +1387,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Account[] accounts = {new Account("ada", 100), new Savings("alan", 50)};
 
@@ -1456,7 +1456,7 @@ public sealed class InterpreterTests
                 end function
             end structure
 
-            global model Program
+            shared model Program
                 function Main()
                     Suit s = Suit.Hearts;
                     Point p = new Point(1);
@@ -1486,7 +1486,7 @@ public sealed class InterpreterTests
     [Test]
     public void ABuiltInExceptionAnswersToWhatItIs() => Assert.That(
         Lines(Run("""
-            global model Program
+            shared model Program
                 function Main()
                     Exception widened = new ArgumentException("bad");
 
@@ -1589,7 +1589,7 @@ public sealed class InterpreterTests
     [Test]
     public void ConvertingAnOptionalKeepsAbsenceAbsent() => Assert.That(
         Lines(Run("""
-            global model Program
+            shared model Program
                 string? function Nothing()
                     string? none;
                     yield none;
@@ -1617,7 +1617,7 @@ public sealed class InterpreterTests
     [Test]
     public void AFunctionOfAnyShapeIsHeldAsAFunction() => Assert.That(
         Lines(Run("""
-            global model Program
+            shared model Program
                 integer function Twice(integer n)
                     yield n * 2;
                 end function
@@ -1650,7 +1650,7 @@ public sealed class InterpreterTests
         Lines(Run($$"""
             {{Suits}}
 
-            global model Program
+            shared model Program
                 function Main()
                     for n = 0 to 3
                         Suit? found = n as Suit;
@@ -1671,7 +1671,7 @@ public sealed class InterpreterTests
         Lines(Run($$"""
             {{Suits}}
 
-            global model Program
+            shared model Program
                 function Main()
                     Suit start = Suit.Diamonds;
                     Suit? back = start.ToInteger() as Suit;
@@ -1704,7 +1704,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape[] shapes = {new Circle(), new Square()};
 
@@ -1739,7 +1739,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Tag one = new Tag("a");
 
@@ -1778,7 +1778,7 @@ public sealed class InterpreterTests
                 end function
             end structure
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Point(1, 2));
                     Console.WriteLine(new Plain(3));
@@ -1806,7 +1806,7 @@ public sealed class InterpreterTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape held = new Square();
                     Console.WriteLine(held);
@@ -1822,7 +1822,7 @@ public sealed class InterpreterTests
             model Plain
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Plain());
                 end function

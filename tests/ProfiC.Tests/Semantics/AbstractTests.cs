@@ -58,7 +58,7 @@ public sealed class AbstractTests
             abstract model Shape
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape s = new Shape();
                     Console.WriteLine(s);
@@ -160,7 +160,7 @@ public sealed class AbstractTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Shape s = new Square();
                     Console.WriteLine(s.Area());
@@ -276,7 +276,7 @@ public sealed class AbstractTests
                     end function
                 end model
 
-                global model Program
+                shared model Program
                     function Main()
                         Shape s = new Square(3.0);
                         Console.WriteLine(s.Describe());

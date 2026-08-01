@@ -75,7 +75,7 @@ namespace Flat
         real radius;
 
         # @summary: A flat circle of the given radius.
-        # @radius: how far it reaches from its centre.
+        # @radius: how far it reaches from its center.
         public function Circle(real radius)
             base("a flat circle");
             this.radius = radius;
@@ -104,7 +104,7 @@ namespace Solid
         real radius;
 
         # @summary: A sphere of the given radius.
-        # @radius: how far it reaches from its centre.
+        # @radius: how far it reaches from its center.
         public function Circle(real radius)
             base("a sphere");
             this.radius = radius;
@@ -120,7 +120,7 @@ namespace Solid
 
 end namespace
 
-global model Program
+shared model Program
 
     function Main()
         Program.WhatTheUsingDecides();

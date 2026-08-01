@@ -14,7 +14,7 @@ model Account
     end function
 end model
 
-global model Program
+shared model Program
     function Main()
         integer? maybe;
         Account? found;

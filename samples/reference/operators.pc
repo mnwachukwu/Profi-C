@@ -1,7 +1,7 @@
 # Every operator and punctuation mark, with each two-character form written
 # beside the one-character form it could be confused with.
 
-global model Operators
+shared model Operators
 
     function Arithmetic(integer a, integer b)
         let sum = a + b;

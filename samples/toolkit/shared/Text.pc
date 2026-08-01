@@ -7,7 +7,7 @@
 
 model Text
 
-    public global string function Repeat(string what, integer times)
+    public shared string function Repeat(string what, integer times)
         string built = "";
 
         for i = 1 to times
@@ -17,7 +17,7 @@ model Text
         yield built;
     end function
 
-    public global string function Pad(string what, integer width)
+    public shared string function Pad(string what, integer width)
         yield what + Text.Repeat(" ", Math.Max(0, width - what.Count()));
     end function
 

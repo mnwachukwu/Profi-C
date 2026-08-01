@@ -46,9 +46,9 @@ public sealed partial class Interpreter
             return cell.Value;
         }
 
-        if (_globals.Lookup(symbol) is { } global)
+        if (_shared.Lookup(symbol) is { } cellOnType)
         {
-            return global.Value;
+            return cellOnType.Value;
         }
 
         // A field reached without a receiver only happens inside the type that declares it.
@@ -443,13 +443,13 @@ public sealed partial class Interpreter
             {
                 foreach (Symbol member in group)
                 {
-                    if (member is not FieldSymbol { IsGlobal: false } field)
+                    if (member is not FieldSymbol { IsShared: false } field)
                     {
                         continue;
                     }
 
                     instance.Fields[field] = _initializers.TryGetValue(field, out Expression? start)
-                        ? Evaluate(start, _globals, instance)
+                        ? Evaluate(start, _shared, instance)
                         : DefaultFor(field.Type);
                 }
             }
@@ -481,7 +481,7 @@ public sealed partial class Interpreter
         {
             Invoke(
                 new FunctionValue(
-                    constructor.Parameters, constructor.Body, expressionBody: null, _globals, instance),
+                    constructor.Parameters, constructor.Body, expressionBody: null, _shared, instance),
                 [],
                 arguments);
         }
@@ -548,21 +548,21 @@ public sealed partial class Interpreter
             return Perform(constant, subject, []).Value;
         }
 
-        // A type name on the left reaches a global member.
+        // A type name on the left reaches a shared member.
         if (TypeNamedBy(member.Receiver) is not null)
         {
             return _model.GetSymbol(member) switch
             {
-                FieldSymbol field => _globals.Lookup(field)?.Value,
+                FieldSymbol field => _shared.Lookup(field)?.Value,
                 EnumMemberSymbol enumMember => new EnumValue(
                     enumMember.Owner.Name, enumMember.Name, enumMember.Value),
 
                 // Functions are values, so naming one without calling it produces the function
-                // itself. It closes over nothing but the globals, since a global member has no
-                // instance to remember.
+                // itself. It closes over the shared storage and nothing else, since a shared
+                // member has no instance to remember.
                 FunctionSymbol function when BodyOf(function) is { } declared =>
                     new FunctionValue(
-                        declared.Parameters, declared.Body, expressionBody: null, _globals, null),
+                        declared.Parameters, declared.Body, expressionBody: null, _shared, null),
 
                 _ => null,
             };
@@ -585,7 +585,7 @@ public sealed partial class Interpreter
                 && BodyOf(method) is { } body)
             {
                 return new FunctionValue(
-                    body.Parameters, body.Body, expressionBody: null, _globals, instance);
+                    body.Parameters, body.Body, expressionBody: null, _shared, instance);
             }
         }
 

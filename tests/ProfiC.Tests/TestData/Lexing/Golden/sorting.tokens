@@ -1,4 +1,4 @@
-  11:1    Global               'global'
+  11:1    Shared               'shared'
   11:8    Model                'model'
   11:14   Identifier           'Program'
   13:5    Function             'function'

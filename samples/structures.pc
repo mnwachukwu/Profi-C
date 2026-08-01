@@ -60,7 +60,7 @@ structure Pin
     # @summary: Where the pin sits, copied with the pin.
     public Point Where;
 
-    # @summary: What it is labelled, shared with every copy.
+    # @summary: What it is labeled, shared with every copy.
     public Marker Tag;
 
     # @summary: A pin at a place, carrying a marker.
@@ -72,7 +72,7 @@ structure Pin
     end function
 end structure
 
-global model Program
+shared model Program
 
     function Main()
         Program.CopyingAStructure();

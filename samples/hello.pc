@@ -1,6 +1,6 @@
 # The smallest legal Profi-C program.
 
-global model Program
+shared model Program
     function Main()
         Console.WriteLine("Hello, World!");
     end function

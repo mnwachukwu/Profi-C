@@ -42,7 +42,7 @@ end model
 model Solid extends Shape
 end model
 
-global model Program
+shared model Program
     function Main()
         Console.WriteLine(new Loose().Area());
     end function

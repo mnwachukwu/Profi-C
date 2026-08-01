@@ -1,4 +1,4 @@
-   3:1    Global               'global'
+   3:1    Shared               'shared'
    3:8    Model                'model'
    3:14   Identifier           'Literals'
    7:5    Constant             'constant'

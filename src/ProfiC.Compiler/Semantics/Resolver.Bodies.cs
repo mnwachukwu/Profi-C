@@ -94,11 +94,11 @@ public sealed partial class Resolver
             // Settled when signatures were, so it is read rather than resolved again.
             _model.BindType(field, symbol.Type);
 
-            // A global model has no instances, so an instance member on one could never be
+            // A shared model has no instances, so an instance member on one could never be
             // reached.
-            if (_currentModel is { IsGlobal: true } && !symbol.IsGlobal)
+            if (_currentModel is { IsShared: true } && !symbol.IsShared)
             {
-                Report(DiagnosticDescriptors.GlobalModelMemberNotGlobal, field, _currentModel.Name);
+                Report(DiagnosticDescriptors.SharedModelMemberNotShared, field, _currentModel.Name);
             }
         }
 
@@ -113,7 +113,7 @@ public sealed partial class Resolver
     /// <summary>
     /// <para>Binds a function's parameters and body.</para>
     /// <para><paramref name="isMember"/> separates a declared member from a function declared
-    /// among statements. A local function is not a member, so the rules about what a global
+    /// among statements. A local function is not a member, so the rules about what a shared
     /// model may hold do not apply to it — and it inherits whether <c>this</c> is available
     /// from the member it sits inside, rather than deciding for itself.</para>
     /// </summary>
@@ -128,15 +128,15 @@ public sealed partial class Resolver
             ResolveType(function.ReturnType);
         }
 
-        bool savedGlobal = _inGlobalMember;
+        bool savedShared = _inSharedMember;
 
         if (isMember)
         {
-            _inGlobalMember = symbol?.IsGlobal ?? false;
+            _inSharedMember = symbol?.IsShared ?? false;
 
-            if (_currentModel is { IsGlobal: true } && symbol is { IsGlobal: false })
+            if (_currentModel is { IsShared: true } && symbol is { IsShared: false })
             {
-                Report(DiagnosticDescriptors.GlobalModelMemberNotGlobal, function, _currentModel.Name);
+                Report(DiagnosticDescriptors.SharedModelMemberNotShared, function, _currentModel.Name);
             }
         }
 
@@ -168,7 +168,7 @@ public sealed partial class Resolver
         }
         finally
         {
-            _inGlobalMember = savedGlobal;
+            _inSharedMember = savedShared;
         }
     }
 

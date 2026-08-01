@@ -25,8 +25,8 @@ public sealed partial class Interpreter
     /// </summary>
     private readonly TextReader _input;
 
-    /// <summary>Global storage, for the fields of a global model.</summary>
-    private readonly Environment _globals = new(parent: null);
+    /// <summary>Storage for the fields of a shared model, of which there is one each.</summary>
+    private readonly Environment _shared = new(parent: null);
 
     /// <summary>
     /// <para>The generator behind <c>Random.Integer</c> and the two beside it, for every
@@ -114,8 +114,8 @@ public sealed partial class Interpreter
 
     private int Execute(IReadOnlyList<CompilationUnit> units)
     {
-        // Types across every file are collected before any global is initialized, so that an
-        // initializer in one file may name a type declared in another.
+        // Types across every file are collected before any shared field is initialized, so that
+        // an initializer in one file may name a type declared in another.
         foreach (Declaration declaration in units.SelectMany(unit => unit.Declarations))
         {
             CollectTypes(declaration);
@@ -123,7 +123,7 @@ public sealed partial class Interpreter
 
         foreach (Declaration declaration in units.SelectMany(unit => unit.Declarations))
         {
-            InitializeGlobals(declaration);
+            InitializeShared(declaration);
         }
 
         if (_model.EntryPoint is not { } main)
@@ -142,7 +142,7 @@ public sealed partial class Interpreter
                 declarationOfMain.Parameters,
                 declarationOfMain.Body,
                 expressionBody: null,
-                _globals,
+                _shared,
                 receiver: null),
             arguments: [],
             declarationOfMain.Parameters.Count == 0 ? [] : [new ProfiCSet<object?>()]);
@@ -205,17 +205,17 @@ public sealed partial class Interpreter
     };
 
     /// <summary>
-    /// Gives every global field its starting value. Field initializers run before anything
-    /// else, so a global constant is ready by the time the entry point begins.
+    /// Gives every shared field its starting value. Field initializers run before anything
+    /// else, so a shared constant is ready by the time the entry point begins.
     /// </summary>
-    private void InitializeGlobals(Declaration declaration)
+    private void InitializeShared(Declaration declaration)
     {
         switch (declaration)
         {
             case NamespaceDecl namespaceDecl:
                 foreach (Declaration member in namespaceDecl.Declarations)
                 {
-                    InitializeGlobals(member);
+                    InitializeShared(member);
                 }
 
                 break;
@@ -224,17 +224,17 @@ public sealed partial class Interpreter
                 foreach (Declaration member in MembersOf(declaration))
                 {
                     if (member is FieldDecl field
-                        && _model.GetSymbol(field) is FieldSymbol { IsGlobal: true } symbol)
+                        && _model.GetSymbol(field) is FieldSymbol { IsShared: true } symbol)
                     {
                         object? value = field.Initializer is null
                             ? DefaultFor(symbol.Type)
-                            : Evaluate(field.Initializer, _globals, receiver: null);
+                            : Evaluate(field.Initializer, _shared, receiver: null);
 
-                        _globals.Declare(symbol, value);
+                        _shared.Declare(symbol, value);
                     }
                     else
                     {
-                        InitializeGlobals(member);
+                        InitializeShared(member);
                     }
                 }
 
@@ -332,7 +332,7 @@ public sealed partial class Interpreter
         }
 
         return instance => Invoke(
-            new FunctionValue(body.Parameters, body.Body, null, _globals, instance),
+            new FunctionValue(body.Parameters, body.Body, null, _shared, instance),
             [],
             []) as string ?? string.Empty;
     }
@@ -341,7 +341,7 @@ public sealed partial class Interpreter
     /// <para>The type a receiver names, or null where it is a value.</para>
     /// <para>Only a written name can name a type: an identifier, or a run of them joined by
     /// dots. <c>this</c> is bound to the type around it and is still a value rather than that
-    /// type's name, which is the difference between reading a field and reaching a global one.
+    /// type's name, which is the difference between reading a field and reaching a shared one.
     /// </para>
     /// </summary>
     private DeclaredTypeSymbol? TypeNamedBy(Expression receiver) =>

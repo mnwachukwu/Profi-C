@@ -1,15 +1,15 @@
 ##
-    Global is not public.
+    Shared and public answer different questions.
 
-    These two words get confused constantly, and the confusion is worth heading off early
-    because they answer completely different questions.
+    A declaration may carry both, and neither one narrows the other, so they are worth
+    seeing apart before seeing them together.
 
-        global   asks how many there are.   One, shared, rather than one per instance.
+        shared   asks how many there are.   One, for everybody, rather than one per instance.
         public   asks who can reach it.     Anyone, rather than only this type.
 
-    A 'global model' cannot be instantiated and every member of it is global — there is one
+    A 'shared model' cannot be instantiated and every member of it is shared — there is one
     of each, for the whole program. That says nothing at all about who may reach them. A
-    member of a global model with no visibility written is private, exactly as a member of an
+    member of a shared model with no visibility written is private, exactly as a member of an
     ordinary model is, and reaching it from outside is refused.
 
     So the four reaches are the same wherever a member lives:
@@ -26,15 +26,15 @@
 ##
     @summary: A counter shared by the whole program.
 
-    @remarks: Every member here is global — there is one of each, and 'new Tally()' is
+    @remarks: Every member here is shared — there is one of each, and 'new Tally()' is
     refused. What each member says after that is about reach, and the two are independent.
 ##
-global model Tally
+shared model Tally
 
     ##
         @summary: How many times anything has been counted.
 
-        @remarks: No visibility written, so this reaches Tally and nothing else. It is global
+        @remarks: No visibility written, so this reaches Tally and nothing else. It is shared
         and private at the same time, which is the whole point: one of it, reachable here.
     ##
     integer counted = 0;
@@ -75,10 +75,10 @@ global model Tally
     ##
         @summary: Puts the count back to nothing.
 
-        @remarks: Private, like the field it resets. A global model may keep things to itself
+        @remarks: Private, like the field it resets. A shared model may keep things to itself
         exactly as any other model does.
     ##
-    global function Reset()
+    shared function Reset()
         Tally.counted = 0;
     end function
 
@@ -92,7 +92,7 @@ end model
 ##
     @summary: An ordinary model, for comparing the same four words against.
 
-    @remarks: Nothing here is global, so each instance carries its own. The visibility words
+    @remarks: Nothing here is shared, so each instance carries its own. The visibility words
     mean exactly what they meant above.
 ##
 model Reading
@@ -120,7 +120,7 @@ model Reading
 
 end model
 
-global model Program
+shared model Program
 
     function Main()
         Console.WriteLine("== one tally, shared by everything ==");
@@ -129,17 +129,17 @@ global model Program
         Console.WriteLine("  and asking:   " + Tally.Counted());
 
         ##
-            Tally.counted is not written here, and cannot be. It is global — there is one of
+            Tally.counted is not written here, and cannot be. It is shared — there is one of
             it — and it is private, so only Tally reaches it. Being one of a thing and being
-            reachable are separate questions, and 'global' answers only the first.
+            reachable are separate questions, and 'shared' answers only the first.
         ##
         Console.WriteLine();
-        Console.WriteLine("== global says how many, not who ==");
+        Console.WriteLine("== shared says how many, not who ==");
         Console.WriteLine("  Tally.Counted() is public, so this line compiles");
         Console.WriteLine("  Tally.counted is private, so writing it would not");
 
         ##
-            Reset is global and private; Restart is global and public. Both are one function
+            Reset is shared and private; Restart is shared and public. Both are one function
             for the whole program. Only one of them can be called from here.
         ##
         Tally.Restart();

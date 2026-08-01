@@ -19,7 +19,7 @@
 ##
 # ignore whatever you like
 
-global model Program
+shared model Program
 
     function Main()
         ##

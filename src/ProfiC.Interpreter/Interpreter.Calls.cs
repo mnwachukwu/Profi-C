@@ -42,7 +42,7 @@ public sealed partial class Interpreter
     {
         List<object?> arguments = [.. call.Arguments.Select(a => Evaluate(a, scope, receiver))];
 
-        // A type name on the left: either a built-in like Console, or a global function.
+        // A type name on the left: either a built-in like Console, or a shared function.
         if (TypeNamedBy(member.Receiver) is not null)
         {
             // Which version of an overloaded name this is was settled while checking, weighing
@@ -54,10 +54,10 @@ public sealed partial class Interpreter
             }
 
             if (_model.GetSymbol(member) is FunctionSymbol callee
-                && BodyOf(callee) is { } global)
+                && BodyOf(callee) is { } shared)
             {
                 return Invoke(
-                    new FunctionValue(global.Parameters, global.Body, null, _globals, null),
+                    new FunctionValue(shared.Parameters, shared.Body, null, _shared, null),
                     call.Arguments,
                     arguments);
             }
@@ -74,7 +74,7 @@ public sealed partial class Interpreter
             && BodyOf(parent) is { } parentMethod)
         {
             return Invoke(
-                new FunctionValue(parentMethod.Parameters, parentMethod.Body, null, _globals, receiver),
+                new FunctionValue(parentMethod.Parameters, parentMethod.Body, null, _shared, receiver),
                 call.Arguments,
                 arguments);
         }
@@ -96,7 +96,7 @@ public sealed partial class Interpreter
                 && BodyOf(found) is { } method)
             {
                 return Invoke(
-                    new FunctionValue(method.Parameters, method.Body, null, _globals, instance),
+                    new FunctionValue(method.Parameters, method.Body, null, _shared, instance),
                     call.Arguments,
                     arguments);
             }

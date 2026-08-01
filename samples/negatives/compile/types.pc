@@ -20,7 +20,7 @@ end model
 model Circle extends Shape
 end model
 
-global model Program
+shared model Program
     function Main()
         # A string is not a number.
         integer count = "twelve";

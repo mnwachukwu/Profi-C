@@ -34,7 +34,7 @@ public abstract class ParserTestBase
     protected static IReadOnlyList<Statement> ParseStatements(string body)
     {
         CompilationUnit unit = ParseUnit($$"""
-            global model Program
+            shared model Program
                 function Main()
             {{body}}
                 end function
@@ -57,7 +57,7 @@ public abstract class ParserTestBase
         ParseExpressionWithDiagnostics(string expression)
     {
         (CompilationUnit unit, DiagnosticBag diagnostics) = ParseRaw($$"""
-            global model Program
+            shared model Program
                 function Main()
                     let value = {{expression}};
                 end function

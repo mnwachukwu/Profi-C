@@ -38,12 +38,12 @@ public sealed class AstPrinterTests : AstTestBase
     {
         ModelDecl model = Model(
             "Program",
-            DeclarationModifiers.Global | DeclarationModifiers.Public,
+            DeclarationModifiers.Shared | DeclarationModifiers.Public,
             members: [Function("Main")]);
 
         Assert.That(Print(model), Is.EqualTo(Tree(
             """
-            ModelDecl 'Program' [public global]
+            ModelDecl 'Program' [public shared]
               FunctionDecl 'Main'
 
             """)));
@@ -155,7 +155,7 @@ public sealed class AstPrinterTests : AstTestBase
     {
         CompilationUnit unit = Unit(
             Model("Program",
-                DeclarationModifiers.Global,
+                DeclarationModifiers.Shared,
                 members:
                 [
                     Function(
@@ -171,7 +171,7 @@ public sealed class AstPrinterTests : AstTestBase
         Assert.That(Print(unit), Is.EqualTo(Tree(
             """
             CompilationUnit
-              ModelDecl 'Program' [global]
+              ModelDecl 'Program' [shared]
                 FunctionDecl 'Main'
                   VarDeclStmt 'total' [inferred]
                     LiteralExpr 0 [Integer]

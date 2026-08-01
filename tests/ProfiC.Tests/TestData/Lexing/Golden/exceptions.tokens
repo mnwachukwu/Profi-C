@@ -70,7 +70,7 @@
   53:9    Function             'function'
   54:1    End                  'end'
   54:5    Model                'model'
-  56:1    Global               'global'
+  56:1    Shared               'shared'
   56:8    Model                'model'
   56:14   Identifier           'Program'
   58:5    Function             'function'

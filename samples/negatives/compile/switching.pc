@@ -10,7 +10,7 @@ enumeration Suit
     Hearts, Diamonds, Clubs, Spades
 end enumeration
 
-global model Program
+shared model Program
     function Main()
         Suit suit = Suit.Hearts;
         integer code = 1;

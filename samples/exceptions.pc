@@ -53,7 +53,7 @@ model OvenBroken extends KitchenProblem
     end function
 end model
 
-global model Program
+shared model Program
 
     function Main()
         Program.ThrowingAndCatching();

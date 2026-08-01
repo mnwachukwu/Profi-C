@@ -17,10 +17,11 @@ public sealed class ReservedWordTests : LexerTestBase
         "abstract", "and", "as", "base", "begin", "bitwise", "boolean", "break", "case", "catch",
         "character", "constant", "continue", "default", "delegate", "each", "else", "end",
         "enumeration",
-        "extends", "false", "finally", "for", "fraction", "function", "global", "if", "import", "in",
+        "extends", "false", "finally", "for", "fraction", "function", "if", "import", "in",
         "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or",
         "override",
-        "protected", "public", "real", "sealed", "shiftleft", "shiftright", "step", "string",
+        "protected", "public", "real", "sealed", "shared", "shiftleft", "shiftright", "step",
+        "string",
         "structure", "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
         "xor", "yield",
@@ -36,6 +37,11 @@ public sealed class ReservedWordTests : LexerTestBase
         // Dropped along with capture on nested models: a nested model holds no reference to
         // the model it sits inside, so there was nothing left for the word to name.
         "outer",
+
+        // 'shared' is the word for a member there is one of. 'global' is an ordinary name, and
+        // is worth pinning as one: it reads like a modifier, so a program that uses it as a
+        // variable must still lex as a variable.
+        "global",
     ];
 
     public static IEnumerable<string> ExpectedWords => Expected;
@@ -236,6 +242,17 @@ public sealed class ReservedWordTests : LexerTestBase
                 "the language reserves words the specification does not list");
         });
     }
+
+    /// <summary>
+    /// And counts them, as the summary's heading does. The list and the number beside it are
+    /// written separately, so a word added to one leaves the other saying something false —
+    /// and a reader who counts a fence of sixty-one words is not the reader the sentence is
+    /// there for.
+    /// </summary>
+    [Test]
+    public void TheSpecificationSaysHowManyThereAre() => Assert.That(
+        File.ReadAllText(SpecificationPath),
+        Does.Contain($"Profi-C has **{ReservedWords.Count}** reserved words"));
 
     private static string SummaryPath =>
         Path.Combine(RepositoryRootForTests, "docs", "language-summary.md");

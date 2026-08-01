@@ -1,5 +1,5 @@
 CompilationUnit
-  ModelDecl 'Literals' [global]
+  ModelDecl 'Literals' [shared]
     FieldDecl 'Zero' [constant]
       NamedTypeSyntax 'integer'
       LiteralExpr 0 [Integer]

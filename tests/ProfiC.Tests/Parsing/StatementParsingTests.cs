@@ -110,7 +110,7 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         (_, DiagnosticBag diagnostics) = ParseRaw(
             $$"""
-            global model Program
+            shared model Program
                 function Main()
                     for {{type}} i = 1 to 10
                         yield;
@@ -316,7 +316,7 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         CompilationUnit unit = ParseUnit(
             """
-            global model Program
+            shared model Program
                 string function Describe()
                     yield "a";
                 end function
@@ -345,8 +345,8 @@ public sealed class StatementParsingTests : ParserTestBase
     [Test]
     public void BothNamespaceFormsParse()
     {
-        CompilationUnit fileScoped = ParseUnit("namespace A.B;\nglobal model P\nend model");
-        CompilationUnit block = ParseUnit("namespace A.B\n    global model P\n    end model\nend namespace");
+        CompilationUnit fileScoped = ParseUnit("namespace A.B;\nshared model P\nend model");
+        CompilationUnit block = ParseUnit("namespace A.B\n    shared model P\n    end model\nend namespace");
 
         Assert.Multiple(() =>
         {
@@ -407,7 +407,7 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         CompilationUnit unit = ParseUnit(
             """
-            global model Program
+            shared model Program
                 model Nested
                 end model
 
@@ -442,7 +442,7 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         (_, ProfiC.Compiler.Diagnostics.DiagnosticBag diagnostics) = ParseRaw(
             $$"""
-            global model Program
+            shared model Program
                 function Main()
             {{declaration}}
                 end function
@@ -464,7 +464,7 @@ public sealed class StatementParsingTests : ParserTestBase
         // are already ordered like locals, so it causes none of the trouble.
         CompilationUnit unit = ParseUnit(
             """
-            global model Program
+            shared model Program
                 function Main()
                     integer function Helper()
                         yield 1;

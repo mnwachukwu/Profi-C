@@ -96,7 +96,7 @@ namespace Tour
 
     # ---- Every statement and expression form ---------------------------------
 
-    global model Tour
+    shared model Tour
 
         constant integer Limit = 10;
         constant real Half = 1.0 / 2.0;

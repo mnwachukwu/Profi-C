@@ -237,7 +237,7 @@ public sealed class DefiniteAssignment
             foreach (Symbol member in group)
             {
                 if (member is not FieldSymbol field
-                    || field.IsGlobal
+                    || field.IsShared
                     || field.Type is OptionalType
                     || field.Declaration is not FieldDecl { Initializer: null })
                 {

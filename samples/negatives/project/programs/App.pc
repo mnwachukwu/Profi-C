@@ -1,6 +1,6 @@
 namespace App;
 
-global model Program
+shared model Program
     function Main()
         Console.WriteLine("the app");
     end function

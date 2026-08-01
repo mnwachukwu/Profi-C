@@ -46,7 +46,7 @@ public sealed class MultiFileTests : LexerTestBase
 
     private const string SharedModel = """
         model Helper
-            public global integer function Twice(integer n)
+            public shared integer function Twice(integer n)
                 yield n * 2;
             end function
         end model
@@ -54,7 +54,7 @@ public sealed class MultiFileTests : LexerTestBase
 
     private static string ProgramCalling(string what) =>
         $$"""
-        global model Program
+        shared model Program
             function Main()
                 Console.WriteLine({{what}});
             end function
@@ -98,7 +98,7 @@ public sealed class MultiFileTests : LexerTestBase
     public void ABrokenProgramBesideOneDoesNotBreakIt()
     {
         Write("Helper.pc", SharedModel);
-        Write("Broken.pc", "global model Program function Main() this is not a program ((( ");
+        Write("Broken.pc", "shared model Program function Main() this is not a program ((( ");
         string program = Write("Program.pc", ProgramCalling("Helper.Twice(21)"));
 
         DiagnosticBag diagnostics = new();
@@ -117,7 +117,7 @@ public sealed class MultiFileTests : LexerTestBase
     {
         Write("Helper.pc", """
             model Helper
-                public global integer function Twice(integer n)
+                public shared integer function Twice(integer n)
                     integer answer;
                     yield answer;
                 end function
@@ -196,11 +196,11 @@ public sealed class MultiFileTests : LexerTestBase
     private void WriteTwoPrograms()
     {
         Write("Tools.pc",
-            "namespace Tools;\n\nglobal model Program\n    function Main()\n"
+            "namespace Tools;\n\nshared model Program\n    function Main()\n"
             + "        Console.WriteLine(\"tools\");\n    end function\nend model\n");
 
         Write("App.pc",
-            "namespace App;\n\nglobal model Program\n    function Main()\n"
+            "namespace App;\n\nshared model Program\n    function Main()\n"
             + "        Console.WriteLine(\"app\");\n    end function\nend model\n");
     }
 
@@ -426,7 +426,7 @@ public sealed class MultiFileTests : LexerTestBase
     {
         Write("deep/Deep.pc", """
             model Deep
-                public global integer function Four()
+                public shared integer function Four()
                     yield 4;
                 end function
             end model
@@ -436,7 +436,7 @@ public sealed class MultiFileTests : LexerTestBase
 
         Write("middle/Middle.pc", """
             model Middle
-                public global integer function Eight()
+                public shared integer function Eight()
                     yield Deep.Four() * 2;
                 end function
             end model
@@ -676,7 +676,7 @@ public sealed class MultiFileTests : LexerTestBase
     {
         Write("lib/Deep.pc", """
             model Deep
-                public global integer function Four()
+                public shared integer function Four()
                     yield 4;
                 end function
             end model
@@ -686,7 +686,7 @@ public sealed class MultiFileTests : LexerTestBase
             import "Deep.pc";
 
             model Middle
-                public global integer function Eight()
+                public shared integer function Eight()
                     yield Deep.Four() * 2;
                 end function
             end model
@@ -1020,7 +1020,7 @@ public sealed class MultiFileTests : LexerTestBase
     [Test]
     public void AnythingElseIsRefused()
     {
-        Write("notes.txt", "global model Program function Main() end function end model");
+        Write("notes.txt", "shared model Program function Main() end function end model");
 
         Assert.Multiple(() =>
         {

@@ -10,7 +10,7 @@
     and '!=' already asks that question, which is what the message says.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Program.Booleans();

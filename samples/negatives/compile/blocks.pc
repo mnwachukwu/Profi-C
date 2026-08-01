@@ -6,7 +6,7 @@
     fails to match, rather than reporting a missing brace somewhere near the end of the file.
 ##
 
-global model Program
+shared model Program
     function Main()
         boolean ready = true;
 

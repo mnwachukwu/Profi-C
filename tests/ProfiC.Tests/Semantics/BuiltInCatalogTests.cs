@@ -290,7 +290,7 @@ public sealed class BuiltInCatalogTests
 
     private static string Run(string body) => RunProgram(
         $$"""
-        global model Program
+        shared model Program
             function Main()
                 {{body}};
             end function
@@ -489,7 +489,7 @@ public sealed class BuiltInCatalogTests
                 Blue
             end enumeration
 
-            global model Program
+            shared model Program
                 function Main()
                     Color c = Color.Green;
                     Console.WriteLine(c.ToInteger());
@@ -507,7 +507,7 @@ public sealed class BuiltInCatalogTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     try
                         throw new NotFoundException("key");
@@ -531,7 +531,7 @@ public sealed class BuiltInCatalogTests
     [TestCase("\"xyhiyx\".TrimEnd({'x', 'y'})", "xyhi")]
     public void AStringTrimsFromEitherEnd(string call, string expected) => Assert.That(
         RunProgram($$"""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine("[" + {{call}} + "]");
                 end function
@@ -552,7 +552,7 @@ public sealed class BuiltInCatalogTests
     public void AStringAnswersSubsetAsWellAsSubstring(string call, string expected) =>
         Assert.That(
             RunProgram($$"""
-                global model Program
+                shared model Program
                     function Main()
                         string word = "hello";
                         Console.WriteLine({{call}});
@@ -573,7 +573,7 @@ public sealed class BuiltInCatalogTests
     [TestCase("xs.Subset(0, 2).Count() + xs.Subset(2).Count()", "5")]
     public void ASubsetIsARunOfASet(string call, string expected) => Assert.That(
         RunProgram($$"""
-            global model Program
+            shared model Program
                 function Main()
                     integer[] xs = {10, 20, 30, 40, 50};
                     Console.WriteLine({{call}});
@@ -595,7 +595,7 @@ public sealed class BuiltInCatalogTests
     [TestCase("sparse.TrimAll()", "{1, 2}")]
     public void ASetOfOptionalsDropsItsEmpties(string call, string expected) => Assert.That(
         RunProgram($$"""
-            global model Program
+            shared model Program
                 function Main()
                     integer? nothing;
                     integer?[] sparse = {nothing, 1, nothing, 2, nothing};
@@ -621,7 +621,7 @@ public sealed class BuiltInCatalogTests
     [TestCase("original.TrimAll()")]
     public void AMemberThatYieldsASetLeavesTheOriginalAlone(string call) => Assert.That(
         RunProgram($$"""
-            global model Program
+            shared model Program
                 function Main()
                     integer? nothing;
                     integer?[] original = {nothing, 1, nothing, 2, nothing};
@@ -651,7 +651,7 @@ public sealed class BuiltInCatalogTests
                 end function
             end model
 
-            global model Program
+            shared model Program
                 function Main()
                     Tag[] tags = {new Tag("first"), new Tag("second")};
                     Tag[] some = tags.Subset(0, 1);
@@ -709,7 +709,7 @@ public sealed class BuiltInCatalogTests
     [TestCase("\"1/0\".ToFraction().HasValue()", "false")]
     public void TheTextMembers(string expression, string expected) => Assert.That(
         RunProgram($$"""
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine({{expression}});
                 end function
@@ -769,7 +769,7 @@ public sealed class BuiltInCatalogTests
 
         Assert.That(
             RunProgram($$"""
-                global model Program
+                shared model Program
                     function Main()
                         try
                             Console.WriteLine("ran");
@@ -806,7 +806,7 @@ public sealed class BuiltInCatalogTests
                 end function
             end structure
 
-            global model Program
+            shared model Program
                 function Main()
                     Console.WriteLine(new Contact("Ada, Countess", 'A', 36));
                 end function
@@ -844,7 +844,7 @@ public sealed class BuiltInCatalogTests
                 end function
             end structure
 
-            global model Program
+            shared model Program
                 function Main()
                     Contact one = new Contact("Ada", 36);
                     Contact same = new Contact("Ada", 36);

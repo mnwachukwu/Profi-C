@@ -112,8 +112,8 @@ public sealed class ModelSymbol(string name, DeclarationModifiers modifiers)
     /// <summary>True when this cannot be instantiated.</summary>
     public bool IsAbstract => Modifiers.Has(DeclarationModifiers.Abstract);
 
-    /// <summary>True for a <c>global model</c>, which has no instances and only global members.</summary>
-    public bool IsGlobal => Modifiers.Has(DeclarationModifiers.Global);
+    /// <summary>True for a <c>shared model</c>, which has no instances and only shared members.</summary>
+    public bool IsShared => Modifiers.Has(DeclarationModifiers.Shared);
 
     public override bool IsValueType => false;
 
@@ -200,7 +200,7 @@ public sealed class FieldSymbol(
 
     public DeclarationModifiers Modifiers { get; } = modifiers;
 
-    public bool IsGlobal => Modifiers.Has(DeclarationModifiers.Global);
+    public bool IsShared => Modifiers.Has(DeclarationModifiers.Shared);
 
     public bool IsConstant => Modifiers.Has(DeclarationModifiers.Constant);
 
@@ -227,7 +227,7 @@ public sealed class FunctionSymbol(
 
     public DeclarationModifiers Modifiers { get; } = modifiers;
 
-    public bool IsGlobal => Modifiers.Has(DeclarationModifiers.Global);
+    public bool IsShared => Modifiers.Has(DeclarationModifiers.Shared);
 
     public bool IsVirtual => Modifiers.Has(DeclarationModifiers.Virtual);
 

@@ -15,7 +15,7 @@
     thing below it has something to say.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         Console.WriteLine("== silencing one line ==");
@@ -68,7 +68,7 @@ global model Program
         Here it is kept, because the point of the section is that it can be — and the directive
         above it records the choice.
     ##
-    global function Counting()
+    shared function Counting()
         Console.WriteLine("== a counter that says its type ==");
 
         # ignore PC0111 kept deliberately, to show a directive inside a function

@@ -7,7 +7,7 @@
 
     It must not, because an assembly holds one entry point in its metadata. The choice is made
     when the thing is built, however it is spelled — and if the compiler picked, it would have
-    to pick by the order the sources happen to be listed, which would make a build's behaviour
+    to pick by the order the sources happen to be listed, which would make a build's behavior
     depend on the order of its own file list. Swapping two lines here would change which
     program ran, and nothing would say so.
 

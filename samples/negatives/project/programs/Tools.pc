@@ -1,6 +1,6 @@
 namespace Tools;
 
-global model Program
+shared model Program
     function Main()
         Console.WriteLine("the tools");
     end function

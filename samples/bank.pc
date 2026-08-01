@@ -96,7 +96,7 @@ model Account
 
 end model
 
-global model Program
+shared model Program
 
     function Main()
         Account[] accounts = {};

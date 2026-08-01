@@ -82,7 +82,7 @@ CompilationUnit
           MemberExpr 'balance'
             ThisExpr
           IdentifierExpr 'amount'
-  ModelDecl 'Program' [global]
+  ModelDecl 'Program' [shared]
     FunctionDecl 'Main'
       VarDeclStmt 'accounts'
         SetTypeSyntax

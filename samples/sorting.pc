@@ -8,7 +8,7 @@
     also slow on large sets, since every value may have to slide past every other.
 ##
 
-global model Program
+shared model Program
 
     function Main()
         integer[] values = {29, 10, 14, 37, 13, 5, 42, 1};

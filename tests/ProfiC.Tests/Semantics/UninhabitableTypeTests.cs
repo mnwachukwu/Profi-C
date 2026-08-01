@@ -8,7 +8,7 @@ namespace ProfiC.Tests.Semantics;
 
 /// <summary>
 /// <para>Types nothing can ever be, written where a value's type belongs.</para>
-/// <para>A <c>global model</c> has no instances, which is what the word means, and four of the
+/// <para>A <c>shared model</c> has no instances, which is what the word means, and four of the
 /// language's own are names to reach members through rather than things to hold. Each is
 /// accepted by every rule taken singly, and together they let a program declare a variable
 /// nothing can fill: nothing assigns to it, nothing reads it, and it runs.</para>
@@ -24,7 +24,7 @@ public sealed class UninhabitableTypeTests
 
         CompilationUnit unit = Parser.Parse(
             new SourceText($$"""
-                global model Program
+                shared model Program
                     function Main()
                 {{body}}
                     end function
@@ -48,8 +48,8 @@ public sealed class UninhabitableTypeTests
         Assert.That(Check(written), Is.EqualTo(new[] { "PC0233" }));
 
     [Test]
-    public void AGlobalModelCannotBeAVariablesType() => Assert.That(
-        Check("        Helpers h;", "global model Helpers\nend model"),
+    public void ASharedModelCannotBeAVariablesType() => Assert.That(
+        Check("        Helpers h;", "shared model Helpers\nend model"),
         Is.EqualTo(new[] { "PC0233" }));
 
     /// <summary>
@@ -77,7 +77,7 @@ public sealed class UninhabitableTypeTests
 
         CompilationUnit unit = Parser.Parse(
             new SourceText("""
-                global model Program
+                shared model Program
                     function Main()
                         Fraction f;
                     end function
@@ -103,7 +103,7 @@ public sealed class UninhabitableTypeTests
 
         CompilationUnit unit = Parser.Parse(
             new SourceText($$"""
-                global model Program
+                shared model Program
                     function Main()
                     end function
 

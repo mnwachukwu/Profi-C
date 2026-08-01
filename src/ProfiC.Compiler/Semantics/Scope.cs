@@ -2,7 +2,7 @@ namespace ProfiC.Compiler.Semantics;
 
 /// <summary>
 /// <para>A nested run of local names: a function body, a loop, a block.</para>
-/// <para>Only locals and parameters live here. Fields and global members are reached through
+/// <para>Only locals and parameters live here. Fields and shared members are reached through
 /// <c>this.</c> or a type name, never by a bare identifier, which is what collapses name
 /// lookup from the usual five-level search to two: this chain, then nothing.</para>
 /// </summary>

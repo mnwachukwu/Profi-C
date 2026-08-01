@@ -14,7 +14,7 @@ import "nowhere.pc";
 import "../runtime/notes.txt";
 import "sideways/Missing.pc";
 
-global model Program
+shared model Program
     function Main()
         Console.WriteLine("never reached");
     end function

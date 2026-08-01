@@ -147,7 +147,7 @@ public sealed class RefusalMessageTests : LexerTestBase
 
         CompilationUnit unit = Parser.Parse(
             new SourceText($$"""
-                global model Program
+                shared model Program
                     function Main()
                 {{"        " + body}}
                     end function
