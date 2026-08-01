@@ -17,6 +17,8 @@ still the same:   true
 10 + 20 + 70:     100
 10 + 5 + 5:       20
 1 2 3 
+each its own: 10 100
+after raising the first: 12 100
 tripled: {3, 6, 9}
 counting: 11 12 13
 held: 3

@@ -27,6 +27,10 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
+          MemberExpr 'RememberingAnInstance'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
           MemberExpr 'NamingOneThatAlreadyExists'
             IdentifierExpr 'Program'
       ExpressionStmt
@@ -474,6 +478,61 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
+    FunctionDecl 'RememberingAnInstance'
+      VarDeclStmt 'first'
+        NamedTypeSyntax 'Counter'
+        NewExpr 'Counter'
+          LiteralExpr 10 [Integer]
+      VarDeclStmt 'second'
+        NamedTypeSyntax 'Counter'
+        NewExpr 'Counter'
+          LiteralExpr 100 [Integer]
+      VarDeclStmt 'readFirst'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Reader'
+            IdentifierExpr 'first'
+      VarDeclStmt 'readSecond'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Reader'
+            IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "each its own: " [String]
+                CallExpr
+                  IdentifierExpr 'readFirst'
+              LiteralExpr " " [String]
+            CallExpr
+              IdentifierExpr 'readSecond'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Next'
+            IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Next'
+            IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "after raising the first: " [String]
+                CallExpr
+                  IdentifierExpr 'readFirst'
+              LiteralExpr " " [String]
+            CallExpr
+              IdentifierExpr 'readSecond'
     FunctionDecl 'Triple'
       NamedTypeSyntax 'integer'
       ParameterDecl 'n'
@@ -602,3 +661,10 @@ CompilationUnit
       YieldStmt
         MemberExpr 'count'
           ThisExpr
+    FunctionDecl 'Reader' [public]
+      FunctionTypeSyntax
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        LambdaExpr inline
+          MemberExpr 'count'
+            ThisExpr

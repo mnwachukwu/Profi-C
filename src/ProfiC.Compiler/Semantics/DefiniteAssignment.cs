@@ -89,6 +89,12 @@ public sealed class DefiniteAssignment
     private readonly SemanticModel _model;
     private readonly DiagnosticBag _diagnostics;
 
+    /// <summary>
+    /// What each function declared among statements in the member being walked reaches for.
+    /// Held so that naming one can be weighed against what holds a value at that point.
+    /// </summary>
+    private readonly Dictionary<FunctionSymbol, CaptureSet> _captures = [];
+
     private DefiniteAssignment(SemanticModel model, DiagnosticBag diagnostics)
     {
         _model = model;
@@ -184,6 +190,19 @@ public sealed class DefiniteAssignment
         }
 
         FlowState state = FlowState.Empty();
+
+        // What each function declared among statements reaches for, so that naming one can be
+        // weighed against what has been given a value by then. Worked out once for the member
+        // rather than at each mention, and only for the ones reached by name.
+        _captures.Clear();
+
+        foreach ((SyntaxNode value, CaptureSet uses) in CaptureAnalysis.Analyze(function, _model))
+        {
+            if (value is FunctionDecl local && _model.GetSymbol(local) is FunctionSymbol named)
+            {
+                _captures[named] = uses;
+            }
+        }
 
         // Parameters arrive holding values.
         foreach (ParameterDecl parameter in function.Parameters)
@@ -520,6 +539,7 @@ public sealed class DefiniteAssignment
         {
             case IdentifierExpr identifier:
                 CheckRead(identifier, state);
+                CheckReachedInTime(identifier, state);
                 return state;
 
             case LambdaExpr lambda:
@@ -561,6 +581,40 @@ public sealed class DefiniteAssignment
         if (lambda.Body is not null)
         {
             AnalyzeStatements(lambda.Body, inside);
+        }
+    }
+
+    /// <summary>
+    /// <para>Naming a function declared among statements, before something it uses is ready.
+    /// </para>
+    /// <para>Such a function is in scope for the whole run it sits in, so where it is written
+    /// says where to read it rather than when it exists. What it names is another matter: the
+    /// locals it reaches for come into being in order, and reaching it from above one of them
+    /// would read a place holding nothing.</para>
+    /// <para>Asked of the name rather than of the call, because handing the function somewhere
+    /// else is as good as calling it — the run that gets it can call it whenever it likes.
+    /// </para>
+    /// </summary>
+    private void CheckReachedInTime(IdentifierExpr identifier, FlowState state)
+    {
+        if (_model.GetSymbol(identifier) is not FunctionSymbol function
+            || !_captures.TryGetValue(function, out CaptureSet? uses))
+        {
+            return;
+        }
+
+        foreach (Symbol used in uses.Names)
+        {
+            if (used is LocalSymbol local && !state.Assigned.Contains(local))
+            {
+                _diagnostics.Report(
+                    DiagnosticDescriptors.CalledBeforeWhatItUsesIsReady,
+                    identifier.Span,
+                    function.Name,
+                    local.Name);
+
+                return;
+            }
         }
     }
 

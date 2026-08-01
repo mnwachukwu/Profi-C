@@ -6,11 +6,29 @@ namespace ProfiC.Interpreter;
 
 public sealed partial class Interpreter
 {
+    /// <summary>
+    /// <para>Runs a run of statements, the functions it declares in place first.</para>
+    /// <para>A function declared among statements is in scope throughout the run rather than
+    /// from its own line onward, so a call may sit above it and two of them may call each
+    /// other. Making them all before the first statement runs is what makes that true at run
+    /// time as well as to the resolver.</para>
+    /// <para>Each closes over this same scope, so a local declared later is one they can read
+    /// once it holds something — and calling one before it does is refused while checking
+    /// (<c>PC0405</c>) rather than answered with whatever the cell happened to hold.</para>
+    /// </summary>
     private ExecutionResult ExecuteStatements(
         IReadOnlyList<Statement> statements,
         Environment scope,
         Instance? receiver)
     {
+        foreach (Statement statement in statements)
+        {
+            if (statement is LocalDeclStmt local)
+            {
+                ExecuteLocalFunction(local, scope, receiver);
+            }
+        }
+
         foreach (Statement statement in statements)
         {
             ExecutionResult result = ExecuteStatement(statement, scope, receiver);
@@ -29,9 +47,11 @@ public sealed partial class Interpreter
         Environment scope,
         Instance? receiver) => statement switch
     {
+        // Already made, before the first statement of the run it belongs to.
+        LocalDeclStmt => ExecutionResult.Normal,
+
         BlockStmt block => ExecuteStatements(block.Statements, scope.Push(), receiver),
         VarDeclStmt declaration => ExecuteVarDecl(declaration, scope, receiver),
-        LocalDeclStmt local => ExecuteLocalFunction(local, scope, receiver),
         IfStmt branch => ExecuteIf(branch, scope, receiver),
         WhileStmt loop => ExecuteWhile(loop, scope, receiver),
         ForStmt loop => ExecuteFor(loop, scope, receiver),

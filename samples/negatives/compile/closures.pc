@@ -1,0 +1,82 @@
+##
+    Mistakes about what a function remembers.
+
+    This program does not compile. Each line below is a way of misreading what a kept
+    function names — and each one, left alone, would be quiet rather than wrong in a way
+    anything shows.
+
+    samples/closures.pc is the same ground written correctly.
+##
+
+shared model Program
+
+    function Main()
+        Program.MovingACounter();
+        Program.HidingWhatIsKept();
+        Program.ReachingForAnInstanceThatIsNotThere();
+        Program.CallingBeforeWhatItUsesIsReady();
+    end function
+
+    ##
+        A loop counter cannot be assigned to.
+
+        Each turn binds a fresh one, which is what lets a function made on one turn keep that
+        turn's value. So a write here would change that turn's counter and nothing else — the
+        loop would go on as before, and the line would look like it did something.
+    ##
+    function MovingACounter()
+        for i = 1 to 3
+            i = i + 1;
+        end for
+    end function
+
+    ##
+        A name inside a kept function cannot hide one around it.
+
+        Reading such a body means asking, of every name, whether it belongs to the function or
+        to the code around it. Where the two spellings are the same there is nothing in the
+        line to tell you, so the second is refused rather than shadowing the first.
+    ##
+    function HidingWhatIsKept()
+        integer total = 1;
+
+        delegate() report = function()
+            integer total = 2;
+            Console.WriteLine(total);
+        end function;
+
+        report();
+    end function
+
+    ##
+        A kept function may name 'this' only where 'this' means something.
+
+        A shared member runs without an instance, so there is none for a function written
+        inside it to keep. The refusal is the same one a shared member gets for naming 'this'
+        directly: being inside a function value changes nothing about it.
+    ##
+    function ReachingForAnInstanceThatIsNotThere()
+        integer delegate() reader = () yield this.missing;
+
+        Console.WriteLine(reader());
+    end function
+
+    ##
+        A function declared among statements may be called from above its own line — but not
+        from above a name it uses.
+
+        Being in scope throughout the run is about where the name may be written. The locals
+        it reaches for still come into being in order, so a call up here would read a place
+        holding nothing yet, and answer with it rather than say so.
+    ##
+    function CallingBeforeWhatItUsesIsReady()
+        Console.WriteLine(Doubled());
+
+        integer total = 7;
+
+        integer function Doubled()
+            yield total * 2;
+        end function
+    end function
+
+end model

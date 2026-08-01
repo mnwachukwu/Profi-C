@@ -1,0 +1,21 @@
+== the variable, not its value ==
+  changed after, read inside:  99
+  changed inside, read after:  100
+== a fresh counter every turn ==
+  made in the loop: 1 2 3 
+== naming two runs at once ==
+  start at 100:       101 102 103 
+  start moved to 200: 201 202 203 
+== living past the call that made it ==
+  5 through each:   15 and 6
+== keeping an instance ==
+  each its own:     10 and 100
+  first raised:     12 and 100
+== reaching a parent ==
+  through the value: hush
+  and its own:       HUSH
+== a function with a name ==
+  raised after by moved: 42
+== declared in whatever order reads best ==
+  4 even? true
+  7 even? false

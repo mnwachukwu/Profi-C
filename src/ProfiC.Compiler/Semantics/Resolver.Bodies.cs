@@ -174,8 +174,26 @@ public sealed partial class Resolver
 
     // ---- Statements -----------------------------------------------------------------------
 
+    /// <summary>
+    /// <para>Binds a run of statements, the functions it declares first.</para>
+    /// <para>A function declared among statements is in scope throughout the run rather than
+    /// from its own line onward, so a call may be written above it and two of them may call
+    /// each other. Where a declaration sits says where to read it, not when it exists — the
+    /// same as for a member, and for the same reason.</para>
+    /// <para>What this costs is that a call can be written before a local the function names
+    /// has been given a value. Nothing here can see that: it is a question about paths through
+    /// the body, so <see cref="DefiniteAssignment"/> answers it.</para>
+    /// </summary>
     private void BindStatements(IReadOnlyList<Statement> statements)
     {
+        foreach (Statement statement in statements)
+        {
+            if (statement is LocalDeclStmt { Declaration: FunctionDecl function })
+            {
+                DeclareLocalFunction(function);
+            }
+        }
+
         foreach (Statement statement in statements)
         {
             BindStatement(statement);
@@ -195,7 +213,7 @@ public sealed partial class Resolver
                 break;
 
             case LocalDeclStmt local when local.Declaration is FunctionDecl function:
-                BindLocalFunction(function);
+                BindFunction(function, isMember: false);
                 break;
 
             case IfStmt statement2:
@@ -282,13 +300,15 @@ public sealed partial class Resolver
     }
 
     /// <summary>
-    /// <para>Binds a function declared among statements.</para>
+    /// <para>Puts a function declared among statements into the scope around it.</para>
     /// <para>Members were collected in the first pass, but a local function is not a member —
-    /// it is introduced by a statement, so its symbol is built here. It goes into the
-    /// enclosing scope, which is both what makes it callable by name and what lets its body
-    /// see the locals around it.</para>
+    /// it is introduced by a statement, so its symbol is built here. It goes into the enclosing
+    /// scope, which is both what makes it callable by name and what lets its body see the
+    /// locals around it.</para>
+    /// <para>Done for a whole run before any of it is bound, which is what lets a call sit
+    /// above the declaration it reaches.</para>
     /// </summary>
-    private void BindLocalFunction(FunctionDecl function)
+    private void DeclareLocalFunction(FunctionDecl function)
     {
         TypeSymbol? returnType =
             function.ReturnType is null ? null : ResolveType(function.ReturnType);
@@ -306,8 +326,6 @@ public sealed partial class Resolver
 
         Declare(symbol, function);
         _model.Bind(function, symbol);
-
-        BindFunction(function, isMember: false);
     }
 
     private void BindVarDecl(VarDeclStmt declaration)

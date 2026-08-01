@@ -1364,6 +1364,22 @@ public static class DiagnosticDescriptors
         "Not every path yields a value",
         "'{0}' yields {1}, but it can reach its end without yielding one.");
 
+    /// <summary>
+    /// <para>A function declared among statements, reached before a name it uses has a value.
+    /// </para>
+    /// <para>Such a function is in scope for the whole run it is declared in, so it may be
+    /// called from above its own line — but the locals it names come into being in order, and a
+    /// call written above one of them would read a place holding nothing yet.</para>
+    /// <para>This is what buys the freedom to write the declarations in whatever order reads
+    /// best. Without it the mistake is silent: the call answers with an empty value and the
+    /// program carries on, and nothing in the line says which name was not ready.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CalledBeforeWhatItUsesIsReady = Error(
+        "PC0405",
+        "Called before a name it uses is ready",
+        "'{0}' uses '{1}', which has not been given a value yet. Call it after '{1}' is set, "
+        + "or move what it needs above this line.");
+
     // ---- Project files, PC0600 to PC0699 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor ProjectFileNotFound = Error(

@@ -1015,6 +1015,25 @@ Functions may be declared among statements, capturing the locals around them. Ty
 a type introduced by a statement would tie name resolution to statement order, and forward
 references contradict that.
 
+**A function declared among statements is in scope for the whole run it sits in**, not from its
+own line onward, so a call may be written above it and two of them may call each other. Where a
+declaration sits says where to read it rather than when it exists — the same as for a member.
+
+What that costs is paid by `PC0405`. The locals such a function names come into being in order,
+so calling one from above a local it uses would read a place holding nothing yet:
+
+```
+Console.WriteLine(Doubled());       PC0405: 'Doubled' uses 'total', which is not ready
+integer total = 7;
+
+integer function Doubled()
+    yield total * 2;
+end function
+```
+
+Asked of the name rather than of the call, since handing the function elsewhere is as good as
+calling it. Move the call below what it needs, or move what it needs above the call.
+
 ### 4.5 Definite assignment
 
 **A variable must be assigned before it is read**, and the compiler proves it rather than
@@ -2764,6 +2783,7 @@ of a reader.
 | `PC0402` | error | Field not given a value |
 | `PC0403` | warning | Unreachable code |
 | `PC0404` | error | Not every path yields a value |
+| `PC0405` | error | Called before a name it uses is ready |
 
 ### PC0600 to PC0699
 

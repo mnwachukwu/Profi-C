@@ -24,6 +24,7 @@ shared model Program
         Program.HandingThemBack();
         Program.OneAtATime();
         Program.Remembering();
+        Program.RememberingAnInstance();
         Program.NamingOneThatAlreadyExists();
         Program.HoldingAnyFunctionAtAll();
     end function
@@ -228,6 +229,28 @@ shared model Program
         Console.WriteLine();
     end function
 
+    ##
+        A function made inside an instance member remembers 'this' as surely as it remembers a
+        local. What it keeps is the instance rather than a copy of what the instance held, so
+        raising the count afterwards is seen the next time the function is called — and two
+        counters hand out two functions that never answer for each other.
+    ##
+    function RememberingAnInstance()
+        Counter first = new Counter(10);
+        Counter second = new Counter(100);
+
+        integer delegate() readFirst = first.Reader();
+        integer delegate() readSecond = second.Reader();
+
+        Console.WriteLine("each its own: " + readFirst() + " " + readSecond());
+
+        first.Next();
+        first.Next();
+
+        Console.WriteLine("after raising the first: "
+                            + readFirst() + " " + readSecond());
+    end function
+
     # ---- Naming one that already exists --------------------------------------------
 
     # @summary: Multiplies by three, declared so it can be passed as a value.
@@ -298,6 +321,18 @@ model Counter
     public integer function Next()
         this.count = this.count + 1;
         yield this.count;
+    end function
+
+    ##
+        @summary: A function that answers this counter's value whenever it is called.
+
+        @remarks: The lambda names 'this.count', so what it keeps is this counter rather than
+        the number the counter happened to hold when it was made.
+
+        @yields: a function answering the count as it stands.
+    ##
+    public integer delegate() function Reader()
+        yield () yield this.count;
     end function
 
 end model

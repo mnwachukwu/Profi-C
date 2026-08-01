@@ -1,0 +1,302 @@
+##
+    What a function remembers.
+
+    A function written inside another one may name what surrounds it, and what it names it
+    keeps. The call that made it can finish; the function goes on answering.
+
+    The whole of it is one rule: what is kept is the variable, not a copy of what the variable
+    held. Everything below follows from that, including the two or three places where the
+    answer surprises people coming from elsewhere.
+
+    samples/lambdas.pc is about functions as values — their types, passing them, handing them
+    back. This is about what happens to the names they mention.
+##
+
+shared model Program
+
+    function Main()
+        Program.TheVariableRatherThanItsValue();
+        Program.AFreshOneEachTurn();
+        Program.ReachingFurtherOut();
+        Program.OutlivingTheCall();
+        Program.RememberingAnInstance();
+        Program.ReachingAParent();
+        Program.AFunctionWithAName();
+        Program.InWhateverOrderReadsBest();
+    end function
+
+    # ---- What is kept -----------------------------------------------------------------
+
+    ##
+        The variable is kept, not its value. So a change made after the function was written
+        is seen by it, and a change the function makes is seen outside.
+
+        This is the part worth reading twice. Reading it as a copy explains the first line
+        and then gets the second one wrong.
+    ##
+    function TheVariableRatherThanItsValue()
+        Console.WriteLine("== the variable, not its value ==");
+
+        integer total = 1;
+        integer delegate() read = () yield total;
+
+        total = 99;
+        Console.WriteLine("  changed after, read inside:  " + read());
+
+        delegate() raise = function()
+            total = total + 1;
+        end function;
+
+        raise();
+        Console.WriteLine("  changed inside, read after:  " + total);
+    end function
+
+    # ---- Loops ------------------------------------------------------------------------
+
+    ##
+        A loop counter is fresh on every turn, so a function made on one turn keeps that
+        turn's counter and no other.
+
+        Languages that share one counter across the loop answer 3 3 3 here. Being unable to
+        assign to a counter is what buys this: there is nothing to share.
+    ##
+    function AFreshOneEachTurn()
+        Console.WriteLine("== a fresh counter every turn ==");
+
+        integer delegate()[] answers = {};
+
+        for i = 1 to 3
+            answers.Insert(() yield i);
+        end for
+
+        Console.Write("  made in the loop: ");
+
+        for each answer in answers
+            Console.Write(answer() + " ");
+        end for
+
+        Console.WriteLine();
+    end function
+
+    ##
+        One function may name things from several runs at once: its own turn's counter, and
+        something declared before the loop began.
+
+        The counter is fresh each turn and the other is not, so the two are kept apart — and
+        raising the shared one afterwards moves every answer, while each keeps its own turn.
+    ##
+    function ReachingFurtherOut()
+        Console.WriteLine("== naming two runs at once ==");
+
+        integer start = 100;
+        integer delegate()[] answers = {};
+
+        for i = 1 to 3
+            answers.Insert(() yield start + i);
+        end for
+
+        Console.Write("  start at 100:       ");
+        Program.WriteAll(answers);
+
+        start = 200;
+
+        Console.Write("  start moved to 200: ");
+        Program.WriteAll(answers);
+    end function
+
+    # ---- Outliving the call -----------------------------------------------------------
+
+    ##
+        @summary: Makes a function that adds a fixed amount.
+
+        @remarks: 'by' belongs to this call, and this call is over by the time the function
+        it made is used. What is handed back keeps it anyway, which is the whole reason any
+        of this machinery exists.
+
+        @by: what the function it makes will add.
+        @yields: a function adding that amount.
+    ##
+    integer delegate(integer) function AdderOf(integer by)
+        yield (n) yield n + by;
+    end function
+
+    ##
+        Two calls make two functions, and neither can see the other's 'by'.
+    ##
+    function OutlivingTheCall()
+        Console.WriteLine("== living past the call that made it ==");
+
+        integer delegate(integer) addTen = Program.AdderOf(10);
+        integer delegate(integer) addOne = Program.AdderOf(1);
+
+        Console.WriteLine("  5 through each:   " + addTen(5) + " and " + addOne(5));
+    end function
+
+    # ---- Instances --------------------------------------------------------------------
+
+    ##
+        A function written inside an instance member keeps 'this' the same way it keeps a
+        local: the instance itself, not a reading taken at the time.
+    ##
+    function RememberingAnInstance()
+        Console.WriteLine("== keeping an instance ==");
+
+        Tally first = new Tally(10);
+        Tally second = new Tally(100);
+
+        integer delegate() readFirst = first.Reader();
+        integer delegate() readSecond = second.Reader();
+
+        Console.WriteLine("  each its own:     " + readFirst() + " and " + readSecond());
+
+        first.Raise();
+        first.Raise();
+
+        Console.WriteLine("  first raised:     " + readFirst() + " and " + readSecond());
+    end function
+
+    ##
+        'base' inside such a function means what it always means: the parent's version,
+        whichever version the instance would otherwise have chosen.
+    ##
+    function ReachingAParent()
+        Console.WriteLine("== reaching a parent ==");
+
+        Loud loud = new Loud();
+        string delegate() quietly = loud.Quietly();
+
+        Console.WriteLine("  through the value: " + quietly());
+        Console.WriteLine("  and its own:       " + loud.Sound());
+    end function
+
+    # ---- Functions declared among statements ------------------------------------------
+
+    ##
+        A function declared among statements keeps what surrounds it exactly as one written
+        inline does. Which of the two spellings was used changes nothing about what is kept.
+    ##
+    function AFunctionWithAName()
+        Console.WriteLine("== a function with a name ==");
+
+        integer by = 4;
+
+        integer function Raised(integer n)
+            yield n + by;
+        end function
+
+        by = 40;
+
+        Console.WriteLine("  raised after by moved: " + Raised(2));
+    end function
+
+    ##
+        Such a function is in scope for the whole run it sits in, not from its own line
+        onward. So a call may be written above it, and two of them may call each other —
+        where a declaration sits says where to read it, not when it exists.
+
+        What that costs is PC0405: the locals such a function names do come into being in
+        order, so calling one from above a name it uses is refused rather than answered with
+        a place holding nothing.
+    ##
+    function InWhateverOrderReadsBest()
+        Console.WriteLine("== declared in whatever order reads best ==");
+
+        Console.WriteLine("  4 even? " + Even(4));
+        Console.WriteLine("  7 even? " + Even(7));
+
+        boolean function Even(integer n)
+            if n == 0
+                yield true;
+            end if
+
+            yield Odd(n - 1);
+        end function
+
+        boolean function Odd(integer n)
+            if n == 0
+                yield false;
+            end if
+
+            yield Even(n - 1);
+        end function
+    end function
+
+    # ---- Shared help ------------------------------------------------------------------
+
+    # @summary: Writes every answer in a set of functions on one line.
+    # @answers: the functions to call.
+    function WriteAll(integer delegate()[] answers)
+        for each answer in answers
+            Console.Write(answer() + " ");
+        end for
+
+        Console.WriteLine();
+    end function
+
+end model
+
+# @summary: A number that goes up, for showing what keeping an instance means.
+model Tally
+
+    # @summary: How high it has been raised.
+    integer count;
+
+    # @summary: A tally beginning at the given number.
+    # @start: what to count up from.
+    public function Tally(integer start)
+        this.count = start;
+    end function
+
+    # @summary: Raises the count by one.
+    public function Raise()
+        this.count = this.count + 1;
+    end function
+
+    ##
+        @summary: A function answering this tally's count whenever it is called.
+
+        @remarks: It names 'this.count', so what it keeps is this tally rather than the
+        number the tally held when the function was made.
+
+        @yields: a function answering the count as it stands.
+    ##
+    public integer delegate() function Reader()
+        yield () yield this.count;
+    end function
+
+end model
+
+# @summary: A sound, for showing what 'base' means inside a kept function.
+model Quiet
+
+    # @summary: What this makes.
+    # @yields: the sound.
+    public virtual string function Sound()
+        yield "hush";
+    end function
+
+end model
+
+# @summary: A louder one, which still knows its parent's version.
+model Loud extends Quiet
+
+    # @summary: What this makes.
+    # @yields: the sound.
+    public override string function Sound()
+        yield "HUSH";
+    end function
+
+    ##
+        @summary: A function answering the parent's sound rather than this one's.
+
+        @remarks: 'base' inside a kept function means what it means anywhere else. Reading it
+        as 'this' would answer the overriding version, which is the same shape and the wrong
+        answer.
+
+        @yields: a function answering the quiet version.
+    ##
+    public string delegate() function Quietly()
+        yield () yield base.Sound();
+    end function
+
+end model

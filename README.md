@@ -572,6 +572,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [mathematics.pc](samples/mathematics.pc) | **Every member of `Math`.** Constants, roots, logarithms, angles, rounding, and why `Log` is the natural one |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
+| [closures.pc](samples/closures.pc) | **What a function remembers.** The variable rather than a copy of it, a fresh loop counter every turn, naming two runs at once, outliving the call that made it, keeping an instance, and reaching a parent |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
 | [exceptions.pc](samples/exceptions.pc) | **Everything about going wrong.** A hierarchy the program declares, catching by ancestor, which clause wins, `finally`, throwing again, the ones the language raises — and when an optional is the right answer instead |
@@ -644,6 +645,7 @@ Programs the compiler rejects:
 | [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
 | [bits.pc](samples/negatives/compile/bits.pc) | `xor` on two booleans, bit operations on a real and a fraction, a shift past the width of an integer, and a word after `bitwise` that is neither `and` nor `or` |
 | [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `for each` is walking |
+| [closures.pc](samples/negatives/compile/closures.pc) | Misreadings of what a kept function names — assigning to a loop counter, hiding a name it kept, and reaching for an instance a shared member does not have |
 | [ignoring.pc](samples/negatives/compile/ignoring.pc) | An `ignore` naming no diagnostic, one naming a diagnostic nothing here reports, and one trying to silence an error — which fires anyway |
 | [documenting.pc](samples/negatives/compile/documenting.pc) | A documented parameter the function does not take, `@yields:` on a function that yields nothing, a label written twice, and a doc above a statement |
 | [abstract.pc](samples/negatives/compile/abstract.pc) | A function left open on a model that can be constructed, a body where there should be none and none where there should be one, and a model that never writes what it inherited |

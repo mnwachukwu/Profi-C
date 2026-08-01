@@ -76,7 +76,7 @@ shared model Program
             'and'. So the line below is 1100 or (0011 and 0001), which is 1101.
         ##
         Console.WriteLine("  levels:        "
-                          + (0b1100 bitwise or 0b0011 bitwise and 0b0001).Format("B"));
+                            + (0b1100 bitwise or 0b0011 bitwise and 0b0001).Format("B"));
     end function
 
     ##

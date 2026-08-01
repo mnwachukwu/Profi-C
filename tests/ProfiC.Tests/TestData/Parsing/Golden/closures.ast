@@ -1,0 +1,456 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TheVariableRatherThanItsValue'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AFreshOneEachTurn'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ReachingFurtherOut'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'OutlivingTheCall'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'RememberingAnInstance'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ReachingAParent'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AFunctionWithAName'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'InWhateverOrderReadsBest'
+            IdentifierExpr 'Program'
+    FunctionDecl 'TheVariableRatherThanItsValue'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== the variable, not its value ==" [String]
+      VarDeclStmt 'total'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+      VarDeclStmt 'read'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+        LambdaExpr inline
+          IdentifierExpr 'total'
+      AssignmentStmt
+        IdentifierExpr 'total'
+        LiteralExpr 99 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  changed after, read inside:  " [String]
+            CallExpr
+              IdentifierExpr 'read'
+      VarDeclStmt 'raise'
+        FunctionTypeSyntax
+        LambdaExpr block
+          AssignmentStmt
+            IdentifierExpr 'total'
+            BinaryExpr '+'
+              IdentifierExpr 'total'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          IdentifierExpr 'raise'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  changed inside, read after:  " [String]
+            IdentifierExpr 'total'
+    FunctionDecl 'AFreshOneEachTurn'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a fresh counter every turn ==" [String]
+      VarDeclStmt 'answers'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 3 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'answers'
+            LambdaExpr inline
+              IdentifierExpr 'i'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  made in the loop: " [String]
+      ForEachStmt 'answer'
+        IdentifierExpr 'answers'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                IdentifierExpr 'answer'
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+    FunctionDecl 'ReachingFurtherOut'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== naming two runs at once ==" [String]
+      VarDeclStmt 'start'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 100 [Integer]
+      VarDeclStmt 'answers'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'i' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 3 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'answers'
+            LambdaExpr inline
+              BinaryExpr '+'
+                IdentifierExpr 'start'
+                IdentifierExpr 'i'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  start at 100:       " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteAll'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'answers'
+      AssignmentStmt
+        IdentifierExpr 'start'
+        LiteralExpr 200 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  start moved to 200: " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteAll'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'answers'
+    FunctionDecl 'AdderOf'
+      FunctionTypeSyntax
+        NamedTypeSyntax 'integer'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'by'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        LambdaExpr inline
+          ParameterDecl 'n'
+          BinaryExpr '+'
+            IdentifierExpr 'n'
+            IdentifierExpr 'by'
+    FunctionDecl 'OutlivingTheCall'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== living past the call that made it ==" [String]
+      VarDeclStmt 'addTen'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'AdderOf'
+            IdentifierExpr 'Program'
+          LiteralExpr 10 [Integer]
+      VarDeclStmt 'addOne'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'AdderOf'
+            IdentifierExpr 'Program'
+          LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  5 through each:   " [String]
+                CallExpr
+                  IdentifierExpr 'addTen'
+                  LiteralExpr 5 [Integer]
+              LiteralExpr " and " [String]
+            CallExpr
+              IdentifierExpr 'addOne'
+              LiteralExpr 5 [Integer]
+    FunctionDecl 'RememberingAnInstance'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== keeping an instance ==" [String]
+      VarDeclStmt 'first'
+        NamedTypeSyntax 'Tally'
+        NewExpr 'Tally'
+          LiteralExpr 10 [Integer]
+      VarDeclStmt 'second'
+        NamedTypeSyntax 'Tally'
+        NewExpr 'Tally'
+          LiteralExpr 100 [Integer]
+      VarDeclStmt 'readFirst'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Reader'
+            IdentifierExpr 'first'
+      VarDeclStmt 'readSecond'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Reader'
+            IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  each its own:     " [String]
+                CallExpr
+                  IdentifierExpr 'readFirst'
+              LiteralExpr " and " [String]
+            CallExpr
+              IdentifierExpr 'readSecond'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Raise'
+            IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Raise'
+            IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  first raised:     " [String]
+                CallExpr
+                  IdentifierExpr 'readFirst'
+              LiteralExpr " and " [String]
+            CallExpr
+              IdentifierExpr 'readSecond'
+    FunctionDecl 'ReachingAParent'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== reaching a parent ==" [String]
+      VarDeclStmt 'loud'
+        NamedTypeSyntax 'Loud'
+        NewExpr 'Loud'
+      VarDeclStmt 'quietly'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'Quietly'
+            IdentifierExpr 'loud'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  through the value: " [String]
+            CallExpr
+              IdentifierExpr 'quietly'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and its own:       " [String]
+            CallExpr
+              MemberExpr 'Sound'
+                IdentifierExpr 'loud'
+    FunctionDecl 'AFunctionWithAName'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a function with a name ==" [String]
+      VarDeclStmt 'by'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 4 [Integer]
+      LocalDeclStmt
+        FunctionDecl 'Raised'
+          NamedTypeSyntax 'integer'
+          ParameterDecl 'n'
+            NamedTypeSyntax 'integer'
+          YieldStmt
+            BinaryExpr '+'
+              IdentifierExpr 'n'
+              IdentifierExpr 'by'
+      AssignmentStmt
+        IdentifierExpr 'by'
+        LiteralExpr 40 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  raised after by moved: " [String]
+            CallExpr
+              IdentifierExpr 'Raised'
+              LiteralExpr 2 [Integer]
+    FunctionDecl 'InWhateverOrderReadsBest'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== declared in whatever order reads best ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  4 even? " [String]
+            CallExpr
+              IdentifierExpr 'Even'
+              LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  7 even? " [String]
+            CallExpr
+              IdentifierExpr 'Even'
+              LiteralExpr 7 [Integer]
+      LocalDeclStmt
+        FunctionDecl 'Even'
+          NamedTypeSyntax 'boolean'
+          ParameterDecl 'n'
+            NamedTypeSyntax 'integer'
+          IfStmt
+            BinaryExpr '=='
+              IdentifierExpr 'n'
+              LiteralExpr 0 [Integer]
+            YieldStmt
+              LiteralExpr true [Boolean]
+          YieldStmt
+            CallExpr
+              IdentifierExpr 'Odd'
+              BinaryExpr '-'
+                IdentifierExpr 'n'
+                LiteralExpr 1 [Integer]
+      LocalDeclStmt
+        FunctionDecl 'Odd'
+          NamedTypeSyntax 'boolean'
+          ParameterDecl 'n'
+            NamedTypeSyntax 'integer'
+          IfStmt
+            BinaryExpr '=='
+              IdentifierExpr 'n'
+              LiteralExpr 0 [Integer]
+            YieldStmt
+              LiteralExpr false [Boolean]
+          YieldStmt
+            CallExpr
+              IdentifierExpr 'Even'
+              BinaryExpr '-'
+                IdentifierExpr 'n'
+                LiteralExpr 1 [Integer]
+    FunctionDecl 'WriteAll'
+      ParameterDecl 'answers'
+        SetTypeSyntax
+          FunctionTypeSyntax
+            NamedTypeSyntax 'integer'
+      ForEachStmt 'answer'
+        IdentifierExpr 'answers'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                IdentifierExpr 'answer'
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+  ModelDecl 'Tally'
+    FieldDecl 'count'
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Tally' [public]
+      ParameterDecl 'start'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'count'
+          ThisExpr
+        IdentifierExpr 'start'
+    FunctionDecl 'Raise' [public]
+      AssignmentStmt
+        MemberExpr 'count'
+          ThisExpr
+        BinaryExpr '+'
+          MemberExpr 'count'
+            ThisExpr
+          LiteralExpr 1 [Integer]
+    FunctionDecl 'Reader' [public]
+      FunctionTypeSyntax
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        LambdaExpr inline
+          MemberExpr 'count'
+            ThisExpr
+  ModelDecl 'Quiet'
+    FunctionDecl 'Sound' [public virtual]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "hush" [String]
+  ModelDecl 'Loud' extends Quiet
+    FunctionDecl 'Sound' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "HUSH" [String]
+    FunctionDecl 'Quietly' [public]
+      FunctionTypeSyntax
+        NamedTypeSyntax 'string'
+      YieldStmt
+        LambdaExpr inline
+          CallExpr
+            MemberExpr 'Sound'
+              BaseExpr
