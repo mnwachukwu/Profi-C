@@ -296,28 +296,70 @@ public sealed class EditorGrammarTests : LexerTestBase
     }
 
     /// <summary>
-    /// <para>The colour is the extension's, since a grammar names meaning and a theme chooses
-    /// what it looks like.</para>
-    /// <para>A directive is addressed to the compiler rather than to a reader, so it is set
-    /// apart from the prose around it rather than sharing its colour. Shipped as a default, so
-    /// anyone who disagrees overrides it the ordinary way.</para>
+    /// <para>Each colour the extension sets names one scope, written as a string.</para>
+    /// <para>A rule may name several scopes as an array, and the editor accepts the shape but
+    /// applies nothing: the rule is silently skipped and the theme paints the token instead.
+    /// One scope per rule is what actually reaches a reader, so a rule with an array here is a
+    /// colour that looks contributed and is not.</para>
     /// </summary>
     [Test]
-    public void TheExtensionGivesTheDirectiveItsOwnColour()
+    public void EveryColourTheExtensionSetsNamesOneScope()
     {
         using JsonDocument manifest = JsonDocument.Parse(
             File.ReadAllText(Path.Combine(
                 RepositoryRoot, "editors", "vscode", "package.json")));
 
-        string[] scopes = [.. manifest.RootElement
+        JsonElement[] rules = [.. manifest.RootElement
             .GetProperty("contributes")
             .GetProperty("configurationDefaults")
             .GetProperty("editor.tokenColorCustomizations")
             .GetProperty("textMateRules")
-            .EnumerateArray()
-            .Select(rule => rule.GetProperty("scope").GetString()!)];
+            .EnumerateArray()];
 
-        Assert.That(scopes, Does.Contain("comment.line.number-sign.directive.profi-c"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                rules.Select(r => r.GetProperty("scope").ValueKind),
+                Has.All.EqualTo(JsonValueKind.String),
+                "a rule naming an array of scopes is skipped");
+
+            Assert.That(
+                rules.Select(r => r.GetProperty("scope").GetString()!),
+                Is.EquivalentTo(new[]
+                {
+                    "comment.line.number-sign.directive.profi-c",
+                    "constant.language.documentation.profi-c",
+                }));
+        });
+    }
+
+    /// <summary>
+    /// <para>A label is scoped as a language constant, and scoped whole.</para>
+    /// <para>Whole because the thing acting on the documentation is the word, not the
+    /// punctuation around it, and a mark left in the prose colour reads as though the label
+    /// began a character late. A constant rather than a keyword because a keyword scope is
+    /// painted in a theme's loudest colour, which is wrong for a line addressed to tooling
+    /// rather than to a reader.</para>
+    /// </summary>
+    [Test]
+    public void ALabelIsScopedWholeAsAConstant()
+    {
+        JsonElement captures = Grammar().RootElement
+                                        .GetProperty("repository")
+                                        .GetProperty("documentation-label")
+                                        .GetProperty("captures");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                captures.EnumerateObject().Count(),
+                Is.EqualTo(1),
+                "the mark, the name and the colon are coloured together");
+
+            Assert.That(
+                captures.GetProperty("1").GetProperty("name").GetString(),
+                Does.StartWith("constant."));
+        });
     }
 
     /// <summary>

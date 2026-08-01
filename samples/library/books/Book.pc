@@ -1,42 +1,63 @@
 ##
     A book, and what a shelf can be asked about one.
 
-    Nothing here knows there is a lending desk. That is the point of putting it in a project of
-    its own: it can be built, read, and reused without the program that happens to use it today.
+    Nothing here knows there is a lending desk. That is the point of putting it in a
+    project of its own: it can be built, read, and reused without the program that happens to
+    use it today.
 
-    Public, because Library is meant to use it. A type written with no visibility reaches its own
-    project and no further, which is why Wording beside it stays inside Books however many
+    Public, because Library is meant to use it. A type written with no visibility reaches its
+    own project and no further, which is why Wording beside it stays inside Books however many
     projects reference this one.
 ##
 
+# @summary: A book on a shelf, and how many copies are left of it.
 public model Book
 
+    # @summary: What the book is called.
     string title;
+
+    # @summary: Who wrote it.
     string author;
+
+    # @summary: How many are on the shelf right now.
     integer copies;
 
+    # @summary: Puts a book on the shelf.
+    # @title: what it is called.
+    # @author: who wrote it.
+    # @copies: how many there are.
     public function Book(string title, string author, integer copies)
         this.title = title;
         this.author = author;
         this.copies = copies;
     end function
 
+    # @summary: What the book is called.
+    # @yields: the title.
     public string function Title()
         yield this.title;
     end function
 
+    # @summary: Who wrote it.
+    # @yields: the author's name.
     public string function Author()
         yield this.author;
     end function
 
+    # @summary: How many are on the shelf.
+    # @yields: the number left.
     public integer function Copies()
         yield this.copies;
     end function
 
+    # @summary: Whether one can be borrowed.
+    # @yields: true while at least one copy is left.
     public boolean function IsAvailable()
         yield this.copies > 0;
     end function
 
+    # @summary: Takes one copy off the shelf.
+    # @throws: ArgumentException where none is left to take.
     public function Lend()
         if this.copies <= 0
             throw new ArgumentException();
@@ -45,6 +66,8 @@ public model Book
         this.copies = this.copies - 1;
     end function
 
+    # @summary: The book written out as one line.
+    # @yields: the title and author joined for reading.
     public string function Described()
         yield Wording.Join(this.title, this.author);
     end function

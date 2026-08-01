@@ -1,42 +1,53 @@
 ##
     When something goes wrong.
 
-    An exception is for the case a function cannot answer: not "the answer is nothing", which
-    is an optional, but "there is no answer and I cannot go on". Telling those two apart is
-    most of using exceptions well, and the last section here is about exactly that.
+    An exception is for the case a function cannot answer: not "the answer is
+    nothing", which is an optional, but "there is no answer and I cannot go on". Telling those
+    two apart is most of using exceptions well, and the last section is about that.
 
-    Everything else is small. A program declares an exception by extending one, throws it,
-    and catches it by naming it or any of its ancestors.
+    Everything else is small. A program declares an exception by extending one, throws it, and
+    catches it by naming it or any of its ancestors.
 ##
 
 # ---- Declaring some ------------------------------------------------------------------
 
 ##
-    Extending Exception is all it takes. The constructor passes a message up with base(...),
-    which is what Message() gives back later — Exception declares nothing else a program can
-    see, so the message is the one thing every exception carries.
+    @summary: Anything that can go wrong in a kitchen.
+
+    @remarks: Extending Exception is all it takes. The constructor passes a message up with
+    base(...), which is what Message() gives back later — Exception declares nothing else a
+    program can see, so the message is the one thing every exception carries.
 ##
 model KitchenProblem extends Exception
+    # @summary: A kitchen problem carrying a message about what went wrong.
+    # @message: what to tell whoever catches it.
     public function KitchenProblem(string message)
         base(message);
     end function
 end model
 
 ##
-    Exceptions form a hierarchy like any other model, and it is worth one: a caller who cares
-    which thing went wrong names the exact one, and a caller who only cares that something did
-    names the parent. Neither has to know about the other.
+    @summary: A kitchen problem where something has run out.
+
+    @remarks: Exceptions form a hierarchy like any other model, and it is worth one: a caller
+    who cares which thing went wrong names the exact one, and a caller who only cares that
+    something did names the parent. Neither has to know about the other.
 ##
 model OutOfIngredient extends KitchenProblem
+    # @summary: Which ingredient ran out, for a caller that wants to know.
     public string Ingredient;
 
+    # @summary: Says which ingredient is missing.
+    # @ingredient: the one that ran out.
     public function OutOfIngredient(string ingredient)
         base("no " + ingredient + " left");
         this.Ingredient = ingredient;
     end function
 end model
 
+# @summary: A kitchen problem where the oven has stopped working.
 model OvenBroken extends KitchenProblem
+    # @summary: Says the oven will not light.
     public function OvenBroken()
         base("the oven will not light");
     end function
@@ -56,6 +67,9 @@ global model Program
 
     # ---- The shape of it ----------------------------------------------------------------
 
+    # @summary: Bakes with an ingredient, and fails in a different way for each.
+    # @ingredient: what to bake with.
+    # @throws: OutOfIngredient for flour, OvenBroken for anything electrical.
     function Bake(string ingredient)
         if ingredient == "flour"
             throw new OutOfIngredient("flour");
@@ -64,6 +78,7 @@ global model Program
         Console.WriteLine("  baked with {{ingredient}}");
     end function
 
+    # @summary: Throwing one and catching it by name.
     function ThrowingAndCatching()
         Console.WriteLine("== throwing and catching ==");
 
@@ -116,6 +131,8 @@ global model Program
         Program.Attempt(new Exception("something else entirely"));
     end function
 
+    # @summary: Throws whatever it is handed, so a catch can be watched choosing.
+    # @what: the exception to raise.
     function Attempt(Exception what)
         try
             throw what;
@@ -171,6 +188,7 @@ global model Program
         end try
     end function
 
+    # @summary: Catching one, saying something about it, and letting it carry on.
     function NoteAndRethrow()
         try
             throw new OutOfIngredient("salt");
@@ -258,6 +276,10 @@ global model Program
         end try
     end function
 
+    # @summary: Looks for something on a shelf, where absence is ordinary.
+    # @shelf: what is on the shelf.
+    # @what: the thing to look for.
+    # @yields: the item, or nothing where the shelf does not hold it.
     string? function Find(string[] shelf, string what)
         for each item in shelf
             if item == what
@@ -269,6 +291,9 @@ global model Program
         yield missing;
     end function
 
+    # @summary: Weighs something, where an impossible weight is not an ordinary answer.
+    # @grams: how much it weighs.
+    # @throws: ArgumentException where the weight is negative.
     function Weigh(integer grams)
         if grams < 0
             throw new ArgumentException("cannot weigh " + grams + " grams");

@@ -1,13 +1,15 @@
 ##
     Getting from one type to another.
 
-    Profi-C converts on its own only where nothing is lost and nothing would surprise you.
-    Everywhere else it asks, and the asking is a member call you can read.
+    A conversion happens on its own only where nothing is lost and nothing would
+    surprise a reader. Everywhere else it is asked for, and the asking is a member call that
+    can be read.
 
-    The rule to carry away: if a conversion could lose information or change what a value
-    means, you write it down.
+    The rule to carry away: a conversion that could lose information or change what a value
+    means is written down.
 ##
 
+# @summary: The four suits, for showing what an enumeration converts to.
 enumeration Suit
     Clubs,
     Diamonds,
@@ -15,35 +17,51 @@ enumeration Suit
     Spades
 end enumeration
 
+# @summary: A shape of no particular kind, for asking what a value really is.
 model Shape
+    # @summary: A shape with nothing distinguishing it.
     public function Shape()
     end function
 
+    # @summary: What kind of shape this is.
+    # @yields: its name, which each kind answers for itself.
     public virtual string function Name()
         yield "shape";
     end function
 end model
 
+# @summary: A round shape, to be found among shapes with 'is' and reached with 'as'.
 model Circle extends Shape
+    # @summary: How far it reaches from its centre.
     real radius;
 
+    # @summary: A circle of the given radius.
+    # @r: how far it reaches from its centre.
     public function Circle(real r)
         this.radius = r;
     end function
 
+    # @summary: What kind of shape this is.
+    # @yields: "circle".
     public override string function Name()
         yield "circle";
     end function
 
+    # @summary: How far it reaches from its centre.
+    # @yields: the radius, which only a Circle has.
     public real function Radius()
         yield this.radius;
     end function
 end model
 
+# @summary: A four-sided shape, so that not every shape is a circle.
 model Square extends Shape
+    # @summary: A square, which needs nothing to build.
     public function Square()
     end function
 
+    # @summary: What kind of shape this is.
+    # @yields: "square".
     public override string function Name()
         yield "square";
     end function
@@ -102,6 +120,7 @@ global model Program
         Console.WriteLine("  1e3 is real:  " + (1e3 == 1000.0));
     end function
 
+    # @summary: Conversions that happen unasked, because nothing is lost.
     function Widening()
         real r = 7;
         fraction f = 7;
@@ -127,7 +146,7 @@ global model Program
         Console.WriteLine("and as text: " + third.ToString() + " " + tenth.ToString());
     end function
 
-    # A string and a set of characters are two views of the same thing.
+    # @summary: A string and a set of characters, which are two views of one thing.
     function StringsAndCharacters()
         character[] letters = "cast";
         string word = letters;
@@ -154,6 +173,8 @@ global model Program
         Console.WriteLine("nothing stays nothing: " + (not unspelled.HasValue()));
     end function
 
+    # @summary: An optional string that holds nothing, for showing what stays nothing.
+    # @yields: an empty optional.
     string? function NothingToSay()
         string? none;
         yield none;

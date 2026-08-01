@@ -5,8 +5,11 @@
     different types that never have to know about each other. That is most of what a namespace
     is for and very nearly all of what it does.
 
-    Everything else here follows from one rule: a bare name is read from where it is written,
-    then outward, ending at the global namespace. Nearest wins.
+    Everything else follows from one rule: a bare name is read from where it is written, then
+    outward, ending at the global namespace. Nearest wins.
+
+    A remark rather than documentation: the next thing below is a 'using', which declares
+    nothing to hang a summary on. The namespaces themselves carry theirs.
 ##
 
 ##
@@ -17,8 +20,10 @@
 using Geometry.Flat;
 
 ##
-    The file-scoped form. Everything below belongs to Geometry, and there is no closer because
-    there is nothing after it to close.
+    @summary: Shapes, and the arithmetic that goes with them.
+
+    @remarks: The file-scoped form. Everything below belongs to Geometry, and there is no
+    closer because there is nothing after it to close.
 
     A namespace written inside this one is a child of it rather than a second beside it, so the
     file says what it is once at the top, and then says where within itself each piece sits.
@@ -34,22 +39,30 @@ namespace Geometry;
 ##
 public abstract model Shape
 
+    # @summary: What this shape is called.
     protected string name;
 
+    # @summary: Names a shape.
+    # @label: what to call it.
     public function Shape(string label)
         this.name = label;
     end function
 
+    # @summary: How much the shape covers, which each kind answers for itself.
+    # @yields: the area, nothing for a shape of no particular kind.
     public virtual real function Area()
         yield 0.0;
     end function
 
+    # @summary: What a shape prints as.
+    # @yields: its name and its area, rounded.
     public override string function ToString()
         yield this.name + " of area " + Math.Round(this.Area());
     end function
 
 end model
 
+# @summary: Shapes that sit flat on a page.
 namespace Flat
 
     ##
@@ -61,11 +74,15 @@ namespace Flat
 
         real radius;
 
+        # @summary: A flat circle of the given radius.
+        # @radius: how far it reaches from its centre.
         public function Circle(real radius)
             base("a flat circle");
             this.radius = radius;
         end function
 
+        # @summary: The area a flat circle covers.
+        # @yields: pi times the radius squared.
         public override real function Area()
             yield Math.Pi * this.radius * this.radius;
         end function
@@ -74,6 +91,7 @@ namespace Flat
 
 end namespace
 
+# @summary: Shapes that take up room.
 namespace Solid
 
     ##
@@ -85,12 +103,15 @@ namespace Solid
 
         real radius;
 
+        # @summary: A sphere of the given radius.
+        # @radius: how far it reaches from its centre.
         public function Circle(real radius)
             base("a sphere");
             this.radius = radius;
         end function
 
-        # The surface area of a sphere, which is four times the flat circle's.
+        # @summary: The surface area of a sphere, which is four times the flat circle's.
+        # @yields: four pi times the radius squared.
         public override real function Area()
             yield 4.0 * Math.Pi * this.radius * this.radius;
         end function

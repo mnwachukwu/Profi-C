@@ -1,7 +1,7 @@
 ##
     Telling the compiler to stop saying something.
 
-    A diagnostic carries one of three severities. An error means the program's meaning is
+    A diagnostic carries one of three severities. An error means the meaning is
     genuinely unpredictable, and it stops compilation. A warning means the meaning is clear and
     probably not what was intended. An opinion means the meaning is clear, intended and
     correct, and the language would still write it differently.

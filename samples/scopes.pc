@@ -1,31 +1,39 @@
 ##
     Where a name lives, and how long it lives there.
 
-    Three things that shape a program without appearing in its output: a block that exists only
-    to bound a name, a function declared inside another and able to see what surrounds it, and
-    the word that says how far a type can be seen.
+    Three things that shape a program without appearing in its output: a block that
+    exists only to bound a name, a function declared inside another and able to see what
+    surrounds it, and the word that says how far a type can be seen.
 
     Nothing here is exotic. It is the machinery every other sample sits on, gathered in one
     place so it can be watched.
 ##
 
 ##
-    'internal' is what a type says when it should be reachable anywhere in its project and
-    nowhere beyond it. A type that says nothing is internal already — writing it is for when a
-    reader should not have to know the default.
+    @summary: A list of amounts, reachable anywhere in its project and nowhere beyond.
+
+    @remarks: 'internal' is what a type says when that is the reach it wants. A type saying
+    nothing is internal already — writing it is for when a reader should not have to know the
+    default.
 ##
 internal model Ledger
 
+    # @summary: Every amount added so far.
     integer[] amounts;
 
+    # @summary: Opens an empty ledger.
     public function Ledger()
         this.amounts = {};
     end function
 
+    # @summary: Records one amount.
+    # @amount: what to add to the ledger.
     public function Add(integer amount)
         this.amounts.Insert(amount);
     end function
 
+    # @summary: Adds up everything recorded.
+    # @yields: the total of every amount.
     public integer function Total()
         integer running = 0;
 
@@ -54,11 +62,11 @@ global model Program
     end function
 
     ##
-        'begin' opens a scope and nothing else. It runs no loop and asks no question — it draws
-        a line around a name so the name ends at the line.
+        @summary: A block that exists only to bound a name.
 
-        Useful when two stretches of a function each want a working value and neither should
-        reach the other's. Outside the block that name is free again.
+        @remarks: 'begin' opens a scope and nothing else. It runs no loop and asks no question
+        — it draws a line around a name so the name ends at the line. Useful when two stretches
+        of a function each want a working value and neither should reach the other's.
     ##
     function Blocks()
         Console.WriteLine("== a block that only bounds a name ==");
@@ -78,19 +86,25 @@ global model Program
     end function
 
     ##
-        A function may be declared inside another. Its name is reachable only within the
-        function that holds it, which is what to reach for when a helper is meaningful to one
-        caller and to nothing else.
+        @summary: A function declared inside another.
 
-        Both forms are here: one that yields a result, and one that yields nothing.
+        @remarks: Its name is reachable only within the function that holds it, which is what
+        to reach for when a helper is meaningful to one caller and to nothing else. Both forms
+        are here: one that yields a result, and one that yields nothing.
     ##
     function NestedFunctions()
         Console.WriteLine("== a function inside a function ==");
 
+        # @summary: Twice a number, reachable only inside this function.
+        # @value: the number to double.
+        # @yields: twice it.
         integer function Doubled(integer value)
             yield value * 2;
         end function
 
+        # @summary: Writes a labelled number, and yields nothing.
+        # @label: what to call it.
+        # @value: the number to write.
         function Announce(string label, integer value)
             Console.WriteLine("  " + label + ": " + value);
         end function
@@ -100,15 +114,17 @@ global model Program
     end function
 
     ##
-        A nested function sees the locals around it, and sees them as they are rather than as
-        they were when it was written. The counter below is read at each call, not copied at
-        the declaration.
+        @summary: What a nested function can see around it.
+
+        @remarks: The locals it sits among, as they are rather than as they were when it was
+        written. The counter below is read at each call, not copied at the declaration.
     ##
     function Capturing()
         Console.WriteLine("== what a nested function can see ==");
 
         integer counted = 0;
 
+        # @summary: Raises the surrounding counter, which it sees rather than copies.
         function Count()
             counted = counted + 1;
         end function

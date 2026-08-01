@@ -1,8 +1,8 @@
 ##
     Dates, times, moments, and how long things last.
 
-    Four types, because there are four different questions. Which day? What time of day? How
-    long? Which exact moment? A language with only the last one makes you answer the other
+    Four types, because there are four different questions. Which day? What time of
+    day? How long? Which exact moment? A language with only the last one answers the other
     three by pretending, and the pretending is where the bugs come from.
 
     A birthday is a Date. It is the fifteenth of August wherever you are and whatever the
@@ -35,7 +35,9 @@ global model Program
     # ---- Writing one down -----------------------------------------------------------------
 
     ##
-        Printing one gives a plain, unambiguous form that reads the same everywhere. Format
+        @summary: Writing a moment down, and choosing how.
+
+        @remarks: Printing one gives a plain, unambiguous form that reads the same everywhere. Format
         says something else instead, using .NET's patterns unchanged — so what is learned here
         is what you will type in C# later.
 
@@ -63,7 +65,9 @@ global model Program
     # ---- Reading one back -------------------------------------------------------------------
 
     ##
-        Parse is the way in that Format is the way out, and it yields an optional rather than
+        @summary: Reading a moment back out of text.
+
+        @remarks: Parse is the way in that Format is the way out, and it yields an optional rather than
         raising: text that will not read is the ordinary case, since most of it arrives from a
         person typing. There is no exception to catch and no second variable to pass in — the
         type says the answer may be absent, and the compiler will not let that be forgotten.
@@ -96,6 +100,7 @@ global model Program
 
     # ---- One of each ---------------------------------------------------------------
 
+    # @summary: The four types side by side, and which question each answers.
     function FourQuestions()
         Console.WriteLine("== four types, four questions ==");
 
@@ -113,7 +118,9 @@ global model Program
     # ---- A day and a time make a moment; a moment comes apart into both ----------------
 
     ##
-        The way in and the way back. This is what keeps the four types from being a burden:
+        @summary: Taking a moment apart, and putting one together.
+
+        @remarks: This is what keeps the four types from being a burden:
         nothing is trapped in the type you first wrote it as.
     ##
     function PuttingThemTogether()
@@ -132,7 +139,9 @@ global model Program
     # ---- Subtracting two moments leaves a span -----------------------------------------
 
     ##
-        Components against totals, which is the thing to read twice. An hour and a half has
+        @summary: How far apart two moments are.
+
+        @remarks: Components against totals, which is the thing to read twice. An hour and a half has
         Hours of 1 and Minutes of 30 — that is how you would say it aloud. Its TotalMinutes is
         90 — that is how you would measure it. Reaching for the wrong pair is the most common
         mistake this type invites, so both are printed side by side.
@@ -160,7 +169,9 @@ global model Program
     # ---- Moving a date, a moment, and a clock ------------------------------------------
 
     ##
-        Adding to a Time wraps around midnight, because a clock does. Adding to a DateTime
+        @summary: Moving a moment forward and back.
+
+        @remarks: Adding to a Time wraps around midnight, because a clock does. Adding to a DateTime
         rolls into the next day, because a calendar does. The two differ exactly where you
         would expect them to, and this is the clearest place to see why they are not one type.
     ##
@@ -187,7 +198,9 @@ global model Program
     # ---- Ordering, which is spelled with a word rather than an operator ------------------
 
     ##
-        CompareTo yields a negative number when this one comes first, zero when they are the
+        @summary: Putting moments in order.
+
+        @remarks: CompareTo yields a negative number when this one comes first, zero when they are the
         same, and a positive number when it comes after. Written as a word because that is
         what .NET does, and because '<' on two dates reads as though it were arithmetic.
 
@@ -217,7 +230,9 @@ global model Program
     # ---- Asking what time it is ---------------------------------------------------------
 
     ##
-        Each of the three that can answer does. Nothing here prints the answer, because it is
+        @summary: Asking what time it is now.
+
+        @remarks: Each of the three that can answer does. Nothing here prints the answer, because it is
         different every second and this file's output is checked against a recording — so what
         is printed is what stays true whenever you run it.
     ##

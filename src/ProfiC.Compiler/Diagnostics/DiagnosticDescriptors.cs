@@ -181,6 +181,22 @@ public static class DiagnosticDescriptors
         "'{0}' is written against the number before it. A name begins with a letter or an "
         + "underscore, and nothing in the language puts two values side by side.");
 
+    /// <summary>
+    /// <para><c>let</c> where a field is being declared.</para>
+    /// <para>Reported here rather than left to the type parser, which would say only that
+    /// <c>let</c> is not a type and then fail three more times on the rest of the line.</para>
+    /// <para>The rule is about distance rather than about what the compiler can work out. A
+    /// local is read where it is written, so its initializer is on the same screen and a
+    /// reader infers the type as easily as the compiler does. A field is read in every
+    /// function of its type, and by callers who never see the initializer at all — which is
+    /// the same reason <c>this.</c> is required on one and not the other.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor LetIsForLocals = Error(
+        "PC0119",
+        "'let' declares a local, not a field",
+        "'let' works inside a function, where the value it holds is written beside it. A "
+        + "field is read far from here, so it says its type: '{0} {1} = ...'.");
+
     // ---- Ignoring a diagnostic, PC0022 to PC0025 ------------------------------------------
     //
     // Nothing here is an error. A writer reaches for 'ignore' to make the compiler quieter, so
@@ -962,8 +978,10 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor DocumentsNothing = Warning(
         "PC0244",
         "This documentation has nothing to document",
-        "An '@summary:' comment goes above a type, a member of one, or an enumeration's "
-        + "member, and none of those follows this one. Nothing will show it.");
+        "An '@summary:' comment goes directly above a namespace, a type, a member of one, or "
+        + "an enumeration's member, with nothing in between. Nothing like that follows this "
+        + "one, so nothing will show it. A heading about the whole file is an ordinary "
+        + "comment.");
 
     /// <summary>
     /// A documented parameter the function does not take, which is where documentation and

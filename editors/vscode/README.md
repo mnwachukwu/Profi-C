@@ -127,14 +127,66 @@ A line comment can carry an `ignore` directive, which silences a warning or an o
 Console.WriteLine("");
 ```
 
-Those read in a grey of their own rather than in whatever colour your theme gives comments,
-because a line addressed to the compiler is not prose and should not look like it. It is the
-one colour this extension sets by default, and only the comments the compiler actually acts on
-get it — a remark that merely begins with the word, like `# ignore the sign for now`, stays an
-ordinary comment. A `##` block never carries a directive, so no block is ever set apart.
+Only the comments the compiler acts on are set apart — a remark that merely begins with the
+word, like `# ignore the sign for now`, stays an ordinary comment, and a `##` block never
+carries a directive at all. The scope is `comment.line.number-sign.directive.profi-c`.
 
-To change or drop it, name the scope in the block below:
-`comment.line.number-sign.directive.profi-c`.
+A comment can also document what follows it, and the label inside one is coloured apart from
+the prose:
+
+```
+##
+    @summary: One person's money, and the rules about taking it out.
+    @remarks: The longer explanation, for a hover rather than a list.
+##
+model Account
+```
+
+Only the label is coloured, never the text after it, and the name is coloured apart from the
+`@` and `:` around it — `constant.language.documentation.profi-c` for the name,
+`punctuation.definition.documentation.profi-c` for the marks.
+
+The extension ships both as defaults. To change either, or to set colours the extension does
+not, put the block below in `settings.json` — a block of your own replaces the defaults rather
+than merging with them, so copy across anything you want to keep. A rule must name **one**
+scope as a string: writing several as an array is accepted and then quietly ignored.
+
+## Bump the version whenever package.json changes
+
+**A grammar edit shows up on the next reload. A `package.json` edit does not.** Grammar files
+are read each time one is needed; everything under `contributes` is read once, when the editor
+scans the extension, and cached against its id and version. Edit a colour without touching the
+version and the editor keeps serving the old one — no error, no warning, and the file on disk
+plainly says otherwise.
+
+So raise `version` in `package.json` with any change to it, and point the link at the new
+number, since the folder name carries it:
+
+```bash
+cmd /c rmdir "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0"; New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.1" -Target "D:\Repos\Profi-C\editors\vscode"
+```
+
+`Developer: Restart Extension Host` is worth trying first; a plain window reload is not enough.
+
+## Checking what the grammar really does
+
+The scopes above are what a theme paints, so being wrong about them is easy and quiet. The
+test suite runs the grammar through the engine VS Code itself uses and asserts the scopes that
+come out, rather than reading the grammar file and believing it.
+
+It needs the engine installed once:
+
+```bash
+npm install
+```
+
+After that `dotnet test` covers it. Without it those tests skip rather than fail, since a fresh
+checkout not having fetched them is an ordinary state to be in. To look at the scopes on a line
+by hand:
+
+```bash
+echo '["# @summary: A thing."]' | node tools/scopes.js
+```
 
 ## Tweaking the colours
 
@@ -145,10 +197,20 @@ whatever your theme says.
 ```jsonc
 "editor.tokenColorCustomizations": {
   "textMateRules": [
-    // A line comment the compiler acts on, such as '# ignore opinion'. Set
-    // apart from ordinary comments, since it is addressed to the compiler
-    // rather than to a reader. This is the one the extension sets by default.
+    // A line comment the compiler acts on, such as '# ignore opinion'.
+    // Addressed to the compiler rather than to a reader, so it is worth
+    // setting apart from the prose around it.
     { "scope": "comment.line.number-sign.directive.profi-c",
+      "settings": { "foreground": "#7A7A7A" } },
+
+    // The name in a documentation label — the 'summary' of '@summary:'.
+    // Most themes paint a language constant the same colour as a keyword,
+    // so this is worth setting rather than leaving to the theme.
+    { "scope": "constant.language.documentation.profi-c",
+      "settings": { "foreground": "#00E5FF" } },
+
+    // The '@' and the ':' around it, kept quieter than the name itself.
+    { "scope": "punctuation.definition.documentation.profi-c",
       "settings": { "foreground": "#7A7A7A" } },
 
     // The primitive types: integer, real, boolean, character, string, fraction.

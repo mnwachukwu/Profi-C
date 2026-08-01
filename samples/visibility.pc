@@ -1,0 +1,159 @@
+##
+    Global is not public.
+
+    These two words get confused constantly, and the confusion is worth heading off early
+    because they answer completely different questions.
+
+        global   asks how many there are.   One, shared, rather than one per instance.
+        public   asks who can reach it.     Anyone, rather than only this type.
+
+    A 'global model' cannot be instantiated and every member of it is global — there is one
+    of each, for the whole program. That says nothing at all about who may reach them. A
+    member of a global model with no visibility written is private, exactly as a member of an
+    ordinary model is, and reaching it from outside is refused.
+
+    So the four reaches are the same wherever a member lives:
+
+        (nothing)   the type that declares it
+        protected   that type and everything extending it
+        internal    anywhere in this project
+        public      anywhere at all
+
+    Everything below is one program, so 'internal' and 'public' cannot be told apart by
+    running it. samples/library shows that boundary; this shows the rest.
+##
+
+##
+    @summary: A counter shared by the whole program.
+
+    @remarks: Every member here is global — there is one of each, and 'new Tally()' is
+    refused. What each member says after that is about reach, and the two are independent.
+##
+global model Tally
+
+    ##
+        @summary: How many times anything has been counted.
+
+        @remarks: No visibility written, so this reaches Tally and nothing else. It is global
+        and private at the same time, which is the whole point: one of it, reachable here.
+    ##
+    integer counted = 0;
+
+    ##
+        @summary: The largest count seen.
+
+        @remarks: 'internal' widens it to the project. In a program of one file that is every
+        line of it, so this and 'public' behave alike here — the difference appears the moment
+        a second project references this one.
+    ##
+    internal integer highest = 0;
+
+    # @summary: Counts one more thing, and is reachable from anywhere.
+    # @yields: the running total after counting.
+    public integer function Count()
+        Tally.counted = Tally.counted + 1;
+
+        if Tally.counted > Tally.highest
+            Tally.highest = Tally.counted;
+        end if
+
+        yield Tally.counted;
+    end function
+
+    ##
+        @summary: The running total, without adding to it.
+
+        @remarks: Reaching 'counted' from here is fine — a private member is reachable
+        throughout the type that declares it, however many functions that is.
+
+        @yields: how many things have been counted.
+    ##
+    public integer function Counted()
+        yield Tally.counted;
+    end function
+
+    ##
+        @summary: Puts the count back to nothing.
+
+        @remarks: Private, like the field it resets. A global model may keep things to itself
+        exactly as any other model does.
+    ##
+    global function Reset()
+        Tally.counted = 0;
+    end function
+
+    # @summary: Resets the count from outside, which is what a public door looks like.
+    public function Restart()
+        Tally.Reset();
+    end function
+
+end model
+
+##
+    @summary: An ordinary model, for comparing the same four words against.
+
+    @remarks: Nothing here is global, so each instance carries its own. The visibility words
+    mean exactly what they meant above.
+##
+model Reading
+
+    # @summary: What this reading measured. Private, so only Reading may read it.
+    integer value;
+
+    # @summary: Anyone may make one.
+    # @measured: what it measured.
+    public function Reading(integer measured)
+        this.value = measured;
+    end function
+
+    ##
+        @summary: What it measured.
+
+        @remarks: 'protected' would put this within reach of anything extending Reading and
+        nowhere else. It is public instead, because callers ask.
+
+        @yields: the value measured.
+    ##
+    public integer function Value()
+        yield this.value;
+    end function
+
+end model
+
+global model Program
+
+    function Main()
+        Console.WriteLine("== one tally, shared by everything ==");
+        Console.WriteLine("  first count:  " + Tally.Count());
+        Console.WriteLine("  second count: " + Tally.Count());
+        Console.WriteLine("  and asking:   " + Tally.Counted());
+
+        ##
+            Tally.counted is not written here, and cannot be. It is global — there is one of
+            it — and it is private, so only Tally reaches it. Being one of a thing and being
+            reachable are separate questions, and 'global' answers only the first.
+        ##
+        Console.WriteLine();
+        Console.WriteLine("== global says how many, not who ==");
+        Console.WriteLine("  Tally.Counted() is public, so this line compiles");
+        Console.WriteLine("  Tally.counted is private, so writing it would not");
+
+        ##
+            Reset is global and private; Restart is global and public. Both are one function
+            for the whole program. Only one of them can be called from here.
+        ##
+        Tally.Restart();
+        Console.WriteLine("  after Restart(): " + Tally.Counted());
+
+        Console.WriteLine();
+        Console.WriteLine("== an ordinary model, one per instance ==");
+
+        Reading first = new Reading(7);
+        Reading second = new Reading(9);
+
+        Console.WriteLine("  first:  " + first.Value());
+        Console.WriteLine("  second: " + second.Value());
+        Console.WriteLine("  each carries its own, where Tally carried one for everybody");
+    end function
+
+end model

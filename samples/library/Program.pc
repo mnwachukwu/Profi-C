@@ -1,9 +1,9 @@
 ##
     The lending desk.
 
-    Book comes from the Books project, which library.pcp references. It is written here exactly
-    as though it had been declared beside this file — a reference decides what a build is made
-    of, and changes nothing about how a type is named or used.
+    Book comes from the Books project, which library.pcp references. It is written
+    here exactly as though it had been declared beside this file — a reference decides what a
+    build is made of, and changes nothing about how a type is named or used.
 ##
 
 global model Program
@@ -27,6 +27,9 @@ global model Program
         Program.Lend(shelf[2]);
     end function
 
+    # @summary: Whether a book can be borrowed, in words.
+    # @book: the book to ask about.
+    # @yields: a line saying how many copies are left.
     string function Availability(Book book)
         if book.IsAvailable()
             yield book.Copies() + " on hand";
@@ -35,6 +38,8 @@ global model Program
         end if
     end function
 
+    # @summary: Lends a book out, and says what happened.
+    # @book: the book to lend.
     function Lend(Book book)
         try
             book.Lend();

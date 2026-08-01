@@ -1,7 +1,7 @@
 ##
     Functions as values.
 
-    A function in Profi-C is a value like any other: it has a type, it can be stored in a
+    A function is a value like any other: it has a type, it can be stored in a
     variable, held in a set, passed to another function, and handed back from one. Everything
     below is that one idea in different shapes.
 
@@ -102,6 +102,7 @@ global model Program
         yield results;
     end function
 
+    # @summary: Handing a function to another function as an argument.
     function PassingThemAlong()
         integer[] numbers = {1, 2, 3, 4};
 
@@ -141,6 +142,7 @@ global model Program
         yield (n) yield n + by;
     end function
 
+    # @summary: A function that yields another function.
     function HandingThemBack()
         integer delegate(integer) addFive = Program.AdderOf(5);
         integer delegate(integer) addHundred = Program.AdderOf(100);
@@ -191,6 +193,7 @@ global model Program
         yield (b) yield (c) yield a + b + c;
     end function
 
+    # @summary: A set of functions, called in turn.
     function OneAtATime()
         Console.WriteLine("1 + 2 + 3:        " + Program.SumOf(1)(2)(3));
 
@@ -227,6 +230,9 @@ global model Program
 
     # ---- Naming one that already exists --------------------------------------------
 
+    # @summary: Multiplies by three, declared so it can be passed as a value.
+    # @n: the number to triple.
+    # @yields: three times it.
     integer function Triple(integer n)
         yield n * 3;
     end function
@@ -275,14 +281,20 @@ global model Program
 
 end model
 
+# @summary: A number that goes up, for showing what a captured reference sees.
 model Counter
 
+    # @summary: How many times it has been raised.
     integer count;
 
+    # @summary: A counter beginning at the given number.
+    # @start: what to count up from.
     public function Counter(integer start)
         this.count = start;
     end function
 
+    # @summary: Raises the count by one and hands back the new value.
+    # @yields: the count after raising it.
     public integer function Next()
         this.count = this.count + 1;
         yield this.count;

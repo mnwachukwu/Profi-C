@@ -1,9 +1,9 @@
 ##
-    What the language gives you without declaring anything.
+    What the language provides without declaring anything.
 
-    Four models are always in scope — Console, Math, Reference, and Fraction — and every
-    value carries members of its own. Nothing here is imported or installed; these are part
-    of the language rather than a library you add.
+    Four models are always in scope — Console, Math, Reference, and Fraction — and
+    every value carries members of its own. Nothing here is imported or installed; these are
+    part of the language rather than a library to add.
 
     This is v1's whole standard library, with one part left out on purpose: File and Directory
     are shown in files.pc instead, because exercising them means writing to a disk, and what
@@ -25,7 +25,7 @@ global model Program
         Program.ShowReference();
     end function
 
-    # Console is how a program says anything at all.
+    # @summary: Console, which is how a program says anything at all.
     function ShowConsole()
         Console.WriteLine("== Console ==");
 
@@ -42,6 +42,7 @@ global model Program
         Console.WriteLine();
     end function
 
+    # @summary: Math, whose members mathematics.pc goes through one at a time.
     function ShowMath()
         Console.WriteLine("== Math ==");
 
@@ -82,7 +83,7 @@ global model Program
         Console.WriteLine();
     end function
 
-    # A set's members are on the set itself rather than on some helper model.
+    # @summary: A set's members, which sit on the set itself rather than on a helper model.
     function ShowSets()
         Console.WriteLine("== members of a set ==");
         integer[] values = {40, 10, 30};
@@ -120,7 +121,9 @@ global model Program
         comes back is still a set of optionals. TrimAll takes every one, so nothing left can
         be absent — and the type says so, which is why the result needs no unwrapping.
 
-        Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
+        @summary: A set that may hold gaps, and the four ways to drop them.
+
+        @remarks: Every one of them hands back a NEW set. That is what makes TrimAll's narrower type
         safe: the promise that nothing is absent is about the set you were given, and since
         the original is untouched and separate, nothing can put an empty into it afterwards.
         Had it filtered in place, the promise would have been about a set someone else was
@@ -147,8 +150,10 @@ global model Program
     end function
 
     ##
-        A string answers the same questions a set does, on purpose: Count() rather than
-        Length, so there is one name for the idea rather than two.
+        @summary: A string's members, which answer the same questions a set's do.
+
+        @remarks: On purpose: Count() rather than Length, so there is one name for the idea
+        rather than two.
     ##
     function ShowStrings()
         Console.WriteLine("== members of a string ==");
@@ -195,7 +200,7 @@ global model Program
         Console.WriteLine();
     end function
 
-    # The three members that make an optional safe to read.
+    # @summary: The three members that make an optional safe to read.
     function ShowOptionals()
         Console.WriteLine("== members of an optional ==");
 
@@ -223,7 +228,9 @@ global model Program
         second meaning to '==' and make you remember it; here you have to ask for it.
     ##
     ##
-        Chance, in two shapes. A generator a program holds disturbs nothing of anyone else's,
+        @summary: Random, in the two shapes a program can reach it.
+
+        @remarks: A generator a program holds disturbs nothing of anyone else's,
         and seeding one makes two runs agree — which is what makes a program that uses chance
         testable. The same questions asked through the name draw from one the language keeps,
         which is what most programs want and cannot be seeded, exactly as in C#.
@@ -262,7 +269,9 @@ global model Program
     end function
 
     ##
-        A moment in time, and what .NET reads as a property is read as one here: no
+        @summary: DateTime, a moment in time.
+
+        @remarks: What .NET reads as a property is read as one here: no
         parentheses on Year, Month or DayOfWeek. A moment never changes, so adding to one
         yields another, as adding to a string does.
     ##
@@ -297,7 +306,9 @@ global model Program
     end function
 
     ##
-        Three types sit beside a moment, and what tells them apart is what each leaves out. A
+        @summary: TimeSpan, Date and Time, the three types that sit beside a moment.
+
+        @remarks: What tells them apart is what each leaves out. A
         span is how long something lasted, with no when. A date is a day with no time of day —
         a birthday is one, since it is the same day whatever hour it is. A time is a reading on
         a clock with no day, which is what opening hours are.
@@ -344,6 +355,7 @@ global model Program
         Console.WriteLine();
     end function
 
+    # @summary: Reference.Equals, for asking whether two names reach one object.
     function ShowReference()
         Console.WriteLine("== Reference ==");
 
@@ -361,6 +373,9 @@ global model Program
         Console.WriteLine();
     end function
 
+    # @summary: Writes a set out as one comma-separated line.
+    # @values: the set to write.
+    # @yields: the values in order, separated by commas.
     string function Render(integer[] values)
         string text = "{";
 

@@ -1,13 +1,13 @@
 ##
     Asking a person something.
 
-    Console.Read gives back what they typed, or nothing at all when there is nothing left to
-    read — the end of a file piped in, or a person pressing Ctrl+D. That is why it yields an
-    optional: "they typed nothing more" is an answer, not a fault.
+    Console.Read gives back what they typed, or nothing when there is nothing left
+    to read — the end of a file piped in, or a person pressing Ctrl+D. Hence the optional:
+    "they typed nothing more" is an answer, not a fault.
 
-    Everything they type arrives as text, so anything else has to be read out of it. Every one
-    of those readings yields an optional too, for the same reason: text that will not read is
-    the ordinary case when a person is doing the typing.
+    Everything typed arrives as text, so anything else has to be read out of it. Those
+    readings yield optionals too, for the same reason: text that will not read is the ordinary
+    case when a person is doing the typing.
 
     Run it with something piped in:
 
@@ -24,6 +24,7 @@ global model Program
 
     # ---- Text, which needs no reading ---------------------------------------------------
 
+    # @summary: Text, which needs no reading out of anything.
     function AskingForAName()
         Console.Write("your name? ");
 
@@ -39,9 +40,11 @@ global model Program
     # ---- A number, which does ------------------------------------------------------------
 
     ##
-        Two questions, and both must be asked. Was anything typed? And did what they typed
-        read as a number? Neither can be skipped, and the compiler will not let them be: an
-        optional cannot be used until its presence is proven.
+        @summary: A number, which does need reading.
+
+        @remarks: Two questions, and both must be asked. Was anything typed, and did it read
+        as a number? Neither can be skipped: an optional cannot be used until its presence is
+        proven.
     ##
     function AskingForANumber()
         Console.Write("a number? ");
@@ -65,9 +68,11 @@ global model Program
     # ---- Or say what to do instead --------------------------------------------------------
 
     ##
-        Or gives a value to fall back on, which turns both questions into one line when a
+        @summary: Saying what to do instead, in one line.
+
+        @remarks: Or gives a value to fall back on, which collapses both questions where a
         sensible default exists. What it must not do is hide a mistake worth reporting — here
-        an unreadable answer really does mean "take none", so it is the right shape.
+        an unreadable answer really does mean "take none".
     ##
     function WhenNothingComes()
         Console.Write("how many? ");

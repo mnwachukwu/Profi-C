@@ -1,19 +1,26 @@
 ##
     Choosing among fixed alternatives.
 
-    A switch compares one value against constant labels. Labels may be grouped, and a group
-    runs only its own statements — there is no falling through from one group into the next,
-    so nothing has to be written to prevent it.
+    A switch compares one value against constant labels. Labels may be grouped, and a
+    group runs only its own statements — there is no falling through from one group into the
+    next, so nothing has to be written to prevent it.
 
     Over an enumeration, a switch that leaves members out and writes no 'default' is warned
     about, naming the ones with no case. That is what makes adding a member safe: every switch
     that has to change says so, where it has to change.
 ##
 
+# @summary: The four suits of a deck of cards.
 enumeration Suit
     Hearts, Diamonds, Clubs, Spades
 end enumeration
 
+##
+    @summary: The thirteen ranks, numbered by what each is worth.
+
+    @remarks: Two is written out and the rest follow from it, so the ordinals and the values
+    are the same number.
+##
 enumeration Rank
     Two = 2, Three, Four, Five, Six, Seven, Eight, Nine, Ten,
     Jack, Queen, King, Ace
@@ -31,7 +38,13 @@ global model Program
     # ---- One case per member --------------------------------------------------------
 
     ##
-        Every member has a case, so nothing is left unhandled and the compiler says nothing.
+        @summary: Names a suit.
+
+        @remarks: Every member has a case, so nothing is left unhandled and the compiler says
+        nothing.
+
+        @suit: the suit to name.
+        @yields: its name in lower case.
     ##
     string function NameOf(Suit suit)
         switch suit
@@ -49,6 +62,7 @@ global model Program
         yield "unknown";
     end function
 
+    # @summary: A switch where every member has a case, so nothing is warned about.
     function NamingEachOne()
         Suit[] suits = {Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades};
 
@@ -62,8 +76,13 @@ global model Program
     # ---- Grouping labels ------------------------------------------------------------
 
     ##
-        Several labels may share one group. This is the case other languages need 'break' for;
-        here a group simply ends where the next label begins.
+        @summary: Which colour a suit is printed in.
+
+        @remarks: Several labels may share one group. This is the case other languages need
+        'break' for; here a group ends where the next label begins.
+
+        @suit: the suit to look at.
+        @yields: "red" or "black".
     ##
     string function ColorOf(Suit suit)
         switch suit
@@ -78,6 +97,7 @@ global model Program
         yield "unknown";
     end function
 
+    # @summary: Several labels sharing one group of statements.
     function GroupingLabels()
         Console.WriteLine("hearts is " + Program.ColorOf(Suit.Hearts));
         Console.WriteLine("spades is " + Program.ColorOf(Suit.Spades));
@@ -86,8 +106,13 @@ global model Program
     # ---- Letting a default cover the rest ---------------------------------------------
 
     ##
-        Thirteen ranks and only three of them are worth naming, so a default handles the rest.
+        @summary: What a rank is worth in play.
+
+        @remarks: Thirteen ranks and only three worth naming, so a default handles the rest.
         Writing one says "everything else is covered", which is why it silences the warning.
+
+        @rank: the rank to score.
+        @yields: its value, with the court cards at ten and an ace at eleven.
     ##
     integer function ValueOf(Rank rank)
         switch rank
@@ -102,6 +127,7 @@ global model Program
         end switch
     end function
 
+    # @summary: A default, which covers everything not named and silences the warning.
     function LeavingTheRestToDefault()
         Rank[] hand = {Rank.Ace, Rank.King, Rank.Seven};
         integer total = 0;

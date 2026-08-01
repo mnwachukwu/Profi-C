@@ -1,12 +1,12 @@
 ##
     Binary search, and what to do when the answer is "it is not there".
 
-    In most languages this function returns -1 for a miss, and every caller is trusted to
-    remember. Forgetting compiles fine and goes wrong later, somewhere else.
+    In most languages this function returns -1 for a miss, and every caller is
+    trusted to remember. Forgetting compiles fine and goes wrong later, somewhere else.
 
-    Profi-C has no null and no sentinel to reach for. The function yields 'integer?', so a
-    caller cannot read the index at all until it has proved there is one. The check is not
-    good manners here — it is the only way to get at the value.
+    There is no null here and no sentinel to reach for. The function yields 'integer?', so a
+    caller cannot read the index until it has proved there is one. The check is not good
+    manners — it is the only way to get at the value.
 ##
 
 global model Program
@@ -20,6 +20,11 @@ global model Program
         Program.Report(sorted, 40);
     end function
 
+    ##
+        @summary: Writes where a value sits, or that it is absent.
+        @sorted: the set to look in.
+        @wanted: the value to look for.
+    ##
     function Report(integer[] sorted, integer wanted)
         integer? found = Program.IndexOf(sorted, wanted);
 
@@ -35,8 +40,15 @@ global model Program
     end function
 
     ##
-        Halve the range each time: look at the middle, and throw away the half the answer
-        cannot be in. Ten values take at most four looks, and a thousand take at most ten.
+        @summary: Finds where a value sits in a sorted set.
+
+        @remarks: Halve the range each time: look at the middle, and throw away the half the
+        answer cannot be in. Ten values take at most four looks, and a thousand take at most
+        ten.
+
+        @sorted: a set already in order, which the halving depends on.
+        @wanted: the value to look for.
+        @yields: its index, or nothing where the set does not hold it.
     ##
     integer? function IndexOf(integer[] sorted, integer wanted)
         integer low = 0;

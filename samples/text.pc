@@ -1,7 +1,7 @@
 ##
     Building text.
 
-    Three things that all end up as a string, and each is worth reaching for at a different
+    Three things that all end up as a string, each worth reaching for at a different
     moment: joining values into a sentence, writing a block out as it stands, and taking a
     string apart to put it back together differently.
 ##
@@ -26,6 +26,7 @@ global model Program
         which is why an ordinary string full of braces stays ordinary. To write a literal pair,
         escape the first one.
     ##
+    # @summary: Joining values into a sentence, with the holes written in place.
     function Interpolation()
         Console.WriteLine("== putting values in ==");
 
@@ -54,6 +55,7 @@ global model Program
 
         The same patterns are available without a string around them, through Format.
     ##
+    # @summary: Format, for saying how a value should be written out.
     function SayingHowToWriteIt()
         Console.WriteLine("== saying how ==");
 
@@ -84,6 +86,7 @@ global model Program
         every line — so a block can sit at the indentation of the code around it without
         dragging that indentation into what it holds.
     ##
+    # @summary: Writing a block of text out exactly as it stands.
     function BlockStrings()
         Console.WriteLine("== a block, as written ==");
 
@@ -130,6 +133,7 @@ global model Program
         title-casing does — that one also lowers everything it did not raise, which is wrong
         for a name like "McDonald".
     ##
+    # @summary: Splitting a string up and putting it back together differently.
     function TakingStringsApart()
         Console.WriteLine("== apart and back together ==");
 

@@ -1,0 +1,167 @@
+CompilationUnit
+  ModelDecl 'Tally' [global]
+    FieldDecl 'counted'
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0 [Integer]
+    FieldDecl 'highest' [internal]
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0 [Integer]
+    FunctionDecl 'Count' [public]
+      NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'counted'
+          IdentifierExpr 'Tally'
+        BinaryExpr '+'
+          MemberExpr 'counted'
+            IdentifierExpr 'Tally'
+          LiteralExpr 1 [Integer]
+      IfStmt
+        BinaryExpr '>'
+          MemberExpr 'counted'
+            IdentifierExpr 'Tally'
+          MemberExpr 'highest'
+            IdentifierExpr 'Tally'
+        AssignmentStmt
+          MemberExpr 'highest'
+            IdentifierExpr 'Tally'
+          MemberExpr 'counted'
+            IdentifierExpr 'Tally'
+      YieldStmt
+        MemberExpr 'counted'
+          IdentifierExpr 'Tally'
+    FunctionDecl 'Counted' [public]
+      NamedTypeSyntax 'integer'
+      YieldStmt
+        MemberExpr 'counted'
+          IdentifierExpr 'Tally'
+    FunctionDecl 'Reset' [global]
+      AssignmentStmt
+        MemberExpr 'counted'
+          IdentifierExpr 'Tally'
+        LiteralExpr 0 [Integer]
+    FunctionDecl 'Restart' [public]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Reset'
+            IdentifierExpr 'Tally'
+  ModelDecl 'Reading'
+    FieldDecl 'value'
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Reading' [public]
+      ParameterDecl 'measured'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'value'
+          ThisExpr
+        IdentifierExpr 'measured'
+    FunctionDecl 'Value' [public]
+      NamedTypeSyntax 'integer'
+      YieldStmt
+        MemberExpr 'value'
+          ThisExpr
+  ModelDecl 'Program' [global]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== one tally, shared by everything ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  first count:  " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'Tally'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  second count: " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'Tally'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and asking:   " [String]
+            CallExpr
+              MemberExpr 'Counted'
+                IdentifierExpr 'Tally'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== global says how many, not who ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "  Tally.Counted() is public, so this line compiles" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "  Tally.counted is private, so writing it would not" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Restart'
+            IdentifierExpr 'Tally'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  after Restart(): " [String]
+            CallExpr
+              MemberExpr 'Counted'
+                IdentifierExpr 'Tally'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== an ordinary model, one per instance ==" [String]
+      VarDeclStmt 'first'
+        NamedTypeSyntax 'Reading'
+        NewExpr 'Reading'
+          LiteralExpr 7 [Integer]
+      VarDeclStmt 'second'
+        NamedTypeSyntax 'Reading'
+        NewExpr 'Reading'
+          LiteralExpr 9 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  first:  " [String]
+            CallExpr
+              MemberExpr 'Value'
+                IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  second: " [String]
+            CallExpr
+              MemberExpr 'Value'
+                IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "  each carries its own, where Tally carried one for everybody" [String]

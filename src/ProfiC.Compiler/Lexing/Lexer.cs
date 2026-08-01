@@ -86,11 +86,14 @@ public sealed class Lexer
     /// </summary>
     private readonly List<(SourceSpan Span, SuppressionTarget Target)> _directives = [];
 
+    /// <summary>Where a comment began and ended, and whether it was written with one mark.</summary>
+    private readonly record struct Comment(int Start, int End, bool Line);
+
     /// <summary>
-    /// Documentation comments read while scanning, told which line each documents once the
-    /// tokens are in. Read from <see cref="Documentation"/> after <see cref="Scan"/>.
+    /// Every comment scanned, kept until the tokens can say which line each documents. What
+    /// they say is read once, at the end; read from <see cref="Documentation"/>.
     /// </summary>
-    private readonly List<DocComment> _documentation = [];
+    private readonly List<Comment> _comments = [];
 
     /// <summary>What the file documents, in the order written. Empty until <see cref="Scan"/>.</summary>
     public IReadOnlyList<DocComment> Documentation { get; private set; } = [];
@@ -201,10 +204,7 @@ public sealed class Lexer
 
         RecordDirectives(tokens);
 
-        Documentation =
-            [.. _documentation.Select(d => d.Documenting(
-                NextLineCarryingCode(tokens, d.Span.Start.Line)))];
-
+        Documentation = [.. ReadDocumentation(tokens)];
         return tokens;
     }
 
@@ -233,6 +233,37 @@ public sealed class Lexer
                 target.Id,
                 span));
         }
+    }
+
+    /// <summary>
+    /// <para>Reads what each comment says, keeping the ones that document something and
+    /// passing over the remarks.</para>
+    /// <para><b>A documentation comment sits immediately above what it documents</b>, with
+    /// nothing between but the newline that ends it. Reaching further would mean a heading
+    /// about a whole file, written above a blank line and a second remark, silently became the
+    /// documentation of whichever declaration happened to come next — which is the accident
+    /// the <c>@summary:</c> marker exists to prevent, arriving by another route.</para>
+    /// </summary>
+    private IEnumerable<DocComment> ReadDocumentation(List<Token> tokens)
+    {
+        foreach (Comment comment in _comments)
+        {
+            if (DocComment.TryRead(_source, comment.Start, comment.End, out DocComment? read))
+            {
+                yield return read.Documenting(LineBelow(tokens, comment));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The line directly under a comment, where that line carries code. Zero where anything at
+    /// all comes between — a blank line, another comment, or the end of the file.
+    /// </summary>
+    private int LineBelow(List<Token> tokens, Comment comment)
+    {
+        int below = _source.PositionAt(Math.Max(comment.Start, comment.End - 1)).Line + 1;
+
+        return tokens.Exists(t => t.Type != TokenType.EndOfFile && t.Line == below) ? below : 0;
     }
 
     /// <summary>Whether an identifier names something that exists and does not stop compilation.</summary>
@@ -295,29 +326,43 @@ public sealed class Lexer
         if (Peek() == '#')
         {
             SkipBlockComment(opened);
-            ReadDocumentation(opened);
+            KeepComment(opened, line: false);
             return true;
         }
 
         SkipToEndOfLine();
         ReadDirective(opened);
-        ReadDocumentation(opened);
+        KeepComment(opened, line: true);
         return true;
     }
 
     /// <summary>
-    /// <para>Keeps a comment that documents something, and passes over one that does not.</para>
-    /// <para>Both forms carry documentation, since a one-line summary is worth writing on one
-    /// line. Which declaration each belongs to is settled once the tokens are in, for the same
-    /// reason a line-scoped directive is.</para>
+    /// <para>Keeps the reach of a comment, so that what it says can be read once scanning is
+    /// done.</para>
+    /// <para><b>A run of line comments is one comment.</b> Anything but a summary needs a line
+    /// of its own, so reading each <c>#</c> separately would leave every line after the first
+    /// opening with something other than <c>@summary:</c> — read as prose and silently
+    /// dropped. Nothing separates the lines of a run but the newline between them, so they are
+    /// what a reader plainly means them to be: one thing.</para>
     /// </summary>
-    private void ReadDocumentation(int start)
+    private void KeepComment(int start, bool line)
     {
-        if (DocComment.TryRead(_source, start, _index, out DocComment? read))
+        if (line && _comments.Count > 0 && _comments[^1].Line && Adjoins(_comments[^1].End, start))
         {
-            _documentation.Add(read);
+            _comments[^1] = _comments[^1] with { End = _index };
+            return;
         }
+
+        _comments.Add(new Comment(start, _index, line));
     }
+
+    /// <summary>
+    /// Whether one comment runs straight into the next: nothing between them but the single
+    /// newline that ends the first. A blank line, or anything else, starts a new comment.
+    /// </summary>
+    private bool Adjoins(int end, int start) =>
+        _text[end..start].Count(c => c == '\n') == 1
+        && _text[end..start].All(char.IsWhiteSpace);
 
     /// <summary>
     /// <para>Reads the one directive a line comment may carry, and keeps it if it is one.</para>

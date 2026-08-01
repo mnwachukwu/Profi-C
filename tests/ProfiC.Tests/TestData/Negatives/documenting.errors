@@ -1,5 +1,5 @@
 documenting.pc(13,9): warning PC0245: 'limit' is documented, but 'Total' takes 'n'. Rename the line or take it out.
 documenting.pc(15,9): opinion PC0247: 'summary' already has a line above this one, and the first is the one that shows. For a second paragraph, leave a blank line and keep writing.
 documenting.pc(29,9): warning PC0246: 'Announce' yields nothing, so there is no value for '@yields:' to describe.
-documenting.pc(36,9): warning PC0244: An '@summary:' comment goes above a type, a member of one, or an enumeration's member, and none of those follows this one. Nothing will show it.
+documenting.pc(36,9): warning PC0244: An '@summary:' comment goes directly above a namespace, a type, a member of one, or an enumeration's member, with nothing in between. Nothing like that follows this one, so nothing will show it. A heading about the whole file is an ordinary comment.
 documenting.pc(41,25): error PC0300: Cannot use a string where an integer is expected.

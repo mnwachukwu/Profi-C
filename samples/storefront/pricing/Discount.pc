@@ -1,29 +1,41 @@
 ##
     Taking money off, in exact fractions.
 
-    A percentage written as a real would drift; a fraction takes a third off a price and means
-    exactly a third.
+    A percentage written as a real would drift; a fraction takes a third off a price
+    and means exactly a third.
 ##
 
+# @summary: A named share taken off a price, held as an exact fraction.
 model Discount
 
+    # @summary: What this discount is called.
     string label;
+
+    # @summary: How much of the price it takes off.
     fraction share;
 
+    # @summary: A named discount taking a given share off.
+    # @called: what to call it.
+    # @taken: the share of the price to remove.
     public function Discount(string called, fraction taken)
         this.label = called;
         this.share = taken;
     end function
 
+    # @summary: What this discount is called.
+    # @yields: its label.
     public string function Label()
         yield this.label;
     end function
 
     ##
-        What is left of a price after this discount.
+        @summary: What is left of a price after this discount.
 
-        The arithmetic is exact: a quarter off 2499 is exactly 7497|4 pence, and only the last
-        step asks for the real that a price is usually shown as.
+        @remarks: The arithmetic is exact: a quarter off 2499 is exactly 7497|4 pence, and only
+        the last step asks for the real that a price is usually shown as.
+
+        @pence: the price before the discount.
+        @yields: what remains to pay.
     ##
     public real function Apply(integer pence)
         fraction kept = 1 - this.share;

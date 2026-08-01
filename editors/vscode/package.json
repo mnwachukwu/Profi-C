@@ -2,10 +2,14 @@
   "name": "profi-c",
   "displayName": "Profi-C",
   "description": "Syntax highlighting for Profi-C.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "profi-c",
   "license": "MIT",
   "engines": { "vscode": "^1.75.0" },
+  "devDependencies": {
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.1.0"
+  },
   "categories": ["Programming Languages"],
   "contributes": {
     "languages": [
@@ -40,6 +44,10 @@
           {
             "scope": "comment.line.number-sign.directive.profi-c",
             "settings": { "foreground": "#7A7A7A" }
+          },
+          {
+            "scope": "constant.language.documentation.profi-c",
+            "settings": { "foreground": "#00E5FF" }
           }
         ]
       }

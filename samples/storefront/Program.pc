@@ -1,8 +1,8 @@
 ##
     A program across three folders.
 
-    Its files do not sit together, so the folder rule cannot gather them. storefront.pcp lists
-    what the build is made of instead:
+    Its files do not sit together, so the folder rule cannot gather them.
+    storefront.pcp lists what the build is made of instead:
 
         pc run samples/storefront/storefront.pcp
 ##

@@ -1,9 +1,10 @@
 ##
     Working on the bits of a whole number.
 
-    This is the one part of the language aimed past a first program. Nothing else needs it, and
-    a reader who never meets it loses nothing — but a whole number is a row of bits underneath,
-    and there are jobs where saying so directly is the honest way to write them.
+    This is the one part of the language aimed past a first program. Nothing else
+    needs it, and a reader who never meets it loses nothing — but a whole number is a row of
+    bits underneath, and there are jobs where saying so directly is the honest way to write
+    them.
 
     Everything here is spelled as a word. '&' and '|' would have been new punctuation, and '|'
     could not be had in any case: it already writes a fraction. So 'bitwise' qualifies the
@@ -13,8 +14,9 @@
 global model Program
 
     ##
-        A row of switches, each standing for one thing that is either on or off. Written in
-        binary, the value and the picture are the same thing.
+        @summary: A row of switches, each standing for one thing that is on or off.
+
+        @remarks: Written in binary, the value and the picture are the same thing.
     ##
     constant integer Read = 0b0001;
     constant integer Write = 0b0010;
@@ -28,9 +30,11 @@ global model Program
     end function
 
     ##
-        'bitwise or' puts flags together: a bit is on in the answer if it was on in either.
-        'bitwise and' asks whether one is present, since the answer keeps only the bits both
-        sides had.
+        @summary: Putting flags together and asking what is set.
+
+        @remarks: 'bitwise or' combines them — a bit is on in the answer if it was on in
+        either. 'bitwise and' asks whether one is present, since the answer keeps only the
+        bits both sides had.
     ##
     function CombiningAndAsking()
         Console.WriteLine("== putting flags together and asking about them ==");
@@ -49,10 +53,11 @@ global model Program
     end function
 
     ##
-        'xor' needs no 'bitwise' in front of it, because nothing else in the language claims
-        the word. On booleans there is nothing for it to do that '!=' does not already say.
+        @summary: Exclusive or, which is its own undo.
 
-        It is its own undo: applying the same mask twice gives back what you started with.
+        @remarks: 'xor' needs no 'bitwise' in front of it, because nothing else claims the
+        word. On booleans there is nothing for it to do that '!=' does not already say.
+        Applying the same mask twice gives back what it started with.
     ##
     function TheThreeOperations()
         Console.WriteLine("== and, or, xor ==");
@@ -75,9 +80,10 @@ global model Program
     end function
 
     ##
-        A shift moves every bit along, which doubles or halves the number as many times as it
-        moves. The direction is in the word rather than in the sign of the amount, so there is
-        nothing to work out.
+        @summary: Moving every bit along, which doubles or halves the number.
+
+        @remarks: The direction is in the word rather than in the sign of the amount, so there
+        is nothing to work out.
 
         An amount below zero or past 63 is refused: an integer holds 64 bits, and a shift
         further than that has nothing left to move. C# quietly wraps the amount instead, which

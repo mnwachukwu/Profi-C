@@ -1,10 +1,10 @@
 ##
     Keeping things in files.
 
-    A file is somewhere a program puts text and takes it back later. There is no opening and
-    no closing here: a file is read whole or written whole, which is what a program being
-    learned on actually wants and avoids the one mistake every beginner makes with the other
-    kind — forgetting to close it.
+    A file is somewhere a program puts text and takes it back later. There is no
+    opening and no closing here: a file is read whole or written whole, which is what a program
+    being learned on wants, and it avoids the mistake every beginner makes with the other kind
+    — forgetting to close it.
 
     Two questions run through all of it, and they are different questions:
 
@@ -38,6 +38,9 @@ global model Program
         Console.WriteLine("cleaned up: {{not Directory.Exists(Program.Folder)}}");
     end function
 
+    # @summary: A path to a file inside this program's working folder.
+    # @name: what the file is called.
+    # @yields: the name joined to the folder.
     string function In(string name)
         yield Program.Folder + "/" + name;
     end function
@@ -45,7 +48,9 @@ global model Program
     # ---- The whole of it, out and back ---------------------------------------------------
 
     ##
-        Write replaces whatever was there; Append adds to the end. Both make the file if there
+        @summary: Writing a file whole, and reading it back whole.
+
+        @remarks: Write replaces whatever was there; Append adds to the end. Both make the file if there
         is none. Neither makes the folder it sits in, so a path with a typo in it fails rather
         than quietly building somewhere new.
     ##
@@ -70,7 +75,9 @@ global model Program
     # ---- A line at a time ------------------------------------------------------------------
 
     ##
-        Lines go out with one ending each and come back without them, so a set of lines is the
+        @summary: Reading and writing a file as a set of lines.
+
+        @remarks: Lines go out with one ending each and come back without them, so a set of lines is the
         same set whichever machine wrote the file. Nothing has to strip anything.
     ##
     function LineByLine()
@@ -95,7 +102,9 @@ global model Program
     # ---- What is not there ------------------------------------------------------------------
 
     ##
-        This is why reading yields an optional. The alternative is asking Exists first and
+        @summary: Asking whether a file is there, and why reading yields an optional.
+
+        @remarks: The alternative is asking Exists first and
         reading second, which is two questions where one will do — and the file can go away
         between them.
     ##
@@ -121,6 +130,7 @@ global model Program
 
     # ---- Copying, moving, removing -----------------------------------------------------------
 
+    # @summary: Copying, moving and deleting a file.
     function MovingThingsAbout()
         Console.WriteLine("== moving things ==");
 
@@ -144,7 +154,9 @@ global model Program
     # ---- What is in a folder ------------------------------------------------------------------
 
     ##
-        Both come back in a settled order rather than whatever the file system happens to
+        @summary: Listing what a folder holds.
+
+        @remarks: Both come back in a settled order rather than whatever the file system happens to
         offer, so a program prints the same list twice and on two machines.
     ##
     function LookingInAFolder()
@@ -170,7 +182,9 @@ global model Program
     # ---- When something really is wrong ---------------------------------------------------------
 
     ##
-        Everything that is not "there is no such file" raises, because absence cannot say which
+        @summary: What happens when a file cannot be read at all.
+
+        @remarks: Everything that is not "there is no such file" raises, because absence cannot say which
         of them happened. Writing into a folder that does not exist is the one to meet first.
     ##
     function WhenSomethingGoesWrong()

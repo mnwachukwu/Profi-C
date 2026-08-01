@@ -1,0 +1,14 @@
+== one tally, shared by everything ==
+  first count:  1
+  second count: 2
+  and asking:   2
+
+== global says how many, not who ==
+  Tally.Counted() is public, so this line compiles
+  Tally.counted is private, so writing it would not
+  after Restart(): 0
+
+== an ordinary model, one per instance ==
+  first:  7
+  second: 9
+  each carries its own, where Tally carried one for everybody

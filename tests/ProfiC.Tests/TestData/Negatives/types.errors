@@ -1,11 +1,12 @@
-types.pc(17,25): error PC0300: Cannot use a string where an integer is expected.
-types.pc(20,18): error PC0301: A fraction does not become a real on its own, because the result would surprise you. Write 'ToReal()' to ask for it.
-types.pc(21,22): error PC0301: A real does not become a fraction on its own, because the result would surprise you. Write 'ToFraction()' to ask for it.
-types.pc(24,19): error PC0303: '*' is not defined for a boolean and an integer.
-types.pc(27,20): error PC0300: Cannot use a Shape where a Circle is expected.
-types.pc(30,19): error PC0300: Cannot use an integer where a Model is expected.
-types.pc(33,24): error PC0305: The branches of an if expression must have the same type, and these are an integer and a string.
-types.pc(36,31): error PC0324: This divides by zero.
-types.pc(41,17): error PC0117: 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.
-types.pc(45,9): error PC0116: 'Function' is the type every function descends from and takes no parentheses. For a function of a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'.
-types.pc(45,36): error PC0300: Cannot use an integer function(integer) where a function(integer) is expected.
+types.pc(16,5): error PC0119: 'let' works inside a function, where the value it holds is written beside it. A field is read far from here, so it says its type: 'integer inferred = ...'.
+types.pc(26,25): error PC0300: Cannot use a string where an integer is expected.
+types.pc(29,18): error PC0301: A fraction does not become a real on its own, because the result would surprise you. Write 'ToReal()' to ask for it.
+types.pc(30,22): error PC0301: A real does not become a fraction on its own, because the result would surprise you. Write 'ToFraction()' to ask for it.
+types.pc(33,19): error PC0303: '*' is not defined for a boolean and an integer.
+types.pc(36,20): error PC0300: Cannot use a Shape where a Circle is expected.
+types.pc(39,19): error PC0300: Cannot use an integer where a Model is expected.
+types.pc(42,24): error PC0305: The branches of an if expression must have the same type, and these are an integer and a string.
+types.pc(45,31): error PC0324: This divides by zero.
+types.pc(50,17): error PC0117: 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.
+types.pc(54,9): error PC0116: 'Function' is the type every function descends from and takes no parentheses. For a function of a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'.
+types.pc(54,36): error PC0300: Cannot use an integer function(integer) where a function(integer) is expected.

@@ -303,6 +303,14 @@ on a function yielding nothing is `PC0246`; a label written twice is `PC0247`. *
 is never reported**, since requiring one everywhere is how documentation becomes a tax rather
 than a help.
 
+**`@throws:` is carried and not checked.** What a function can raise is not something v1 works
+out — there are no checked exceptions and no inference of what a body may throw — so an
+implementation has nothing to compare the claim against. A check that guessed would be worse
+than none, and one that demanded the label would demand it everywhere. The text is kept and
+shown, and its accuracy is the author's. This is a limit of v1 rather than a design principle:
+should what a function raises ever become something the language tracks, the claim becomes
+checkable and this stops being true.
+
 ### 0.6 Versioning
 
 This document describes **v1**. Features named as deferred are not part of v1 and a
@@ -2643,6 +2651,7 @@ of a reader.
 | `PC0116` | error | A function's type is written with 'delegate' |
 | `PC0117` | error | A function's type is written with 'delegate' |
 | `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' |
+| `PC0119` | error | 'let' declares a local, not a field |
 
 ### PC0200 to PC0299
 

@@ -1,47 +1,71 @@
 ##
     Values and references, and what changes when you copy one.
 
-    A structure is a value: assigning one copies it, and the copy has nothing to do with the
-    original afterwards. A model is a reference: assigning one copies the reference, and both
-    names then reach the same object.
+    A structure is a value: assigning one copies it, and the copy has nothing to do
+    with the original afterwards. A model is a reference: assigning one copies the reference,
+    and both names then reach the same object.
 
     That is the whole difference, and every surprising thing below follows from it.
 ##
 
+# @summary: A place on a grid, held by value.
 structure Point
+    # @summary: How far across.
     public integer X;
+
+    # @summary: How far down.
     public integer Y;
 
+    # @summary: A point at the given coordinates.
+    # @x: how far across.
+    # @y: how far down.
     public function Point(integer x, integer y)
         this.X = x;
         this.Y = y;
     end function
 
     ##
-        Measuring keeps the type it measured, so the distance between two whole coordinates
-        is a whole number and can be counted with.
+        @summary: How far away another point is, counted in steps along the grid.
+
+        @remarks: Measuring keeps the type it measured, so the distance between two whole
+        coordinates is a whole number and can be counted with.
+
+        @other: the point to measure to.
+        @yields: the number of grid steps between them.
     ##
     public integer function ManhattanFrom(Point other)
         yield Math.Abs(this.X - other.X) + Math.Abs(this.Y - other.Y);
     end function
 end structure
 
+# @summary: A name pinned to somewhere, held by reference.
 model Marker
+    # @summary: What this marker is called.
     public string Label;
 
+    # @summary: A marker with the given name.
+    # @label: what to call it.
     public function Marker(string label)
         this.Label = label;
     end function
 end model
 
 ##
-    A structure may hold a model, and this is the case worth stopping over: copying the
-    structure copies the reference, not the model. Both copies then see one marker.
+    @summary: A place and the marker standing on it.
+
+    @remarks: A structure may hold a model, and this is the case worth stopping over: copying
+    the structure copies the reference, not the model. Both copies then see one marker.
 ##
 structure Pin
+    # @summary: Where the pin sits, copied with the pin.
     public Point Where;
+
+    # @summary: What it is labelled, shared with every copy.
     public Marker Tag;
 
+    # @summary: A pin at a place, carrying a marker.
+    # @where: the place it sits.
+    # @tag: the marker it carries.
     public function Pin(Point where, Marker tag)
         this.Where = where;
         this.Tag = tag;
@@ -60,6 +84,7 @@ global model Program
 
     # ---- A structure copies ------------------------------------------------------
 
+    # @summary: Copying a structure, which copies the value.
     function CopyingAStructure()
         Point a = new Point(1, 2);
         Point b = a;
@@ -71,6 +96,7 @@ global model Program
 
     # ---- A model does not ---------------------------------------------------------
 
+    # @summary: Copying a model, which copies the reference and not the object.
     function CopyingAModel()
         Marker first = new Marker("start");
         Marker second = first;
@@ -138,6 +164,7 @@ global model Program
         marker.Label = "changed";
     end function
 
+    # @summary: What a function can and cannot change about what it was passed.
     function PassingThemToFunctions()
         Point point = new Point(1, 1);
         Marker marker = new Marker("before");

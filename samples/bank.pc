@@ -1,43 +1,74 @@
 ##
     Exceptions, and when to reach for one.
 
-    An exception is for a case the caller cannot reasonably be asked to check first, or one
-    that must not be quietly ignored. Overdrawing an account is both: the balance may change
-    between the check and the withdrawal, and silently doing nothing would be worse than
+    An exception is for a case the caller cannot reasonably be asked to check first,
+    or one that must not be quietly ignored. Overdrawing an account is both: the balance may
+    change between the check and the withdrawal, and silently doing nothing would be worse than
     stopping.
 
-    Compare that with looking up an account by name, at the bottom. A name that is not there
-    is ordinary, not exceptional, so that one yields an optional instead. Choosing between the
-    two is most of what there is to learn here.
+    Compare that with looking up an account by name, at the bottom. A name that is not there is
+    ordinary rather than exceptional, so that one yields an optional. Choosing between the two
+    is most of what there is to learn here.
 ##
 
-# A model may extend Exception, which is how a program names its own failures.
+##
+    @summary: Raised when an account is asked for more than it holds.
+
+    @remarks: A model may extend Exception, which is how a program names its own failures.
+##
 model InsufficientFundsException extends Exception
 
+    ##
+        @summary: Names the account and how far short it fell.
+        @owner: whose account it is.
+        @short: how much more was asked for than was there.
+    ##
     public function InsufficientFundsException(string owner, integer short)
         base(owner + " is " + short + " short");
     end function
 
 end model
 
+# @summary: One person's money, and the rules about taking it out.
 model Account
 
+    # @summary: Whose account this is.
     string owner;
+
+    # @summary: How much it currently holds.
     integer balance;
 
+    ##
+        @summary: Opens an account for someone.
+        @who: whose account it is.
+        @opening: what it starts with.
+    ##
     public function Account(string who, integer opening)
         this.owner = who;
         this.balance = opening;
     end function
 
+    ##
+        @summary: Whose account this is.
+        @yields: the owner's name.
+    ##
     public string function Owner()
         yield this.owner;
     end function
 
+    ##
+        @summary: What the account holds right now.
+        @yields: the current balance.
+    ##
     public integer function Balance()
         yield this.balance;
     end function
 
+    ##
+        @summary: Puts money in.
+        @amount: how much to add, which must be more than nothing.
+        @throws: ArgumentException where the amount is zero or negative.
+    ##
     public function Deposit(integer amount)
         if amount <= 0
             throw new ArgumentException();
@@ -46,7 +77,15 @@ model Account
         this.balance = this.balance + amount;
     end function
 
-    # Throws rather than yielding false, so that ignoring the failure is not possible.
+    ##
+        @summary: Takes money out.
+
+        @remarks: Throws rather than yielding false, so that ignoring the failure is not
+        possible.
+
+        @amount: how much to take.
+        @throws: InsufficientFundsException where the account holds less than that.
+    ##
     public function Withdraw(integer amount)
         if amount > this.balance
             throw new InsufficientFundsException(this.owner, amount - this.balance);
@@ -76,6 +115,12 @@ global model Program
         end for
     end function
 
+    ##
+        @summary: Tries one withdrawal and reports how it went.
+        @accounts: every account there is.
+        @who: whose account to take from.
+        @amount: how much to take.
+    ##
     function Attempt(Account[] accounts, string who, integer amount)
         Console.WriteLine();
         Console.WriteLine(who + " withdraws " + amount);
@@ -104,8 +149,14 @@ global model Program
     end function
 
     ##
-        Yields an optional rather than throwing. A missing name is a normal answer to a
-        question, and the caller has to deal with it either way.
+        @summary: Looks an account up by name.
+
+        @remarks: Yields an optional rather than throwing. A missing name is a normal answer
+        to a question, and the caller has to deal with it either way.
+
+        @accounts: every account there is.
+        @who: the name to look for.
+        @yields: the account, or nothing where no one holds that name.
     ##
     Account? function Find(Account[] accounts, string who)
         for each account in accounts

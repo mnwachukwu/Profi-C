@@ -59,3 +59,8 @@ desktop.ini
 
 # Local publish output, for putting profi-c and pc on PATH
 dist/
+
+# Installed by the editor grammar's tokenization test, which needs the engine
+# VS Code itself uses. Run 'npm install' in editors/vscode to restore it.
+node_modules/
+package-lock.json

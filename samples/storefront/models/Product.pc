@@ -1,24 +1,35 @@
 ##
     Something for sale.
 
-    This folder is reached only because storefront.pcp names it. A source file compiles with
-    the folder it sits in; a project reaches as many folders as it lists.
+    This folder is reached only because storefront.pcp names it. A source file
+    compiles with the folder it sits in; a project reaches as many folders as it lists.
 ##
 
+# @summary: Something for sale, with a name and a price.
 model Product
 
+    # @summary: What the product is called.
     string name;
+
+    # @summary: What it costs, in pence.
     integer pence;
 
+    # @summary: Puts something on the shelf at a price.
+    # @called: what the product is called.
+    # @costing: what it costs, in pence.
     public function Product(string called, integer costing)
         this.name = called;
         this.pence = costing;
     end function
 
+    # @summary: What the product is called.
+    # @yields: its name.
     public string function Name()
         yield this.name;
     end function
 
+    # @summary: What it costs.
+    # @yields: the price in pence.
     public integer function Pence()
         yield this.pence;
     end function

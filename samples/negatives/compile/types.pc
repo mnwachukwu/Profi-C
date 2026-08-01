@@ -6,6 +6,15 @@
 ##
 
 model Shape
+
+    ##
+        'let' declares a local, where the value it holds is written beside it. A field is read
+        in every function of its type, and by callers who never see this line, so it says what
+        it holds. The rule is about how far a declaration is read from, which is the same thing
+        that makes 'this.' required on a field and not on a local.
+    ##
+    let inferred = 0;
+
 end model
 
 model Circle extends Shape

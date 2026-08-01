@@ -1,41 +1,54 @@
 ##
     Inheritance and virtual dispatch.
 
-    Three shapes, each computing its own area. The loop at the bottom does not ask what kind
-    of shape it is holding — it calls Area() and the shape decides. That is the whole idea,
-    and it is worth watching happen: one line of calling code, three different answers.
+    Three shapes, each computing its own area. The loop at the bottom does not ask
+    what kind of shape it is holding — it calls Area() and the shape decides. One line of
+    calling code, three different answers.
 
     'abstract' marks a model that exists to be extended rather than instantiated. 'virtual'
-    marks a function a child may replace, and 'override' is required on the replacement — the
-    compiler will not let a child shadow a parent's function by accident.
+    marks a function a child may replace, and 'override' is required on the replacement — a
+    child cannot shadow a parent's function by accident.
 ##
 
+# @summary: Something with an area, whatever shape it turns out to be.
 abstract model Shape
 
+    # @summary: What this shape is called.
     protected string name;
 
+    # @summary: Names a shape.
+    # @label: what to call it.
     public function Shape(string label)
         this.name = label;
     end function
 
     ##
-        Left open. A shape has an area, but there is no answer that would be right for shapes
-        in general, so this says the name and the result type and stops at the semicolon.
+        @summary: How much surface the shape covers.
 
-        Every model built from Shape has to write it — the compiler refuses one that does not —
-        and 'abstract' is what offers it for overriding, so no 'virtual' is wanted beside it.
+        @remarks: Left open. A shape has an area, but no answer would be right for shapes in
+        general, so this says the name and the result type and stops at the semicolon.
+
+        Every model built from Shape has to write it — the compiler refuses one that does not
+        — and 'abstract' is what offers it for overriding, so no 'virtual' is wanted beside it.
+
+        @yields: the area, decided by whichever shape this turns out to be.
     ##
     public abstract real function Area();
 
+    # @summary: The shape in words, with its area.
+    # @yields: a line naming the shape and how much it covers.
     public virtual string function Describe()
         yield this.name + " with area " + this.Area();
     end function
 
     ##
-        Every model inherits ToString from Model, so overriding it needs no 'extends' and no
-        'virtual' written anywhere. This is what a shape prints as — written out, printed on its
-        own, joined to a string, or sitting in a set — and it dispatches on the runtime type, so
-        a Square held as a Shape still prints as a square.
+        @summary: What a shape prints as.
+
+        @remarks: Every model inherits ToString from Model, so overriding it needs no 'extends'
+        and no 'virtual' written anywhere. It dispatches on the runtime type, so a Square held
+        as a Shape still prints as a square.
+
+        @yields: the same line Describe gives.
     ##
     public override string function ToString()
         yield this.Describe();
@@ -43,17 +56,26 @@ abstract model Shape
 
 end model
 
+# @summary: A four-sided shape with square corners.
 model Rectangle extends Shape
 
+    # @summary: How far across it goes.
     real width;
+
+    # @summary: How far down it goes.
     real height;
 
+    # @summary: A rectangle of the given size.
+    # @across: how wide it is.
+    # @down: how tall it is.
     public function Rectangle(real across, real down)
         base("rectangle");
         this.width = across;
         this.height = down;
     end function
 
+    # @summary: Width times height.
+    # @yields: the area it covers.
     public override real function Area()
         yield this.width * this.height;
     end function
@@ -61,36 +83,50 @@ model Rectangle extends Shape
 end model
 
 ##
-    A square is a rectangle whose sides agree, so it extends one rather than repeating the
-    arithmetic. 'sealed' says nothing may extend it further — there is no narrower square.
+    @summary: A rectangle whose sides agree.
+
+    @remarks: It extends one rather than repeating the arithmetic. 'sealed' says nothing may
+    extend it further — there is no narrower square.
 ##
 sealed model Square extends Rectangle
 
+    # @summary: A square of the given side.
+    # @side: how long each side is.
     public function Square(real side)
         base(side, side);
     end function
 
+    # @summary: The shape in words, saying square rather than rectangle.
+    # @yields: a line naming it and how much it covers.
     public override string function Describe()
         yield "square with area " + this.Area();
     end function
 
 end model
 
+# @summary: A round shape, measured from its centre.
 model Circle extends Shape
 
     ##
-        'constant' says it never changes; 'global' says there is one of it rather than one
-        per circle. Both are needed to reach it as Circle.Pi.
+        @summary: The ratio of a circle's circumference to its diameter.
+
+        @remarks: 'constant' says it never changes; 'global' says there is one of it rather
+        than one per circle. Both are needed to reach it as Circle.Pi.
     ##
     global constant real Pi = 3.14159265358979;
 
+    # @summary: How far it reaches from its centre.
     real radius;
 
+    # @summary: A circle of the given radius.
+    # @r: how far it reaches from its centre.
     public function Circle(real r)
         base("circle");
         this.radius = r;
     end function
 
+    # @summary: Pi times the radius squared.
+    # @yields: the area it covers.
     public override real function Area()
         yield Circle.Pi * this.radius * this.radius;
     end function
@@ -134,6 +170,9 @@ global model Program
         end for
     end function
 
+    # @summary: Adds up the areas of a mixed set of shapes.
+    # @shapes: the shapes to measure, of whatever kind.
+    # @yields: the total area they cover.
     real function TotalArea(Shape[] shapes)
         real total = 0.0;
 

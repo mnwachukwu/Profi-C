@@ -85,6 +85,85 @@ public sealed class DocumentationTests : LexerTestBase
         Assert.That(unit.Documentation, Is.Empty);
     }
 
+    /// <summary>
+    /// <para>A run of line comments is one documentation comment.</para>
+    /// <para>Everything but the summary needs a line of its own, so reading each mark
+    /// separately would leave every line after the first opening with something other than
+    /// <c>@summary:</c> — read as prose and dropped without a word. Nothing separates the
+    /// lines of a run but the newline between them.</para>
+    /// </summary>
+    [Test]
+    public void ARunOfLineCommentsIsOneComment()
+    {
+        CompilationUnit unit = Compile(
+            Program("""
+                # @summary: Adds two numbers.
+                # @a: the first.
+                # @b: the second.
+                # @yields: their sum.
+                global integer function Add(integer a, integer b)
+                    yield a + b;
+                end function
+            """),
+            out DiagnosticBag diagnostics);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(unit.Documentation, Has.Count.EqualTo(1));
+            Assert.That(unit.Documentation[0].Summary, Is.EqualTo("Adds two numbers."));
+            Assert.That(
+                unit.Documentation[0].Parameters.Select(p => p.Name),
+                Is.EqualTo(new[] { "a", "b" }));
+            Assert.That(diagnostics.Select(d => d.Id), Is.Empty);
+        });
+    }
+
+    /// <summary>A label in a run is held to the same account as one written in a block.</summary>
+    [Test]
+    public void ARunIsCheckedLikeABlock() => Assert.That(
+        Report(Program("""
+            # @summary: Adds two numbers.
+            # @first: not what it is called.
+            global integer function Add(integer a, integer b)
+                yield a + b;
+            end function
+        """)),
+        Is.EqualTo(new[] { "PC0245" }));
+
+    /// <summary>A blank line ends a run, so what follows it is a comment of its own.</summary>
+    [Test]
+    public void ABlankLineEndsARun()
+    {
+        CompilationUnit unit = Compile(
+            Program("""
+                # @summary: One comment.
+
+                # @summary: And a second, which is not part of the first.
+                global integer function Total(integer n)
+                    yield n;
+                end function
+            """),
+            out _);
+
+        Assert.That(unit.Documentation, Has.Count.EqualTo(2));
+    }
+
+    /// <summary>A type carries a doc written on one line as readily as a member does.</summary>
+    [Test]
+    public void ATypeCanBeDocumentedOnOneLine() => Assert.That(
+        Report("""
+            # @summary: A pair of numbers.
+            model Pair
+                integer a;
+            end model
+
+            global model Program
+                function Main()
+                end function
+            end model
+            """),
+        Is.Empty);
+
     /// <summary>One line is enough where one line is enough.</summary>
     [Test]
     public void ALineCommentDocumentsToo()
@@ -322,6 +401,29 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                 {member}
             end model
+
+            global model Program
+                function Main()
+                end function
+            end model
+            """),
+        Is.Empty);
+
+    /// <summary>
+    /// A namespace carries documentation too. Nothing is declared in one directly, but it is a
+    /// name a reader meets and can ask about — and without it, a file whose first declaration
+    /// is a namespace could carry no documented heading at all.
+    /// </summary>
+    [Test]
+    public void ANamespaceCanBeDocumented() => Assert.That(
+        Report("""
+            ##
+                @summary: Shapes that sit flat on a page.
+            ##
+            namespace Flat
+                model Circle
+                end model
+            end namespace
 
             global model Program
                 function Main()

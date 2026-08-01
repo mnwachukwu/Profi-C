@@ -1,16 +1,21 @@
 ##
     How Books phrases things, which is nobody else's business.
 
-    No visibility is written, so this reaches its own project and stops there. Library references
-    Books and still cannot name Wording — which is the point. Books can change how it phrases a
-    book, or delete this model outright, without breaking anyone, because nobody outside could
-    have depended on it.
+    No visibility is written, so this reaches its own project and stops there.
+    Library references Books and still cannot name Wording — which is the point. Books can
+    change how it phrases a book, or delete this model outright, without breaking anyone,
+    because nobody outside could have depended on it.
 
     Book is public for the opposite reason: Library is meant to use it, so it says so.
 ##
 
+# @summary: How Books phrases a book, reachable only inside Books.
 model Wording
 
+    # @summary: Joins a title and an author into one readable line.
+    # @title: what the book is called.
+    # @author: who wrote it.
+    # @yields: the two joined with "by".
     public global string function Join(string title, string author)
         yield title + " by " + author;
     end function

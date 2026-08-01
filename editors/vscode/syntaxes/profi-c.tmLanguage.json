@@ -34,12 +34,10 @@
     },
 
     "documentation-label": {
-      "comment": "A label inside a documentation comment: the mark, the name, and the colon, but not the prose after it. Matched wherever it appears rather than only above a declaration, since a grammar cannot see what follows a comment and colouring it either way says the same true thing — this line is a label. The mark is required, which is exactly the rule the scanner reads by, so prose wrapping onto a line that begins with a word and a colon is left alone.",
-      "match": "(@)([A-Za-z_][A-Za-z0-9_]*)(:)",
+      "comment": "A label inside a documentation comment: the mark, the name and the colon together, but not the prose after it. Matched wherever it appears rather than only above a declaration, since a grammar cannot see what follows a comment and colouring it either way says the same true thing — this line is a label. The mark is required, which is exactly the rule the scanner reads by, so prose wrapping onto a line that begins with a word and a colon is left alone.\n\nScoped as a language constant rather than a keyword, and the choice is about what a reader sees. An extension cannot set a colour: 'configurationDefaults' does not reach editor.tokenColorCustomizations, so whatever scope is chosen here is what the theme paints. Keyword scopes are painted in a theme's loudest colour, which is wrong for a line addressed to tooling; constant scopes are painted in a cool one. The names are a fixed set the language defines, so the scope is honest as well as legible.",
+      "match": "(@[A-Za-z_][A-Za-z0-9_]*:)",
       "captures": {
-        "1": { "name": "punctuation.definition.keyword.profi-c" },
-        "2": { "name": "keyword.other.documentation.profi-c" },
-        "3": { "name": "punctuation.separator.profi-c" }
+        "1": { "name": "constant.language.documentation.profi-c" }
       }
     },
 

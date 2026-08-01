@@ -1,13 +1,13 @@
 ##
     Sets, and the same words on a string.
 
-    A set holds values in the order they were put there. It is not the set of mathematics: the
-    order matters, and the same value may appear twice. Think of it as a row of boxes you can
-    add to and take from.
+    A set holds values in the order they were put there. It is not the set of
+    mathematics: the order matters, and the same value may appear twice. It is a row of boxes
+    to add to and take from.
 
     Nearly every word here also works on a string, because a string is a row of characters and
-    the questions you ask of a row are the same ones. Where the two differ is worth learning
-    once and then never worrying about again: **a set changes, and a string does not.**
+    the questions asked of a row are the same. Where the two differ is worth learning once:
+    **a set changes, and a string does not.**
 ##
 
 global model Program
@@ -26,9 +26,11 @@ global model Program
     # ---- Building one, and changing it ------------------------------------------------
 
     ##
-        Insert, InsertAt, RemoveAt and Clear yield nothing, because they change the set in
-        front of you rather than handing back a new one. Remove is the exception: it yields
-        whether there was anything to remove.
+        @summary: Putting a set together and taking things out of it.
+
+        @remarks: Insert, InsertAt, RemoveAt and Clear yield nothing, because they change the
+        set in front of you rather than handing back a new one. Remove is the exception: it
+        yields whether there was anything to remove.
     ##
     function BuildingOne()
         Console.WriteLine("== building one ==");
@@ -62,6 +64,7 @@ global model Program
 
     # ---- Asking about it ----------------------------------------------------------------
 
+    # @summary: Count, Contains and IndexOf, which read a set without changing it.
     function AskingAboutIt()
         Console.WriteLine("== asking ==");
 
@@ -78,7 +81,9 @@ global model Program
     # ---- Taking a run out -----------------------------------------------------------------
 
     ##
-        Subset copies a run out and leaves the original alone. The second number says where to
+        @summary: Copying a run of a set out of the middle of it.
+
+        @remarks: Subset copies and leaves the original alone. The second number says where to
         stop rather than how many, which is the same reading "until" has in a loop — and it is
         what makes Subset(0, n) and Subset(n, count) put the whole thing back together.
     ##
@@ -97,9 +102,11 @@ global model Program
     # ---- Two sets read together -------------------------------------------------------
 
     ##
-        All three hand back a new set and leave both originals alone. Union appends, so a value
-        in both ends up in the answer twice — the order and the repeats are kept, because that
-        is what this kind of set is.
+        @summary: Union, Intersect and Except, which read two sets together.
+
+        @remarks: All three hand back a new set and leave both originals alone. Union appends,
+        so a value in both ends up in the answer twice — the order and the repeats are kept,
+        because that is what this kind of set is.
 
         Intersect and Except divide a set in two between them: every element goes to exactly one
         of the answers. Putting those back together therefore returns every element — though in
@@ -128,8 +135,10 @@ global model Program
     # ---- The same words, on a string ----------------------------------------------------
 
     ##
-        A string answers the row-of-things questions the same way, because that is what it is.
-        Only the element differs: a character rather than whatever the set holds.
+        @summary: The same words asked of a string.
+
+        @remarks: A string answers the row-of-things questions the same way, because that is
+        what it is. Only the element differs: a character rather than whatever the set holds.
     ##
     function TheSameWordsOnAString()
         Console.WriteLine("== the same words on a string ==");
@@ -150,9 +159,11 @@ global model Program
     # ---- Where the two part company ------------------------------------------------------
 
     ##
-        This is the difference worth learning once. Inserting into a set changes that set.
-        Inserting into a string cannot change it — a string never changes — so it hands back a
-        new one and leaves the original exactly as it was.
+        @summary: Where a set and a string part company.
+
+        @remarks: Inserting into a set changes that set. Inserting into a string cannot change
+        it — a string never changes — so it hands back a new one and leaves the original
+        exactly as it was.
 
         Everything surprising about text in most languages comes from missing this.
     ##
@@ -179,6 +190,7 @@ global model Program
 
     # ---- Getting from one to the other ---------------------------------------------------
 
+    # @summary: Going from a string to a set of characters and back again.
     function BetweenTheTwo()
         Console.WriteLine("== between the two ==");
 
@@ -201,10 +213,12 @@ global model Program
     # ---- The one thing only a set of optionals answers -----------------------------------
 
     ##
-        A set of optionals may hold gaps. Trim, TrimStart and TrimEnd drop them from the ends
-        only, so the type must go on saying a gap is possible. TrimAll drops every one, and so
-        yields a set where nothing can be absent — which is why it is the only one that changes
-        the type, and why nothing after it has to unwrap.
+        @summary: Dropping the gaps out of a set of optionals.
+
+        @remarks: Trim, TrimStart and TrimEnd drop them from the ends only, so the type must go
+        on saying a gap is possible. TrimAll drops every one, and so yields a set where nothing
+        can be absent — which is why it is the only one that changes the type, and why nothing
+        after it has to unwrap.
     ##
     function DroppingTheEmpties()
         Console.WriteLine("== dropping the gaps ==");

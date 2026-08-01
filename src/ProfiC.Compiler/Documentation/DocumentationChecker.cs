@@ -31,7 +31,7 @@ public static class DocumentationChecker
 
         Dictionary<int, Declaration> eligible = [];
 
-        foreach (Declaration declaration in Eligible(unit.Declarations))
+        foreach (Declaration declaration in Eligible(unit.Declarations).Concat(Locals(unit)))
         {
             eligible.TryAdd(declaration.Span.Start.Line, declaration);
         }
@@ -54,9 +54,12 @@ public static class DocumentationChecker
     }
 
     /// <summary>
-    /// Everything that can carry documentation: a type, a member of one, and an enumeration's
-    /// members. A local, a parameter, and a statement cannot, which is what makes a comment
-    /// above one of those report rather than quietly do nothing.
+    /// <para>Everything that can carry documentation: a namespace, a type, a member of one,
+    /// and an enumeration's members. A local, a parameter, and a statement cannot, which is
+    /// what makes a comment above one of those report rather than quietly do nothing.</para>
+    /// <para>A namespace is included because it is a name a reader meets and can ask about,
+    /// even though nothing is declared in it directly. Leaving it out would mean a file whose
+    /// first declaration is a namespace could not carry a documented heading at all.</para>
     /// </summary>
     private static IEnumerable<Declaration> Eligible(IEnumerable<Declaration> declarations)
     {
@@ -65,6 +68,8 @@ public static class DocumentationChecker
             switch (declaration)
             {
                 case NamespaceDecl inside:
+                    yield return inside;
+
                     foreach (Declaration nested in Eligible(inside.Declarations))
                     {
                         yield return nested;
@@ -105,6 +110,32 @@ public static class DocumentationChecker
                 case FieldDecl or FunctionDecl:
                     yield return declaration;
                     break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// <para>Every local declared anywhere in the file.</para>
+    /// <para>A local carries documentation as readily as a member does. Nothing outside the
+    /// function can see it, so nothing will complete on it — but a reader inside that function
+    /// asks what a name holds far more often than they ask about anything else, and that is
+    /// the question a hover answers.</para>
+    /// <para>Found by walking the whole tree rather than by threading through the structured
+    /// walk above, since a local may be nested inside any number of blocks, loops and branches
+    /// and every one of those is just another statement holding statements.</para>
+    /// </summary>
+    private static IEnumerable<Declaration> Locals(SyntaxNode node)
+    {
+        foreach (SyntaxNode child in node.Children)
+        {
+            if (child is LocalDeclStmt local)
+            {
+                yield return local.Declaration;
+            }
+
+            foreach (Declaration nested in Locals(child))
+            {
+                yield return nested;
             }
         }
     }

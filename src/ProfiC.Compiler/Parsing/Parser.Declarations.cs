@@ -218,6 +218,11 @@ public sealed partial class Parser
             return ParseFunctionRest(start, modifiers, returnType: null);
         }
 
+        if (Check(TokenType.Let))
+        {
+            return ParseFieldWrittenWithLet(modifiers, start);
+        }
+
         TypeSyntax type = ParseType();
 
         // "integer function Name(...)" — what was read is the return type.
@@ -232,6 +237,36 @@ public sealed partial class Parser
         Expect(TokenType.Semicolon);
 
         return new FieldDecl(SpanFrom(start), modifiers, type, name, initializer);
+    }
+
+    /// <summary>
+    /// <para>Reads a field someone wrote with <c>let</c>, reports the one thing wrong with it,
+    /// and carries on as though the type had been written.</para>
+    /// <para>Standing a type in is what keeps this to one message. Left to the type parser,
+    /// <c>let</c> is not a type, then the name after it is a second error, then the name is
+    /// looked up as a type and is not one — four reports for a line with a single mistake in
+    /// it, none of them naming the rule.</para>
+    /// </summary>
+    private Declaration ParseFieldWrittenWithLet(DeclarationModifiers modifiers, Token start)
+    {
+        Token let = Current;
+        Advance();
+
+        string name = ExpectIdentifier();
+        Expression? initializer = Match(TokenType.Equal) ? ParseExpression() : null;
+        Expect(TokenType.Semicolon);
+
+        // The suggestion names a type the reader has to choose, since what the initializer
+        // works out to is a question for a pass that has not run yet.
+        _diagnostics.Report(
+            DiagnosticDescriptors.LetIsForLocals, let.Span, "integer", name);
+
+        return new FieldDecl(
+            SpanFrom(start),
+            modifiers,
+            new NamedTypeSyntax(let.Span, "integer"),
+            name,
+            initializer);
     }
 
     /// <summary>Reads a function from its name onward, the <c>function</c> word consumed.</summary>

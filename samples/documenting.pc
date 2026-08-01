@@ -1,7 +1,7 @@
 ##
-    @summary: Writing down what a thing is, where the tooling can find it.
+    Writing down what a thing is, where the tooling can find it.
 
-    @remarks: An ordinary comment explains code to whoever is reading the file. Documentation
+    An ordinary comment explains code to whoever is reading the file. Documentation
     is different: it is meant to reach someone who is not reading the file at all, but calling
     the thing from somewhere else and asking their editor what it does.
 

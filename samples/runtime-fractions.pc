@@ -1,13 +1,12 @@
 ##
     Fractions built while the program runs.
 
-    A fraction literal like 3|4 is fixed when the program is written — both numerals are
-    there in the source. Fraction.Create(n, d) builds one from values worked out at run
-    time, which is what you need the moment the numbers come from a loop, a calculation,
-    or the person using the program.
+    A literal like 3|4 is fixed when the program is written — both numerals are
+    there in the source. Fraction.Create(n, d) builds one from values worked out at run time,
+    which is what the numbers coming from a loop or a calculation need.
 
-    What comes back is an ordinary fraction. It reduces, it carries its sign in the
-    numerator, and every operator works on it.
+    What comes back is an ordinary fraction. It reduces, it carries its sign in the numerator,
+    and every operator works on it.
 ##
 
 global model Program
@@ -16,9 +15,9 @@ global model Program
         Console.WriteLine("== a table of unit fractions ==");
 
         ##
-            Given one number, Create reads it as a whole one — the same as writing a
-            denominator of 1. It is worth having only where nothing says a fraction is
-            wanted: 'let counted = 3;' holds an integer, while Create(3) holds 3|1.
+            Given one number, Create reads it as a whole one — the same as a denominator of 1.
+            It is worth having only where nothing else says a fraction is wanted: 'let counted
+            = 3;' holds an integer, while Create(3) holds 3|1.
         ##
         for d = 2 to 6
             let piece = Fraction.Create(1, d);
@@ -58,8 +57,13 @@ global model Program
     end function
 
     ##
-        The sum of 1|1 through 1|n, exactly. Each term needs a denominator that only exists
-        once the loop is running, so this cannot be written with literals at all.
+        @summary: The sum of 1|1 through 1|n, exactly.
+
+        @remarks: Each term needs a denominator that only exists once the loop is running, so
+        this cannot be written with literals at all.
+
+        @n: how many terms to add.
+        @yields: the exact rational sum.
     ##
     fraction function Harmonic(integer n)
         fraction total = 0;
