@@ -165,6 +165,21 @@
           "comment.line.number-sign.profi-c"
         ],
         "settings": { "foreground": "#4C9A5A" }
+      },
+
+      // The label in a documentation comment: '@summary:', '@yields:', or a parameter's name.
+      // Cyan, because it is the one thing inside a comment that something other than a reader
+      // acts on, and the prose around it should not be mistaken for it.
+      {
+        "scope": "constant.language.documentation.profi-c",
+        "settings": { "foreground": "#00E5FF" }
+      },
+
+      // A line the compiler heeds, such as '# ignore opinion'. Addressed to the compiler
+      // rather than to a reader, so it is set apart from the prose it sits among.
+      {
+        "scope": "comment.line.number-sign.directive.profi-c",
+        "settings": { "foreground": "#7A7A7A" }
       }
     ]
   }

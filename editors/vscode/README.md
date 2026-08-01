@@ -94,6 +94,12 @@ Reload the window — `Ctrl+Shift+P`, "Developer: Reload Window" — and open a 
   same.
 - **The folder name carries the version**, and VS Code will keep serving an old copy if a new
   one arrives under the same name. Bump it to match `package.json` when that changes.
+- **A grammar edit lands on the next reload. A `package.json` edit does not.** Grammar files
+  are read each time one is needed; everything under `contributes` is read once, at the scan,
+  and written to `~/.vscode/extensions/extensions.json` with the version beside it. Raise
+  `version` when you change what the manifest contributes, or the editor goes on serving what
+  it recorded — silently, with the file on disk plainly saying otherwise. Deleting that cache
+  and restarting forces a rescan if a bump ever fails to take.
 
 **How a stale copy shows itself.** The editor colours by whatever rules it has, so a construct
 the copy has never heard of is coloured by the rules for something else, and the symptom looks
@@ -142,31 +148,36 @@ the prose:
 model Account
 ```
 
-Only the label is coloured, never the text after it, and the name is coloured apart from the
-`@` and `:` around it — `constant.language.documentation.profi-c` for the name,
-`punctuation.definition.documentation.profi-c` for the marks.
+Only the label is coloured — the mark, the name and the colon together — never the prose after
+it. The scope is `constant.language.documentation.profi-c`.
 
-The extension ships both as defaults. To change either, or to set colours the extension does
-not, put the block below in `settings.json` — a block of your own replaces the defaults rather
-than merging with them, so copy across anything you want to keep. A rule must name **one**
-scope as a string: writing several as an array is accepted and then quietly ignored.
+## Where the colours come from
 
-## Bump the version whenever package.json changes
+**This extension sets no colours, and none of the ones above come from it.** An extension can
+offer token colours through `configurationDefaults`, and the editor accepts the manifest and
+then ignores them. There is no error and no warning; the manifest sits there naming a colour
+nobody ever sees, which is why this extension no longer carries one.
 
-**A grammar edit shows up on the next reload. A `package.json` edit does not.** Grammar files
-are read each time one is needed; everything under `contributes` is read once, when the editor
-scans the extension, and cached against its id and version. Edit a colour without touching the
-version and the editor keeps serving the old one — no error, no warning, and the file on disk
-plainly says otherwise.
+So every colour on a Profi-C file comes from one of two places:
 
-So raise `version` in `package.json` with any change to it, and point the link at the new
-number, since the folder name carries it:
+1. **A `textMateRules` entry**, in your user or workspace settings. This repository has one in
+   `.vscode/settings.json`, which is what colours these files while working on the language.
+2. **Your theme**, for any scope no rule names.
 
-```bash
-cmd /c rmdir "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0"; New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.1" -Target "D:\Repos\Profi-C\editors\vscode"
+That second case is where the confusion lives. A theme knows nothing about `.profi-c` scopes,
+so it falls back on the general part of the name — `constant.language.documentation.profi-c`
+is painted as whatever the theme does with `constant.language`. In several dark themes that is
+the same colour as `keyword`, so a scope that looks wrong may simply be a scope with no rule.
+
+**When a colour will not take, it is nearly always a missing rule rather than a broken one.**
+Put the cursor on the token and run:
+
+```
+Developer: Inspect Editor Tokens and Scopes
 ```
 
-`Developer: Restart Extension Host` is worth trying first; a plain window reload is not enough.
+The last line names the rule that won. A `.profi-c` scope means a rule is being applied; a bare
+`constant.language` or `keyword` means none is, and the theme is deciding.
 
 ## Checking what the grammar really does
 
@@ -188,11 +199,26 @@ by hand:
 echo '["# @summary: A thing."]' | node tools/scopes.js
 ```
 
-## Tweaking the colours
+## The Profi-C palette
 
-Every theme paints these differently, so the grammar picks scopes rather than colours. To set
-them yourself, put this in `settings.json` and change what you like — anything left out keeps
-whatever your theme says.
+Everything above is already coloured by whatever theme you use, because the grammar names its
+scopes the way every other language does and a theme's rule for `keyword` reaches
+`keyword.declaration.profi-c`. Nothing has to be installed for a `.pc` file to read properly.
+
+What a theme cannot do is tell one Profi-C construct from another where it has no reason to.
+A primitive type and a visibility word are both `storage`, so most themes paint them alike; a
+documentation label inherits from `constant.language`, which several dark themes paint the same
+colour as a keyword. **A palette written for the language does better**, because it can separate
+the things a reader of *this* language wants separated.
+
+That palette lives in [`.vscode/settings.json`](../../.vscode/settings.json) at the root of
+this repository, which is why a `.pc` file opened here looks the same for everyone. To use it
+in your own projects, copy its `editor.tokenColorCustomizations` block into your user
+`settings.json`. It applies as soon as it is saved — no reload, and nothing to install.
+
+It is the only copy, deliberately: two palettes in two files drift, and the one in this README
+had already gone stale on three colours before it was removed. A shortened version, to show the
+shape:
 
 ```jsonc
 "editor.tokenColorCustomizations": {
@@ -203,59 +229,27 @@ whatever your theme says.
     { "scope": "comment.line.number-sign.directive.profi-c",
       "settings": { "foreground": "#7A7A7A" } },
 
-    // The name in a documentation label — the 'summary' of '@summary:'.
-    // Most themes paint a language constant the same colour as a keyword,
-    // so this is worth setting rather than leaving to the theme.
+    // The label in a documentation comment: '@summary:', '@yields:', or a
+    // parameter's name, mark and colon together. Worth setting rather than
+    // leaving to the theme, which paints a language constant the same colour
+    // as a keyword in several of the dark ones.
     { "scope": "constant.language.documentation.profi-c",
       "settings": { "foreground": "#00E5FF" } },
-
-    // The '@' and the ':' around it, kept quieter than the name itself.
-    { "scope": "punctuation.definition.documentation.profi-c",
-      "settings": { "foreground": "#7A7A7A" } },
-
-    // The primitive types: integer, real, boolean, character, string, fraction.
-    { "scope": "storage.type.profi-c", "settings": { "foreground": "#569CD6" } },
-
-    // How far something reaches, and what kind of thing it is: public,
-    // protected, internal, global, constant, virtual, override, abstract,
-    // sealed, extends. Kept apart from the primitives above, so a reader can
-    // tell a modifier from a type at a glance.
-    { "scope": "storage.modifier.profi-c", "settings": { "foreground": "#569CD6" } },
-
-    // What runs, and the closer that ends it. 'end while' matches 'while'.
-    { "scope": ["keyword.control.profi-c", "keyword.control.end.profi-c"],
-      "settings": { "foreground": "#C586C0" } },
-
-    // Words that introduce or compose a declaration: model, function, let,
-    // namespace, using, import, new, as, is, base, this.
-    { "scope": "keyword.other.profi-c", "settings": { "foreground": "#569CD6" } },
-
-    // The name a declaration introduces, and a name being called.
-    { "scope": "entity.name.type.profi-c", "settings": { "foreground": "#4EC9B0" } },
-    { "scope": "entity.name.function.profi-c", "settings": { "foreground": "#DCDCAA" } },
-    { "scope": "entity.name.function.call.profi-c", "settings": { "foreground": "#DCDCAA" } },
-
-    // Types the language provides: Console, Math, DateTime, the exceptions.
-    { "scope": "support.class.profi-c", "settings": { "foreground": "#4EC9B0" } },
-
-    // and, or, not — spelled out, and worth reading as operators.
-    { "scope": "keyword.operator.word.profi-c", "settings": { "foreground": "#C586C0" } },
-
-    { "scope": "constant.numeric.fraction.profi-c", "settings": { "foreground": "#B5CEA8" } },
-    { "scope": "constant.language.profi-c", "settings": { "foreground": "#569CD6" } },
 
     // Both comment forms together. A comment is a comment whichever mark
     // opened it, and naming only one leaves the other whatever grey the
     // theme had in mind.
     { "scope": ["comment.block.profi-c", "comment.line.number-sign.profi-c"],
       "settings": { "foreground": "#4C9A5A" } }
+
+    // ... and the rest, in .vscode/settings.json
   ]
 }
 ```
 
-This repository already carries the comment colour in `.vscode/settings.json`, so a `.pc` file
-opened here reads the same for everyone. That file is workspace-scoped: it changes nothing
-about any other project, and editing a colour there applies at once with no reload.
+A workspace `settings.json` is scoped to the folder it sits in: it changes nothing about any
+other project, and a colour edited there applies at once with no reload. A user
+`settings.json` does the same for everything you open.
 
 **Inside an interpolated string**, the hole is `meta.interpolation`, its doubled braces are
 `punctuation.section.interpolation.begin` and `.end`, and a pattern after the colon is

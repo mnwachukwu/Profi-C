@@ -296,41 +296,118 @@ public sealed class EditorGrammarTests : LexerTestBase
     }
 
     /// <summary>
-    /// <para>Each colour the extension sets names one scope, written as a string.</para>
-    /// <para>A rule may name several scopes as an array, and the editor accepts the shape but
-    /// applies nothing: the rule is silently skipped and the theme paints the token instead.
-    /// One scope per rule is what actually reaches a reader, so a rule with an array here is a
-    /// colour that looks contributed and is not.</para>
+    /// <para>The extension contributes no colours, because it cannot.</para>
+    /// <para>Token colours offered through <c>configurationDefaults</c> are never applied —
+    /// measured, after a manifest carrying them was watched losing to a theme rule for six
+    /// rounds of changing it. Carrying one anyway is worse than carrying none: it reads as a
+    /// colour the extension sets, so the next person to find the wrong colour on screen looks
+    /// at the manifest, sees the right value, and believes it.</para>
+    /// <para>What a reader sees is the scope the grammar chooses and whatever their settings
+    /// or theme paint it. The extension's README carries the block to paste.</para>
     /// </summary>
     [Test]
-    public void EveryColourTheExtensionSetsNamesOneScope()
+    public void TheExtensionContributesNoColours()
     {
         using JsonDocument manifest = JsonDocument.Parse(
             File.ReadAllText(Path.Combine(
                 RepositoryRoot, "editors", "vscode", "package.json")));
 
-        JsonElement[] rules = [.. manifest.RootElement
-            .GetProperty("contributes")
-            .GetProperty("configurationDefaults")
-            .GetProperty("editor.tokenColorCustomizations")
-            .GetProperty("textMateRules")
-            .EnumerateArray()];
+        Assert.That(
+            manifest.RootElement.GetProperty("contributes")
+                    .TryGetProperty("configurationDefaults", out _),
+            Is.False,
+            "an extension cannot set token colours; saying it does misleads");
+    }
+
+    /// <summary>
+    /// <para>Every scope named anywhere colours are chosen is one the grammar still
+    /// produces.</para>
+    /// <para>Two files name these by hand — the workspace settings that colour this repository
+    /// while it is worked on, and the block the extension's README offers anyone else to copy.
+    /// A scope renamed in the grammar leaves both pointing at nothing, which is silent, paints
+    /// nothing, and looks exactly like a colour that will not take. One did sit stale in the
+    /// README for a while, which is how this test came to exist.</para>
+    /// </summary>
+    [TestCase(".vscode/settings.json")]
+    [TestCase("editors/vscode/README.md")]
+    public void EveryColouredScopeIsOneTheGrammarProduces(string file)
+    {
+        string grammar = File.ReadAllText(GrammarPath);
+        string text = File.ReadAllText(Path.Combine(RepositoryRoot, file));
+
+        string[] painted = [.. Regex
+            .Matches(text, @"""scope"":\s*(""[^""]+""|\[[^\]]*\])")
+            .SelectMany(m => Regex.Matches(m.Groups[1].Value, @"""([^""]+)"""))
+            .Select(m => m.Groups[1].Value)
+            .Where(scope => scope.EndsWith(".profi-c", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)];
 
         Assert.Multiple(() =>
         {
-            Assert.That(
-                rules.Select(r => r.GetProperty("scope").ValueKind),
-                Has.All.EqualTo(JsonValueKind.String),
-                "a rule naming an array of scopes is skipped");
+            Assert.That(painted, Is.Not.Empty, $"{file} should name some scopes");
 
             Assert.That(
-                rules.Select(r => r.GetProperty("scope").GetString()!),
-                Is.EquivalentTo(new[]
-                {
-                    "comment.line.number-sign.directive.profi-c",
-                    "constant.language.documentation.profi-c",
-                }));
+                painted.Where(scope => !grammar.Contains(scope, StringComparison.Ordinal)),
+                Is.Empty,
+                $"scopes {file} colours that the grammar no longer produces");
         });
+    }
+
+    /// <summary>
+    /// Settings files admit comments and a JSON reader does not, so they come out before it is
+    /// asked to read one.
+    /// </summary>
+    private static string StripComments(string text) =>
+        Regex.Replace(text, @"^\s*//.*$", string.Empty, RegexOptions.Multiline);
+
+    /// <summary>Every colour a file gives a Profi-C scope, read off its rules.</summary>
+    private static Dictionary<string, string> Palette(string file)
+    {
+        Dictionary<string, string> painted = new(StringComparer.Ordinal);
+
+        foreach (Match rule in Regex.Matches(
+                     File.ReadAllText(Path.Combine(RepositoryRoot, file)),
+                     @"""scope"":\s*(""[^""]+""|\[[^\]]*\])\s*,\s*""settings"":\s*\{([^}]*)\}"))
+        {
+            if (Regex.Match(rule.Groups[2].Value, @"""foreground"":\s*""([^""]+)""")
+                is { Success: true } colour)
+            {
+                foreach (Match scope in Regex.Matches(rule.Groups[1].Value, @"""([^""]+)"""))
+                {
+                    if (scope.Groups[1].Value.EndsWith(".profi-c", StringComparison.Ordinal))
+                    {
+                        painted[scope.Groups[1].Value] = colour.Groups[1].Value;
+                    }
+                }
+            }
+        }
+
+        return painted;
+    }
+
+    /// <summary>
+    /// <para>The palette shown in the extension's README agrees with the one the repository
+    /// uses.</para>
+    /// <para>The README once carried the whole thing and drifted from it on three colours,
+    /// unnoticed, because nothing compared them. It now shows a few rules to give the shape
+    /// and points at <c>.vscode/settings.json</c> for the rest — and the few it shows are held
+    /// to what that file says, since a wrong colour in the one place a reader copies from is
+    /// worse than no example at all.</para>
+    /// </summary>
+    [Test]
+    public void TheReadmePaletteAgreesWithTheRepositorys()
+    {
+        Dictionary<string, string> repository = Palette(Path.Combine(".vscode", "settings.json"));
+        Dictionary<string, string> shown = Palette(Path.Combine("editors", "vscode", "README.md"));
+
+        Assert.That(shown, Is.Not.Empty, "the README should show some of the palette");
+
+        Assert.That(
+            shown.Where(rule => !repository.TryGetValue(rule.Key, out string? real)
+                                || real != rule.Value)
+                 .Select(rule => $"{rule.Key}: README says {rule.Value}"),
+            Is.Empty,
+            "colours the README shows that the repository does not use");
     }
 
     /// <summary>
