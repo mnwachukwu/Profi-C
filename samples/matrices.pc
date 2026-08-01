@@ -1,0 +1,421 @@
+##
+    Grids, cubes, and the arithmetic they hold.
+
+    A set holds values. Nothing stops those values being sets, so 'integer[][]' is a set of
+    sets — a grid — and 'integer[][][]' is a set of grids, which is a cube. No feature was
+    added for either: '[]' means "a set of", and it can be said twice.
+
+    That is worth two brackets of explanation and then a great deal of arithmetic, because a
+    grid of numbers is a matrix, and a matrix is how a turn, a stretch, or a reflection is
+    written down. The second half of this program is that: multiplying grids, and using one to
+    move a point.
+
+    What a grid here is not is a rectangle. Every row is its own set and may be its own
+    length, so nothing but care keeps them square. A fixed-shape kind is a later version's
+    work; until then, the third section is the one to read twice.
+##
+
+shared model Program
+
+    function Main()
+        Program.AGridIsASetOfSets();
+        Program.ACubeIsASetOfGrids();
+        Program.EveryRowIsItsOwnSet();
+        Program.Transposing();
+        Program.Multiplying();
+        Program.TurningAPoint();
+        Program.TurningInSpace();
+        Program.TurningTheCube();
+    end function
+
+    # ---- The shape of it ----------------------------------------------------------------
+
+    ##
+        Two brackets, read left to right: the first picks a row, the second picks within it.
+
+        'square[1][2]' is not one operation but two — take row 1, then take element 2 of what
+        came back. Reading it that way is what makes everything below follow.
+    ##
+    function AGridIsASetOfSets()
+        Console.WriteLine("== a grid is a set of sets ==");
+
+        integer[][] square = {{1, 2, 3},
+                              {4, 5, 6},
+                              {7, 8, 9}};
+
+        Console.WriteLine("  rows:        " + square.Count());
+        Console.WriteLine("  columns:     " + square[0].Count());
+        Console.WriteLine("  square[1][2] is " + square[1][2]);
+
+        Program.WriteGrid("  the whole of it", square);
+    end function
+
+    ##
+        A third bracket, and the same rule again: a cube is a set of grids.
+
+        The first index picks a layer, which is a grid; the second a row within that layer;
+        the third a number within that row. Nothing new is happening — it is "a set of" said
+        three times.
+    ##
+    function ACubeIsASetOfGrids()
+        Console.WriteLine("== a cube is a set of grids ==");
+
+        integer[][][] cube = {{{1, 2}, {3, 4}},
+                              {{5, 6}, {7, 8}}};
+
+        Console.WriteLine("  layers:         " + cube.Count());
+        Console.WriteLine("  cube[1][0][1] is " + cube[1][0][1]);
+
+        Program.WriteCube("  the whole of it", cube);
+    end function
+
+    ##
+        Every row is a set in its own right, so rows may differ in length, and one may be
+        replaced with a set of another size.
+
+        This is the difference between a set of sets and a rectangle. It is the reason
+        'Program.Multiply' below asks each row for its own count rather than measuring once,
+        and the reason a grid built by hand is square only because it was written that way.
+    ##
+    function EveryRowIsItsOwnSet()
+        Console.WriteLine("== every row is its own set ==");
+
+        integer[][] ragged = {{1},
+                              {2, 3},
+                              {4, 5, 6}};
+
+        Console.Write("  row lengths: ");
+
+        for each row in ragged
+            Console.Write(row.Count() + " ");
+        end for
+
+        Console.WriteLine();
+
+        # A row is a value like any other, so one can be handed out and put back.
+        integer[] middle = ragged[1];
+        middle.Insert(99);
+
+        Console.WriteLine("  a row kept and grown: " + ragged[1].Count() + " long now");
+
+        ragged.Insert({7, 8});
+        Console.WriteLine("  a row added:          " + ragged.Count() + " rows now");
+    end function
+
+    # ---- Transforms ---------------------------------------------------------------------
+
+    ##
+        Transposing is the simplest thing that can be done to a grid: what was a row becomes a
+        column.
+
+        Doing it twice gives back what was started with, which is the check worth running on
+        any transform — and the reason it is the first one here.
+    ##
+    function Transposing()
+        Console.WriteLine("== transposing ==");
+
+        integer[][] grid = {{1, 2, 3},
+                            {4, 5, 6}};
+
+        Program.WriteGrid("  before", grid);
+        Program.WriteGrid("  after ", Program.Transpose(grid));
+        Program.WriteGrid("  twice ", Program.Transpose(Program.Transpose(grid)));
+    end function
+
+    ##
+        Multiplying two grids: each number in the answer is one row met with one column.
+
+        The rule reads worse than it works. To fill row r and column c of the answer, walk
+        along row r of the left and down column c of the right, multiplying the pairs and
+        adding them up. That single sentence is the whole operation.
+
+        Multiplying by the identity — ones down the diagonal, zeros elsewhere — changes
+        nothing, which is what makes it the identity and a good way to see the rule is right.
+    ##
+    function Multiplying()
+        Console.WriteLine("== multiplying ==");
+
+        integer[][] a = {{1, 2},
+                         {3, 4}};
+
+        integer[][] b = {{5, 6},
+                         {7, 8}};
+
+        Program.WriteGrid("  a          ", a);
+        Program.WriteGrid("  b          ", b);
+        Program.WriteGrid("  a times b  ", Program.Multiply(a, b));
+
+        # Order matters, which is the first surprise of matrix arithmetic.
+        Program.WriteGrid("  b times a  ", Program.Multiply(b, a));
+
+        Program.WriteGrid("  a times one", Program.Multiply(a, Program.Identity(2)));
+    end function
+
+    # ---- What a matrix is for -----------------------------------------------------------
+
+    ##
+        A grid used on a point is a turn.
+
+        These four numbers are a quarter turn about the origin. Applying them to a point gives
+        the point moved; applying them four times gives the point back, because four quarter
+        turns is a whole one. That is the payoff for everything above: a transform is data, so
+        it can be stored, passed, and combined.
+    ##
+    function TurningAPoint()
+        Console.WriteLine("== turning a point ==");
+
+        integer[][] quarterTurn = {{0, -1},
+                                   {1,  0}};
+
+        integer[] point = {3, 1};
+
+        Program.WriteVector("  start        ", point);
+
+        for turn = 1 to 4
+            point = Program.Apply(quarterTurn, point);
+            Program.WriteVector("  after turn " + turn + " ", point);
+        end for
+    end function
+
+    ##
+        The same idea with one more number in the point, and one more row and column in the
+        grid.
+
+        This turn is about the up-down axis, so the third number never moves while the first
+        two go round. Nothing about the method changed — a bigger point wants a bigger grid,
+        and 'Apply' was already written to ask how big.
+    ##
+    function TurningInSpace()
+        Console.WriteLine("== turning in space ==");
+
+        integer[][] aboutTheVertical = {{0, -1, 0},
+                                        {1,  0, 0},
+                                        {0,  0, 1}};
+
+        integer[] point = {1, 2, 3};
+
+        Program.WriteVector("  start       ", point);
+        Program.WriteVector("  turned once ", Program.Apply(aboutTheVertical, point));
+
+        Program.WriteVector(
+            "  turned twice",
+            Program.Apply(aboutTheVertical, Program.Apply(aboutTheVertical, point)));
+
+        # Combining the turns first gives the same answer as applying them one after the
+        # other, which is the reason multiplying grids is worth having.
+        integer[][] halfTurn = Program.Multiply(aboutTheVertical, aboutTheVertical);
+
+        Program.WriteVector("  combined    ", Program.Apply(halfTurn, point));
+    end function
+
+    ##
+        Turning a whole cube, by turning each of its layers.
+
+        A grid has one transpose; a cube has a choice of which two axes to swap, which is the
+        thing a third bracket really buys. This one leaves the layers where they are and turns
+        the contents of each, so the cube spins about the axis running through them.
+    ##
+    function TurningTheCube()
+        Console.WriteLine("== turning the cube ==");
+
+        integer[][][] cube = {{{1, 2}, {3, 4}},
+                              {{5, 6}, {7, 8}}};
+
+        Program.WriteCube("  before", cube);
+        Program.WriteCube("  turned", Program.TurnEachLayer(cube));
+    end function
+
+    # ---- The arithmetic ------------------------------------------------------------------
+
+    ##
+        @summary: A grid with its rows and columns swapped.
+
+        @remarks: The answer has as many rows as the grid had columns, so it is built a column
+        at a time rather than filled in place.
+
+        @grid: the grid to turn about its diagonal.
+        @yields: a grid where element r,c is the given grid's element c,r.
+    ##
+    integer[][] function Transpose(integer[][] grid)
+        integer[][] turned = {};
+
+        for column = 0 to grid[0].Count() - 1
+            integer[] built = {};
+
+            for row = 0 to grid.Count() - 1
+                built.Insert(grid[row][column]);
+            end for
+
+            turned.Insert(built);
+        end for
+
+        yield turned;
+    end function
+
+    ##
+        @summary: Two grids multiplied, row against column.
+
+        @remarks: Each element of the answer is a row of the left walked against a column of
+        the right, the pairs multiplied and added. The left's rows and the right's columns are
+        what the answer is shaped by, so the left's width must match the right's height.
+
+        @left: the grid on the left of the multiplication.
+        @right: the grid on the right.
+        @yields: the product, with the left's height and the right's width.
+    ##
+    integer[][] function Multiply(integer[][] left, integer[][] right)
+        integer[][] product = {};
+
+        for row = 0 to left.Count() - 1
+            integer[] built = {};
+
+            for column = 0 to right[0].Count() - 1
+                integer total = 0;
+
+                for along = 0 to right.Count() - 1
+                    total = total + (left[row][along] * right[along][column]);
+                end for
+
+                built.Insert(total);
+            end for
+
+            product.Insert(built);
+        end for
+
+        yield product;
+    end function
+
+    ##
+        @summary: A grid that changes nothing it is multiplied by.
+
+        @size: how many rows and columns it should have.
+        @yields: a square grid with ones down the diagonal and zeros elsewhere.
+    ##
+    integer[][] function Identity(integer size)
+        integer[][] built = {};
+
+        for row = 0 to size - 1
+            integer[] line = {};
+
+            for column = 0 to size - 1
+                line.Insert(if row == column then 1 else 0);
+            end for
+
+            built.Insert(line);
+        end for
+
+        yield built;
+    end function
+
+    ##
+        @summary: A grid used on a point, which is what makes it a transform.
+
+        @remarks: The same rule as multiplying, with the point standing in for a grid one
+        column wide. Each number of the answer is one row of the grid met with the whole
+        point.
+
+        @transform: the grid to apply.
+        @point: the point to move, as long as the grid is wide.
+        @yields: the point moved.
+    ##
+    integer[] function Apply(integer[][] transform, integer[] point)
+        integer[] moved = {};
+
+        for row = 0 to transform.Count() - 1
+            integer total = 0;
+
+            for column = 0 to point.Count() - 1
+                total = total + (transform[row][column] * point[column]);
+            end for
+
+            moved.Insert(total);
+        end for
+
+        yield moved;
+    end function
+
+    ##
+        @summary: A cube with each of its layers turned a quarter of the way round.
+
+        @remarks: A layer is a grid, so this is the grid quarter turn done once per layer: the
+        first column read from the bottom up becomes the first row.
+
+        @cube: the cube to turn.
+        @yields: a cube of the same shape, each layer turned.
+    ##
+    integer[][][] function TurnEachLayer(integer[][][] cube)
+        integer[][][] turned = {};
+
+        for each layer in cube
+            integer[][] built = {};
+
+            for column = 0 to layer[0].Count() - 1
+                integer[] line = {};
+
+                for row = layer.Count() - 1 until -1 stepby -1
+                    line.Insert(layer[row][column]);
+                end for
+
+                built.Insert(line);
+            end for
+
+            turned.Insert(built);
+        end for
+
+        yield turned;
+    end function
+
+    # ---- Writing them out -----------------------------------------------------------------
+
+    # @summary: Writes a grid, one row to a line, under a label.
+    # @label: what to call it.
+    # @grid: the grid to write.
+    function WriteGrid(string label, integer[][] grid)
+        Console.WriteLine(label + ":");
+
+        for each row in grid
+            Console.Write("   ");
+
+            for each cell in row
+                Console.Write(" " + cell);
+            end for
+
+            Console.WriteLine();
+        end for
+    end function
+
+    # @summary: Writes a cube, a labeled layer at a time.
+    # @label: what to call it.
+    # @cube: the cube to write.
+    function WriteCube(string label, integer[][][] cube)
+        Console.WriteLine(label + ":");
+
+        for layer = 0 to cube.Count() - 1
+            Console.WriteLine("    layer " + layer + ":");
+
+            for each row in cube[layer]
+                Console.Write("     ");
+
+                for each cell in row
+                    Console.Write(" " + cell);
+                end for
+
+                Console.WriteLine();
+            end for
+        end for
+    end function
+
+    # @summary: Writes a point on one line, under a label.
+    # @label: what to call it.
+    # @point: the numbers to write.
+    function WriteVector(string label, integer[] point)
+        Console.Write(label + ": ");
+
+        for each number in point
+            Console.Write(" " + number);
+        end for
+
+        Console.WriteLine();
+    end function
+
+end model

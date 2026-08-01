@@ -58,7 +58,7 @@ public static class ReservedWords
             ["shared"] = TokenType.Shared,
             ["shiftleft"] = TokenType.ShiftLeft,
             ["shiftright"] = TokenType.ShiftRight,
-            ["step"] = TokenType.Step,
+            ["stepby"] = TokenType.StepBy,
             ["string"] = TokenType.String,
             ["structure"] = TokenType.Structure,
             ["switch"] = TokenType.Switch,

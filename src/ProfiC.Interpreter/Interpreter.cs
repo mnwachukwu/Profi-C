@@ -98,6 +98,14 @@ public sealed partial class Interpreter
                 uncaught.Thrown.Type.Name,
                 uncaught.Thrown.Message ?? string.Empty);
         }
+        catch (Exception raised) when (raised.Data.Contains(RaisedByProgram))
+        {
+            // One the program threw that the language already had a type for. It needs no
+            // carrier on the way up, but it does need saying the same way, or a beginner who
+            // wrote 'throw new Exception("...")' and caught nothing meets a .NET stack trace
+            // where every other unhandled exception gives them a sentence.
+            throw new UncaughtProfiCException(raised.GetType().Name, raised.Message);
+        }
     }
 
     /// <summary>Runs one lowered file, which is a program of one.</summary>
@@ -274,9 +282,7 @@ public sealed partial class Interpreter
         if (++_depth > MaximumDepth)
         {
             _depth--;
-            throw new ProfiCRuntimeException(
-                $"Too many nested calls; stopped after {MaximumDepth}. This usually means a "
-                + "function calls itself without ever reaching a base case.");
+            throw new RecursionTooDeepException(MaximumDepth);
         }
 
         try

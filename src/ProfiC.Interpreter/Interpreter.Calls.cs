@@ -1048,9 +1048,16 @@ public sealed partial class Interpreter
 
         long result = 1;
 
-        for (long i = 2; i <= n; i++)
+        try
         {
-            result = checked(result * i);
+            for (long i = 2; i <= n; i++)
+            {
+                result = checked(result * i);
+            }
+        }
+        catch (OverflowException)
+        {
+            throw Runtime.ArithmeticFailures.TooLargeForAnInteger();
         }
 
         return result;

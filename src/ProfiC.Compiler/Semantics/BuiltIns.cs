@@ -789,9 +789,14 @@ public static class BuiltIns
     /// <summary>Whether a name belongs to the language rather than to a program.</summary>
     public static bool IsBuiltInType(string name) => AllTypeNames.Contains(name);
 
-    /// <summary>Whether <c>extends</c> may name this type.</summary>
+    /// <summary>
+    /// <para>Whether <c>extends</c> may name this type.</para>
+    /// <para>An uncatchable exception may not be extended. A program's own type descending from
+    /// one could be caught while its parent could not, which reads as though catching the
+    /// parent were merely something nobody had tried.</para>
+    /// </summary>
     public static bool MayBeExtended(string name) =>
-        ExceptionNames.Contains(name)
+        (ExceptionNames.Contains(name) && Runtime.BuiltInExceptions.MayBeCaught(name))
         || Models.FirstOrDefault(m => m.Name == name)?.MayBeExtended == true;
 
     /// <summary>

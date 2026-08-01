@@ -81,9 +81,34 @@ public sealed class RefusalMessageTests : LexerTestBase
          + "than 1."),
 
         // ---- Dividing by nothing --------------------------------------------------------------
-        // The platform's own wording, since nothing is added by rephrasing it.
+        // Worded here rather than left as the platform's, which says the same thing for both
+        // operators and says nothing about why the compiler let it through. Both facts are what
+        // a reader wants at this moment: a literal divisor is refused before the program runs,
+        // so meeting this at all means the zero arrived in a variable.
         ("integer zero = 0;\n        Console.WriteLine(1 / zero);", typeof(DivideByZeroException),
-         "Attempted to divide by zero."),
+         "Cannot divide by zero. A divisor written down is refused while compiling as PC0324, "
+         + "so a zero reaching here arrived in a variable and could only be found now."),
+
+        ("integer zero = 0;\n        Console.WriteLine(1 % zero);", typeof(DivideByZeroException),
+         "Cannot take the remainder of a division by zero. A remainder is what a division "
+         + "leaves behind, so it needs a division that can happen."),
+
+        // ---- Numbers that outgrow what holds them ---------------------------------------------
+        ("integer big = 4000000000;\n        Console.WriteLine(big * big);",
+         typeof(OverflowException),
+         "This result is too large to hold. An integer counts up to about 9.2 quintillion, and "
+         + "arithmetic is checked rather than wrapped round, so it stops here instead of "
+         + "carrying on with a number that would look plausible and be wrong."),
+
+        // Denominators multiply on every unlike addition, so a chain of them overflows long
+        // before any one fraction looks large. This is that chain.
+        ("fraction total = 0|1;\n        for n = 1 to 60\n"
+         + "            total = total + Fraction.Create(1, n);\n        end for\n"
+         + "        Console.WriteLine(total);",
+         typeof(OverflowException),
+         "The parts of this fraction have grown too large to hold. Denominators multiply every "
+         + "time two unlike fractions are added, so a long chain of them can outgrow an integer "
+         + "even where no single fraction looks large."),
 
         ("integer zero = 0;\n        Console.WriteLine(Fraction.Create(1, zero));",
          typeof(DivideByZeroException), "A fraction cannot have a denominator of zero."),
@@ -109,9 +134,13 @@ public sealed class RefusalMessageTests : LexerTestBase
          "Cannot read the value of an empty optional."),
 
         // ---- Calling without ever stopping ------------------------------------------------------
-        ("Program.Forever(1);", typeof(ProfiC.Interpreter.ProfiCRuntimeException),
-         "Too many nested calls; stopped after 512. This usually means a function calls itself "
-         + "without ever reaching a base case."),
+        // The one refusal no catch clause takes. It carries a name all the same, because a
+        // reader still has to be told what stopped their program.
+        ("Program.Forever(1);", typeof(ProfiC.Runtime.RecursionTooDeepException),
+         "Calls nested more than 512 deep, so the program stopped. This nearly always means a "
+         + "function calls itself without ever reaching the case that stops it. This is not the "
+         + "machine running out of room — the language counts the calls and stops early, while "
+         + "it can still say what happened."),
 
         // ---- Changing a set that is being walked ------------------------------------------------
         ("integer[] xs = {1, 2};\n        integer[] alias = xs;\n"
@@ -216,14 +245,24 @@ public sealed class RefusalMessageTests : LexerTestBase
         {
             string text = File.ReadAllText(file);
 
-            // Anchored to the start of a line so that a "throw new" written inside a doc
-            // comment is not read as a site. One was, and its message was a worked example.
+            // Two shapes carry a message. A throw writes one where it is raised; a factory
+            // returns one worded in a single place because more than one back end will raise
+            // it. Reading only the first would let anything moved into a factory quietly leave
+            // the coverage, which is the opposite of what centralizing it was for.
+            //
+            // Both are anchored to the start of a line so that a "throw new" written inside a
+            // doc comment is not read as a site. One was, and its message was a worked example.
             foreach (Match site in Regex.Matches(
-                         text, @"^\s*throw new (\w+)\(([\s\S]*?)\);", RegexOptions.Multiline))
+                         text,
+                         @"^\s*throw new (\w+)\(([\s\S]*?)\);"
+                         + @"|^\s*public static \w*Exception \w+\(\) => (new)\(([\s\S]*?)\);",
+                         RegexOptions.Multiline))
             {
+                string written = site.Groups[2].Value + site.Groups[4].Value;
+
                 string literals = string.Join(
                     " ",
-                    Regex.Matches(site.Groups[2].Value, @"""((?:[^""\\]|\\.)*)""")
+                    Regex.Matches(written, @"""((?:[^""\\]|\\.)*)""")
                          .Select(m => m.Groups[1].Value));
 
                 literals = Regex.Replace(literals, @"\{[^}]*\}", "*");

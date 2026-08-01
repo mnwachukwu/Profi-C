@@ -482,7 +482,7 @@ public sealed class InterpreterTests
     [Test]
     public void ANegativeStepCountsDown() => Assert.That(
         RunBody("""
-                for i = 3 until 0 step -1
+                for i = 3 until 0 stepby -1
                     Console.Write(i);
                 end for
                 Console.WriteLine();
@@ -512,18 +512,20 @@ public sealed class InterpreterTests
         Is.EqualTo("123\nlimit 4\n"));
 
     /// <summary>
-    /// And so is the step, at the same moment. One turn reads the header once: the step that
-    /// decided whether this turn runs is the step that advances to the next.
+    /// <para>And so is the step, at the same moment. One turn reads the header once: the step
+    /// that decided whether this turn runs is the step that advances to the next.</para>
+    /// <para>Written with a variable actually called <c>step</c>, which the keyword being
+    /// <c>stepby</c> is what makes possible.</para>
     /// </summary>
     [Test]
     public void SoIsTheStep() => Assert.That(
         RunBody("""
-                integer by = 2;
+                integer step = 2;
 
-                for i = 0 until 10 step by
+                for i = 0 until 10 stepby step
                     Console.Write(i);
                     Console.Write(" ");
-                    by = by + 5;
+                    step = step + 5;
                 end for
 
                 Console.WriteLine();
@@ -549,6 +551,141 @@ public sealed class InterpreterTests
                 end for
         """))!.Message,
         Does.Contain("walking it"));
+
+    // ---- Sets of sets -----------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A set of sets needs nothing added: <c>[]</c> applies to a type already ending in
+    /// one, and indexing is that same operation twice.</para>
+    /// <para>Pinned three deep as well as two, because nothing in the implementation counts
+    /// the brackets and a rule that stopped at two would be a surprising place to stop.</para>
+    /// </summary>
+    [Test]
+    public void SetsNestToAnyDepth() => Assert.That(
+        RunBody("""
+                integer[][] grid = {{1, 2}, {3, 4}};
+                integer[][][] cube = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};
+
+                grid[0][1] = 9;
+
+                Console.WriteLine(grid[0][1] + " " + grid[1][0]);
+                Console.WriteLine(cube[1][0][1] + " " + cube.Count() + " " + cube[0].Count());
+        """),
+        Is.EqualTo("9 3\n6 2 2\n"));
+
+    /// <summary>
+    /// <para>Rows are sets in their own right, so a grid may be ragged and a row handed out is
+    /// the row itself rather than a copy of it.</para>
+    /// <para>This is the property the fixed-shape kind will exist to remove, so it is worth
+    /// stating as behavior rather than leaving as something nobody happened to try. A change
+    /// that quietly made rows uniform would break no other test here.</para>
+    /// </summary>
+    [Test]
+    public void RowsOfAGridAreTheirOwnSets() => Assert.That(
+        RunBody("""
+                integer[][] ragged = {{1}, {2, 3}, {4, 5, 6}};
+
+                for each row in ragged
+                    Console.Write(row.Count() + " ");
+                end for
+
+                integer[] kept = ragged[1];
+                kept.Insert(99);
+
+                Console.WriteLine();
+                Console.WriteLine("grown through the name it was given: " + ragged[1].Count());
+        """),
+        Is.EqualTo("1 2 3 \ngrown through the name it was given: 3\n"));
+
+    // ---- Whose failure it is ----------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A writer that fails on one line and carries the rest, so that a failure which is
+    /// nobody's fault but ours can be produced on purpose.</para>
+    /// <para>Selective rather than total: a writer that broke on everything would break the
+    /// catch clause's own line too, and the test would pass whether or not the clause ran.</para>
+    /// </summary>
+    private sealed class FailingWriter : StringWriter
+    {
+        public override void Write(string? value)
+        {
+            if (value is not null && value.Contains("break", StringComparison.Ordinal))
+            {
+                throw new NotSupportedException("the world outside the program broke");
+            }
+
+            base.Write(value);
+        }
+    }
+
+    /// <summary>
+    /// <para>A fault that is not the program's cannot be caught by the program.</para>
+    /// <para>Every .NET exception answers to <c>Exception</c>, so a clause naming it would take
+    /// a bug in the interpreter as readily as a divide by zero — and having taken it, would
+    /// report it as something the program did. The person who could fix it would never hear.
+    /// </para>
+    /// <para>Written with a broken writer because a real interpreter bug is by definition one
+    /// nobody knows about; this stands in for one, and asks the question that matters, which is
+    /// whether a catch clause can tell whose failure it has.</para>
+    /// </summary>
+    [Test]
+    public void ACatchDoesNotTakeAFailureTheProgramDidNotCause()
+    {
+        DiagnosticBag diagnostics = new();
+
+        CompilationUnit unit = Parser.Parse(
+            new SourceText("""
+                shared model Program
+                    function Main()
+                        try
+                            Console.WriteLine("break the writer");
+                        catch Exception e
+                            Console.WriteLine("caught");
+                        end try
+                    end function
+                end model
+                """, "<test>"),
+            diagnostics);
+
+        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+        Assert.That(diagnostics, Is.Empty, "the program should check cleanly before it is run");
+
+        Assert.Throws<NotSupportedException>(() => ProfiC.Interpreter.Interpreter.Run(
+            Lowering.Lower(unit, model), model, new FailingWriter()));
+    }
+
+    /// <summary>
+    /// The other side of the same rule: an exception the program threw itself is the program's,
+    /// even where it is a bare <c>Exception</c> and so indistinguishable by type from a fault
+    /// in the interpreter. What tells them apart is which of the two raised it.
+    /// </summary>
+    [Test]
+    public void ACatchTakesABareExceptionTheProgramThrewItself() => Assert.That(
+        RunBody("""
+                try
+                    throw new Exception("mine");
+                catch Exception e
+                    Console.WriteLine("caught " + e.Message());
+                end try
+        """),
+        Is.EqualTo("caught mine\n"));
+
+    /// <summary>
+    /// <para>One the program threw and did not catch is described, not dumped.</para>
+    /// <para>A declared exception has a carrier that says as much on the way up. A bare
+    /// <c>Exception</c> has none, so nothing marked it as the program's and the top of the run
+    /// treated it as a fault in the interpreter — which meant a .NET stack trace for a beginner
+    /// whose only mistake was not catching what they threw.</para>
+    /// </summary>
+    [Test]
+    public void AnUncaughtBareExceptionIsDescribedRatherThanDumped() => Assert.That(
+        Assert.Throws<ProfiC.Interpreter.UncaughtProfiCException>(() => RunBody("""
+                throw new Exception("mine to answer for");
+        """))!.Message,
+        Is.EqualTo("unhandled Exception: mine to answer for"));
 
     /// <summary>
     /// The mark is lifted however the walk ends, so a set left early by <c>break</c> can be
@@ -758,6 +895,14 @@ public sealed class InterpreterTests
             """),
         Is.EqualTo("120\n"));
 
+    /// <summary>
+    /// <para>Nesting too deep has a name, and says it is not the machine running out of room.
+    /// </para>
+    /// <para>Both halves matter. The name is what a reader is told, and it is not
+    /// <c>StackOverflowException</c> because this is not one — the language counts calls and
+    /// stops at its own number, long before the machine is anywhere near the end of its stack.
+    /// </para>
+    /// </summary>
     [Test]
     public void RunawayRecursionFailsWithAnExplanationRatherThanAStackOverflow() => Assert.That(
         () => Run("""
@@ -771,8 +916,33 @@ public sealed class InterpreterTests
                 end function
             end model
             """),
-        Throws.InstanceOf<ProfiC.Interpreter.ProfiCRuntimeException>()
-              .With.Message.Contains("nested calls"));
+        Throws.InstanceOf<RecursionTooDeepException>()
+              .With.Message.Contains("not the machine running out of room"));
+
+    /// <summary>
+    /// <para>And no clause takes it, the root included.</para>
+    /// <para>This is the one place the language breaks "a name it can raise is a name a program
+    /// can catch", so it is the one place worth a test of its own: a change that quietly made
+    /// this catchable would look like every other exception working.</para>
+    /// </summary>
+    [Test]
+    public void NestingTooDeepIsNotCaughtByAnything() => Assert.That(
+        () => Run("""
+            shared model Program
+                function Main()
+                    try
+                        Program.Forever(1);
+                    catch Exception e
+                        Console.WriteLine("caught");
+                    end try
+                end function
+
+                integer function Forever(integer n)
+                    yield Program.Forever(n + 1);
+                end function
+            end model
+            """),
+        Throws.InstanceOf<RecursionTooDeepException>());
 
     [Test]
     public void ALocalFunctionSeesTheEnclosingScope() => Assert.That(

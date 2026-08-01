@@ -120,7 +120,7 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           LiteralExpr "== a step that grows ==" [String]
-      VarDeclStmt 'by'
+      VarDeclStmt 'step'
         NamedTypeSyntax 'integer'
         LiteralExpr 1 [Integer]
       ExpressionStmt
@@ -131,7 +131,7 @@ CompilationUnit
       ForStmt 'i' until
         LiteralExpr 0 [Integer]
         LiteralExpr 20 [Integer]
-        IdentifierExpr 'by'
+        IdentifierExpr 'step'
         ExpressionStmt
           CallExpr
             MemberExpr 'Write'
@@ -143,9 +143,9 @@ CompilationUnit
               IdentifierExpr 'Console'
             LiteralExpr " " [String]
         AssignmentStmt
-          IdentifierExpr 'by'
+          IdentifierExpr 'step'
           BinaryExpr '*'
-            IdentifierExpr 'by'
+            IdentifierExpr 'step'
             LiteralExpr 2 [Integer]
       ExpressionStmt
         CallExpr

@@ -19,13 +19,13 @@ enumeration extends     false       finally     for         fraction
 function    if          import      in          integer     internal
 is          let         model       namespace   new         not
 or          override    protected   public      real        sealed
-shared      shiftleft   shiftright  step        string      structure
+shared      shiftleft   shiftright  stepby      string      structure
 switch      then        this        throw       to          true
 try         until       using       virtual     while       xor
 yield
 ```
 
-A name may take one back by writing `@` in front of it — `@end`, `@step` — which is the only
+A name may take one back by writing `@` in front of it — `@end`, `@each` — which is the only
 place a name may begin with something other than a letter.
 
 ### 1.1a How many words that is
@@ -97,6 +97,12 @@ Members are private by default, so `protected`, `internal`, and `public` opt out
 | `IOException` | thrown when a file operation fails for any reason other than the file not being there |
 
 Users may extend `Exception` and its subtypes. `Model` **is** extendable and is extended implicitly by everything, exactly as `object` is in C#; what cannot be done is redeclaring the name. `Console` and `Reference` are `shared model`s, so neither can be extended or instantiated.
+
+**The names are .NET's; the messages are not.** A name a reader learns here means the same thing in C#, which is why none of them were renamed. What each one *says* is written for this language: `1 / zero` reports that a divisor written down would have been refused while compiling, so this one must have arrived in a variable — where C# says only "Attempted to divide by zero."
+
+**`catch Exception` takes less than C#'s `catch (Exception)`.** It takes what the program caused, and not a failure in the implementation. In C# the root clause takes everything including a bug in a library, which is how a `catch (Exception)` ends up reporting someone else's defect as the program's.
+
+**Calling too deeply stops the program rather than throwing**, so no clause takes it — the reasoning behind C#'s uncatchable `StackOverflowException`, applied the same way. It does not borrow that name, since a name shared with C# should behave as C#'s does.
 
 **`Model` roots the value types too.** Structures and enumerations inherit its members, which is where their `ToString()` and `Equals()` come from, exactly as a C# struct inherits from `object`. What they cannot do — **permanently, not merely for now** — is be *assigned* to a `Model` variable. That conversion is boxing, and Profi-C does not have it.
 
@@ -339,7 +345,7 @@ everywhere without one. See §12.3 of the specification.
 
 **A diagnostic carries one of three severities**, and what separates them is how much is known about what the program means. An **error** is reported where the meaning is genuinely unpredictable, and only an error blocks compilation. A **warning** is reported where the meaning is clear and unlikely to be what was intended. An **opinion** is reported where the meaning is clear, intended, and correct, and the language would still write it differently.
 
-**Warnings are few and each one names its fix.** Fourteen exist: more quotes in a row than close a block string, a type shadowing one the language provides, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, unreachable code, an import naming an absolute path, imports that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one naming a diagnostic that stops compilation, and one in a project file naming neither a severity nor a diagnostic — and three about documentation that has come apart from what it documents: one above nothing that can carry it, one naming a parameter that is not there, and one describing a value never given back.
+**Warnings are few and each one names its fix.** Fifteen exist: more quotes in a row than close a block string, a type shadowing one the language provides, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, unreachable code, a `catch` naming the one exception nothing catches, an import naming an absolute path, imports that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one naming a diagnostic that stops compilation, and one in a project file naming neither a severity nor a diagnostic — and three about documentation that has come apart from what it documents: one above nothing that can carry it, one naming a parameter that is not there, and one describing a value never given back.
 
 **Opinions are the language having taste, and every one says a written token has no effect.** Ten exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, `virtual` beside `abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences nothing, and a doc that says the same thing twice.
 

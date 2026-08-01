@@ -54,6 +54,11 @@ public static class DiagnosticRenderer
             UncaughtProfiCException uncaught =>
                 $"{label}: unhandled {uncaught.TypeName}: {uncaught.Text}",
 
+            // Named, so a reader knows what stopped them, but never "unhandled" — that word
+            // implies a handler was the missing piece, and no clause could have taken this.
+            _ when !BuiltInExceptions.MayBeCaught(failure.GetType().Name) =>
+                $"{label}: {failure.GetType().Name}: {failure.Message}",
+
             _ when BuiltInExceptions.IsBuiltIn(failure) =>
                 $"{label}: unhandled {failure.GetType().Name}: {failure.Message}",
 

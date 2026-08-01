@@ -1,4 +1,4 @@
 18! = 6402373705728000
 19! = 121645100408832000
 20! = 2432902008176640000
-overflow.pc: unhandled OverflowException: Arithmetic operation resulted in an overflow.
+overflow.pc: unhandled OverflowException: This result is too large to hold. An integer counts up to about 9.2 quintillion, and arithmetic is checked rather than wrapped round, so it stops here instead of carrying on with a number that would look plausible and be wrong.

@@ -141,7 +141,7 @@ namespace Tour
                 explicitly = explicitly + i;
             end for
 
-            for i = 10 until 0 step -1
+            for i = 10 until 0 stepby -1
                 explicitly = explicitly - i;
             end for
 

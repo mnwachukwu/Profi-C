@@ -60,6 +60,83 @@ public sealed class SequenceChangedException : InvalidOperationException
 }
 
 /// <summary>
+/// <para>Thrown when calls nest deeper than the language will follow, which is almost always a
+/// function that calls itself without ever reaching a base case.</para>
+/// <para><b>This is not a stack overflow.</b> The limit is a count the language keeps, and it
+/// is reached long before the machine is anywhere near out of room — deliberately, so that the
+/// program stops while it can still say why. A real stack overflow gives no such chance: by the
+/// time it happens there is no room left to report it in.</para>
+/// <para>It has a name because a reader deserves to know what stopped their program, and it
+/// cannot be caught because there is nothing useful a program could do with it. The depth is
+/// the language's number rather than the program's, so a handler would run at an arbitrary
+/// point with every frame beneath it abandoned half-finished. .NET's
+/// <c>StackOverflowException</c> is uncatchable for the same reason, and this is the same
+/// bargain — a name to read, and no pretence that catching it would help.</para>
+/// </summary>
+public sealed class RecursionTooDeepException : Exception
+{
+    public RecursionTooDeepException(int depth)
+        : base($"Calls nested more than {depth} deep, so the program stopped. This nearly "
+               + "always means a function calls itself without ever reaching the case that "
+               + "stops it. This is not the machine running out of room — the language counts "
+               + "the calls and stops early, while it can still say what happened.")
+    {
+    }
+
+    public RecursionTooDeepException(string message)
+        : base(message)
+    {
+    }
+
+    public RecursionTooDeepException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
+
+/// <summary>
+/// <para>The arithmetic that cannot answer, worded once.</para>
+/// <para>These carry <c>System</c> types, because the name is what a reader takes with them to
+/// another language and those names are already right. The wording is not: a message is read
+/// once and thrown away, so there is nothing to be gained by keeping .NET's and something to
+/// lose, which is the only voice a program speaks in while it is failing.</para>
+/// <para>Both back ends read from here, so the interpreter and the emitter cannot drift into
+/// saying different things about the same fault.</para>
+/// </summary>
+public static class ArithmeticFailures
+{
+    /// <summary>Dividing by a divisor that turned out to be zero.</summary>
+    public static DivideByZeroException DivideByZero() => new(
+        "Cannot divide by zero. A divisor written down is refused while compiling as PC0324, "
+        + "so a zero reaching here arrived in a variable and could only be found now.");
+
+    /// <summary>Taking a remainder against a divisor that turned out to be zero.</summary>
+    public static DivideByZeroException RemainderByZero() => new(
+        "Cannot take the remainder of a division by zero. A remainder is what a division "
+        + "leaves behind, so it needs a division that can happen.");
+
+    /// <summary>
+    /// A whole-number result too large to hold. The bound is stated because "too large" means
+    /// nothing without it, and the design decision is stated because a reader arriving from a
+    /// language that wraps round will otherwise expect a wrong answer rather than a stop.
+    /// </summary>
+    public static OverflowException TooLargeForAnInteger() => new(
+        "This result is too large to hold. An integer counts up to about 9.2 quintillion, and "
+        + "arithmetic is checked rather than wrapped round, so it stops here instead of "
+        + "carrying on with a number that would look plausible and be wrong.");
+
+    /// <summary>
+    /// A fraction whose parts no longer fit. Denominators multiply on every unlike addition, so
+    /// this arrives from a chain of them rather than from one large number, which is worth
+    /// saying: the operand a reader is looking at is rarely the one at fault.
+    /// </summary>
+    public static OverflowException TooLargeForAFraction() => new(
+        "The parts of this fraction have grown too large to hold. Denominators multiply every "
+        + "time two unlike fractions are added, so a long chain of them can outgrow an integer "
+        + "even where no single fraction looks large.");
+}
+
+/// <summary>
 /// <para>The exceptions a Profi-C program can name, and what each is at run time.</para>
 /// <para>Recorded here so that one place answers the question, rather than the mapping being
 /// implicit in the emitter.</para>
@@ -82,6 +159,7 @@ public static class BuiltInExceptions
         ("FormatException", typeof(FormatException)),
         ("ArgumentException", typeof(ArgumentException)),
         ("OverflowException", typeof(OverflowException)),
+        ("RecursionTooDeepException", typeof(RecursionTooDeepException)),
 
         // Everything that can go wrong with a file except the file not being there, which is
         // an absent optional rather than a fault. Maps onto System.IOException, which is
@@ -92,6 +170,19 @@ public static class BuiltInExceptions
 
     /// <summary>Every exception name the language defines.</summary>
     public static IReadOnlyList<string> Names { get; } = [.. Catalog.Select(entry => entry.Name)];
+
+    /// <summary>
+    /// <para>The names a program may write but never catch.</para>
+    /// <para>Being nameable and being catchable are separate: a reader needs the name to
+    /// understand what stopped their program, which is why these are in the catalog at all,
+    /// but no <c>catch</c> takes one. A clause naming one is reported rather than left to sit
+    /// there looking like a handler.</para>
+    /// </summary>
+    public static IReadOnlySet<string> Uncatchable { get; } =
+        new HashSet<string>(StringComparer.Ordinal) { "RecursionTooDeepException" };
+
+    /// <summary>Whether a <c>catch</c> naming this type could ever take anything.</summary>
+    public static bool MayBeCaught(string profiCName) => !Uncatchable.Contains(profiCName);
 
     /// <summary>Maps a Profi-C exception name to the type it denotes.</summary>
     public static Type? Resolve(string profiCName)

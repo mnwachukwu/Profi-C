@@ -875,6 +875,22 @@ public static class DiagnosticDescriptors
         + "from 0 to 63 is what there is to move.");
 
     /// <summary>
+    /// <para>A <c>catch</c> naming an exception no <c>catch</c> can take.</para>
+    /// <para>Such a name is written so a reader can be told what stopped their program, not so a
+    /// program can go on from it. Nothing in the line says which kind it is, so a clause naming
+    /// one would sit there looking like a handler and never run.</para>
+    /// <para>A warning rather than an error, for the reason <c>PC0327</c> is one: the program
+    /// says exactly one thing and nothing about its meaning is in doubt. The clause simply does
+    /// not run, and the rest of the try works as written.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ExceptionCannotBeCaught = Warning(
+        "PC0344",
+        "This exception cannot be caught",
+        "Nothing catches {0}. It has a name so that a reader can be told what stopped the "
+        + "program, and it stops the program because there is nothing useful to do about it. "
+        + "This clause would never run.");
+
+    /// <summary>
     /// <para>A local, parameter, or loop binding reusing a name already visible from a scope
     /// around it.</para>
     /// <para>Inside a function body a bare name means exactly one thing throughout, and this is

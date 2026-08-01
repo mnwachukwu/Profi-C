@@ -59,6 +59,7 @@ public sealed partial class TypeChecker
 
                 foreach (CatchClause clause in tryStmt.Catches)
                 {
+                    CheckCatchIsReachable(clause);
                     CheckStatements(clause.Body);
                 }
 
@@ -279,6 +280,21 @@ public sealed partial class TypeChecker
                 call,
                 walked.Name,
                 member.MemberName);
+        }
+    }
+
+    /// <summary>
+    /// <para>A <c>catch</c> clause naming an exception nothing ever hands to one.</para>
+    /// <para>Nothing in the line separates a name that can be caught from one that cannot, so
+    /// without this the clause reads as a handler and silently never runs — which is worse than
+    /// the name being unavailable, because the author believes they covered the case.</para>
+    /// </summary>
+    private void CheckCatchIsReachable(CatchClause clause)
+    {
+        if (_model.GetType(clause.ExceptionType) is { } named
+            && !Runtime.BuiltInExceptions.MayBeCaught(named.Name))
+        {
+            Report(DiagnosticDescriptors.ExceptionCannotBeCaught, clause.ExceptionType, named.Name);
         }
     }
 

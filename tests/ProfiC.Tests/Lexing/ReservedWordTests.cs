@@ -20,7 +20,7 @@ public sealed class ReservedWordTests : LexerTestBase
         "extends", "false", "finally", "for", "fraction", "function", "if", "import", "in",
         "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or",
         "override",
-        "protected", "public", "real", "sealed", "shared", "shiftleft", "shiftright", "step",
+        "protected", "public", "real", "sealed", "shared", "shiftleft", "shiftright", "stepby",
         "string",
         "structure", "switch",
         "then", "this", "throw", "to", "true", "try", "until", "using", "virtual", "while",
@@ -42,6 +42,13 @@ public sealed class ReservedWordTests : LexerTestBase
         // is worth pinning as one: it reads like a modifier, so a program that uses it as a
         // variable must still lex as a variable.
         "global",
+
+        // The keyword is 'stepby'. 'step' was given back because it is the natural name for
+        // what a range loop's third clause is handed, and a keyword written in only one
+        // position loses nothing by being longer. Pinned here because that is the entire
+        // point of the rename: if this word ever became reserved again, the change would have
+        // bought nothing and nothing else would say so.
+        "step",
     ];
 
     public static IEnumerable<string> ExpectedWords => Expected;
@@ -52,16 +59,18 @@ public sealed class ReservedWordTests : LexerTestBase
 
     /// <summary>
     /// <para>A reserved word may be used as a name by writing '@' in front of it.</para>
-    /// <para>Twelve of the reserved words are ordinary things to call a variable — 'end',
-    /// 'base', 'to', 'each', 'step' among them — and no amount of renaming keywords frees them
-    /// all. The mark takes one back deliberately, and it is the only place a name may begin
-    /// with something other than a letter.</para>
+    /// <para>Eleven of the reserved words are ordinary things to call a variable — 'end',
+    /// 'base', 'to', 'each' among them — and no amount of renaming keywords frees them all.
+    /// The mark takes one back deliberately, and it is the only place a name may begin with
+    /// something other than a letter.</para>
+    /// <para>'step' is no longer among them: a word only ever written in one position can be
+    /// lengthened without costing any clarity, which is what 'stepby' does and what gave the
+    /// plain word back. The one below checks it really did.</para>
     /// </summary>
     [TestCase("@end")]
     [TestCase("@base")]
     [TestCase("@to")]
     [TestCase("@each")]
-    [TestCase("@step")]
     [TestCase("@this")]
     public void AnEscapedReservedWordScansAsAName(string written)
     {

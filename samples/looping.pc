@@ -79,20 +79,23 @@ shared model Program
     function ALiveStep()
         Console.WriteLine("== a step that grows ==");
 
-        integer by = 1;
+        # 'step' is an ordinary name. The keyword is 'stepby', which is longer for exactly this
+        # reason: it can appear nowhere else, so lengthening it costs nothing and leaves the
+        # plain word for whoever wants it.
+        integer step = 1;
 
         Console.Write("  counted: ");
-        for i = 0 until 20 step by
+        for i = 0 until 20 stepby step
             Console.Write(i);
             Console.Write(" ");
-            by = by * 2;
+            step = step * 2;
         end for
 
         Console.WriteLine();
 
         # A negative step counts down, and 'until' still stops short of its bound.
         Console.Write("  down:    ");
-        for i = 5 until 0 step -1
+        for i = 5 until 0 stepby -1
             Console.Write(i);
             Console.Write(" ");
         end for

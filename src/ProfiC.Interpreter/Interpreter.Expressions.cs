@@ -200,33 +200,55 @@ public sealed partial class Interpreter
         long result = 1;
         long factor = value;
 
-        for (long remaining = exponent; remaining > 0; remaining /= 2)
+        try
         {
-            if (remaining % 2 == 1)
+            for (long remaining = exponent; remaining > 0; remaining /= 2)
             {
-                result = checked(result * factor);
-            }
+                if (remaining % 2 == 1)
+                {
+                    result = checked(result * factor);
+                }
 
-            if (remaining > 1)
-            {
-                factor = checked(factor * factor);
+                if (remaining > 1)
+                {
+                    factor = checked(factor * factor);
+                }
             }
+        }
+        catch (OverflowException)
+        {
+            throw ArithmeticFailures.TooLargeForAnInteger();
         }
 
         return result;
     }
 
     /// <summary>
-    /// Integer arithmetic. Division truncates, which is worth knowing: one divided by three
-    /// is zero, not a third.
+    /// <para>Integer arithmetic. Division truncates, which is worth knowing: one divided by
+    /// three is zero, not a third.</para>
+    /// <para>The three checked operations are wrapped rather than each testing its own bounds,
+    /// so that one wording covers them and none can be added later without it. Nothing nested
+    /// runs inside the switch, so the only overflow it can catch is its own.</para>
     /// </summary>
-    private static object? IntegerOperation(BinaryOperator op, long a, long b) => op switch
+    private static object? IntegerOperation(BinaryOperator op, long a, long b)
+    {
+        try
+        {
+            return CheckedIntegerOperation(op, a, b);
+        }
+        catch (OverflowException)
+        {
+            throw ArithmeticFailures.TooLargeForAnInteger();
+        }
+    }
+
+    private static object? CheckedIntegerOperation(BinaryOperator op, long a, long b) => op switch
     {
         BinaryOperator.Add => checked(a + b),
         BinaryOperator.Subtract => checked(a - b),
         BinaryOperator.Multiply => checked(a * b),
-        BinaryOperator.Divide => b == 0 ? throw new DivideByZeroException() : a / b,
-        BinaryOperator.Remainder => b == 0 ? throw new DivideByZeroException() : a % b,
+        BinaryOperator.Divide => b == 0 ? throw ArithmeticFailures.DivideByZero() : a / b,
+        BinaryOperator.Remainder => b == 0 ? throw ArithmeticFailures.RemainderByZero() : a % b,
         BinaryOperator.LessThan => a < b,
         BinaryOperator.GreaterThan => a > b,
         BinaryOperator.LessThanOrEqual => a <= b,

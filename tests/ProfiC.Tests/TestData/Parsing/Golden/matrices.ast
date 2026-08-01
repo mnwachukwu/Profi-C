@@ -1,0 +1,919 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AGridIsASetOfSets'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ACubeIsASetOfGrids'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'EveryRowIsItsOwnSet'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Transposing'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Multiplying'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TurningAPoint'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TurningInSpace'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TurningTheCube'
+            IdentifierExpr 'Program'
+    FunctionDecl 'AGridIsASetOfSets'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a grid is a set of sets ==" [String]
+      VarDeclStmt 'square'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 2 [Integer]
+            LiteralExpr 3 [Integer]
+          CollectionExpr
+            LiteralExpr 4 [Integer]
+            LiteralExpr 5 [Integer]
+            LiteralExpr 6 [Integer]
+          CollectionExpr
+            LiteralExpr 7 [Integer]
+            LiteralExpr 8 [Integer]
+            LiteralExpr 9 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  rows:        " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'square'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  columns:     " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IndexExpr
+                  IdentifierExpr 'square'
+                  LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  square[1][2] is " [String]
+            IndexExpr
+              IndexExpr
+                IdentifierExpr 'square'
+                LiteralExpr 1 [Integer]
+              LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  the whole of it" [String]
+          IdentifierExpr 'square'
+    FunctionDecl 'ACubeIsASetOfGrids'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== a cube is a set of grids ==" [String]
+      VarDeclStmt 'cube'
+        SetTypeSyntax
+          SetTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            CollectionExpr
+              LiteralExpr 1 [Integer]
+              LiteralExpr 2 [Integer]
+            CollectionExpr
+              LiteralExpr 3 [Integer]
+              LiteralExpr 4 [Integer]
+          CollectionExpr
+            CollectionExpr
+              LiteralExpr 5 [Integer]
+              LiteralExpr 6 [Integer]
+            CollectionExpr
+              LiteralExpr 7 [Integer]
+              LiteralExpr 8 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  layers:         " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'cube'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  cube[1][0][1] is " [String]
+            IndexExpr
+              IndexExpr
+                IndexExpr
+                  IdentifierExpr 'cube'
+                  LiteralExpr 1 [Integer]
+                LiteralExpr 0 [Integer]
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteCube'
+            IdentifierExpr 'Program'
+          LiteralExpr "  the whole of it" [String]
+          IdentifierExpr 'cube'
+    FunctionDecl 'EveryRowIsItsOwnSet'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== every row is its own set ==" [String]
+      VarDeclStmt 'ragged'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+          CollectionExpr
+            LiteralExpr 2 [Integer]
+            LiteralExpr 3 [Integer]
+          CollectionExpr
+            LiteralExpr 4 [Integer]
+            LiteralExpr 5 [Integer]
+            LiteralExpr 6 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  row lengths: " [String]
+      ForEachStmt 'row'
+        IdentifierExpr 'ragged'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'row'
+              LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      VarDeclStmt 'middle'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        IndexExpr
+          IdentifierExpr 'ragged'
+          LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'middle'
+          LiteralExpr 99 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  a row kept and grown: " [String]
+              CallExpr
+                MemberExpr 'Count'
+                  IndexExpr
+                    IdentifierExpr 'ragged'
+                    LiteralExpr 1 [Integer]
+            LiteralExpr " long now" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'ragged'
+          CollectionExpr
+            LiteralExpr 7 [Integer]
+            LiteralExpr 8 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "  a row added:          " [String]
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'ragged'
+            LiteralExpr " rows now" [String]
+    FunctionDecl 'Transposing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== transposing ==" [String]
+      VarDeclStmt 'grid'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 2 [Integer]
+            LiteralExpr 3 [Integer]
+          CollectionExpr
+            LiteralExpr 4 [Integer]
+            LiteralExpr 5 [Integer]
+            LiteralExpr 6 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  before" [String]
+          IdentifierExpr 'grid'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  after " [String]
+          CallExpr
+            MemberExpr 'Transpose'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'grid'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  twice " [String]
+          CallExpr
+            MemberExpr 'Transpose'
+              IdentifierExpr 'Program'
+            CallExpr
+              MemberExpr 'Transpose'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'grid'
+    FunctionDecl 'Multiplying'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== multiplying ==" [String]
+      VarDeclStmt 'a'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 2 [Integer]
+          CollectionExpr
+            LiteralExpr 3 [Integer]
+            LiteralExpr 4 [Integer]
+      VarDeclStmt 'b'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 5 [Integer]
+            LiteralExpr 6 [Integer]
+          CollectionExpr
+            LiteralExpr 7 [Integer]
+            LiteralExpr 8 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  a          " [String]
+          IdentifierExpr 'a'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  b          " [String]
+          IdentifierExpr 'b'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  a times b  " [String]
+          CallExpr
+            MemberExpr 'Multiply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'a'
+            IdentifierExpr 'b'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  b times a  " [String]
+          CallExpr
+            MemberExpr 'Multiply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'b'
+            IdentifierExpr 'a'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteGrid'
+            IdentifierExpr 'Program'
+          LiteralExpr "  a times one" [String]
+          CallExpr
+            MemberExpr 'Multiply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'a'
+            CallExpr
+              MemberExpr 'Identity'
+                IdentifierExpr 'Program'
+              LiteralExpr 2 [Integer]
+    FunctionDecl 'TurningAPoint'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== turning a point ==" [String]
+      VarDeclStmt 'quarterTurn'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 0 [Integer]
+            UnaryExpr '-'
+              LiteralExpr 1 [Integer]
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 0 [Integer]
+      VarDeclStmt 'point'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 3 [Integer]
+          LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteVector'
+            IdentifierExpr 'Program'
+          LiteralExpr "  start        " [String]
+          IdentifierExpr 'point'
+      ForStmt 'turn' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 4 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'point'
+          CallExpr
+            MemberExpr 'Apply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'quarterTurn'
+            IdentifierExpr 'point'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteVector'
+              IdentifierExpr 'Program'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  after turn " [String]
+                IdentifierExpr 'turn'
+              LiteralExpr " " [String]
+            IdentifierExpr 'point'
+    FunctionDecl 'TurningInSpace'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== turning in space ==" [String]
+      VarDeclStmt 'aboutTheVertical'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            LiteralExpr 0 [Integer]
+            UnaryExpr '-'
+              LiteralExpr 1 [Integer]
+            LiteralExpr 0 [Integer]
+          CollectionExpr
+            LiteralExpr 1 [Integer]
+            LiteralExpr 0 [Integer]
+            LiteralExpr 0 [Integer]
+          CollectionExpr
+            LiteralExpr 0 [Integer]
+            LiteralExpr 0 [Integer]
+            LiteralExpr 1 [Integer]
+      VarDeclStmt 'point'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteVector'
+            IdentifierExpr 'Program'
+          LiteralExpr "  start       " [String]
+          IdentifierExpr 'point'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteVector'
+            IdentifierExpr 'Program'
+          LiteralExpr "  turned once " [String]
+          CallExpr
+            MemberExpr 'Apply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'aboutTheVertical'
+            IdentifierExpr 'point'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteVector'
+            IdentifierExpr 'Program'
+          LiteralExpr "  turned twice" [String]
+          CallExpr
+            MemberExpr 'Apply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'aboutTheVertical'
+            CallExpr
+              MemberExpr 'Apply'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'aboutTheVertical'
+              IdentifierExpr 'point'
+      VarDeclStmt 'halfTurn'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Multiply'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'aboutTheVertical'
+          IdentifierExpr 'aboutTheVertical'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteVector'
+            IdentifierExpr 'Program'
+          LiteralExpr "  combined    " [String]
+          CallExpr
+            MemberExpr 'Apply'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'halfTurn'
+            IdentifierExpr 'point'
+    FunctionDecl 'TurningTheCube'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== turning the cube ==" [String]
+      VarDeclStmt 'cube'
+        SetTypeSyntax
+          SetTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+        CollectionExpr
+          CollectionExpr
+            CollectionExpr
+              LiteralExpr 1 [Integer]
+              LiteralExpr 2 [Integer]
+            CollectionExpr
+              LiteralExpr 3 [Integer]
+              LiteralExpr 4 [Integer]
+          CollectionExpr
+            CollectionExpr
+              LiteralExpr 5 [Integer]
+              LiteralExpr 6 [Integer]
+            CollectionExpr
+              LiteralExpr 7 [Integer]
+              LiteralExpr 8 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteCube'
+            IdentifierExpr 'Program'
+          LiteralExpr "  before" [String]
+          IdentifierExpr 'cube'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteCube'
+            IdentifierExpr 'Program'
+          LiteralExpr "  turned" [String]
+          CallExpr
+            MemberExpr 'TurnEachLayer'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'cube'
+    FunctionDecl 'Transpose'
+      SetTypeSyntax
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'grid'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+      VarDeclStmt 'turned'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'column' to
+        LiteralExpr 0 [Integer]
+        BinaryExpr '-'
+          CallExpr
+            MemberExpr 'Count'
+              IndexExpr
+                IdentifierExpr 'grid'
+                LiteralExpr 0 [Integer]
+          LiteralExpr 1 [Integer]
+        VarDeclStmt 'built'
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+          CollectionExpr
+        ForStmt 'row' to
+          LiteralExpr 0 [Integer]
+          BinaryExpr '-'
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'grid'
+            LiteralExpr 1 [Integer]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Insert'
+                IdentifierExpr 'built'
+              IndexExpr
+                IndexExpr
+                  IdentifierExpr 'grid'
+                  IdentifierExpr 'row'
+                IdentifierExpr 'column'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'turned'
+            IdentifierExpr 'built'
+      YieldStmt
+        IdentifierExpr 'turned'
+    FunctionDecl 'Multiply'
+      SetTypeSyntax
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'left'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+      ParameterDecl 'right'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+      VarDeclStmt 'product'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'row' to
+        LiteralExpr 0 [Integer]
+        BinaryExpr '-'
+          CallExpr
+            MemberExpr 'Count'
+              IdentifierExpr 'left'
+          LiteralExpr 1 [Integer]
+        VarDeclStmt 'built'
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+          CollectionExpr
+        ForStmt 'column' to
+          LiteralExpr 0 [Integer]
+          BinaryExpr '-'
+            CallExpr
+              MemberExpr 'Count'
+                IndexExpr
+                  IdentifierExpr 'right'
+                  LiteralExpr 0 [Integer]
+            LiteralExpr 1 [Integer]
+          VarDeclStmt 'total'
+            NamedTypeSyntax 'integer'
+            LiteralExpr 0 [Integer]
+          ForStmt 'along' to
+            LiteralExpr 0 [Integer]
+            BinaryExpr '-'
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'right'
+              LiteralExpr 1 [Integer]
+            AssignmentStmt
+              IdentifierExpr 'total'
+              BinaryExpr '+'
+                IdentifierExpr 'total'
+                ParenthesizedExpr
+                  BinaryExpr '*'
+                    IndexExpr
+                      IndexExpr
+                        IdentifierExpr 'left'
+                        IdentifierExpr 'row'
+                      IdentifierExpr 'along'
+                    IndexExpr
+                      IndexExpr
+                        IdentifierExpr 'right'
+                        IdentifierExpr 'along'
+                      IdentifierExpr 'column'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Insert'
+                IdentifierExpr 'built'
+              IdentifierExpr 'total'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'product'
+            IdentifierExpr 'built'
+      YieldStmt
+        IdentifierExpr 'product'
+    FunctionDecl 'Identity'
+      SetTypeSyntax
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ParameterDecl 'size'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'built'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'row' to
+        LiteralExpr 0 [Integer]
+        BinaryExpr '-'
+          IdentifierExpr 'size'
+          LiteralExpr 1 [Integer]
+        VarDeclStmt 'line'
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+          CollectionExpr
+        ForStmt 'column' to
+          LiteralExpr 0 [Integer]
+          BinaryExpr '-'
+            IdentifierExpr 'size'
+            LiteralExpr 1 [Integer]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Insert'
+                IdentifierExpr 'line'
+              IfExpr
+                BinaryExpr '=='
+                  IdentifierExpr 'row'
+                  IdentifierExpr 'column'
+                LiteralExpr 1 [Integer]
+                LiteralExpr 0 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'built'
+            IdentifierExpr 'line'
+      YieldStmt
+        IdentifierExpr 'built'
+    FunctionDecl 'Apply'
+      SetTypeSyntax
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'transform'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+      ParameterDecl 'point'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'moved'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForStmt 'row' to
+        LiteralExpr 0 [Integer]
+        BinaryExpr '-'
+          CallExpr
+            MemberExpr 'Count'
+              IdentifierExpr 'transform'
+          LiteralExpr 1 [Integer]
+        VarDeclStmt 'total'
+          NamedTypeSyntax 'integer'
+          LiteralExpr 0 [Integer]
+        ForStmt 'column' to
+          LiteralExpr 0 [Integer]
+          BinaryExpr '-'
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'point'
+            LiteralExpr 1 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'total'
+            BinaryExpr '+'
+              IdentifierExpr 'total'
+              ParenthesizedExpr
+                BinaryExpr '*'
+                  IndexExpr
+                    IndexExpr
+                      IdentifierExpr 'transform'
+                      IdentifierExpr 'row'
+                    IdentifierExpr 'column'
+                  IndexExpr
+                    IdentifierExpr 'point'
+                    IdentifierExpr 'column'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'moved'
+            IdentifierExpr 'total'
+      YieldStmt
+        IdentifierExpr 'moved'
+    FunctionDecl 'TurnEachLayer'
+      SetTypeSyntax
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+      ParameterDecl 'cube'
+        SetTypeSyntax
+          SetTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+      VarDeclStmt 'turned'
+        SetTypeSyntax
+          SetTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+        CollectionExpr
+      ForEachStmt 'layer'
+        IdentifierExpr 'cube'
+        VarDeclStmt 'built'
+          SetTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+          CollectionExpr
+        ForStmt 'column' to
+          LiteralExpr 0 [Integer]
+          BinaryExpr '-'
+            CallExpr
+              MemberExpr 'Count'
+                IndexExpr
+                  IdentifierExpr 'layer'
+                  LiteralExpr 0 [Integer]
+            LiteralExpr 1 [Integer]
+          VarDeclStmt 'line'
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+            CollectionExpr
+          ForStmt 'row' until
+            BinaryExpr '-'
+              CallExpr
+                MemberExpr 'Count'
+                  IdentifierExpr 'layer'
+              LiteralExpr 1 [Integer]
+            UnaryExpr '-'
+              LiteralExpr 1 [Integer]
+            UnaryExpr '-'
+              LiteralExpr 1 [Integer]
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'Insert'
+                  IdentifierExpr 'line'
+                IndexExpr
+                  IndexExpr
+                    IdentifierExpr 'layer'
+                    IdentifierExpr 'row'
+                  IdentifierExpr 'column'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Insert'
+                IdentifierExpr 'built'
+              IdentifierExpr 'line'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'turned'
+            IdentifierExpr 'built'
+      YieldStmt
+        IdentifierExpr 'turned'
+    FunctionDecl 'WriteGrid'
+      ParameterDecl 'label'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'grid'
+        SetTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            IdentifierExpr 'label'
+            LiteralExpr ":" [String]
+      ForEachStmt 'row'
+        IdentifierExpr 'grid'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr "   " [String]
+        ForEachStmt 'cell'
+          IdentifierExpr 'row'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Write'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                LiteralExpr " " [String]
+                IdentifierExpr 'cell'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+    FunctionDecl 'WriteCube'
+      ParameterDecl 'label'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'cube'
+        SetTypeSyntax
+          SetTypeSyntax
+            SetTypeSyntax
+              NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            IdentifierExpr 'label'
+            LiteralExpr ":" [String]
+      ForStmt 'layer' to
+        LiteralExpr 0 [Integer]
+        BinaryExpr '-'
+          CallExpr
+            MemberExpr 'Count'
+              IdentifierExpr 'cube'
+          LiteralExpr 1 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "    layer " [String]
+                IdentifierExpr 'layer'
+              LiteralExpr ":" [String]
+        ForEachStmt 'row'
+          IndexExpr
+            IdentifierExpr 'cube'
+            IdentifierExpr 'layer'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Write'
+                IdentifierExpr 'Console'
+              LiteralExpr "     " [String]
+          ForEachStmt 'cell'
+            IdentifierExpr 'row'
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'Write'
+                  IdentifierExpr 'Console'
+                BinaryExpr '+'
+                  LiteralExpr " " [String]
+                  IdentifierExpr 'cell'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+    FunctionDecl 'WriteVector'
+      ParameterDecl 'label'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'point'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            IdentifierExpr 'label'
+            LiteralExpr ": " [String]
+      ForEachStmt 'number'
+        IdentifierExpr 'point'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr " " [String]
+              IdentifierExpr 'number'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'

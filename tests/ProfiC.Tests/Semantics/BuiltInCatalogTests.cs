@@ -314,6 +314,19 @@ public sealed class BuiltInCatalogTests
         return output.ToString().ReplaceLineEndings("\n");
     }
 
+    /// <summary>Compiles without running, and gives back the ids reported.</summary>
+    private static IReadOnlyList<string> Diagnose(string source)
+    {
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(new SourceText(source, "<test>"), diagnostics);
+
+        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
+        TypeChecker.Check(unit, model, diagnostics);
+        DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+        return [.. diagnostics.Sorted().Select(d => d.Id)];
+    }
+
     /// <summary>
     /// A member that type-checks but produces nothing satisfies every other test in the
     /// suite. Only running it and comparing the answer catches that.
@@ -749,10 +762,13 @@ public sealed class BuiltInCatalogTests
     ];
 
     /// <summary>
-    /// Every exception the language raises is one a program can name after 'catch'. The
+    /// <para>Every exception the language raises is one a program can name after 'catch'. The
     /// compiler reads its list of exception names from the runtime's catalog, so this holds
     /// the other direction: that each name in the catalog really is a type a program can
-    /// mention, and that the two halves have not been allowed to disagree.
+    /// mention, and that the two halves have not been allowed to disagree.</para>
+    /// <para>The uncatchable ones are still named, and still resolve — that is the whole point
+    /// of their being in the catalog. What differs is the clause, so they are checked below
+    /// rather than excused.</para>
     /// </summary>
     [TestCaseSource(nameof(ExceptionNames))]
     public void EveryBuiltInExceptionCanBeNamedAndResolved(string name)
@@ -766,6 +782,11 @@ public sealed class BuiltInCatalogTests
             BuiltIns.IsBuiltInType(name),
             Is.True,
             $"{name} denotes a type but the compiler does not know the name");
+
+        if (!ProfiC.Runtime.BuiltInExceptions.MayBeCaught(name))
+        {
+            return;
+        }
 
         Assert.That(
             RunProgram($$"""
@@ -783,7 +804,33 @@ public sealed class BuiltInCatalogTests
             $"a program cannot catch {name}");
     }
 
+    /// <summary>
+    /// <para>And an uncatchable one is reported where it is named, rather than quietly
+    /// accepted.</para>
+    /// <para>The failure this guards is the silent one: a clause that compiles, reads as a
+    /// handler, and never runs. Nothing in the line distinguishes it from the ten that work.
+    /// </para>
+    /// </summary>
+    [TestCaseSource(nameof(UncatchableExceptionNames))]
+    public void CatchingAnUncatchableExceptionIsReported(string name) => Assert.That(
+        Diagnose($$"""
+            shared model Program
+                function Main()
+                    try
+                        Console.WriteLine("ran");
+                    catch {{name}} problem
+                        Console.WriteLine("never");
+                    end try
+                end function
+            end model
+            """),
+        Does.Contain("PC0344"),
+        $"a clause naming {name} compiles without a word about never running");
+
     public static IEnumerable<string> ExceptionNames => ProfiC.Runtime.BuiltInExceptions.Names;
+
+    public static IEnumerable<string> UncatchableExceptionNames =>
+        ProfiC.Runtime.BuiltInExceptions.Uncatchable;
 
     /// <summary>
     /// <para>A structure prints its fields in the order they were declared.</para>
@@ -866,4 +913,45 @@ public sealed class BuiltInCatalogTests
     [TestCase("Fraction", false)]
     public void ExtendabilityIsRecorded(string name, bool expected) =>
         Assert.That(BuiltIns.MayBeExtended(name), Is.EqualTo(expected));
+
+    // ---- What the specification says about them ---------------------------------------------
+
+    /// <summary>
+    /// <para>Every exception the language raises has a row in the specification's table.</para>
+    /// <para>The list and the table are written separately, so one added to the catalog and not
+    /// to the document leaves a name a program can catch and no way to find out it exists.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void TheSpecificationListsEveryBuiltInException() => Assert.That(
+        ProfiC.Runtime.BuiltInExceptions.Names.Where(
+            name => !File.ReadAllText(SpecificationPath).Contains(
+                $"| `{name}` |", StringComparison.Ordinal)),
+        Is.Empty,
+        "exceptions the language raises with no row in the specification's table");
+
+    /// <summary>
+    /// And counts them, as the sentence above the table does. It said eight over a table of
+    /// ten for long enough that a note written from it carried the wrong number twice.
+    /// </summary>
+    [Test]
+    public void TheSpecificationSaysHowManyThereAre() => Assert.That(
+        File.ReadAllText(SpecificationPath),
+        Does.Contain(
+            $"{Written(ProfiC.Runtime.BuiltInExceptions.Names.Count)} exception types, and "
+            + "every one descends from `Exception`"));
+
+    /// <summary>The spec writes its counts as words, so a count has to be one to be found.</summary>
+    private static string Written(int count) => count switch
+    {
+        8 => "Eight",
+        9 => "Nine",
+        10 => "Ten",
+        11 => "Eleven",
+        12 => "Twelve",
+        _ => count.ToString(),
+    };
+
+    private static string SpecificationPath =>
+        Path.Combine(LexerTestBase.RepositoryRootForTests, "docs", "language-spec.md");
 }

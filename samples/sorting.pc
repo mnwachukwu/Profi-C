@@ -75,7 +75,7 @@ shared model Program
     ##
         @summary: The same values read from the back.
 
-        @remarks: 'step' says how far each turn moves, and a negative one counts down, so this
+        @remarks: 'stepby' says how far each turn moves, and a negative one counts down, so this
         walks the last index to the first. Without it a range loop always moves by one, and
         reading a set backwards would mean subtracting the counter from the count every time.
 
@@ -85,7 +85,7 @@ shared model Program
     string function RenderBackwards(integer[] values)
         string text = "";
 
-        for i = values.Count() - 1 to 0 step -1
+        for i = values.Count() - 1 to 0 stepby -1
             if i < values.Count() - 1
                 text = text + ", ";
             end if

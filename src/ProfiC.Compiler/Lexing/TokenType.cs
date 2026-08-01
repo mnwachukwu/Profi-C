@@ -113,7 +113,7 @@ public enum TokenType
     Shared,
     ShiftLeft,
     ShiftRight,
-    Step,
+    StepBy,
     String,
     Structure,
     Switch,

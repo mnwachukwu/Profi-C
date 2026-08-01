@@ -7,6 +7,12 @@ namespace ProfiC.Interpreter;
 public sealed partial class Interpreter
 {
     /// <summary>
+    /// Set on an exception a program threw itself, which is the only way to tell one from a
+    /// fault in the interpreter when both are a plain <c>System.Exception</c>.
+    /// </summary>
+    private const string RaisedByProgram = "ProfiC.RaisedByProgram";
+
+    /// <summary>
     /// <para>Runs a run of statements, the functions it declares in place first.</para>
     /// <para>A function declared among statements is in scope throughout the run rather than
     /// from its own line onward, so a call may sit above it and two of them may call each
@@ -320,9 +326,20 @@ public sealed partial class Interpreter
     /// are matched against the .NET type behind the name. One a program declared is an ordinary
     /// instance, and is matched up its own inheritance chain — which reaches the built-in
     /// <c>Exception</c>, so <c>catch Exception</c> takes both.</para>
+    /// <para>A third kind must not be matched at all: a fault in the interpreter itself. Every
+    /// .NET exception answers to <c>Exception</c>, so without the built-in test a bug in here
+    /// would be handed to the program as though the program had caused it — caught, described
+    /// by a <c>catch</c> block that has nothing to do with it, and hidden from the person who
+    /// could fix it. This is the same division the top of a program already draws, so a failure
+    /// that is ours rather than the program's is treated the same way wherever it is met.</para>
     /// </summary>
     private CatchClause? FindHandler(TryStmt tryStmt, Exception thrown)
     {
+        if (!RaisedByTheProgram(thrown))
+        {
+            return null;
+        }
+
         foreach (CatchClause clause in tryStmt.Catches)
         {
             if (_model.GetType(clause.ExceptionType) is not { } declared)
@@ -352,11 +369,42 @@ public sealed partial class Interpreter
 
         throw value switch
         {
-            Exception built => built,
+            Exception built => Owned(built),
             Instance instance => new ProfiCThrow(instance),
             _ => new ProfiCRuntimeException(Runtime.ModelOperations.ToDisplayString(value)),
         };
     }
+
+    /// <summary>
+    /// <para>Marks an exception as one the program raised, so that a catch clause will take
+    /// it.</para>
+    /// <para>Needed because a program may write <c>throw new Exception("...")</c>, and the
+    /// result is a plain <c>System.Exception</c> — the same type any fault in the interpreter
+    /// answers to. Nothing about the value tells the two apart, so the throw that raised it
+    /// says so here.</para>
+    /// </summary>
+    private static Exception Owned(Exception raised)
+    {
+        raised.Data[RaisedByProgram] = true;
+        return raised;
+    }
+
+    /// <summary>
+    /// <para>Whether a failure is the program's own, and so something a catch clause may
+    /// take.</para>
+    /// <para>Three are: one the program threw itself, one carrying a model it declared, and one
+    /// the language raised on its behalf. Anything else is a fault in the interpreter, and
+    /// letting a catch clause have it would hide the bug behind a handler written for something
+    /// else entirely.</para>
+    /// <para>One the language raises is still excluded if it is uncatchable. Nesting too deep
+    /// has a name so that a reader can be told what stopped their program, not so that a
+    /// program can carry on from it.</para>
+    /// </summary>
+    private static bool RaisedByTheProgram(Exception thrown) =>
+        Runtime.BuiltInExceptions.MayBeCaught(thrown.GetType().Name)
+        && (thrown is ProfiCThrow
+            || Runtime.BuiltInExceptions.IsBuiltIn(thrown)
+            || thrown.Data.Contains(RaisedByProgram));
 
     private ExecutionResult ExecuteAssignment(
         AssignmentStmt assignment,

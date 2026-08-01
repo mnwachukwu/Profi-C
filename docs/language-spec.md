@@ -47,6 +47,7 @@ This document is the normative one: where they disagree, this is right.
 - [3. Types](#3-types) — base types, suffixes, function types, values and references
   - [3.1 The base types](#31-the-base-types)
   - [3.2 The two suffixes](#32-the-two-suffixes)
+  - [3.2a Sets of sets](#32a-sets-of-sets)
   - [3.3 Function types](#33-function-types)
   - [3.4 Values and references](#34-values-and-references)
   - [3.5 Conversions](#35-conversions)
@@ -87,6 +88,8 @@ This document is the normative one: where they disagree, this is right.
   - [9.2 Where a lambda's parameter types go](#92-where-a-lambdas-parameter-types-go)
 - [10. Exceptions](#10-exceptions) — `try`, `catch`, `finally`, `throw`, the built-in hierarchy
   - [10.1 The built-in hierarchy](#101-the-built-in-hierarchy)
+  - [10.1a What a `catch` does not take](#101a-what-a-catch-does-not-take)
+  - [10.1b Calling too deeply](#101b-calling-too-deeply)
   - [10.2 Throwing and catching](#102-throwing-and-catching)
   - [10.3 Declaring an exception](#103-declaring-an-exception)
 - [11. The standard library](#11-the-standard-library) — the built-in models and what they provide
@@ -418,10 +421,16 @@ The mark is no part of the name — `@end` names `end` — and it is the only pl
 may begin with something other than a letter or an underscore.
 
 This exists because several reserved words are ordinary things to call a variable. `end` pairs
-with `start`, `base` pairs with `height`, `to` pairs with `from`, and `each` and `step` are
-natural names for what a loop is given. Freeing them by renaming the keywords would cost the
-vocabulary and still leave the rest taken, so the language keeps its words and hands one back
-on request.
+with `start`, `base` pairs with `height`, `to` pairs with `from`, and `each` is a natural name
+for what a loop is given. Renaming every such keyword would cost the vocabulary and still leave
+the rest taken, so the language keeps its words and hands one back on request.
+
+Where a keyword is only ever written in one position, a compound word costs nothing and the
+plain word is worth more free than reserved. `stepby` is that case, as `shiftleft` and
+`shiftright` are: it can appear nowhere but after a range loop's bound, so lengthening it takes
+away no clarity and gives `step` back as a name. `each` is not that case, despite only
+following `for` — a `foreach` opener would want `end foreach` to close it, and renaming one word
+to keep `end` honest would reach every loop in every program.
 
 An `@` before a word that is not reserved does nothing, and is reported as such. An `@`
 followed by no name at all is an error.
@@ -577,7 +586,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 ### 2.1 Reserved words
 
 Profi-C has **61** reserved words. A name may take one back by writing `@` in front of it —
-`@end`, `@step` — which is the only place a name may begin with something other than a letter.
+`@end`, `@each` — which is the only place a name may begin with something other than a letter.
 
 ```
 abstract     and          as           base         begin        bitwise
@@ -587,7 +596,7 @@ enumeration  extends      false        finally      for          fraction
 function     if           import       in           integer      internal
 is           let          model        namespace    new          not
 or           override     protected    public       real         sealed
-shared       shiftleft    shiftright   step         string       structure
+shared       shiftleft    shiftright   stepby       string       structure
 switch       then         this         throw        to           true
 try          until        using        virtual      while        xor
 yield
@@ -705,6 +714,29 @@ then `scores.Insert(60);`. [§11](#11-the-standard-library) lists its members.
 
 An **optional** is how a value may be absent. There is no `null`; a `Node` always holds a
 node, and `Node?` is the type that may not. [§8](#8-optionals) gives the rules.
+
+### 3.2a Sets of sets
+
+`[]` means "a set of", and what it is said about may be a set already. Nothing is added for
+this; it falls out of the suffix applying to any type.
+
+```
+integer[][]     a set of sets of integers — a grid
+integer[][][]   a set of those — a cube
+```
+
+Indexing is the same operation twice. `grid[1][2]` takes row 1, which is a set, and then takes
+element 2 of it. A literal nests the same way, `{{1, 2}, {3, 4}}`, and either level may be
+written, passed, yielded, and assigned into: `grid[0][1] = 9;` is legal, as is handing a whole
+row to a function that takes `integer[]`.
+
+**A grid of sets is not a rectangle.** Every row is a set in its own right, so rows may differ
+in length, a row may be replaced by one of another size, and a row handed out and then grown is
+grown inside the grid it came from. Squareness is a property of how a particular grid was built
+rather than of its type, so anything walking a grid must ask each row its own length rather than
+measuring one and assuming. A fixed-shape kind, indexed `grid[row, column]`, is deferred.
+
+`samples/matrices.pc` works through both, and then through what a grid of numbers is for.
 
 ### 3.3 Function types
 
@@ -1335,7 +1367,7 @@ Two `for` forms and a `while`:
 ```
 for i = 1 to 10          counts 1 through 10
 for i = 1 until 10       counts 1 through 9
-for i = 10 to 1 step -1  counts down
+for i = 10 to 1 stepby -1  counts down
 for each item in items   takes each element in turn
 while count < 10         while the condition holds
 ```
@@ -1810,7 +1842,7 @@ take one from.
 
 ### 10.1 The built-in hierarchy
 
-Eight exception types, and every one descends from `Exception`:
+Eleven exception types, and every one descends from `Exception`:
 
 | | Raised when |
 |---|---|
@@ -1823,10 +1855,51 @@ Eight exception types, and every one descends from `Exception`:
 | `FormatException` | Text that could not be read as what was wanted |
 | `ArgumentException` | An argument a function will not accept |
 | `OverflowException` | A result too large for the type to hold |
+| `RecursionTooDeepException` | Calls nested deeper than the language will follow. The one no `catch` takes ([§10.1b](#101b-calling-too-deeply)) |
 | `IOException` | Anything going wrong with a file except its not being there, which is an absent optional instead ([§11.5e](#115e-files-and-folders)) |
 
-Every one carries a `Message()`. A name the language can raise is a name a program can catch:
-the two come from one list, so nothing can be thrown that cannot be named.
+Every one carries a `Message()`. A name the language can raise is a name a program can write,
+because the two come from one list — so nothing can be thrown that cannot be named.
+`RecursionTooDeepException` is the one that can be named and not caught
+([§10.1b](#101b-calling-too-deeply)).
+
+Eight of the eleven are the names .NET uses, unchanged. That is deliberate: a reader who learns
+what `DivideByZeroException` means here already knows what it means in C#, Java, and near
+enough in Python, and a name that transfers is worth more than one tuned to this language
+alone. The wording each carries is *not* .NET's — a message is read once and never carried
+anywhere, so it is written here to say what happened and what to do about it.
+
+### 10.1a What a `catch` does not take
+
+A `catch` takes what the program caused: an exception it threw, and one the language raised on
+its behalf. It does not take a failure in the implementation itself.
+
+The distinction matters because every failure on the platform answers to `Exception`, so a
+clause naming the root would otherwise take a bug in the compiler as readily as a divide by
+zero — and, having taken it, would report it as something the program did. A program cannot
+handle a fault it did not cause, and hiding one behind a handler written for something else
+costs the only report the person who could fix it would ever get.
+
+### 10.1b Calling too deeply
+
+Calling too deeply — most often a function that calls itself without ever reaching the case
+that stops it — raises `RecursionTooDeepException`. **It is the one exception no `catch` takes,
+`catch Exception` included.**
+
+Being nameable and being catchable are separate things, and this is the one place they come
+apart. The name exists so a reader can be told what stopped their program. Catching it would
+help nobody: the depth is the implementation's number rather than a property of the program, so
+a handler would run at an arbitrary point with every frame beneath it abandoned half-finished,
+and a program that has run away is not one more code recovers from. Naming it in a `catch` is
+reported as `PC0344` rather than left as a clause that looks like a handler and never runs.
+
+**It is not a stack overflow, which is why it does not carry that name.** The limit is a count
+the language keeps, and it is reached long before the machine is near the end of its stack —
+deliberately, so that the program stops while there is still room to say why. A real stack
+overflow offers no such chance, and .NET's `StackOverflowException` is uncatchable for that
+harder reason: by the time it happens the process is already going down. The bargain here is
+the same in shape — a name to read, and no pretence that catching it would help — but the cause
+is the language's own guard rather than the machine giving out.
 
 ### 10.2 Throwing and catching
 
@@ -2773,6 +2846,7 @@ of a reader.
 | `PC0341` | error | This cannot be formatted |
 | `PC0342` | error | This works on bits, not on booleans |
 | `PC0343` | error | This shift is outside the width of an integer |
+| `PC0344` | warning | This exception cannot be caught |
 
 ### PC0400 to PC0499
 

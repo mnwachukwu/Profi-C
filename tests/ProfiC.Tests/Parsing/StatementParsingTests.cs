@@ -134,7 +134,7 @@ public sealed class StatementParsingTests : ParserTestBase
                     for i = 1 to 10
                         yield;
                     end for
-                    for i = 10 until 0 step -1
+                    for i = 10 until 0 stepby -1
                         yield;
                     end for
             """);

@@ -1108,7 +1108,7 @@ public sealed class TypeCheckerTests
     /// <summary>The bounds are the only part left that can disagree.</summary>
     [TestCase("        for i = 1 to 2.5\n            yield;\n        end for")]
     [TestCase("        for i = 1|2 to 10\n            yield;\n        end for")]
-    [TestCase("        for i = 1 to 10 step 0.5\n            yield;\n        end for")]
+    [TestCase("        for i = 1 to 10 stepby 0.5\n            yield;\n        end for")]
     public void ARangeLoopStillCountsWithIntegers(string body) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0317" }));
 

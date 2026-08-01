@@ -300,7 +300,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
     [TestCase("        else 30;")]
     [TestCase("        catch 1;")]
     [TestCase("        then 1;")]
-    [TestCase("        step 1;")]
+    [TestCase("        stepby 1;")]
     public void ATokenThatBeginsNoStatementIsOneDiagnostic(string body) =>
         Assert.That(IdsOf(ParseBody(body).Diagnostics), Is.EqualTo(new[] { "PC0107" }));
 

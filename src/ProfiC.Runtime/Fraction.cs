@@ -84,17 +84,39 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
 
     // ---- Arithmetic ---------------------------------------------------------------------
 
-    public static Fraction operator +(Fraction left, Fraction right) => checked(new Fraction(
-        left.Numerator * right.Denominator + right.Numerator * left.Denominator,
-        left.Denominator * right.Denominator));
+    /// <summary>
+    /// <para>Runs a piece of fraction arithmetic, saying what happened if the parts outgrow an
+    /// integer.</para>
+    /// <para>Every operator goes through here so that one wording covers them all, and so that
+    /// what a reader is told is a sentence about fractions rather than the platform's word for
+    /// a register that would not hold.</para>
+    /// </summary>
+    private static Fraction Checked(Func<Fraction> arithmetic)
+    {
+        try
+        {
+            return arithmetic();
+        }
+        catch (OverflowException)
+        {
+            throw ArithmeticFailures.TooLargeForAFraction();
+        }
+    }
 
-    public static Fraction operator -(Fraction left, Fraction right) => checked(new Fraction(
-        left.Numerator * right.Denominator - right.Numerator * left.Denominator,
-        left.Denominator * right.Denominator));
+    public static Fraction operator +(Fraction left, Fraction right) => Checked(
+        () => checked(new Fraction(
+            left.Numerator * right.Denominator + right.Numerator * left.Denominator,
+            left.Denominator * right.Denominator)));
 
-    public static Fraction operator *(Fraction left, Fraction right) => checked(new Fraction(
-        left.Numerator * right.Numerator,
-        left.Denominator * right.Denominator));
+    public static Fraction operator -(Fraction left, Fraction right) => Checked(
+        () => checked(new Fraction(
+            left.Numerator * right.Denominator - right.Numerator * left.Denominator,
+            left.Denominator * right.Denominator)));
+
+    public static Fraction operator *(Fraction left, Fraction right) => Checked(
+        () => checked(new Fraction(
+            left.Numerator * right.Numerator,
+            left.Denominator * right.Denominator)));
 
     /// <exception cref="DivideByZeroException">The right operand is zero.</exception>
     public static Fraction operator /(Fraction left, Fraction right)
@@ -104,9 +126,9 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
             throw new DivideByZeroException("Cannot divide a fraction by zero.");
         }
 
-        return checked(new Fraction(
+        return Checked(() => checked(new Fraction(
             left.Numerator * right.Denominator,
-            left.Denominator * right.Numerator));
+            left.Denominator * right.Numerator)));
     }
 
     /// <summary>
@@ -125,11 +147,14 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
             throw new DivideByZeroException("Cannot take the remainder of a fraction by zero.");
         }
 
-        // How many whole copies of the right fit, toward zero.
-        long whole = checked(
-            (left.Numerator * right.Denominator) / (left.Denominator * right.Numerator));
+        return Checked(() =>
+        {
+            // How many whole copies of the right fit, toward zero.
+            long whole = checked(
+                (left.Numerator * right.Denominator) / (left.Denominator * right.Numerator));
 
-        return checked(left - (right * new Fraction(whole, 1)));
+            return left - (right * new Fraction(whole, 1));
+        });
     }
 
     /// <summary>

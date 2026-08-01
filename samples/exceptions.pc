@@ -98,7 +98,12 @@ shared model Program
 
     ##
         A catch takes the type it names and anything descending from it, so one clause handles
-        a whole family. 'catch Exception' takes every exception there is, declared or not.
+        a whole family. 'catch Exception' takes every exception a program can cause, declared
+        or not.
+
+        What it does not take is a fault in the language itself. Those are not the program's to
+        answer for, and a clause that swallowed one would report a bug here as something the
+        program did.
     ##
     function CatchingByAncestor()
         Console.WriteLine("== catching a parent ==");

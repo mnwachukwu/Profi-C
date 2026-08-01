@@ -304,7 +304,7 @@ public sealed partial class Parser
         }
 
         Expression bound = ParseExpression();
-        Expression? step = Match(TokenType.Step) ? ParseExpression() : null;
+        Expression? step = Match(TokenType.StepBy) ? ParseExpression() : null;
 
         List<Statement> body = ParseBody(TokenType.For);
         ExpectEnd(TokenType.For, "for", start);

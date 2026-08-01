@@ -207,7 +207,7 @@ model Counting
     shared integer function CountDown()
         integer total = 0;
 
-        for i = 10 until 0 step -1
+        for i = 10 until 0 stepby -1
             total = total + i;
         end for
 
@@ -573,6 +573,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
 | [closures.pc](samples/closures.pc) | **What a function remembers.** The variable rather than a copy of it, a fresh loop counter every turn, naming two runs at once, outliving the call that made it, keeping an instance, and reaching a parent |
+| [matrices.pc](samples/matrices.pc) | **Grids and cubes, and the arithmetic they hold.** `integer[][]` is a set of sets and `integer[][][]` a set of grids, with no feature added for either — then transposing, multiplying, and using a grid to turn a point in the plane and in space |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
 | [exceptions.pc](samples/exceptions.pc) | **Everything about going wrong.** A hierarchy the program declares, catching by ancestor, which clause wins, `finally`, throwing again, the ones the language raises — and when an optional is the right answer instead |
