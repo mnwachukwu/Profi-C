@@ -166,8 +166,8 @@ public sealed class ResolverTests
     /// </summary>
     [TestCase("        begin\n            let value = 2;\n        end", TestName = "a block's local")]
     [TestCase("        let show = (integer value) yield value;", TestName = "a lambda's parameter")]
-    [TestCase("        for value = 1 to 3\n        end for", TestName = "a for binding")]
-    [TestCase("        for each value in {1, 2}\n        end for", TestName = "a for-each binding")]
+    [TestCase("        loop for value = 1 to 3\n        end loop", TestName = "a for binding")]
+    [TestCase("        loop each value in {1, 2}\n        end loop", TestName = "a for-each binding")]
     [TestCase("        try\n        catch Exception value\n        end try",
               TestName = "a caught exception")]
     public void ANestedScopeMayNotShadowAnOuterName(string written)
@@ -257,9 +257,9 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = ResolveBody(
             """
-                    for i = 1 to 10
+                    loop for i = 1 to 10
                         let inside = i;
-                    end for
+                    end loop
                     let outside = i;
             """);
 
@@ -316,9 +316,9 @@ public sealed class ResolverTests
     {
         (_, DiagnosticBag diagnostics) = ResolveBody(
             """
-                    for i = 1 to 10
+                    loop for i = 1 to 10
                         i = 5;
-                    end for
+                    end loop
             """);
 
         Assert.Multiple(() =>

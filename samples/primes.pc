@@ -16,13 +16,13 @@ shared model Program
 
         Console.WriteLine("Primes up to " + Program.Limit + ":");
 
-        for n = 2 to Program.Limit
+        loop for n = 2 to Program.Limit
             if not composite[n]
                 Console.Write(n);
                 Console.Write(" ");
                 found = found + 1;
             end if
-        end for
+        end loop
 
         Console.WriteLine();
         Console.WriteLine("That is " + found + " of them.");
@@ -41,20 +41,20 @@ shared model Program
     boolean[] function Sieve(integer limit)
         boolean[] composite = {};
 
-        for i = 0 to limit
+        loop for i = 0 to limit
             composite.Insert(false);
-        end for
+        end loop
 
-        for n = 2 to limit
+        loop for n = 2 to limit
             if not composite[n]
                 integer multiple = n * n;
 
-                while multiple <= limit
+                loop while multiple <= limit
                     composite[multiple] = true;
                     multiple = multiple + n;
-                end while
+                end loop
             end if
-        end for
+        end loop
 
         yield composite;
     end function

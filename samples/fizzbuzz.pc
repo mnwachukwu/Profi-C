@@ -9,9 +9,9 @@
 shared model Program
 
     function Main()
-        for n = 1 to 20
+        loop for n = 1 to 20
             Console.WriteLine(Program.Describe(n));
-        end for
+        end loop
     end function
 
     ##

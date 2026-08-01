@@ -148,18 +148,18 @@ shared model Program
             decided by what the value actually is, not by the type the variable was declared
             with — so a Square answers 25 even though nothing here mentions squares.
         ##
-        for each shape in shapes
+        loop each shape in shapes
             # Printed directly rather than through Describe(): ToString is what a value
             # prints as, and this model overrode it.
             Console.WriteLine(shape);
-        end for
+        end loop
 
         Console.WriteLine();
         Console.WriteLine("total area: " + Program.TotalArea(shapes));
 
         # 'is' asks, and 'as' yields an optional rather than failing.
         Console.WriteLine();
-        for each shape in shapes
+        loop each shape in shapes
             if shape is Square
                 Console.WriteLine("found a square");
             else if (shape as Circle).HasValue()
@@ -167,7 +167,7 @@ shared model Program
             else
                 Console.WriteLine("found something else");
             end if
-        end for
+        end loop
     end function
 
     # @summary: Adds up the areas of a mixed set of shapes.
@@ -176,9 +176,9 @@ shared model Program
     real function TotalArea(Shape[] shapes)
         real total = 0.0;
 
-        for each shape in shapes
+        loop each shape in shapes
             total = total + shape.Area();
-        end for
+        end loop
 
         yield total;
     end function

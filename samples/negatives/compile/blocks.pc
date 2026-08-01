@@ -12,9 +12,9 @@ shared model Program
 
         if ready
             Console.WriteLine("yes");
-        end while
+        end loop
 
-        while ready
+        loop while ready
             ready = false;
         end if
     end function

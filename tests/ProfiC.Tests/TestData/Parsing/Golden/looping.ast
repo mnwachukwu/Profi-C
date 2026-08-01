@@ -21,6 +21,14 @@ CompilationUnit
         CallExpr
           MemberExpr 'AFreshVariableEachTurn'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AskingAfterwards'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'NotAskingAtAll'
+            IdentifierExpr 'Program'
     FunctionDecl 'Counting'
       ExpressionStmt
         CallExpr
@@ -264,3 +272,120 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
+    FunctionDecl 'AskingAfterwards'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== asking after the turn ==" [String]
+      VarDeclStmt 'countdown'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  counted down: " [String]
+      LoopUntilStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              IdentifierExpr 'countdown'
+              LiteralExpr " " [String]
+        AssignmentStmt
+          IdentifierExpr 'countdown'
+          BinaryExpr '-'
+            IdentifierExpr 'countdown'
+            LiteralExpr 1 [Integer]
+        BinaryExpr '=='
+          IdentifierExpr 'countdown'
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      VarDeclStmt 'past'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 100 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  already past: " [String]
+      LoopUntilStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'past'
+        BinaryExpr '>'
+          IdentifierExpr 'past'
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+    FunctionDecl 'NotAskingAtAll'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== no condition at all ==" [String]
+      VarDeclStmt 'readings'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 4 [Integer]
+          LiteralExpr 9 [Integer]
+          LiteralExpr 0 [Integer]
+          LiteralExpr 7 [Integer]
+      VarDeclStmt 'at'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  up to the first zero: " [String]
+      LoopForeverStmt
+        IfStmt
+          BinaryExpr '>='
+            IdentifierExpr 'at'
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'readings'
+          BreakStmt
+        IfStmt
+          BinaryExpr '=='
+            IndexExpr
+              IdentifierExpr 'readings'
+              IdentifierExpr 'at'
+            LiteralExpr 0 [Integer]
+          BreakStmt
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              IndexExpr
+                IdentifierExpr 'readings'
+                IdentifierExpr 'at'
+              LiteralExpr " " [String]
+        AssignmentStmt
+          IdentifierExpr 'at'
+          BinaryExpr '+'
+            IdentifierExpr 'at'
+            LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  stopped at index " [String]
+            IdentifierExpr 'at'

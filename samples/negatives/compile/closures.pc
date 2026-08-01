@@ -25,9 +25,9 @@ shared model Program
         loop would go on as before, and the line would look like it did something.
     ##
     function MovingACounter()
-        for i = 1 to 3
+        loop for i = 1 to 3
             i = i + 1;
-        end for
+        end loop
     end function
 
     ##

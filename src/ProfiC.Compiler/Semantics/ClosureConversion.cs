@@ -466,6 +466,16 @@ public sealed class ClosureConversion
                     ConvertExpression(loop.Condition),
                     ConvertBlock(loop.Body, [], loop: null));
 
+            case LoopUntilStmt loop:
+                return new LoopUntilStmt(
+                    loop.Span,
+                    ConvertBlock(loop.Body, [], loop: null),
+                    ConvertExpression(loop.Condition));
+
+            case LoopForeverStmt loop:
+                return new LoopForeverStmt(
+                    loop.Span, ConvertBlock(loop.Body, [], loop: null));
+
             case IfStmt branch:
                 return new IfStmt(
                     branch.Span,

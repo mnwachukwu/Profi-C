@@ -883,6 +883,20 @@ public static class DiagnosticDescriptors
     /// says exactly one thing and nothing about its meaning is in doubt. The clause simply does
     /// not run, and the rest of the try works as written.</para>
     /// </summary>
+    /// <summary>
+    /// <para>A loop written without the <c>loop</c> that opens it.</para>
+    /// <para>The commonest thing a reader will type, from habit in another language or from
+    /// an older Profi-C program. Left to the ordinary machinery it is a cascade — <c>for</c>
+    /// begins no statement, so the counter, the bound and the body are each reported in turn —
+    /// and none of the messages names the one thing that is wrong.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor LoopNeedsItsOpener = Error(
+        "PC0120",
+        "A loop begins with 'loop'",
+        "Every loop opens with 'loop', so this is written 'loop {0}'. The word after 'loop' "
+        + "says which kind: 'for' counts, 'each' walks a set, 'while' asks before each turn, "
+        + "and nothing at all asks after.");
+
     public static readonly DiagnosticDescriptor ExceptionCannotBeCaught = Warning(
         "PC0344",
         "This exception cannot be caught",
@@ -1390,6 +1404,26 @@ public static class DiagnosticDescriptors
     /// best. Without it the mistake is silent: the call answers with an empty value and the
     /// program carries on, and nothing in the line says which name was not ready.</para>
     /// </summary>
+    /// <summary>
+    /// <para>A <c>loop</c> with no condition that nothing inside it can leave.</para>
+    /// <para>Every loop should be able to end. This one has no condition, no <c>break</c>, no
+    /// <c>yield</c> and no <c>throw</c>, so nothing written in it will ever stop it — which is
+    /// almost always a case that was meant to be handled and was left out.</para>
+    /// <para>An opinion rather than an error, because a program that really does mean to run
+    /// until it is stopped from outside is a program someone may legitimately write, and the
+    /// language does not know which one it has. What it can do is say the shape is unusual, and
+    /// name the three things that would end it.</para>
+    /// <para>It does not suppress anything else. A function that yields a value and ends in
+    /// such a loop still gets <c>PC0404</c>, because a function promising a result and holding
+    /// a loop that cannot end is not a loop question, it is a broken promise.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor LoopCannotBeLeft = Opinion(
+        "PC0406",
+        "Nothing here can end this loop",
+        "This loop has no condition, and nothing in it breaks, yields, or throws — so nothing "
+        + "written here will stop it. Add a 'break' where it should end, or write "
+        + "'loop while' or 'until' and say the condition.");
+
     public static readonly DiagnosticDescriptor CalledBeforeWhatItUsesIsReady = Error(
         "PC0405",
         "Called before a name it uses is ready",

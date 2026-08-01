@@ -90,9 +90,9 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         ForStmt statement = (ForStmt)ParseStatements(
             $"""
-                    for i = 1 {keyword} 10
+                    loop for i = 1 {keyword} 10
                         yield;
-                    end for
+                    end loop
             """)[0];
 
         Assert.That(statement.IsInclusive, Is.EqualTo(inclusive));
@@ -112,9 +112,9 @@ public sealed class StatementParsingTests : ParserTestBase
             $$"""
             shared model Program
                 function Main()
-                    for {{type}} i = 1 to 10
+                    loop for {{type}} i = 1 to 10
                         yield;
-                    end for
+                    end loop
                 end function
             end model
             """);
@@ -131,12 +131,12 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         IReadOnlyList<Statement> statements = ParseStatements(
             """
-                    for i = 1 to 10
+                    loop for i = 1 to 10
                         yield;
-                    end for
-                    for i = 10 until 0 stepby -1
+                    end loop
+                    loop for i = 10 until 0 stepby -1
                         yield;
-                    end for
+                    end loop
             """);
 
         Assert.Multiple(() =>
@@ -151,12 +151,12 @@ public sealed class StatementParsingTests : ParserTestBase
     {
         IReadOnlyList<Statement> statements = ParseStatements(
             """
-                    for i = 1 to 10
+                    loop for i = 1 to 10
                         yield;
-                    end for
-                    for each item in items
+                    end loop
+                    loop each item in items
                         yield;
-                    end for
+                    end loop
             """);
 
         Assert.Multiple(() =>

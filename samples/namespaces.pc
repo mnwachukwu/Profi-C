@@ -170,9 +170,9 @@ shared model Program
 
         Console.WriteLine("both are a Shape, so both fit in one set of them:");
 
-        for each shape in shapes
+        loop each shape in shapes
             Console.WriteLine("  " + shape);
-        end for
+        end loop
     end function
 
     # ---- The one namespace nobody declares ---------------------------------------------

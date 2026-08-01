@@ -10,8 +10,8 @@ shared model Program
     function Main()
         integer[] divisors = {4, 2, 0};
 
-        for each d in divisors
+        loop each d in divisors
             Console.WriteLine("100 / " + d + " = " + 100 / d);
-        end for
+        end loop
     end function
 end model

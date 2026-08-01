@@ -148,9 +148,9 @@ public sealed class FlowAnalysisTests
         Assert.That(IdsOf(CheckBody(
             """
                     integer x;
-                    while flag
+                    loop while flag
                         x = 1;
-                    end while
+                    end loop
                     let y = x;
             """)), Is.EqualTo(new[] { "PC0401" }));
     }
@@ -160,9 +160,9 @@ public sealed class FlowAnalysisTests
     {
         Assert.That(IdsOf(CheckBody(
             """
-                    for i = 1 to 10
+                    loop for i = 1 to 10
                         let copy = i;
-                    end for
+                    end loop
             """)), Is.Empty);
     }
 
@@ -476,9 +476,9 @@ public sealed class FlowAnalysisTests
         Assert.That(IdsOf(CheckBody(
             """
                     integer? maybe;
-                    while maybe.HasValue()
+                    loop while maybe.HasValue()
                         integer definite = maybe;
-                    end while
+                    end loop
             """)), Is.Empty);
     }
 
@@ -599,6 +599,102 @@ public sealed class FlowAnalysisTests
                     end function
                 """)),
             Is.EqualTo(new[] { "PC0404" }));
+
+    // ---- A loop with no condition ------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A loop left only by <c>yield</c> has no way of falling out of the bottom, so a
+    /// function may end in one and still satisfy the rule that every path yields.</para>
+    /// <para>This is the whole of what the construct buys beyond reading well, and it is why it
+    /// is its own kind rather than a <c>while</c> whose condition happens to be <c>true</c>.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void AConditionlessLoopLeftByYieldNeedsNothingAfterIt() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    integer function FirstBigEnough(integer[] values)
+                        integer at = 0;
+
+                        loop
+                            if values[at] > 10
+                                yield values[at];
+                            end if
+
+                            at = at + 1;
+                        end loop
+                    end function
+                """)),
+            Is.Empty);
+
+    /// <summary>
+    /// A <c>break</c> leaves the loop rather than the function, so what follows it runs and the
+    /// function must still produce a result.
+    /// </summary>
+    [Test]
+    public void AConditionlessLoopLeftByBreakStillHasToYieldAfterwards() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    integer function Counted()
+                        loop
+                            break;
+                        end loop
+                    end function
+                """)),
+            Is.EqualTo(new[] { "PC0404" }));
+
+    /// <summary>
+    /// <para>A loop nothing can end is an opinion, and it suppresses nothing.</para>
+    /// <para>Both are reported because they say different things: <c>PC0406</c> is about the
+    /// loop having no way out, and <c>PC0404</c> is about a function promising an integer and
+    /// having no path that produces one. Silencing the second because of the first would let a
+    /// broken promise compile clean.</para>
+    /// </summary>
+    [Test]
+    public void ALoopNothingCanEndIsAnOpinionAndStillBreaksThePromise() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    integer function Never()
+                        loop
+                            Console.WriteLine("on and on");
+                        end loop
+                    end function
+                """)),
+            Is.EqualTo(new[] { "PC0404", "PC0406" }));
+
+    /// <summary>
+    /// The same loop in a function promising nothing is the opinion alone — which is the case
+    /// a program that means to run until it is stopped from outside actually writes.
+    /// </summary>
+    [Test]
+    public void ALoopNothingCanEndIsOnlyAnOpinionWhereNothingWasPromised() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Serve()
+                        loop
+                            Console.WriteLine("on and on");
+                        end loop
+                    end function
+                """)),
+            Is.EqualTo(new[] { "PC0406" }));
+
+    /// <summary>
+    /// A <c>break</c> belonging to a nested loop does not count as a way out of the outer one,
+    /// which is the case that makes the check a walk rather than a search.
+    /// </summary>
+    [Test]
+    public void ABreakBelongingToANestedLoopDoesNotCountAsAWayOut() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Serve()
+                        loop
+                            loop for i = 1 to 3
+                                break;
+                            end loop
+                        end loop
+                    end function
+                """)),
+            Is.EqualTo(new[] { "PC0406" }));
 
     [Test]
     public void YieldingOnOnlyOneBranchIsNotEnough() =>

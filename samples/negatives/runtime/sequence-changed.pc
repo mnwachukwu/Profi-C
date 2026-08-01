@@ -1,8 +1,8 @@
 ##
-    A set changed while a 'for each' was walking it, reached under a second name.
+    A set changed while a 'loop each' was walking it, reached under a second name.
 
-    This program compiles and then fails. Changing the sequence a 'for each' names is refused
-    while compiling — see samples/negatives/compile/looping.pc — but that refusal matches the
+    This program compiles and then fails. Changing the sequence a 'loop each' names is refused
+    loop while compiling — see samples/negatives/compile/looping.pc — but that refusal matches the
     name the loop wrote, and here the set is reached through a parameter instead.
 
     No local rule can see that: what Drain does with what it is handed is Drain's business, and
@@ -31,10 +31,10 @@ shared model Program
     function Main()
         Basket basket = new Basket();
 
-        for each item in basket.contents
+        loop each item in basket.contents
             Console.WriteLine(item);
             basket.Drain(basket.contents);
-        end for
+        end loop
 
         Console.WriteLine("never reached");
     end function

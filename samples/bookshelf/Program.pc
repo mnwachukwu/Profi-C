@@ -18,9 +18,9 @@ shared model Program
 
         Console.WriteLine(shelf.Count() + " books:");
 
-        for i = 0 until shelf.Count()
+        loop for i = 0 until shelf.Count()
             Console.WriteLine("  " + shelf.Describe(i));
-        end for
+        end loop
 
         Book? oldest = shelf.Oldest();
 

@@ -85,9 +85,9 @@ shared model Program
     fraction function Harmonic(integer n)
         fraction total = 0;
 
-        for i = 1 to n
+        loop for i = 1 to n
             total = total + 1|1 / i;
-        end for
+        end loop
 
         yield total;
     end function

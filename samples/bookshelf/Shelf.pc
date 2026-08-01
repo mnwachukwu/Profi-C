@@ -29,11 +29,11 @@ model Shelf
     public Book? function Oldest()
         Book? found;
 
-        for each book in this.books
+        loop each book in this.books
             if not found.HasValue() or book.Year() < found.Value().Year()
                 found = book;
             end if
-        end for
+        end loop
 
         yield found;
     end function

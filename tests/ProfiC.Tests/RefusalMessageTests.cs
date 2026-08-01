@@ -102,8 +102,8 @@ public sealed class RefusalMessageTests : LexerTestBase
 
         // Denominators multiply on every unlike addition, so a chain of them overflows long
         // before any one fraction looks large. This is that chain.
-        ("fraction total = 0|1;\n        for n = 1 to 60\n"
-         + "            total = total + Fraction.Create(1, n);\n        end for\n"
+        ("fraction total = 0|1;\n        loop for n = 1 to 60\n"
+         + "            total = total + Fraction.Create(1, n);\n        end loop\n"
          + "        Console.WriteLine(total);",
          typeof(OverflowException),
          "The parts of this fraction have grown too large to hold. Denominators multiply every "
@@ -144,7 +144,7 @@ public sealed class RefusalMessageTests : LexerTestBase
 
         // ---- Changing a set that is being walked ------------------------------------------------
         ("integer[] xs = {1, 2};\n        integer[] alias = xs;\n"
-         + "        for each x in xs\n            alias.Insert(9);\n        end for",
+         + "        loop each x in xs\n            alias.Insert(9);\n        end loop",
          typeof(ProfiC.Runtime.SequenceChangedException), null!),
 
         // ---- Reals that will not fit a fraction ---------------------------------------------

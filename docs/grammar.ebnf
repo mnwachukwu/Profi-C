@@ -123,23 +123,37 @@ BlockItem      = VarDecl | FunctionDecl | Statement ;
 VarDecl        = "let" Identifier "=" Expr ";"
                | [ "constant" ] Type Identifier [ "=" Expr ] ";" ;
 
-Statement      = Block | IfStmt | WhileStmt | ForStmt | ForEachStmt
+Statement      = Block | IfStmt | LoopStmt
                | SwitchStmt | TryStmt | ThrowStmt | YieldStmt
                | "break" ";" | "continue" ";" | ExprStmt ;
 
 IfStmt         = "if" Expr Body { "else" "if" Expr Body } [ "else" Body ]
                  "end" "if" ;
 
-WhileStmt      = "while" Expr Body "end" "while" ;
+(* Every loop opens with "loop", and the word after it says which kind. Three close
+   with "end" "loop"; the fourth is closed by "until", which carries the condition
+   and so is doing the closing itself. *)
+LoopStmt       = WhileStmt | ForStmt | ForEachStmt | UntilStmt | ForeverStmt ;
 
-(* Neither loop writes a type for the variable it binds. A range loop counts, and
-   counting is done with integers; a for-each takes its element's type from the
+WhileStmt      = "loop" "while" Expr Body "end" "loop" ;
+
+(* Neither counted loop writes a type for the variable it binds. A range loop counts,
+   and counting is done with integers; a for-each takes its element's type from the
    sequence. Both are fixed by the construct rather than inferred from a value, which
    is why neither needs "let". Bounds and step must be integers -- see PC0317. *)
-ForStmt        = "for" Identifier "=" Expr ( "to" | "until" ) Expr
-                 [ "stepby" Expr ] Body "end" "for" ;
+ForStmt        = "loop" "for" Identifier "=" Expr ( "to" | "until" ) Expr
+                 [ "stepby" Expr ] Body "end" "loop" ;
 
-ForEachStmt    = "for" "each" Identifier "in" Expr Body "end" "for" ;
+ForEachStmt    = "loop" "each" Identifier "in" Expr Body "end" "loop" ;
+
+(* The one construct "end" does not close. Its condition is tested after the body, so
+   the body always runs at least once, and the condition is written where it is
+   tested rather than at the top where it is not. *)
+UntilStmt      = "loop" Body "until" Expr ;
+
+(* No condition anywhere. Something in the body has to end it -- a break, a yield,
+   or a throw -- and one with none of the three is PC0406, an opinion. *)
+ForeverStmt    = "loop" Body "end" "loop" ;
 
 SwitchStmt     = "switch" Expr { CaseGroup } [ DefaultClause ] "end" "switch" ;
 CaseGroup      = CaseLabel { CaseLabel } { Statement } ;
@@ -320,8 +334,11 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    Type suffixes nest and read left to right. "Node?[]" is a set of
    optionals; "Node[]?" is an optional set. Both are legal and they differ.
 
-   ForStmt and ForEachStmt are told apart by the "each" that follows "for".
-   Both close with "end" "for".
+   Every loop opens with "loop", and the word after it chooses among the four:
+   "for" counts, "each" walks, "while" tests at the top, and nothing at all
+   tests at the bottom. The first three close with "end" "loop"; UntilStmt is
+   the only construct in the language not closed by "end", because the word
+   carrying its condition is what closes it.
 
    A qualified "end" is verified. The parser records which construct opened
    and rejects a mismatched closer with a diagnostic naming both.

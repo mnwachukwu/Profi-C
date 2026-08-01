@@ -100,6 +100,7 @@ public enum TokenType
     Internal,
     Is,
     Let,
+    Loop,
     Model,
     Namespace,
     New,

@@ -30,8 +30,8 @@ Moving mistakes from run time to build time:
 - **There is no `null`.** An [optional](#optionals-instead-of-null) written with a trailing `?`
   replaces it, and reading one the compiler cannot prove is present is a compile error rather
   than a crash. A whole class of failure stops happening at run time because it stops compiling.
-- **Every block says what it closes.** `end if`, `end while`, `end model` — and the compiler
-  checks the qualifier, so [closing an `if` with `end while`](samples/negatives/compile/blocks.pc)
+- **Every block says what it closes.** `end if`, `end loop`, `end model` — and the compiler
+  checks the qualifier, so [closing an `if` with `end loop`](samples/negatives/compile/blocks.pc)
   is an error naming both words, rather than a missing brace reported pages away from the
   mistake.
 
@@ -49,7 +49,7 @@ Keeping a line readable on its own:
 - **Words instead of symbols, and no abbreviations.** `and`, `or`, `not` rather than `&&`,
   `||`, `!`; `boolean`, `enumeration`, and `function` rather than `bool`, `enum`, and `func`. A
   line should be readable aloud and mean what it sounds like.
-- **There is no three-clause `for`.** [`for i = 1 to 10` and `for each item in items`](#loops)
+- **There is no three-clause `for`.** [`loop for i = 1 to 10` and `loop each item in items`](#loops)
   replace it. The C-style header carried the worst teaching problem in the language: an
   increment written before the body and executed after it.
 
@@ -63,6 +63,7 @@ functions with closures, and compile-time definite assignment.
 |---|---|
 | [docs/language-spec.md](docs/language-spec.md) | The normative specification, plus an appendix listing every diagnostic |
 | [docs/language-summary.md](docs/language-summary.md) | A condensed reference and a full **comparison to C#** |
+| [docs/side-by-side.md](docs/side-by-side.md) | Every construct written both ways, plus what C# does better and what it can express that Profi-C cannot |
 | [docs/grammar.ebnf](docs/grammar.ebnf) | The surface syntax as productions, and the precedence table |
 
 The specification is written as each part of the language is implemented and covered by tests,
@@ -90,9 +91,9 @@ shared model Program
     function Main()
         integer[] grades = {100, 95, 72, 40};
 
-        for each grade in grades
+        loop each grade in grades
             Console.WriteLine(Program.Describe(grade));
-        end for
+        end loop
     end function
 
     string function Describe(integer score)
@@ -197,9 +198,9 @@ model Counting
     shared integer function SumTo(integer limit)
         integer total = 0;
 
-        for i = 1 to limit
+        loop for i = 1 to limit
             total = total + i;
-        end for
+        end loop
 
         yield total;
     end function
@@ -207,9 +208,9 @@ model Counting
     shared integer function CountDown()
         integer total = 0;
 
-        for i = 10 until 0 stepby -1
+        loop for i = 10 until 0 stepby -1
             total = total + i;
-        end for
+        end loop
 
         yield total;
     end function
@@ -217,9 +218,9 @@ model Counting
     shared integer function CountLetters(string word)
         integer seen = 0;
 
-        for each letter in word
+        loop each letter in word
             seen = seen + 1;
-        end for
+        end loop
 
         yield seen;
     end function
@@ -326,9 +327,9 @@ shared model Program
     function Main()
         Console.WriteLine("Hello, World!");
 
-        for i = 1 to 5
+        loop for i = 1 to 5
             Console.WriteLine(i + " squared is " + (i * i));
-        end for
+        end loop
     end function
 end model
 ```
@@ -480,7 +481,7 @@ pc lower samples/sorting.pc
 ```
 
 `lower` is the interesting one — it shows the simplified tree the interpreter actually walks,
-with `for each` already rewritten into an index loop and every implicit conversion made
+with `loop each` already rewritten into an index loop and every implicit conversion made
 explicit.
 
 ### One thing to remember
@@ -558,7 +559,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [primes.pc](samples/primes.pc) | The Sieve of Eratosthenes; sets used as a workspace |
 | [sorting.pc](samples/sorting.pc) | Insertion sort, and why `and` short-circuiting matters |
 | [scanning.pc](samples/scanning.pc) | `break` and `continue`, and which loop a `break` leaves |
-| [looping.pc](samples/looping.pc) | **How far a loop counts, and when it decides.** `to` against `until`, a bound and a step that move while the loop runs, and why `for each` is the one that does not |
+| [looping.pc](samples/looping.pc) | **How far a loop counts, and when it decides.** `to` against `until`, a bound and a step that move while the loop runs, and why `loop each` is the one that does not |
 | [card-table.pc](samples/card-table.pc) | **`switch`.** Grouped labels, `default`, and the warning for a member left unhandled |
 | [structures.pc](samples/structures.pc) | **Values against references.** What copying changes, and what a structure holding a model shares |
 | [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
@@ -645,7 +646,7 @@ Programs the compiler rejects:
 | [visibility.pc](samples/negatives/compile/visibility.pc) | Reaching a private and a protected member from outside, two visibilities on one declaration, and `protected` on a type |
 | [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
 | [bits.pc](samples/negatives/compile/bits.pc) | `xor` on two booleans, bit operations on a real and a fraction, a shift past the width of an integer, and a word after `bitwise` that is neither `and` nor `or` |
-| [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `for each` is walking |
+| [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `loop each` is walking |
 | [closures.pc](samples/negatives/compile/closures.pc) | Misreadings of what a kept function names — assigning to a loop counter, hiding a name it kept, and reaching for an instance a shared member does not have |
 | [ignoring.pc](samples/negatives/compile/ignoring.pc) | An `ignore` naming no diagnostic, one naming a diagnostic nothing here reports, and one trying to silence an error — which fires anyway |
 | [documenting.pc](samples/negatives/compile/documenting.pc) | A documented parameter the function does not take, `@yields:` on a function that yields nothing, a label written twice, and a doc above a statement |
@@ -659,7 +660,7 @@ see:
 | [divide-by-zero.pc](samples/negatives/runtime/divide-by-zero.pc) | `DivideByZeroException` — a divisor that arrived in a variable |
 | [index-out-of-range.pc](samples/negatives/runtime/index-out-of-range.pc) | `IndexOutOfRangeException` — one index past the end |
 | [empty-optional.pc](samples/negatives/runtime/empty-optional.pc) | `EmptyOptionalException` — `Value()` on an optional that turned out empty |
-| [sequence-changed.pc](samples/negatives/runtime/sequence-changed.pc) | `SequenceChangedException` — a set cleared during its own `for each`, reached through a parameter where no compile-time rule could see it |
+| [sequence-changed.pc](samples/negatives/runtime/sequence-changed.pc) | `SequenceChangedException` — a set cleared during its own `loop each`, reached through a parameter where no compile-time rule could see it |
 | [overflow.pc](samples/negatives/runtime/overflow.pc) | `OverflowException` — a factorial too large for an integer |
 | [runaway-recursion.pc](samples/negatives/runtime/runaway-recursion.pc) | Recursion with no base case |
 | [uncaught-exception.pc](samples/negatives/runtime/uncaught-exception.pc) | A declared exception no catch clause matches |

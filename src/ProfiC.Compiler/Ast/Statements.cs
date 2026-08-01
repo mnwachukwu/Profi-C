@@ -166,6 +166,58 @@ public sealed class WhileStmt(
 }
 
 /// <summary>
+/// <para>A <c>loop</c> with no condition anywhere, which runs until something leaves it.</para>
+/// <para>Its own kind rather than a <c>while true</c> in disguise, because the two differ in
+/// what can be proved about them. A condition that happens to be the literal <c>true</c> is
+/// still a condition, and reading it would mean constant-folding to learn what the writer
+/// already said. Here the absence of one *is* the statement, so the end of the loop is
+/// unreachable unless the body breaks out — which is what lets a function end in one and still
+/// satisfy the rule that every path yields.</para>
+/// </summary>
+public sealed class LoopForeverStmt(
+    SourceSpan span,
+    IReadOnlyList<Statement> body) : Statement(span)
+{
+    public IReadOnlyList<Statement> Body { get; } = body;
+
+    public override IEnumerable<SyntaxNode> Children => Body;
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitLoopForeverStmt(this);
+
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+        visitor.VisitLoopForeverStmt(this);
+}
+
+/// <summary>
+/// <para>A <c>loop</c> whose condition is tested after the body, so the body always runs at
+/// least once.</para>
+/// <para>The condition is written where it is tested, at the bottom, which is what separates
+/// this from a <c>while</c> that merely happens to be spelled differently. It is the one loop
+/// closed by <c>until</c> rather than by <c>end loop</c>, because the word carrying the
+/// condition is doing the closing.</para>
+/// <para>The sense is "keep going until", so the loop ends when the condition holds — the
+/// opposite of <see cref="WhileStmt"/>, and the same reading <c>until</c> has as a range
+/// loop's exclusive bound.</para>
+/// </summary>
+public sealed class LoopUntilStmt(
+    SourceSpan span,
+    IReadOnlyList<Statement> body,
+    Expression condition) : Statement(span)
+{
+    public IReadOnlyList<Statement> Body { get; } = body;
+
+    public Expression Condition { get; } = condition;
+
+    public override IEnumerable<SyntaxNode> Children =>
+        Body.Cast<SyntaxNode>().Append(Condition);
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitLoopUntilStmt(this);
+
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+        visitor.VisitLoopUntilStmt(this);
+}
+
+/// <summary>
 /// <para>The range <c>for</c>. There is no three-clause form: it carried an increment written
 /// before the body but executed after it, which is the worst teaching problem the language
 /// had.</para>

@@ -1,13 +1,17 @@
 ##
     How far a loop counts, and when it decides.
 
-    There are three ways to repeat: a range loop that counts, a 'for each' that walks
-    a sequence, and a 'while' that asks a question. This is about the difference between the
-    first two, which is the one that surprises people.
+    Every loop opens with 'loop', and the word after it says which kind: 'loop for' counts,
+    'loop each' walks a sequence, 'loop while' asks before each turn, and a bare 'loop' asks
+    after — or never, if nothing follows the body but 'end loop'. One opener, and one closer
+    for all but the asking-after form, which 'until' closes because the word carrying the
+    condition is what ends it.
 
-    A range loop reads its header on every turn. A 'for each' reads its sequence once. Both are
-    defensible and the language could not have both, so the rule is drawn where the line reads:
-    'until limit' is a question about limit, and 'in items' is a sequence to walk.
+    Most of this is about the difference between the first two, which is the one that
+    surprises people. A range loop reads its header on every turn. A 'loop each' reads its
+    sequence once. Both are defensible and the language could not have both, so the rule is
+    drawn where the line reads: 'until limit' is a question about limit, and 'in items' is a
+    sequence to walk.
 ##
 
 shared model Program
@@ -18,6 +22,8 @@ shared model Program
         Program.ALiveStep();
         Program.WalkingASequence();
         Program.AFreshVariableEachTurn();
+        Program.AskingAfterwards();
+        Program.NotAskingAtAll();
     end function
 
     ##
@@ -30,17 +36,17 @@ shared model Program
         Console.WriteLine("== to includes, until stops short ==");
 
         Console.Write("  to 5:    ");
-        for i = 1 to 5
+        loop for i = 1 to 5
             Console.Write(i);
             Console.Write(" ");
-        end for
+        end loop
         Console.WriteLine();
 
         Console.Write("  until 5: ");
-        for i = 1 until 5
+        loop for i = 1 until 5
             Console.Write(i);
             Console.Write(" ");
-        end for
+        end loop
         Console.WriteLine();
     end function
 
@@ -60,11 +66,11 @@ shared model Program
         integer limit = 10;
 
         Console.Write("  counted: ");
-        for i = 1 until limit
+        loop for i = 1 until limit
             Console.Write(i);
             Console.Write(" ");
             limit = limit - 2;
-        end for
+        end loop
 
         Console.WriteLine();
         Console.WriteLine("  limit ended at " + limit);
@@ -85,27 +91,27 @@ shared model Program
         integer step = 1;
 
         Console.Write("  counted: ");
-        for i = 0 until 20 stepby step
+        loop for i = 0 until 20 stepby step
             Console.Write(i);
             Console.Write(" ");
             step = step * 2;
-        end for
+        end loop
 
         Console.WriteLine();
 
         # A negative step counts down, and 'until' still stops short of its bound.
         Console.Write("  down:    ");
-        for i = 5 until 0 stepby -1
+        loop for i = 5 until 0 stepby -1
             Console.Write(i);
             Console.Write(" ");
-        end for
+        end loop
         Console.WriteLine();
     end function
 
     ##
         @summary: Walking a sequence, whose length is read once.
 
-        @remarks: A 'for each' names a sequence rather than a bound, so its length is read when
+        @remarks: A 'loop each' names a sequence rather than a bound, so its length is read when
         the loop begins. Changing that sequence inside its own loop is refused rather than left
         to mean something subtle — see samples/negatives/compile/looping.pc. Building a second
         set is the way to say it.
@@ -116,9 +122,9 @@ shared model Program
         integer[] amounts = {3, 8, 2, 9};
         integer[] doubled = {};
 
-        for each amount in amounts
+        loop each amount in amounts
             doubled.Insert(amount * 2);
-        end for
+        end loop
 
         Console.WriteLine("  original: " + amounts.Join(", "));
         Console.WriteLine("  doubled:  " + doubled.Join(", "));
@@ -139,16 +145,95 @@ shared model Program
 
         integer delegate()[] remembered = {};
 
-        for i = 1 to 3
+        loop for i = 1 to 3
             remembered.Insert(() yield i);
-        end for
+        end loop
 
         Console.Write("  remembered: ");
-        for each made in remembered
+        loop each made in remembered
             Console.Write(made());
             Console.Write(" ");
-        end for
+        end loop
         Console.WriteLine();
+    end function
+
+    ##
+        @summary: A loop that asks after the turn rather than before it.
+
+        @remarks: A 'loop' with no word after it runs its body and then asks 'until'. So the
+        body always happens at least once, however the answer comes out — which is the whole
+        reason to reach for this one rather than 'loop while'.
+
+        The condition is written at the bottom because that is where it is tested. Written at
+        the top it would look exactly like a 'loop while' and behave differently, and nothing
+        in the line would say so.
+
+        It is also the only loop 'end' does not close: 'until' carries the condition, so it is
+        already saying the loop is over.
+    ##
+    function AskingAfterwards()
+        Console.WriteLine("== asking after the turn ==");
+
+        integer countdown = 3;
+
+        Console.Write("  counted down: ");
+        loop
+            Console.Write(countdown + " ");
+            countdown = countdown - 1;
+        until countdown == 0
+
+        Console.WriteLine();
+
+        # Already past its condition, and the body still runs — which a 'loop while' would not.
+        integer past = 100;
+
+        Console.Write("  already past: ");
+        loop
+            Console.Write(past);
+        until past > 0
+
+        Console.WriteLine();
+    end function
+
+    ##
+        @summary: A loop with no condition anywhere.
+
+        @remarks: Written when the reason to stop is not a question that can be asked at the
+        top or the bottom — it is something that happens partway through. Saying so plainly
+        beats writing a condition that is always true and hoping the reader sees what it was
+        standing in for.
+
+        Something in it still has to end it: a 'break', a 'yield', or a 'throw'. A loop with
+        none of the three is PC0406, an opinion rather than an error, because a program that
+        really means to run until it is stopped from outside is one somebody may write.
+
+        What it buys beyond reading well: a loop left only by 'yield' has no way of falling out
+        the bottom, so a function may end in one and still satisfy the rule that every path
+        yields a value.
+    ##
+    function NotAskingAtAll()
+        Console.WriteLine("== no condition at all ==");
+
+        integer[] readings = {4, 9, 0, 7};
+        integer at = 0;
+
+        Console.Write("  up to the first zero: ");
+
+        loop
+            if at >= readings.Count()
+                break;
+            end if
+
+            if readings[at] == 0
+                break;
+            end if
+
+            Console.Write(readings[at] + " ");
+            at = at + 1;
+        end loop
+
+        Console.WriteLine();
+        Console.WriteLine("  stopped at index " + at);
     end function
 
 end model

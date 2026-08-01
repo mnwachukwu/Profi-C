@@ -190,7 +190,7 @@ shared model Program
     function UpAndDownTheFamily()
         Shape[] shapes = {new Circle(2.0), new Square(), new Circle(0.5)};
 
-        for each shape in shapes
+        loop each shape in shapes
             if shape is Square
                 Console.WriteLine("a square, which has no radius to read");
             end if
@@ -200,7 +200,7 @@ shared model Program
             if asCircle.HasValue()
                 Console.WriteLine("a circle of radius " + asCircle.Value().Radius());
             end if
-        end for
+        end loop
     end function
 
     ##
@@ -212,12 +212,12 @@ shared model Program
 
         Console.WriteLine(s + " is number " + s.ToInteger());
 
-        for n = 1 to 4
+        loop for n = 1 to 4
             Suit? found = n as Suit;
 
             Console.WriteLine(
                 n + " names " + if found.HasValue() then found.Value().ToString() else "no suit");
-        end for
+        end loop
     end function
 
 end model

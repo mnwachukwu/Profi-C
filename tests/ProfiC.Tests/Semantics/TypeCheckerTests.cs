@@ -599,9 +599,9 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(CheckBody(
             """
-                    for i = 1 to 2.5
+                    loop for i = 1 to 2.5
                         yield;
-                    end for
+                    end loop
             """)), Is.EqualTo(new[] { "PC0317" }));
     }
 
@@ -611,12 +611,12 @@ public sealed class TypeCheckerTests
         Assert.That(IdsOf(CheckBody(
             """
                     integer[] numbers = {1, 2};
-                    for each n in numbers
+                    loop each n in numbers
                         integer copy = n;
-                    end for
-                    for each letter in "abc"
+                    end loop
+                    loop each letter in "abc"
                         character c = letter;
-                    end for
+                    end loop
             """)), Is.Empty);
     }
 
@@ -625,9 +625,9 @@ public sealed class TypeCheckerTests
     {
         Assert.That(IdsOf(CheckBody(
             """
-                    for each x in 5
+                    loop each x in 5
                         yield;
-                    end for
+                    end loop
             """)), Is.EqualTo(new[] { "PC0316" }));
     }
 
@@ -931,7 +931,7 @@ public sealed class TypeCheckerTests
     [TestCase("        if 1\n            yield;\n        end if", "An if condition")]
     [TestCase("        if true\n            yield;\n        else if 1\n            yield;\n        end if",
               "An else-if condition")]
-    [TestCase("        while 1\n            yield;\n        end while", "A while condition")]
+    [TestCase("        loop while 1\n            yield;\n        end loop", "A while condition")]
     [TestCase("        let f = if 1 then 2 else 3;", "An if expression's condition")]
     [TestCase("        let g = 1 and true;", "An operand of 'and' or 'or'")]
     public void AConditionMessageNamesItsSubjectCorrectly(string body, string expected)
@@ -953,7 +953,7 @@ public sealed class TypeCheckerTests
         string[] bodies =
         [
             "        if 1\n            yield;\n        end if",
-            "        while 1\n            yield;\n        end while",
+            "        loop while 1\n            yield;\n        end loop",
             "        let f = if 1 then 2 else 3;",
             "        let g = 1 and true;",
         ];
@@ -1099,16 +1099,16 @@ public sealed class TypeCheckerTests
     public void TheCounterIsAnIntegerWithoutBeingDeclaredOne() =>
         Assert.That(
             IdsOf(CheckBody("""
-                    for i = 1 to 10
+                    loop for i = 1 to 10
                         integer doubled = i * 2;
-                    end for
+                    end loop
             """)),
             Is.Empty);
 
     /// <summary>The bounds are the only part left that can disagree.</summary>
-    [TestCase("        for i = 1 to 2.5\n            yield;\n        end for")]
-    [TestCase("        for i = 1|2 to 10\n            yield;\n        end for")]
-    [TestCase("        for i = 1 to 10 stepby 0.5\n            yield;\n        end for")]
+    [TestCase("        loop for i = 1 to 2.5\n            yield;\n        end loop")]
+    [TestCase("        loop for i = 1|2 to 10\n            yield;\n        end loop")]
+    [TestCase("        loop for i = 1 to 10 stepby 0.5\n            yield;\n        end loop")]
     public void ARangeLoopStillCountsWithIntegers(string body) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0317" }));
 

@@ -24,9 +24,9 @@ shared model Program
 
         Console.WriteLine(Tally.Bar("fruit", 0));
 
-        for i = 0 until fruit.Count()
+        loop for i = 0 until fruit.Count()
             Console.WriteLine(Tally.Bar(fruit[i], counts[i]));
-        end for
+        end loop
     end function
 
 end model

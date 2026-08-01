@@ -33,12 +33,12 @@ shared model Program
     integer? function FirstEven(integer[] values)
         integer? found;
 
-        for each value in values
+        loop each value in values
             if value % 2 == 0
                 found = value;
                 break;
             end if
-        end for
+        end loop
 
         yield found;
     end function
@@ -66,13 +66,13 @@ shared model Program
     integer function TakingsFrom(integer[] amounts)
         integer total = 0;
 
-        for each amount in amounts
+        loop each amount in amounts
             if amount < 0
                 continue;
             end if
 
             total = total + amount;
-        end for
+        end loop
 
         yield total;
     end function
@@ -94,7 +94,7 @@ shared model Program
     function BothAtOnce()
         integer counted = 0;
 
-        for i = 1 to 20
+        loop for i = 1 to 20
             # Odd numbers are not being counted.
             if i % 2 == 1
                 continue;
@@ -107,7 +107,7 @@ shared model Program
                 Console.WriteLine("stopped at " + i);
                 break;
             end if
-        end for
+        end loop
     end function
 
     # ---- Which loop a break leaves ---------------------------------------------------
@@ -119,19 +119,19 @@ shared model Program
         turns; only the inner one is cut short each time.
     ##
     function BreakingOutOfTheInnerLoop()
-        for row = 1 to 3
+        loop for row = 1 to 3
             string line = "";
 
-            for column = 1 to 5
+            loop for column = 1 to 5
                 if column > row
                     break;
                 end if
 
                 line = line + column + " ";
-            end for
+            end loop
 
             Console.WriteLine("row " + row + ": " + line);
-        end for
+        end loop
     end function
 
 end model

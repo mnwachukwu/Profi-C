@@ -45,6 +45,7 @@ public static class ReservedWords
             ["internal"] = TokenType.Internal,
             ["is"] = TokenType.Is,
             ["let"] = TokenType.Let,
+            ["loop"] = TokenType.Loop,
             ["model"] = TokenType.Model,
             ["namespace"] = TokenType.Namespace,
             ["new"] = TokenType.New,

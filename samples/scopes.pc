@@ -37,9 +37,9 @@ internal model Ledger
     public integer function Total()
         integer running = 0;
 
-        for each amount in this.amounts
+        loop each amount in this.amounts
             running = running + amount;
-        end for
+        end loop
 
         yield running;
     end function

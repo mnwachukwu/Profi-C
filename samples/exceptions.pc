@@ -286,11 +286,11 @@ shared model Program
     # @what: the thing to look for.
     # @yields: the item, or nothing where the shelf does not hold it.
     string? function Find(string[] shelf, string what)
-        for each item in shelf
+        loop each item in shelf
             if item == what
                 yield item;
             end if
-        end for
+        end loop
 
         string? missing;
         yield missing;

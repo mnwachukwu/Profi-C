@@ -142,15 +142,15 @@ public sealed class LoweringTests
         CompilationUnit lowered = LowerBody(
             """
                     integer[] numbers = {1, 2};
-                    for each n in numbers
+                    loop each n in numbers
                         let copy = n;
-                    end for
+                    end loop
             """);
 
         Assert.Multiple(() =>
         {
             Assert.That(lowered.Descendants().OfType<ForEachStmt>(), Is.Empty,
-                        "no 'for each' should survive lowering");
+                        "no 'loop each' should survive lowering");
             Assert.That(lowered.Descendants().OfType<ForStmt>().Count(), Is.EqualTo(1));
         });
     }
@@ -162,9 +162,9 @@ public sealed class LoweringTests
         CompilationUnit lowered = LowerBody(
             """
                     integer[] numbers = {1, 2};
-                    for each n in numbers
+                    loop each n in numbers
                         let copy = n;
-                    end for
+                    end loop
             """);
 
         ForStmt loop = lowered.Descendants().OfType<ForStmt>().Single();
@@ -196,9 +196,9 @@ public sealed class LoweringTests
         CompilationUnit lowered = LowerBody(
             """
                     integer[] numbers = {1, 2};
-                    for each n in numbers
+                    loop each n in numbers
                         let copy = n;
-                    end for
+                    end loop
             """);
 
         ForStmt loop = lowered.Descendants().OfType<ForStmt>().Single();
@@ -217,9 +217,9 @@ public sealed class LoweringTests
         CompilationUnit lowered = LowerBody(
             """
                     integer[] numbers = {1, 2};
-                    for each n in numbers
+                    loop each n in numbers
                         let copy = n;
-                    end for
+                    end loop
             """);
 
         ForStmt loop = lowered.Descendants().OfType<ForStmt>().Single();
@@ -250,9 +250,9 @@ public sealed class LoweringTests
     {
         CompilationUnit lowered = LowerBody(
             """
-                    for each letter in "abc"
+                    loop each letter in "abc"
                         let copy = letter;
-                    end for
+                    end loop
             """);
 
         Assert.Multiple(() =>
@@ -268,9 +268,9 @@ public sealed class LoweringTests
         CompilationUnit lowered = LowerBody(
             """
                     integer[] numbers = {1};
-                    for each n in numbers
+                    loop each n in numbers
                         let copy = n;
-                    end for
+                    end loop
             """);
 
         IEnumerable<string> synthesized = lowered.Descendants()
@@ -290,11 +290,11 @@ public sealed class LoweringTests
             """
                     integer[] outer = {1};
                     integer[] inner = {2};
-                    for each a in outer
-                        for each b in inner
+                    loop each a in outer
+                        loop each b in inner
                             let sum = a + b;
-                        end for
-                    end for
+                        end loop
+                    end loop
             """);
 
         Assert.Multiple(() =>
@@ -330,9 +330,9 @@ public sealed class LoweringTests
                     else
                         x = 3;
                     end if
-                    while x > 0
+                    loop while x > 0
                         x = x - 1;
-                    end while
+                    end loop
                     switch x
                         case 0:
                             x = 1;
@@ -360,8 +360,8 @@ public sealed class LoweringTests
     [Test]
     public void LoweringIsDeterministic()
     {
-        CompilationUnit first = LowerBody("        integer[] n = {1}; for each x in n\n let c = x;\n end for");
-        CompilationUnit second = LowerBody("        integer[] n = {1}; for each x in n\n let c = x;\n end for");
+        CompilationUnit first = LowerBody("        integer[] n = {1}; loop each x in n\n let c = x;\n end loop");
+        CompilationUnit second = LowerBody("        integer[] n = {1}; loop each x in n\n let c = x;\n end loop");
 
         Assert.That(AstPrinter.Print(second), Is.EqualTo(AstPrinter.Print(first)));
     }

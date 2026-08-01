@@ -60,6 +60,10 @@ public abstract class SyntaxVisitor
     public virtual void VisitIfStmt(IfStmt node) => DefaultVisit(node);
     public virtual void VisitElseIfClause(ElseIfClause node) => DefaultVisit(node);
     public virtual void VisitWhileStmt(WhileStmt node) => DefaultVisit(node);
+
+    public virtual void VisitLoopUntilStmt(LoopUntilStmt node) => DefaultVisit(node);
+
+    public virtual void VisitLoopForeverStmt(LoopForeverStmt node) => DefaultVisit(node);
     public virtual void VisitForStmt(ForStmt node) => DefaultVisit(node);
     public virtual void VisitForEachStmt(ForEachStmt node) => DefaultVisit(node);
     public virtual void VisitSwitchStmt(SwitchStmt node) => DefaultVisit(node);
@@ -153,6 +157,10 @@ public abstract class SyntaxVisitor<TResult>
     public virtual TResult VisitIfStmt(IfStmt node) => DefaultVisit(node);
     public virtual TResult VisitElseIfClause(ElseIfClause node) => DefaultVisit(node);
     public virtual TResult VisitWhileStmt(WhileStmt node) => DefaultVisit(node);
+
+    public virtual TResult VisitLoopUntilStmt(LoopUntilStmt node) => DefaultVisit(node);
+
+    public virtual TResult VisitLoopForeverStmt(LoopForeverStmt node) => DefaultVisit(node);
     public virtual TResult VisitForStmt(ForStmt node) => DefaultVisit(node);
     public virtual TResult VisitForEachStmt(ForEachStmt node) => DefaultVisit(node);
     public virtual TResult VisitSwitchStmt(SwitchStmt node) => DefaultVisit(node);

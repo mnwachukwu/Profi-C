@@ -222,9 +222,9 @@ public sealed class CaptureAnalysisTests : LexerTestBase
             """
                     integer delegate()[] made = {};
 
-                    for i = 1 to 3
+                    loop for i = 1 to 3
                         made.Insert(() yield i);
-                    end for
+                    end loop
             """);
 
         Assert.That(NamesOf(captures[0]), Is.EqualTo(new[] { "i" }));

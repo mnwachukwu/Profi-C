@@ -66,9 +66,9 @@ shared model Program
     function NamingEachOne()
         Suit[] suits = {Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades};
 
-        for each suit in suits
+        loop each suit in suits
             Console.Write(Program.NameOf(suit) + " ");
-        end for
+        end loop
 
         Console.WriteLine();
     end function
@@ -132,9 +132,9 @@ shared model Program
         Rank[] hand = {Rank.Ace, Rank.King, Rank.Seven};
         integer total = 0;
 
-        for each rank in hand
+        loop each rank in hand
             total = total + Program.ValueOf(rank);
-        end for
+        end loop
 
         Console.WriteLine("hand is worth " + total);
     end function

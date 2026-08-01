@@ -65,15 +65,15 @@ shared model Program
 
         integer delegate()[] answers = {};
 
-        for i = 1 to 3
+        loop for i = 1 to 3
             answers.Insert(() yield i);
-        end for
+        end loop
 
         Console.Write("  made in the loop: ");
 
-        for each answer in answers
+        loop each answer in answers
             Console.Write(answer() + " ");
-        end for
+        end loop
 
         Console.WriteLine();
     end function
@@ -91,9 +91,9 @@ shared model Program
         integer start = 100;
         integer delegate()[] answers = {};
 
-        for i = 1 to 3
+        loop for i = 1 to 3
             answers.Insert(() yield start + i);
-        end for
+        end loop
 
         Console.Write("  start at 100:       ");
         Program.WriteAll(answers);
@@ -226,9 +226,9 @@ shared model Program
     # @summary: Writes every answer in a set of functions on one line.
     # @answers: the functions to call.
     function WriteAll(integer delegate()[] answers)
-        for each answer in answers
+        loop each answer in answers
             Console.Write(answer() + " ");
-        end for
+        end loop
 
         Console.WriteLine();
     end function

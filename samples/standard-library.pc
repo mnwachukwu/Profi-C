@@ -191,10 +191,10 @@ shared model Program
         character[] letters = word;
         Console.Write("  one letter at a time: ");
 
-        for each letter in letters
+        loop each letter in letters
             Console.Write(letter);
             Console.Write(" ");
-        end for
+        end loop
 
         Console.WriteLine();
         Console.WriteLine();
@@ -244,18 +244,18 @@ shared model Program
         Random rolls = new Random(42);
         Console.Write("  seeded 42, six rolls:  ");
 
-        for i = 1 to 6
+        loop for i = 1 to 6
             Console.Write(rolls.Next(1, 7) + " ");
-        end for
+        end loop
 
         Console.WriteLine();
 
         Random again = new Random(42);
         Console.Write("  the same seed again:   ");
 
-        for i = 1 to 6
+        loop for i = 1 to 6
             Console.Write(again.Next(1, 7) + " ");
-        end for
+        end loop
 
         Console.WriteLine();
 
@@ -379,13 +379,13 @@ shared model Program
     string function Render(integer[] values)
         string text = "{";
 
-        for i = 0 until values.Count()
+        loop for i = 0 until values.Count()
             if i > 0
                 text = text + ", ";
             end if
 
             text = text + values[i];
-        end for
+        end loop
 
         yield text + "}";
     end function

@@ -304,6 +304,8 @@ public sealed class DefiniteAssignment
         LocalDeclStmt { Declaration: FunctionDecl } => state,
         IfStmt branch => AnalyzeIf(branch, state),
         WhileStmt loop => AnalyzeWhile(loop, state),
+        LoopUntilStmt loop => AnalyzeLoopUntil(loop, state),
+        LoopForeverStmt loop => AnalyzeLoopForever(loop, state),
         ForStmt loop => AnalyzeRangeLoop(loop, state),
         ForEachStmt loop => AnalyzeForEach(loop, state),
         SwitchStmt switchStmt => AnalyzeSwitch(switchStmt, state),
@@ -382,6 +384,84 @@ public sealed class DefiniteAssignment
 
         return state.WithPossible(body.AssignedSomewhere);
     }
+
+    /// <summary>
+    /// <para>Unlike every other loop, this body always runs — so what it assigns is assigned.
+    /// </para>
+    /// <para>A <c>while</c>, a range loop and a walk may all run no times at all, which is why
+    /// nothing they assign can be counted on afterwards. This one is tested at the bottom, so
+    /// the first turn is unconditional and its assignments are certain. That is not a detail:
+    /// it is most of why the construct is worth having, since reading a value and then checking
+    /// it is exactly the shape that needs the read to have happened.</para>
+    /// </summary>
+    private FlowState AnalyzeLoopUntil(LoopUntilStmt loop, FlowState state)
+    {
+        state = AnalyzeStatements(loop.Body, state);
+
+        return AnalyzeExpression(loop.Condition, state);
+    }
+
+    /// <summary>
+    /// <para>A loop with no condition, and what follows it.</para>
+    /// <para>Three outcomes, because the three ways out are not alike. A <c>break</c> leaves the
+    /// loop, so the statement after it runs and everything downstream is analyzed normally. A
+    /// <c>yield</c> or a <c>throw</c> leaves the whole function, so nothing falls out of the
+    /// loop at all — which is what lets a function end in one and still satisfy the rule that
+    /// every path yields.</para>
+    /// <para>Nothing at all is the third, and it is reported (<c>PC0406</c>) rather than
+    /// modeled. The end of such a loop is unreachable in the strict sense, but saying so would
+    /// mean a function promising an integer and looping forever compiles clean — and that
+    /// program is broken in a way worth naming. So the end stays reachable, <c>PC0404</c>
+    /// still fires, and the opinion says which of the two things went wrong.</para>
+    /// </summary>
+    private FlowState AnalyzeLoopForever(LoopForeverStmt loop, FlowState state)
+    {
+        FlowState body = AnalyzeStatements(loop.Body, state.Clone());
+        FlowState after = state.WithPossible(body.AssignedSomewhere);
+
+        if (loop.Body.Any(HasABreakOfItsOwn))
+        {
+            return after;
+        }
+
+        if (loop.Body.Any(LeavesTheFunction))
+        {
+            return after.Unreachable();
+        }
+
+        _diagnostics.Report(DiagnosticDescriptors.LoopCannotBeLeft, loop.Span);
+
+        return after;
+    }
+
+    /// <summary>
+    /// <para>Whether a <c>break</c> in here belongs to the loop around it.</para>
+    /// <para>One nested inside another loop or a <c>switch</c> belongs to that instead, so the
+    /// walk stops at each. A lambda or a local function is a separate run, and nothing written
+    /// inside one leaves a loop out here however it is spelled.</para>
+    /// </summary>
+    private static bool HasABreakOfItsOwn(SyntaxNode node) => node switch
+    {
+        BreakStmt => true,
+
+        WhileStmt or LoopUntilStmt or LoopForeverStmt or ForStmt or ForEachStmt or WalkStmt
+            or SwitchStmt or LambdaExpr or LocalDeclStmt => false,
+
+        _ => node.Children.Any(HasABreakOfItsOwn),
+    };
+
+    /// <summary>
+    /// Whether anything in here leaves the whole function. Unlike a <c>break</c>, this passes
+    /// straight through a nested loop or <c>switch</c> — those capture a break, not a yield.
+    /// </summary>
+    private static bool LeavesTheFunction(SyntaxNode node) => node switch
+    {
+        YieldStmt or ThrowStmt => true,
+
+        LambdaExpr or LocalDeclStmt => false,
+
+        _ => node.Children.Any(LeavesTheFunction),
+    };
 
     private FlowState AnalyzeRangeLoop(ForStmt loop, FlowState state)
     {

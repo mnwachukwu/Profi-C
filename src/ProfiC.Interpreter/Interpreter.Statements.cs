@@ -60,6 +60,8 @@ public sealed partial class Interpreter
         VarDeclStmt declaration => ExecuteVarDecl(declaration, scope, receiver),
         IfStmt branch => ExecuteIf(branch, scope, receiver),
         WhileStmt loop => ExecuteWhile(loop, scope, receiver),
+        LoopUntilStmt loop => ExecuteLoopUntil(loop, scope, receiver),
+        LoopForeverStmt loop => ExecuteLoopForever(loop, scope, receiver),
         ForStmt loop => ExecuteFor(loop, scope, receiver),
         WalkStmt walk => ExecuteWalk(walk, scope, receiver),
         SwitchStmt switchStmt => ExecuteSwitch(switchStmt, scope, receiver),
@@ -154,6 +156,67 @@ public sealed partial class Interpreter
         }
 
         return ExecutionResult.Normal;
+    }
+
+    /// <summary>
+    /// <para>The loop whose condition is tested after the body, so the body always runs once.
+    /// </para>
+    /// <para>The condition is evaluated in the scope around the loop rather than the body's own,
+    /// which is pushed fresh each turn and gone by the time the test happens. A name the
+    /// condition reads therefore has to outlive a turn, which is what the resolver enforces.
+    /// </para>
+    /// </summary>
+    private ExecutionResult ExecuteLoopUntil(
+        LoopUntilStmt loop,
+        Environment scope,
+        Instance? receiver)
+    {
+        while (true)
+        {
+            ExecutionResult result = ExecuteStatements(loop.Body, scope.Push(), receiver);
+
+            if (result.Completion == Completion.Break)
+            {
+                break;
+            }
+
+            if (result.Completion == Completion.Yield)
+            {
+                return result;
+            }
+
+            if (IsTrue(Evaluate(loop.Condition, scope, receiver)))
+            {
+                break;
+            }
+        }
+
+        return ExecutionResult.Normal;
+    }
+
+    /// <summary>
+    /// A loop with no condition. Only a <c>break</c>, a <c>yield</c>, or something thrown
+    /// leaves it, which is what the program said by writing no condition.
+    /// </summary>
+    private ExecutionResult ExecuteLoopForever(
+        LoopForeverStmt loop,
+        Environment scope,
+        Instance? receiver)
+    {
+        while (true)
+        {
+            ExecutionResult result = ExecuteStatements(loop.Body, scope.Push(), receiver);
+
+            if (result.Completion == Completion.Break)
+            {
+                return ExecutionResult.Normal;
+            }
+
+            if (result.Completion == Completion.Yield)
+            {
+                return result;
+            }
+        }
     }
 
     /// <summary>

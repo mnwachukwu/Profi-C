@@ -135,6 +135,13 @@ public sealed class Lowering
                 return new WhileStmt(
                     loop.Span, LowerExpression(loop.Condition), LowerStatements(loop.Body));
 
+            case LoopUntilStmt loop:
+                return new LoopUntilStmt(
+                    loop.Span, LowerStatements(loop.Body), LowerExpression(loop.Condition));
+
+            case LoopForeverStmt loop:
+                return new LoopForeverStmt(loop.Span, LowerStatements(loop.Body));
+
             case ForStmt loop:
                 return Carry(loop, new ForStmt(
                     loop.Span,

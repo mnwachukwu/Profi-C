@@ -158,7 +158,7 @@ what it means without a glossary.
 out; anything it borrows is written the way its source writes it, so a name a reader already
 knows is the name they type.
 
-**Every construct says what it closes.** `end if`, `end while`, `end model`. The compiler
+**Every construct says what it closes.** `end if`, `end loop`, `end model`. The compiler
 verifies the qualifier and reports a mismatch by name, so a beginner who loses track of
 nesting is told exactly where.
 
@@ -585,7 +585,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 
 ### 2.1 Reserved words
 
-Profi-C has **61** reserved words. A name may take one back by writing `@` in front of it —
+Profi-C has **62** reserved words. A name may take one back by writing `@` in front of it —
 `@end`, `@each` — which is the only place a name may begin with something other than a letter.
 
 ```
@@ -594,12 +594,12 @@ boolean      break        case         catch        character    constant
 continue     default      delegate     each         else         end
 enumeration  extends      false        finally      for          fraction
 function     if           import       in           integer      internal
-is           let          model        namespace    new          not
-or           override     protected    public       real         sealed
-shared       shiftleft    shiftright   stepby       string       structure
-switch       then         this         throw        to           true
-try          until        using        virtual      while        xor
-yield
+is           let          loop         model        namespace    new
+not          or           override     protected    public       real
+sealed       shared       shiftleft    shiftright   stepby       string
+structure    switch       then         this         throw        to
+true         try          until        using        virtual      while
+xor          yield
 ```
 
 These are every reserved word, and nothing is reserved outside the list. A comment is marked
@@ -1300,10 +1300,15 @@ removes the whole family of bugs where `=` was typed for `==`.
 
 ### 6.1 Blocks and the qualified `end`
 
-**Every construct closes with `end` and the word that opened it** — `end if`, `end while`,
-`end for`, `end function`, `end model`. The parser records what opened and rejects a
-mismatched closer by naming both (`PC0104`), so a misplaced `end` is caught where it is
-written rather than at the end of the file.
+**Every construct closes with `end` and the word that opened it** — `end if`, `end loop`,
+`end function`, `end model`. The parser records what opened and rejects a mismatched closer by
+naming both (`PC0104`), so a misplaced `end` is caught where it is written rather than at the
+end of the file.
+
+**One construct is closed by something other than `end`.** A `loop` with no qualifier is closed
+by `until` and its condition ([§6.3](#63-looping)). The word doing the closing carries
+information, which is what earns it the exception; nothing else in the language departs from
+the rule.
 
 **A construct's body has no opening token.** `begin` opens a block, and a block is always an
 anonymous scope rather than any construct's body:
@@ -1362,24 +1367,64 @@ two members naming one value are handled together.
 
 ### 6.3 Looping
 
-Two `for` forms and a `while`:
+**Every loop opens with `loop`**, and the word after it says which kind:
 
 ```
-for i = 1 to 10          counts 1 through 10
-for i = 1 until 10       counts 1 through 9
-for i = 10 to 1 stepby -1  counts down
-for each item in items   takes each element in turn
-while count < 10         while the condition holds
+loop for i = 1 to 10            counts 1 through 10
+loop for i = 1 until 10         counts 1 through 9
+loop for i = 10 to 1 stepby -1  counts down
+loop each item in items         takes each element in turn
+loop while count < 10           asks before each turn
+loop ... until count == 10      asks after each turn
+loop ... end loop               does not ask at all
 ```
+
+One opener and one closer: every form but `until` closes with `end loop`. That one is the only
+construct in the language `end` does not close, because `until` carries the condition and so is
+already saying the loop is over.
+
+That regularity is the point. A reader learns that `loop` means something repeats and then asks
+one question — which kind — rather than learning three unrelated words and discovering that one
+of them has two forms.
 
 `to` includes its bound and `until` excludes it, which is the distinction other languages
 leave to remembering whether `<` or `<=` was written.
 
-**Neither `for` form writes a type for the variable it binds.** A range loop counts, and counting is done with integers, so
-`for i = 1 to 10` has no type to write and writing one is an error; a `for each` takes its
-element's type from the sequence. Both are fixed by the construct rather than inferred from a
-value, which is why neither needs `let`. A range loop's bounds and step must themselves be
-integers (`PC0317`), and its counter cannot be assigned to inside the loop (`PC0206`).
+**Neither counting form writes a type for the variable it binds.** A range loop counts, and
+counting is done with integers, so `loop for i = 1 to 10` has no type to write and writing one
+is an error; a `loop each` takes its element's type from the sequence. Both are fixed by the
+construct rather than inferred from a value, which is why neither needs `let`. A range loop's
+bounds and step must themselves be integers (`PC0317`), and its counter cannot be assigned to
+inside the loop (`PC0206`).
+
+**`loop ... until` tests after the body, so the body always runs at least once.** That is the
+whole reason it exists, and it has a consequence the others do not share: whatever the body
+definitely assigns is definitely assigned afterwards, because the first turn is unconditional.
+Every other loop may run no times at all.
+
+The condition is written at the bottom because that is where it is tested. Written at the top
+it would be indistinguishable from a `loop while` that checks at a different moment, and
+nothing in the line would say so.
+
+**A `loop` closed by `end loop` has no condition anywhere**, and is for the case where the
+reason to stop is not a question that can be asked at the top or the bottom but something that
+happens partway through. Saying that plainly beats writing a condition that is always true and
+leaving a reader to work out what it stood in for.
+
+Something inside still has to end it — a `break`, a `yield`, or a `throw`. One with none of the
+three is `PC0406`, an **opinion** rather than an error: a program that means to run until it is
+stopped from outside is one somebody may legitimately write, and the language cannot tell which
+it has.
+
+**The opinion suppresses nothing.** A function that yields a value and holds a loop nothing can
+end still gets `PC0404`, because that is not a question about the loop — it is a function
+promising a result and having no path that produces one. Both are reported, and they say
+different things.
+
+Which way out is written matters to what follows the loop. A `break` leaves the loop, so the
+next statement runs. A `yield` or a `throw` leaves the whole function, so nothing falls out of
+the bottom at all — which is what lets a function end in one of these and still satisfy the rule
+that every path yields.
 
 **A range loop reads its header on every turn.** The starting value is read once, because
 there is nothing else it could mean; the bound and the step are read again at the top of each
@@ -1388,13 +1433,13 @@ turn, so `until x` is a condition about `x` as it stands rather than as it was:
 ```
 integer limit = 10;
 
-for i = 1 until limit    three turns: the bound moves down to meet the counter
+loop for i = 1 until limit    three turns: the bound moves down to meet the counter
     limit = limit - 2;
-end for
+end loop
 ```
 
 A bound that moves the other way never ends the loop, which is allowed and is the same thing
-`while true` is. Both are the program saying so.
+`loop while true` is. Both are the program saying so.
 
 The step is read at the same moment as the bound, so one turn reads the header once: whatever
 decided that this turn runs is what advances to the next. Only the counter is out of reach —
@@ -1403,7 +1448,7 @@ it belongs to the loop and cannot be assigned to (`PC0206`).
 This matches a C-style `for`, whose condition and increment are both live:
 `for (int i = 0; i < x; i++) x++;` never finishes there either.
 
-**A `for each` takes its sequence as it stands.** It names a sequence rather than a bound, so
+**A `loop each` takes its sequence as it stands.** It names a sequence rather than a bound, so
 its length is read once, when the loop begins. Modifying the sequence inside its own loop is
 refused (`PC0243`) rather than left to mean something subtle.
 
@@ -1850,7 +1895,7 @@ Eleven exception types, and every one descends from `Exception`:
 | `DivideByZeroException` | Dividing by a value that turned out to be zero |
 | `IndexOutOfRangeException` | Indexing a set or string outside it |
 | `EmptyOptionalException` | `Value()` on an optional holding nothing |
-| `SequenceChangedException` | a set changed while a `for each` was walking it |
+| `SequenceChangedException` | a set changed while a `loop each` was walking it |
 | `InvalidCastException` | A conversion that could not be made |
 | `FormatException` | Text that could not be read as what was wanted |
 | `ArgumentException` | An argument a function will not accept |
@@ -2744,6 +2789,7 @@ of a reader.
 | `PC0117` | error | A function's type is written with 'delegate' |
 | `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' |
 | `PC0119` | error | 'let' declares a local, not a field |
+| `PC0120` | error | A loop begins with 'loop' |
 
 ### PC0200 to PC0299
 
@@ -2858,6 +2904,7 @@ of a reader.
 | `PC0403` | warning | Unreachable code |
 | `PC0404` | error | Not every path yields a value |
 | `PC0405` | error | Called before a name it uses is ready |
+| `PC0406` | opinion | Nothing here can end this loop |
 
 ### PC0600 to PC0699
 

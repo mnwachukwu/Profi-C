@@ -22,7 +22,7 @@ shared model Program
         integer full = 0;
         real due = 0.0;
 
-        for each item in basket
+        loop each item in basket
             real after = quarterOff.Apply(item.Pence());
 
             Console.WriteLine(
@@ -30,7 +30,7 @@ shared model Program
 
             full = full + item.Pence();
             due = due + after;
-        end for
+        end loop
 
         Console.WriteLine(quarterOff.Label() + ": " + full + " becomes " + due);
     end function

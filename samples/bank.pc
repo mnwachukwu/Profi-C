@@ -110,9 +110,9 @@ shared model Program
         Console.WriteLine();
         Console.WriteLine("final balances");
 
-        for each account in accounts
+        loop each account in accounts
             Console.WriteLine("  " + account.Owner() + ": " + account.Balance());
-        end for
+        end loop
     end function
 
     ##
@@ -159,11 +159,11 @@ shared model Program
         @yields: the account, or nothing where no one holds that name.
     ##
     Account? function Find(Account[] accounts, string who)
-        for each account in accounts
+        loop each account in accounts
             if account.Owner() == who
                 yield account;
             end if
-        end for
+        end loop
 
         Account? missing;
         yield missing;

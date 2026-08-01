@@ -10,17 +10,17 @@
 shared model Program
 
     function Main()
-        for n = 18 to 21
+        loop for n = 18 to 21
             Console.WriteLine(n + "! = " + Program.Factorial(n));
-        end for
+        end loop
     end function
 
     integer function Factorial(integer n)
         integer product = 1;
 
-        for factor = 2 to n
+        loop for factor = 2 to n
             product = product * factor;
-        end for
+        end loop
 
         yield product;
     end function

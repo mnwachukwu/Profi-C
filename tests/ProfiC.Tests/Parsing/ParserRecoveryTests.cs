@@ -62,7 +62,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
             """
                     if x > 1
                         yield;
-                    end while
+                    end loop
             """);
 
         Assert.Multiple(() =>
@@ -71,7 +71,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
 
             string message = diagnostics.Single().Message;
             Assert.That(message, Does.Contain("end if"), "should name what was expected");
-            Assert.That(message, Does.Contain("end while"), "should name what was written");
+            Assert.That(message, Does.Contain("end loop"), "should name what was written");
             Assert.That(message, Does.Contain("line 3"), "should point at the opener");
         });
     }
@@ -83,7 +83,7 @@ public sealed class ParserRecoveryTests : ParserTestBase
         // mistake from unterminating every enclosing construct.
         (_, DiagnosticBag diagnostics) = ParseBody(
             """
-                    while x
+                    loop while x
                         yield;
                     end if
             """);
@@ -106,6 +106,35 @@ public sealed class ParserRecoveryTests : ParserTestBase
             """);
 
         Assert.That(IdsOf(diagnostics), Does.Contain("PC0105"));
+    }
+
+    // ---- A loop written without its opener --------------------------------------------------
+
+    /// <summary>
+    /// <para>Every loop opens with <c>loop</c>, and leaving it out is one mistake with one
+    /// message.</para>
+    /// <para>This is the commonest thing anyone will type — from habit in another language, or
+    /// from a Profi-C program written before the word existed. Without the case, <c>for</c>
+    /// begins no statement and the counter, the bound and the body are each reported in turn,
+    /// so the reader gets four messages and none of them says what is actually wrong.</para>
+    /// <para>The rewrite named has to be right for the form written. <c>for each</c> is not a
+    /// loop missing a word, it is the older two-word spelling, so the fix drops the <c>for</c>
+    /// rather than putting something in front of it.</para>
+    /// </summary>
+    [TestCase("        for i = 1 to 3\n            yield;\n        end loop", "loop for")]
+    [TestCase("        for each x in xs\n            yield;\n        end loop", "loop each")]
+    [TestCase("        while x\n            yield;\n        end loop", "loop while")]
+    public void ALoopWithoutItsOpenerIsOneDiagnosticNamingTheRewrite(string body, string rewrite)
+    {
+        (_, DiagnosticBag diagnostics) = ParseBody(body);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(diagnostics), Is.EqualTo(new[] { "PC0120" }),
+                        "one missing word should be one message, not a cascade");
+
+            Assert.That(diagnostics.Single().Message, Does.Contain($"'{rewrite}'"));
+        });
     }
 
     // ---- The statement boundary rule ------------------------------------------------------

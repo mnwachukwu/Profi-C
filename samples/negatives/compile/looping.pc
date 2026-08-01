@@ -1,12 +1,12 @@
 ##
     Changing a sequence while walking it.
 
-    This program does not compile. A 'for each' reads its sequence's length once, when the loop
+    This program does not compile. A 'loop each' reads its sequence's length once, when the loop
     begins, so inserting into it does not lengthen the walk and removing from it leaves the
     walk reaching past the end. Neither is what the line looks like it does.
 
     A range loop is the opposite and says so: its bound is read on every turn, so a bound that
-    moves is a bound that moves. That is why only 'for each' is refused here.
+    moves is a bound that moves. That is why only 'loop each' is refused here.
 ##
 
 shared model Program
@@ -15,15 +15,33 @@ shared model Program
         Program.Growing();
         Program.Shrinking();
         Program.EmptyingIt();
+        Console.WriteLine(Program.NothingEndsIt());
+    end function
+
+    ##
+        A loop with no condition and no way out. Two things are said about it, and they are
+        different things.
+
+        PC0406 is an opinion: nothing in the body breaks, yields, or throws, so nothing written
+        here will ever stop it. That alone is not an error — a program may mean to run until it
+        is stopped from outside.
+
+        PC0404 is the error, and it is about the promise rather than the loop: this function
+        says it yields an integer and has no path that does.
+    ##
+    integer function NothingEndsIt()
+        loop
+            Console.WriteLine("and on, and on");
+        end loop
     end function
 
     # Inserting. The walk was already measured, so the new element is never reached.
     function Growing()
         integer[] amounts = {1, 2, 3};
 
-        for each amount in amounts
+        loop each amount in amounts
             amounts.Insert(amount * 10);
-        end for
+        end loop
 
         Console.WriteLine(amounts.Count());
     end function
@@ -32,9 +50,9 @@ shared model Program
     function Shrinking()
         integer[] amounts = {1, 2, 3};
 
-        for each amount in amounts
+        loop each amount in amounts
             amounts.Remove(amount);
-        end for
+        end loop
 
         Console.WriteLine(amounts.Count());
     end function
@@ -47,9 +65,9 @@ shared model Program
     function EmptyingIt()
         integer[] amounts = {1, 2, 3};
 
-        for each amount in amounts
+        loop each amount in amounts
             amounts.Clear();
-        end for
+        end loop
 
         Console.WriteLine(amounts.Count());
     end function

@@ -45,8 +45,15 @@ public sealed partial class Parser
             case TokenType.Begin: return ParseBlock();
             case TokenType.Let: return ParseLetDeclaration();
             case TokenType.If: return ParseIfStatement();
-            case TokenType.While: return ParseWhile();
-            case TokenType.For: return ParseFor();
+            case TokenType.Loop: return ParseLoop();
+
+            // A loop missing its opener, which is what habit from another language and every
+            // older Profi-C program produces. Reported once and then parsed as though the word
+            // had been there, so the body is read normally instead of cascading.
+            case TokenType.For:
+            case TokenType.Each:
+            case TokenType.While:
+                return ParseLoopWithoutItsOpener();
             case TokenType.Switch: return ParseSwitch();
             case TokenType.Try: return ParseTry();
             case TokenType.Throw: return ParseThrow();
@@ -240,37 +247,121 @@ public sealed partial class Parser
         return new IfStmt(SpanFrom(start), condition, thenBody, elseIfClauses, elseBody);
     }
 
-    private Statement ParseWhile()
+    /// <summary>
+    /// <para>Every loop, told apart by the word after <c>loop</c>.</para>
+    /// <para>One opener and one closer for all of them: a reader learns that <c>loop</c> means
+    /// something repeats, and the next word says which kind. Three close with <c>end loop</c>;
+    /// the one with no qualifier is closed by <c>until</c>, which carries the condition and so
+    /// is doing the closing itself.</para>
+    /// </summary>
+    private Statement ParseLoop()
     {
         Token start = Advance();
-        Expression condition = ParseExpression();
-        List<Statement> body = ParseBody(TokenType.While);
 
-        ExpectEnd(TokenType.While, "while", start);
+        return Kind switch
+        {
+            TokenType.For => ParseLoopFor(start),
+            TokenType.Each => ParseLoopEach(start),
+            TokenType.While => ParseLoopWhile(start),
+            _ => ParseBareLoop(start),
+        };
+    }
+
+    /// <summary>
+    /// <para>Reads a loop whose <c>loop</c> was left out, and says so once.</para>
+    /// <para>The qualifier stands where <c>loop</c> should be, so it is treated as the opener
+    /// and the loop is read from there. That builds the same tree the correct spelling would,
+    /// which is what keeps one missing word from being reported again by every pass after this
+    /// one.</para>
+    /// <para><c>for each</c> is the case worth handling by name. It is not merely missing a
+    /// word — it is the old two-word spelling, so the fix drops the <c>for</c> rather than
+    /// putting something in front of it, and the message has to say <c>loop each</c> or it
+    /// names a rewrite that would still be wrong.</para>
+    /// </summary>
+    private Statement ParseLoopWithoutItsOpener()
+    {
+        Token start = Current;
+
+        bool wasTwoWordEach = Kind == TokenType.For && Peek().Type == TokenType.Each;
+
+        string written = wasTwoWordEach ? "each" : start.Lexeme;
+
+        _diagnostics.Report(DiagnosticDescriptors.LoopNeedsItsOpener, start.Span, written);
+
+        if (wasTwoWordEach)
+        {
+            Advance();
+            return ParseLoopEach(start);
+        }
+
+        return Kind switch
+        {
+            TokenType.For => ParseLoopFor(start),
+            TokenType.Each => ParseLoopEach(start),
+            _ => ParseLoopWhile(start),
+        };
+    }
+
+    private Statement ParseLoopWhile(Token start)
+    {
+        Advance();
+
+        Expression condition = ParseExpression();
+        List<Statement> body = ParseBody(TokenType.Loop);
+
+        ExpectEnd(TokenType.Loop, "loop", start);
 
         return new WhileStmt(SpanFrom(start), condition, body);
     }
 
-    /// <summary>
-    /// Both loop forms, told apart by the <c>each</c> that may follow <c>for</c>. Both close
-    /// with <c>end for</c>.
-    /// </summary>
-    private Statement ParseFor()
+    private Statement ParseLoopEach(Token start)
     {
-        Token start = Advance();
+        Advance();
 
-        if (Match(TokenType.Each))
+        string name = ExpectIdentifier();
+        Expect(TokenType.In);
+
+        Expression sequence = ParseExpression();
+        List<Statement> body = ParseBody(TokenType.Loop);
+
+        ExpectEnd(TokenType.Loop, "loop", start);
+
+        return new ForEachStmt(SpanFrom(start), name, sequence, body);
+    }
+
+    /// <summary>
+    /// <para>A <c>loop</c> with no qualifier, which is one of two things depending on how it
+    /// ends.</para>
+    /// <para>Closed by <c>until</c>, it tests after the body — the one loop <c>end</c> does not
+    /// close, because the word carrying the condition is doing the closing. Closed by
+    /// <c>end loop</c>, it has no condition anywhere and runs until something leaves it.</para>
+    /// <para>Both read the same way from the top, which is right: both always run their body,
+    /// and what differs is only whether there is a reason to stop. The reader finds that out
+    /// where it is written.</para>
+    /// </summary>
+    private Statement ParseBareLoop(Token start)
+    {
+        List<Statement> body = ParseBody(TokenType.Loop, TokenType.Until);
+
+        if (Match(TokenType.Until))
         {
-            string eachName = ExpectIdentifier();
-            Expect(TokenType.In);
+            // Read before the span is taken. Written as one expression the arguments evaluate
+            // left to right, so the span would end at the 'until' and the condition would
+            // reach past its own parent.
+            Expression condition = ParseExpression();
 
-            Expression sequence = ParseExpression();
-            List<Statement> eachBody = ParseBody(TokenType.For);
-
-            ExpectEnd(TokenType.For, "for", start);
-
-            return new ForEachStmt(SpanFrom(start), eachName, sequence, eachBody);
+            return new LoopUntilStmt(SpanFrom(start), body, condition);
         }
+
+        ExpectEnd(TokenType.Loop, "loop", start);
+
+        return new LoopForeverStmt(SpanFrom(start), body);
+    }
+
+    /// <summary>The counting loop, which is <c>loop for</c>.</summary>
+    private Statement ParseLoopFor(Token start)
+    {
+        Advance();
 
         // A range loop counts, and counting is done with integers, so the counter carries no
         // written type. Someone arriving from a language that wants one writes "for integer i",
@@ -306,8 +397,8 @@ public sealed partial class Parser
         Expression bound = ParseExpression();
         Expression? step = Match(TokenType.StepBy) ? ParseExpression() : null;
 
-        List<Statement> body = ParseBody(TokenType.For);
-        ExpectEnd(TokenType.For, "for", start);
+        List<Statement> body = ParseBody(TokenType.Loop);
+        ExpectEnd(TokenType.Loop, "loop", start);
 
         return new ForStmt(SpanFrom(start), name, from, bound, inclusive, step, body);
     }

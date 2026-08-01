@@ -30,11 +30,11 @@ shared model Program
     integer[] function Sorted(integer[] values)
         integer[] result = {};
 
-        for each value in values
+        loop each value in values
             result.Insert(value);
-        end for
+        end loop
 
-        for i = 1 until result.Count()
+        loop for i = 1 until result.Count()
             integer current = result[i];
             integer j = i - 1;
 
@@ -42,13 +42,13 @@ shared model Program
                 'and' stops as soon as the left side is false, which matters here: once j
                 reaches -1 there is no result[j] to read, and the second test is never run.
             ##
-            while j >= 0 and result[j] > current
+            loop while j >= 0 and result[j] > current
                 result[j + 1] = result[j];
                 j = j - 1;
-            end while
+            end loop
 
             result[j + 1] = current;
-        end for
+        end loop
 
         yield result;
     end function
@@ -61,13 +61,13 @@ shared model Program
     string function Render(integer[] values)
         string text = "";
 
-        for i = 0 until values.Count()
+        loop for i = 0 until values.Count()
             if i > 0
                 text = text + ", ";
             end if
 
             text = text + values[i];
-        end for
+        end loop
 
         yield text;
     end function
@@ -85,13 +85,13 @@ shared model Program
     string function RenderBackwards(integer[] values)
         string text = "";
 
-        for i = values.Count() - 1 to 0 stepby -1
+        loop for i = values.Count() - 1 to 0 stepby -1
             if i < values.Count() - 1
                 text = text + ", ";
             end if
 
             text = text + values[i];
-        end for
+        end loop
 
         yield text;
     end function

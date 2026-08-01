@@ -86,9 +86,9 @@ shared model Program
 
         Console.Write("  row lengths: ");
 
-        for each row in ragged
+        loop each row in ragged
             Console.Write(row.Count() + " ");
-        end for
+        end loop
 
         Console.WriteLine();
 
@@ -171,10 +171,10 @@ shared model Program
 
         Program.WriteVector("  start        ", point);
 
-        for turn = 1 to 4
+        loop for turn = 1 to 4
             point = Program.Apply(quarterTurn, point);
             Program.WriteVector("  after turn " + turn + " ", point);
-        end for
+        end loop
     end function
 
     ##
@@ -239,15 +239,15 @@ shared model Program
     integer[][] function Transpose(integer[][] grid)
         integer[][] turned = {};
 
-        for column = 0 to grid[0].Count() - 1
+        loop for column = 0 to grid[0].Count() - 1
             integer[] built = {};
 
-            for row = 0 to grid.Count() - 1
+            loop for row = 0 to grid.Count() - 1
                 built.Insert(grid[row][column]);
-            end for
+            end loop
 
             turned.Insert(built);
-        end for
+        end loop
 
         yield turned;
     end function
@@ -266,21 +266,21 @@ shared model Program
     integer[][] function Multiply(integer[][] left, integer[][] right)
         integer[][] product = {};
 
-        for row = 0 to left.Count() - 1
+        loop for row = 0 to left.Count() - 1
             integer[] built = {};
 
-            for column = 0 to right[0].Count() - 1
+            loop for column = 0 to right[0].Count() - 1
                 integer total = 0;
 
-                for along = 0 to right.Count() - 1
+                loop for along = 0 to right.Count() - 1
                     total = total + (left[row][along] * right[along][column]);
-                end for
+                end loop
 
                 built.Insert(total);
-            end for
+            end loop
 
             product.Insert(built);
-        end for
+        end loop
 
         yield product;
     end function
@@ -294,15 +294,15 @@ shared model Program
     integer[][] function Identity(integer size)
         integer[][] built = {};
 
-        for row = 0 to size - 1
+        loop for row = 0 to size - 1
             integer[] line = {};
 
-            for column = 0 to size - 1
+            loop for column = 0 to size - 1
                 line.Insert(if row == column then 1 else 0);
-            end for
+            end loop
 
             built.Insert(line);
-        end for
+        end loop
 
         yield built;
     end function
@@ -321,15 +321,15 @@ shared model Program
     integer[] function Apply(integer[][] transform, integer[] point)
         integer[] moved = {};
 
-        for row = 0 to transform.Count() - 1
+        loop for row = 0 to transform.Count() - 1
             integer total = 0;
 
-            for column = 0 to point.Count() - 1
+            loop for column = 0 to point.Count() - 1
                 total = total + (transform[row][column] * point[column]);
-            end for
+            end loop
 
             moved.Insert(total);
-        end for
+        end loop
 
         yield moved;
     end function
@@ -346,21 +346,21 @@ shared model Program
     integer[][][] function TurnEachLayer(integer[][][] cube)
         integer[][][] turned = {};
 
-        for each layer in cube
+        loop each layer in cube
             integer[][] built = {};
 
-            for column = 0 to layer[0].Count() - 1
+            loop for column = 0 to layer[0].Count() - 1
                 integer[] line = {};
 
-                for row = layer.Count() - 1 until -1 stepby -1
+                loop for row = layer.Count() - 1 until -1 stepby -1
                     line.Insert(layer[row][column]);
-                end for
+                end loop
 
                 built.Insert(line);
-            end for
+            end loop
 
             turned.Insert(built);
-        end for
+        end loop
 
         yield turned;
     end function
@@ -373,15 +373,15 @@ shared model Program
     function WriteGrid(string label, integer[][] grid)
         Console.WriteLine(label + ":");
 
-        for each row in grid
+        loop each row in grid
             Console.Write("   ");
 
-            for each cell in row
+            loop each cell in row
                 Console.Write(" " + cell);
-            end for
+            end loop
 
             Console.WriteLine();
-        end for
+        end loop
     end function
 
     # @summary: Writes a cube, a labeled layer at a time.
@@ -390,19 +390,19 @@ shared model Program
     function WriteCube(string label, integer[][][] cube)
         Console.WriteLine(label + ":");
 
-        for layer = 0 to cube.Count() - 1
+        loop for layer = 0 to cube.Count() - 1
             Console.WriteLine("    layer " + layer + ":");
 
-            for each row in cube[layer]
+            loop each row in cube[layer]
                 Console.Write("     ");
 
-                for each cell in row
+                loop each cell in row
                     Console.Write(" " + cell);
-                end for
+                end loop
 
                 Console.WriteLine();
-            end for
-        end for
+            end loop
+        end loop
     end function
 
     # @summary: Writes a point on one line, under a label.
@@ -411,9 +411,9 @@ shared model Program
     function WriteVector(string label, integer[] point)
         Console.Write(label + ": ");
 
-        for each number in point
+        loop each number in point
             Console.Write(" " + number);
-        end for
+        end loop
 
         Console.WriteLine();
     end function

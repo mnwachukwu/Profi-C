@@ -17,10 +17,10 @@ shared model Program
     function Main()
         Console.WriteLine("n    recursive   iterative");
 
-        for n = 0 to Program.Limit
+        loop for n = 0 to Program.Limit
             Console.WriteLine(
                 Program.Pad(n) + Program.Pad(Program.Recursive(n)) + Program.Iterative(n));
-        end for
+        end loop
     end function
 
     ##
@@ -49,11 +49,11 @@ shared model Program
         integer previous = 0;
         integer current = 1;
 
-        for i = 0 until n
+        loop for i = 0 until n
             integer next = previous + current;
             previous = current;
             current = next;
-        end for
+        end loop
 
         yield previous;
     end function
@@ -67,9 +67,9 @@ shared model Program
         let text = "" + value;
         string padded = text;
 
-        for i = text.Count() until 12
+        loop for i = text.Count() until 12
             padded = padded + " ";
-        end for
+        end loop
 
         yield padded;
     end function

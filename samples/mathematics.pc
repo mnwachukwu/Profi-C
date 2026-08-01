@@ -185,9 +185,9 @@ shared model Program
     function Counting()
         Console.WriteLine("== counting ==");
 
-        for n = 0 to 6
+        loop for n = 0 to 6
             Console.Write(Math.Factorial(n) + " ");
-        end for
+        end loop
 
         Console.WriteLine();
 

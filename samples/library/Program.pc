@@ -18,9 +18,9 @@ shared model Program
 
         Console.WriteLine("On the shelf");
 
-        for each book in shelf
+        loop each book in shelf
             Console.WriteLine("  " + book.Described() + " - " + Program.Availability(book));
-        end for
+        end loop
 
         Console.WriteLine();
         Program.Lend(shelf[1]);

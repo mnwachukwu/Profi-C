@@ -31,9 +31,9 @@ model Basket
         let double = (integer items) yield items * 2;
 
         # A loop's binding, hiding the parameter.
-        for total = 1 to 3
+        loop for total = 1 to 3
             Console.WriteLine(total);
-        end for
+        end loop
 
         # A caught exception, hiding a local.
         let trouble = "none";

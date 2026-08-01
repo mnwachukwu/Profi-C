@@ -238,6 +238,18 @@ public sealed partial class Resolver
                 InScope(() => BindStatements(loop.Body));
                 break;
 
+            // The condition is bound after the body's scope closes, so a local declared inside
+            // the loop is not visible to it — the body runs again from the top, where that
+            // local does not yet exist.
+            case LoopUntilStmt loop:
+                InScope(() => BindStatements(loop.Body));
+                BindExpression(loop.Condition);
+                break;
+
+            case LoopForeverStmt loop:
+                InScope(() => BindStatements(loop.Body));
+                break;
+
             case ForStmt loop:
                 BindRangeLoop(loop);
                 break;

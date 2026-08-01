@@ -243,7 +243,7 @@
         {
           "comment": "Words that direct what runs.",
           "name": "keyword.control.profi-c",
-          "match": "\\b(if|then|else|while|for|each|in|to|until|stepby|switch|case|default|break|continue|yield|try|catch|finally|throw|begin)\\b"
+          "match": "\\b(if|then|else|loop|while|for|each|in|to|until|stepby|switch|case|default|break|continue|yield|try|catch|finally|throw|begin)\\b"
         },
         {
           "comment": "Words that say what something is or how far it reaches. Kept apart from the primitive types below: a reader telling a modifier from a type at a glance is worth more than the two matching.",

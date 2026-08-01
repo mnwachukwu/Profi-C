@@ -1,2 +1,2 @@
-blocks.pc(15,13): error PC0104: Expected 'end if' to close the if beginning on line 13, but found 'end while'.
-blocks.pc(19,13): error PC0104: Expected 'end while' to close the while beginning on line 17, but found 'end if'.
+blocks.pc(15,13): error PC0104: Expected 'end if' to close the if beginning on line 13, but found 'end loop'.
+blocks.pc(19,13): error PC0104: Expected 'end loop' to close the loop beginning on line 17, but found 'end if'.

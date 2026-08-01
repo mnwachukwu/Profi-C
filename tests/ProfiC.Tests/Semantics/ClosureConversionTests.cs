@@ -159,13 +159,13 @@ public sealed class ClosureConversionTests : LexerTestBase
         """
                 integer delegate()[] made = {};
 
-                for i = 1 to 3
+                loop for i = 1 to 3
                     made.Insert(() yield i);
-                end for
+                end loop
 
-                for each value in made
+                loop each value in made
                     Console.Write(value() + " ");
-                end for
+                end loop
 
                 Console.WriteLine();
         """,
@@ -178,9 +178,9 @@ public sealed class ClosureConversionTests : LexerTestBase
             """
                     integer delegate()[] made = {};
 
-                    for i = 1 to 3
+                    loop for i = 1 to 3
                         made.Insert(() yield i);
-                    end for
+                    end loop
             """);
 
         Assert.That(
@@ -204,13 +204,13 @@ public sealed class ClosureConversionTests : LexerTestBase
                 integer start = 100;
                 integer delegate()[] made = {};
 
-                for i = 1 to 3
+                loop for i = 1 to 3
                     made.Insert(() yield start + i);
-                end for
+                end loop
 
-                for each value in made
+                loop each value in made
                     Console.Write(value() + " ");
-                end for
+                end loop
 
                 Console.WriteLine();
         """,
@@ -224,9 +224,9 @@ public sealed class ClosureConversionTests : LexerTestBase
                     integer start = 100;
                     integer delegate()[] made = {};
 
-                    for i = 1 to 3
+                    loop for i = 1 to 3
                         made.Insert(() yield start + i);
-                    end for
+                    end loop
             """);
 
         Assert.That(
@@ -242,17 +242,17 @@ public sealed class ClosureConversionTests : LexerTestBase
                 integer start = 1000;
                 integer delegate()[] made = {};
 
-                for outer = 1 to 2
+                loop for outer = 1 to 2
                     integer scaled = outer * 100;
 
-                    for inner = 1 to 2
+                    loop for inner = 1 to 2
                         made.Insert(() yield start + scaled + inner);
-                    end for
-                end for
+                    end loop
+                end loop
 
-                for each value in made
+                loop each value in made
                     Console.Write(value() + " ");
-                end for
+                end loop
 
                 Console.WriteLine();
         """,
@@ -268,15 +268,15 @@ public sealed class ClosureConversionTests : LexerTestBase
                 integer total = 0;
                 delegate()[] bumps = {};
 
-                for i = 1 to 3
+                loop for i = 1 to 3
                     bumps.Insert(function()
                         total = total + i;
                     end function);
-                end for
+                end loop
 
-                for each bump in bumps
+                loop each bump in bumps
                     bump();
-                end for
+                end loop
 
                 Console.WriteLine("total: " + total);
         """,

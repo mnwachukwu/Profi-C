@@ -442,7 +442,7 @@ public sealed class InterpreterTests
     [Test]
     public void IfElseIfElseTakesExactlyOneBranch() => Assert.That(
         RunBody("""
-                for n = 1 to 3
+                loop for n = 1 to 3
                     if n == 1
                         Console.WriteLine("one");
                     else if n == 2
@@ -450,7 +450,7 @@ public sealed class InterpreterTests
                     else
                         Console.WriteLine("many");
                     end if
-                end for
+                end loop
         """),
         Is.EqualTo("one\ntwo\nmany\n"));
 
@@ -458,23 +458,23 @@ public sealed class InterpreterTests
     public void WhileRunsUntilItsConditionFails() => Assert.That(
         RunBody("""
                 integer n = 3;
-                while n > 0
+                loop while n > 0
                     Console.WriteLine(n);
                     n = n - 1;
-                end while
+                end loop
         """),
         Is.EqualTo("3\n2\n1\n"));
 
     [Test]
     public void ForToIsInclusiveAndForUntilIsNot() => Assert.That(
         RunBody("""
-                for i = 1 to 3
+                loop for i = 1 to 3
                     Console.Write(i);
-                end for
+                end loop
                 Console.WriteLine();
-                for i = 1 until 3
+                loop for i = 1 until 3
                     Console.Write(i);
-                end for
+                end loop
                 Console.WriteLine();
         """),
         Is.EqualTo("123\n12\n"));
@@ -482,9 +482,9 @@ public sealed class InterpreterTests
     [Test]
     public void ANegativeStepCountsDown() => Assert.That(
         RunBody("""
-                for i = 3 until 0 stepby -1
+                loop for i = 3 until 0 stepby -1
                     Console.Write(i);
-                end for
+                end loop
                 Console.WriteLine();
         """),
         Is.EqualTo("321\n"));
@@ -501,10 +501,10 @@ public sealed class InterpreterTests
         RunBody("""
                 integer limit = 10;
 
-                for i = 1 until limit
+                loop for i = 1 until limit
                     Console.Write(i);
                     limit = limit - 2;
-                end for
+                end loop
 
                 Console.WriteLine();
                 Console.WriteLine("limit " + limit);
@@ -522,11 +522,11 @@ public sealed class InterpreterTests
         RunBody("""
                 integer step = 2;
 
-                for i = 0 until 10 stepby step
+                loop for i = 0 until 10 stepby step
                     Console.Write(i);
                     Console.Write(" ");
                     step = step + 5;
-                end for
+                end loop
 
                 Console.WriteLine();
         """),
@@ -546,11 +546,60 @@ public sealed class InterpreterTests
                 integer[] items = {1, 2, 3};
                 integer[] alias = items;
 
-                for each item in items
+                loop each item in items
                     alias.Insert(99);
-                end for
+                end loop
         """))!.Message,
         Does.Contain("walking it"));
+
+    // ---- A loop with no condition -----------------------------------------------------------
+
+    /// <summary>
+    /// A <c>loop</c> closed by <c>end loop</c> asks nothing and runs until something in it
+    /// leaves.
+    /// </summary>
+    [Test]
+    public void ALoopWithNoConditionRunsUntilSomethingLeavesIt() => Assert.That(
+        RunBody("""
+                integer n = 0;
+
+                loop
+                    n = n + 1;
+                    if n == 4
+                        break;
+                    end if
+                end loop
+
+                Console.WriteLine("stopped at " + n);
+        """),
+        Is.EqualTo("stopped at 4\n"));
+
+    /// <summary>
+    /// <para>A <c>break</c> belongs to the nearest loop, so one written inside a nested loop
+    /// does not end the outer.</para>
+    /// <para>The same rule the flow analysis reads when deciding whether a conditionless loop
+    /// can be left, so getting the two to disagree would be quiet and wrong.</para>
+    /// </summary>
+    [Test]
+    public void ABreakInsideANestedLoopDoesNotEndTheOuterOne() => Assert.That(
+        RunBody("""
+                integer outer = 0;
+
+                loop
+                    outer = outer + 1;
+
+                    loop for inner = 1 to 10
+                        break;
+                    end loop
+
+                    if outer == 3
+                        break;
+                    end if
+                end loop
+
+                Console.WriteLine("outer ran " + outer);
+        """),
+        Is.EqualTo("outer ran 3\n"));
 
     // ---- Sets of sets -----------------------------------------------------------------------
 
@@ -585,9 +634,9 @@ public sealed class InterpreterTests
         RunBody("""
                 integer[][] ragged = {{1}, {2, 3}, {4, 5, 6}};
 
-                for each row in ragged
+                loop each row in ragged
                     Console.Write(row.Count() + " ");
-                end for
+                end loop
 
                 integer[] kept = ragged[1];
                 kept.Insert(99);
@@ -696,10 +745,10 @@ public sealed class InterpreterTests
         RunBody("""
                 integer[] items = {1, 2, 3};
 
-                for each item in items
+                loop each item in items
                     Console.Write(item);
                     break;
-                end for
+                end loop
 
                 items.Insert(99);
 
@@ -717,13 +766,13 @@ public sealed class InterpreterTests
         RunBody("""
                 integer[] items = {1, 2};
 
-                for each left in items
-                    for each right in items
+                loop each left in items
+                    loop each right in items
                         Console.Write(left);
                         Console.Write(right);
                         Console.Write(" ");
-                    end for
-                end for
+                    end loop
+                end loop
 
                 Console.WriteLine();
         """),
@@ -732,9 +781,9 @@ public sealed class InterpreterTests
     [Test]
     public void ALoopWhoseBoundIsAlreadyPassedNeverRuns() => Assert.That(
         RunBody("""
-                for i = 5 to 1
+                loop for i = 5 to 1
                     Console.WriteLine("unreachable");
-                end for
+                end loop
                 Console.WriteLine("done");
         """),
         Is.EqualTo("done\n"));
@@ -742,7 +791,7 @@ public sealed class InterpreterTests
     [Test]
     public void BreakAndContinueApplyToTheNearestLoop() => Assert.That(
         RunBody("""
-                for i = 1 to 10
+                loop for i = 1 to 10
                     if i == 2
                         continue;
                     end if
@@ -750,7 +799,7 @@ public sealed class InterpreterTests
                         break;
                     end if
                     Console.Write(i);
-                end for
+                end loop
                 Console.WriteLine();
         """),
         Is.EqualTo("13\n"));
@@ -758,7 +807,7 @@ public sealed class InterpreterTests
     [Test]
     public void SwitchHasNoFallthroughButCaseLabelsGroup() => Assert.That(
         RunBody("""
-                for i = 1 to 4
+                loop for i = 1 to 4
                     switch i
                         case 1:
                             Console.WriteLine("one");
@@ -768,30 +817,30 @@ public sealed class InterpreterTests
                         default:
                             Console.WriteLine("other");
                     end switch
-                end for
+                end loop
         """),
         Is.EqualTo("one\ntwo or three\ntwo or three\nother\n"));
 
     [Test]
     public void TheConditionalExpressionYieldsOneSide() => Assert.That(
         RunBody("""
-                for n = 1 to 2
+                loop for n = 1 to 2
                     Console.WriteLine(if n == 1 then "first" else "second");
-                end for
+                end loop
         """),
         Is.EqualTo("first\nsecond\n"));
 
-    // ---- for each, which only exists after lowering ------------------------------------------
+    // ---- loop each, which only exists after lowering ------------------------------------------
 
     [Test]
     public void ForEachVisitsEveryElementInOrder() => Assert.That(
         RunBody("""
                 integer[] xs = {10, 20, 30};
                 integer total = 0;
-                for each x in xs
+                loop each x in xs
                     Console.Write(x);
                     total = total + x;
-                end for
+                end loop
                 Console.WriteLine();
                 Console.WriteLine(total);
         """),
@@ -801,9 +850,9 @@ public sealed class InterpreterTests
     public void ForEachOverAnEmptySetRunsNothing() => Assert.That(
         RunBody("""
                 integer[] xs = {};
-                for each x in xs
+                loop each x in xs
                     Console.WriteLine("unreachable");
-                end for
+                end loop
                 Console.WriteLine("done");
         """),
         Is.EqualTo("done\n"));
@@ -813,11 +862,11 @@ public sealed class InterpreterTests
         RunBody("""
                 integer[] xs = {1, 2};
                 integer[] ys = {3, 4};
-                for each x in xs
-                    for each y in ys
+                loop each x in xs
+                    loop each y in ys
                         Console.Write(x * y);
-                    end for
-                end for
+                    end loop
+                end loop
                 Console.WriteLine();
         """),
         Is.EqualTo("3468\n"));
@@ -826,17 +875,17 @@ public sealed class InterpreterTests
     public void ForEachOverAStringVisitsCharacters() => Assert.That(
         RunBody("""
                 character[] letters = "abc";
-                for each c in letters
+                loop each c in letters
                     Console.Write(c);
                     Console.Write("-");
-                end for
+                end loop
                 Console.WriteLine();
         """),
         Is.EqualTo("a-b-c-\n"));
 
     /// <summary>
     /// The interpreter must run the <em>lowered</em> tree. Running the tree the resolver saw
-    /// instead is silent rather than loud — <c>for each</c> simply does nothing — so this pins
+    /// instead is silent rather than loud — <c>loop each</c> simply does nothing — so this pins
     /// it directly.
     /// </summary>
     [Test]
@@ -850,15 +899,15 @@ public sealed class InterpreterTests
                 integer function Sum()
                     integer[] xs = {1, 2, 3};
                     integer total = 0;
-                    for each x in xs
+                    loop each x in xs
                         total = total + x;
-                    end for
+                    end loop
                     yield total;
                 end function
             end model
             """),
         Is.EqualTo("6\n"),
-        "a for each inside a non-entry function must run too");
+        "a loop each inside a non-entry function must run too");
 
     // ---- Functions --------------------------------------------------------------------------
 
@@ -1561,10 +1610,10 @@ public sealed class InterpreterTests
                 function Main()
                     Account[] accounts = {new Account("ada", 100), new Savings("alan", 50)};
 
-                    for each account in accounts
+                    loop each account in accounts
                         account.Deposit(25);
                         Console.WriteLine(account.Describe());
-                    end for
+                    end loop
 
                     try
                         accounts[0].Deposit(-1);
@@ -1573,9 +1622,9 @@ public sealed class InterpreterTests
                     end try
 
                     integer total = 0;
-                    for each account in accounts
+                    loop each account in accounts
                         total = total + Program.BalanceOf(account);
-                    end for
+                    end loop
 
                     Console.WriteLine("total " + total);
                 end function
@@ -1822,14 +1871,14 @@ public sealed class InterpreterTests
 
             shared model Program
                 function Main()
-                    for n = 0 to 3
+                    loop for n = 0 to 3
                         Suit? found = n as Suit;
 
                         Console.WriteLine(
                             n + " " + if found.HasValue()
                                       then found.Value().ToString()
                                       else "nothing");
-                    end for
+                    end loop
                 end function
             end model
             """)),
@@ -1878,9 +1927,9 @@ public sealed class InterpreterTests
                 function Main()
                     Shape[] shapes = {new Circle(), new Square()};
 
-                    for each shape in shapes
+                    loop each shape in shapes
                         Console.WriteLine((shape as Circle).HasValue());
-                    end for
+                    end loop
                 end function
             end model
             """)),

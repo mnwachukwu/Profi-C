@@ -11,14 +11,14 @@ namespace ProfiC.Tests.Lexing;
 [TestFixture]
 public sealed class ReservedWordTests : LexerTestBase
 {
-    /// <summary>The 61 reserved words, written out rather than derived from the table.</summary>
+    /// <summary>The 62 reserved words, written out rather than derived from the table.</summary>
     private static readonly string[] Expected =
     [
         "abstract", "and", "as", "base", "begin", "bitwise", "boolean", "break", "case", "catch",
         "character", "constant", "continue", "default", "delegate", "each", "else", "end",
         "enumeration",
         "extends", "false", "finally", "for", "fraction", "function", "if", "import", "in",
-        "integer", "internal", "is", "let", "model", "namespace", "new", "not", "or",
+        "integer", "internal", "is", "let", "loop", "model", "namespace", "new", "not", "or",
         "override",
         "protected", "public", "real", "sealed", "shared", "shiftleft", "shiftright", "stepby",
         "string",
@@ -105,7 +105,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_ContainsExactlySixtyOneWords()
     {
-        Assert.That(ReservedWords.Count, Is.EqualTo(61));
+        Assert.That(ReservedWords.Count, Is.EqualTo(62));
     }
 
     [Test]
@@ -118,7 +118,7 @@ public sealed class ReservedWordTests : LexerTestBase
     [Test]
     public void KeywordTable_MapsEachWordToADistinctTokenType()
     {
-        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(61));
+        Assert.That(ReservedWords.Keywords.Values.Distinct().Count(), Is.EqualTo(62));
     }
 
     [Test]

@@ -1,15 +1,49 @@
 # Profi-C Language Summary
 
 A condensed reference and a full comparison to C#. For the normative definition see
-[language-spec.md](language-spec.md).
+[language-spec.md](language-spec.md); for the surface syntax as productions,
+[grammar.ebnf](grammar.ebnf). Every diagnostic named here — `PC0243`, `PC0406`, and the rest —
+is listed in the specification's [diagnostics appendix](language-spec.md#appendix-a-diagnostics),
+which gives every id, its severity, and what it says.
 
-**Profi-C is a teaching language.** It aims to make concepts legible to a beginner while staying close enough to C# that what a student learns transfers. The comparison in sections 5 and 6 is therefore a map of the bridge a student will eventually cross, not a list of gotchas for working C# developers.
+**Profi-C is a teaching language.** It aims to make concepts legible to a beginner while staying close enough to C# that what a student learns transfers. The comparison in [§5](#5-similar-to-c) and [§6](#6-different-from-c) is therefore a map of the bridge a student will eventually cross, not a list of gotchas for working C# developers.
+
+If you want that comparison as code rather than prose, [side-by-side.md](side-by-side.md) writes every construct out both ways — and gives two sections to what C# does better and what it has that Profi-C has no form for.
+
+## Contents
+
+- [1. Reserved words](#1-reserved-words)
+  - [1.1 The 62 reserved words](#11-the-62-reserved-words)
+  - [1.1a How many words that is](#11a-how-many-words-that-is)
+  - [1.2 Comments](#12-comments)
+  - [1.3 Not reserved](#13-not-reserved)
+- [2. Reserved models](#2-reserved-models)
+- [3. Reserved functions and members](#3-reserved-functions-and-members)
+  - [3.1 Entry point](#31-entry-point)
+  - [3.2 Built-in model functions](#32-built-in-model-functions)
+  - [3.3 `ToString()`](#33-tostring)
+  - [3.4 Built-in type members](#34-built-in-type-members)
+- [4. Naming convention](#4-naming-convention)
+- [5. Similar to C#](#5-similar-to-c)
+- [6. Different from C#](#6-different-from-c)
+  - [6.1 Syntax](#61-syntax)
+  - [6.2 Semantics](#62-semantics)
+  - [6.3 Absent from Profi-C](#63-absent-from-profi-c)
+- [7. Details worth knowing](#7-details-worth-knowing)
+  - [7.1 Diagnostics](#71-diagnostics)
+  - [7.2 Ignoring one](#72-ignoring-one)
+  - [7.3 Documenting something](#73-documenting-something)
+  - [7.4 The root of every reference type](#74-the-root-of-every-reference-type)
+
+Every construct written out in both languages lives in
+[side-by-side.md](side-by-side.md), alongside what C# does better and what it can express that
+Profi-C cannot.
 
 ---
 
 ## 1. Reserved words
 
-### 1.1 The 61 reserved words
+### 1.1 The 62 reserved words
 
 ```
 abstract    and         as          base        begin       bitwise
@@ -17,12 +51,12 @@ boolean     break       case        catch       character   constant
 continue    default     delegate    each        else        end
 enumeration extends     false       finally     for         fraction
 function    if          import      in          integer     internal
-is          let         model       namespace   new         not
-or          override    protected   public      real        sealed
-shared      shiftleft   shiftright  stepby      string      structure
-switch      then        this        throw       to          true
-try         until       using       virtual     while       xor
-yield
+is          let         loop        model       namespace   new
+not         or          override    protected   public      real
+sealed      shared      shiftleft   shiftright  stepby      string
+structure   switch      then        this        throw       to
+true        try         until       using       virtual     while
+xor         yield
 ```
 
 A name may take one back by writing `@` in front of it — `@end`, `@each` — which is the only
@@ -32,9 +66,9 @@ place a name may begin with something other than a letter.
 
 | | Profi-C | C# |
 |---|---|---|
-| Reserved everywhere | **61** | 77 |
+| Reserved everywhere | **62** | 77 |
 | Contextual — reserved only in one position | **0** | 46 |
-| Words that are special somewhere | **61** | 123 |
+| Words that are special somewhere | **62** | 123 |
 
 C#'s figures are Roslyn's own, from `SyntaxFacts.GetReservedKeywordKinds` and
 `GetContextualKeywordKinds`, minus four undocumented `__`-prefixed ones it also counts.
@@ -89,7 +123,7 @@ Members are private by default, so `protected`, `internal`, and `public` opt out
 | `DivideByZeroException` | thrown on runtime division by zero |
 | `IndexOutOfRangeException` | thrown on out-of-bounds set or string access |
 | `EmptyOptionalException` | thrown when an empty optional is unwrapped |
-| `SequenceChangedException` | thrown when a set is changed while a `for each` is walking it, where the change was not visible to `PC0243` |
+| `SequenceChangedException` | thrown when a set is changed while a `loop each` is walking it, where the change was not visible to `PC0243` |
 | `InvalidCastException` | thrown when a forced cast fails |
 | `FormatException` | thrown when a parse or format operation fails |
 | `ArgumentException` | thrown when an argument is invalid |
@@ -140,7 +174,7 @@ explicit form is legal and redundant.
 `Write` and `WriteLine` behave exactly as in C#: only the second ends the line.
 
 Neither is an overload set. Both accept a value of **any** type and the compiler selects how
-to render it from the static type, the same way the optional members in section 3.4 are
+to render it from the static type, the same way the optional members in [§3.4](#34-built-in-type-members) are
 compiler-known rather than generic. This is why printing an enumeration or a structure needs
 no ceremony even though neither is a `Model`.
 
@@ -238,7 +272,7 @@ The second pair is more confusable than the first, since both live near the idea
 
 | Profi-C | C# |
 |---|---|
-| `end if`, `end while`, `end model`, and no opener at all | `{` opens, `}` closes, and one `}` closes everything |
+| `end if`, `end loop`, `end model`, and no opener at all | `{` opens, `}` closes, and one `}` closes everything |
 | `begin` is only an anonymous scope | bare `{ }` for the same job |
 | `#` to end of line, `##` to the next `##` | `//` and `/* */` |
 | `case 1:` with no `break` | `break` required on every case |
@@ -246,8 +280,8 @@ The second pair is more confusable than the first, since both live near the idea
 | `and`, `or`, `not` | `&&`, `\|\|`, `!` |
 | `let x = 5;` | `var x = 5;` |
 | `integer function Add(...)` | `int Add(...)` |
-| `for each c in name` | `foreach (char c in name)` |
-| `for i = 0 until n` | `for (int i = 0; i < n; i++)` |
+| `loop each c in name` | `foreach (char c in name)` |
+| `loop for i = 0 until n` | `for (int i = 0; i < n; i++)` |
 | `if c ... end if`, no parens | `if (c) { ... }` |
 | `if c then a else b` expression | `c ? a : b` |
 | `"{{name}} is {{age}}"` | `$"{name} is {age}"` |
@@ -302,13 +336,15 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **No local types.** A model, structure, or enumeration may be declared at namespace level or inside a model, but not inside a function. C# has no local classes either. A type introduced by a statement would entangle name resolution with statement order, which is a cost with very little to buy it.
 
-**Loop variables are fresh per iteration** and read-only inside the body. C# does this for `foreach` only, leaving the `for` capture trap intact. Profi-C has no three-clause `for` at all; `for i = 0 until n` and `for each` are the two forms.
+**Loop variables are fresh per iteration** and read-only inside the body. C# does this for `foreach` only, leaving the `for` capture trap intact. Profi-C has no three-clause `for` at all; `loop for i = 0 until n` and `loop each` are the two counting forms.
+
+**Every loop opens with `loop`, and one closer serves them all.** C# has four unrelated loop keywords — `for`, `foreach`, `while`, `do` — and a `do` loop closes with a `while` on the far side of the brace. Profi-C has one opener and a word that says which kind: `loop for`, `loop each`, `loop while`, and a bare `loop ... until` that tests after the body. The first three close with `end loop`; the last is the only construct in the language `end` does not close, because `until` carries the condition and is already saying the loop is over.
 
 **A range loop's header is live, as C#'s is.** The bound and the step are read again at the top of every turn, so `for i = 1 until x` follows `x` as it moves and a bound that grows never ends the loop — exactly as `for (int i = 0; i < x; i++) x++;` never ends. Only the counter is out of reach, where C# lets the body assign to it.
 
-**A `for each` is the opposite, and says so at compile time.** It names a sequence rather than a bound, so the length is read once when the loop begins. Changing that sequence inside its own loop is an error (`PC0243`) naming the member that would have changed it. C# permits the same code and throws `InvalidOperationException` partway through instead.
+**A `loop each` is the opposite, and says so at compile time.** It names a sequence rather than a bound, so the length is read once when the loop begins. Changing that sequence inside its own loop is an error (`PC0243`) naming the member that would have changed it. C# permits the same code and throws `InvalidOperationException` partway through instead.
 
-**Every construct closes with a qualified `end`**, and the compiler verifies the match. `end while` closing an `if` is an error naming both. C# has one `}` for everything and cannot check intent.
+**Every construct closes with a qualified `end`**, and the compiler verifies the match. `end loop` closing an `if` is an error naming both. C# has one `}` for everything and cannot check intent.
 
 ### 6.3 Absent from Profi-C
 
@@ -347,7 +383,9 @@ everywhere without one. See §12.3 of the specification.
 
 **Warnings are few and each one names its fix.** Fifteen exist: more quotes in a row than close a block string, a type shadowing one the language provides, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, unreachable code, a `catch` naming the one exception nothing catches, an import naming an absolute path, imports that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one naming a diagnostic that stops compilation, and one in a project file naming neither a severity nor a diagnostic — and three about documentation that has come apart from what it documents: one above nothing that can carry it, one naming a parameter that is not there, and one describing a value never given back.
 
-**Opinions are the language having taste, and every one says a written token has no effect.** Ten exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, `virtual` beside `abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences nothing, and a doc that says the same thing twice.
+**Opinions are the language having taste, and nearly every one says a written token has no effect.** Eleven exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, `virtual` beside `abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences nothing, and a doc that says the same thing twice.
+
+The eleventh is the exception to that shape: a `loop` with no condition that nothing inside can break, yield, or throw out of. Nothing written is redundant there — something is missing, and the language says so as an opinion because a program meaning to run until stopped from outside is one somebody may write.
 
 Nothing is wrong with a program that has an opinion against it. Reading them in order is a reasonable way to learn what the language expects. [Appendix A](language-spec.md#appendix-a-diagnostics) of the specification lists every diagnostic with its id and severity.
 
@@ -419,3 +457,4 @@ The compiler holds a doc to what it documents: a parameter named that the functi
 ### 7.4 The root of every reference type
 
 **`Model` is the root of every reference type**, not just user models, which is what lets `Reference.Equals(Model, Model)` accept sets and strings. In emitted CIL it corresponds to `System.Object`, which `System.String` and `List<T>` already derive from, so no adapter is needed.
+

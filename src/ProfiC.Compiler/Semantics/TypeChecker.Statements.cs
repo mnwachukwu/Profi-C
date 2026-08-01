@@ -42,6 +42,19 @@ public sealed partial class TypeChecker
                               () => CheckStatements(loop.Body));
                 break;
 
+            // No narrowing to carry inward: the condition is tested after the body, so nothing
+            // it proves was known when the body ran.
+            case LoopUntilStmt loop:
+                CheckStatements(loop.Body);
+                RequireBoolean(
+                    CheckExpression(loop.Condition), loop.Condition, "An until condition");
+                break;
+
+            // No condition to check. That is the whole of it.
+            case LoopForeverStmt loop:
+                CheckStatements(loop.Body);
+                break;
+
             case ForStmt loop:
                 CheckRangeLoop(loop);
                 break;

@@ -9,4 +9,4 @@ csharp-habits.pc(36,55): error PC0006: '=>' is not an operator in Profi-C. A fun
 csharp-habits.pc(37,45): opinion PC0115: The surrounding code already says what 'n' holds, so writing its type says it twice. Leave the type out.
 csharp-habits.pc(37,56): error PC0006: '->' is not an operator in Profi-C. A function's body follows 'yield'. Write '(integer n) yield n + 1'.
 csharp-habits.pc(40,24): error PC0336: Nothing here says what 'n' holds. Write its type, as in '(integer n)'.
-csharp-habits.pc(43,13): opinion PC0111: A range loop counts with integers, so its counter takes no type. Remove the 'integer'.
+csharp-habits.pc(43,18): opinion PC0111: A range loop counts with integers, so its counter takes no type. Remove the 'integer'.

@@ -40,8 +40,8 @@ shared model Program
         let unknown = (n) yield n + 1;
 
         # A range loop's counter carries no type.
-        for integer i = 1 to 3
+        loop for integer i = 1 to 3
             Console.WriteLine(i);
-        end for
+        end loop
     end function
 end model

@@ -10,9 +10,9 @@ model Text
     public shared string function Repeat(string what, integer times)
         string built = "";
 
-        for i = 1 to times
+        loop for i = 1 to times
             built = built + what;
-        end for
+        end loop
 
         yield built;
     end function

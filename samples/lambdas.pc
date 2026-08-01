@@ -5,9 +5,9 @@
     variable, held in a set, passed to another function, and handed back from one. Everything
     below is that one idea in different shapes.
 
-    A function's type is written the way its declaration is: the result, then 'function', then
-    what it takes. So 'integer delegate(integer)' takes an integer and yields one, and
-    'delegate(string)' takes a string and yields nothing.
+    A function's type is written similarly to the way its declaration is: the result, then 'delegate', 
+    then what it takes. So 'integer delegate(integer)' takes an integer and yields one,
+    'delegate(string)' takes a string and yields nothing, and `delegate() takes nothing and yields nothing`.
 
     Two words, two jobs: 'function' declares one or makes one on the spot, and 'delegate'
     writes the type of one. That is why 'integer delegate(integer) function AdderOf(...)'
@@ -96,9 +96,9 @@ shared model Program
     integer[] function Apply(integer[] values, integer delegate(integer) transform)
         integer[] results = {};
 
-        for each value in values
+        loop each value in values
             results.Insert(transform(value));
-        end for
+        end loop
 
         yield results;
     end function
@@ -127,9 +127,9 @@ shared model Program
             (n) yield n * 10
         };
 
-        for each operation in steps
+        loop each operation in steps
             Console.WriteLine("step of 7: " + operation(7));
-        end for
+        end loop
     end function
 
     # ---- Handing one back ---------------------------------------------------------
@@ -218,13 +218,13 @@ shared model Program
     function Remembering()
         integer delegate()[] reporters = {};
 
-        for i = 1 to 3
+        loop for i = 1 to 3
             reporters.Insert(() yield i);
-        end for
+        end loop
 
-        for each reporter in reporters
+        loop each reporter in reporters
             Console.Write(reporter() + " ");
-        end for
+        end loop
 
         Console.WriteLine();
     end function
