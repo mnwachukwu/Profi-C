@@ -219,6 +219,13 @@ public sealed class BuildCommandTests
     /// <para>Checked in the bytes because there is no other way to see it: a launcher still
     /// carrying its placeholder is a well-formed executable that looks for a file called
     /// <c>c3ab8ff1...</c>, and that only shows when somebody runs it.</para>
+    /// <para>Searched as bytes rather than as decoded text, and the distinction is not
+    /// pedantry. An apphost holds the placeholder three times over: once where the name goes,
+    /// and once as each half of itself, kept apart so that the pattern it searches for cannot
+    /// occur in the very constant it is built from. The halves are separated by padding, which
+    /// on some platforms is nothing but zeros — and a text search that is not ordinal treats a
+    /// zero as ignorable and matches straight across the gap. That reports a placeholder in a
+    /// launcher that was named correctly, and it does so on one platform and not another.</para>
     /// <para>The trailing zeros are checked too, and not out of tidiness. Writing the name over
     /// the front of the placeholder leaves the rest of it behind the terminator — which starts
     /// correctly, so every other check here passes, while the file still contains most of a
@@ -238,6 +245,8 @@ public sealed class BuildCommandTests
 
         byte[] bytes = File.ReadAllBytes(launcher);
         byte[] name = System.Text.Encoding.UTF8.GetBytes("Hello.dll\0");
+        byte[] placeholder = System.Text.Encoding.UTF8.GetBytes(
+            "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2");
 
         int at = Find(bytes, name);
 
@@ -245,10 +254,7 @@ public sealed class BuildCommandTests
         {
             Assert.That(at, Is.GreaterThanOrEqualTo(0), "the assembly should be named in it");
 
-            Assert.That(
-                System.Text.Encoding.UTF8.GetString(bytes),
-                Does.Not.Contain("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"),
-                "and the placeholder written over");
+            Assert.That(Find(bytes, placeholder), Is.LessThan(0), "and the placeholder written over");
 
             Assert.That(
                 bytes.Skip(at + name.Length).Take(64).Where(b => b != 0),

@@ -188,6 +188,97 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
         }
     }
 
+    // ---- Reading a set into a new one ----------------------------------------------------
+    //
+    // Every one of these gives back a new set and leaves this one alone, which is what makes
+    // them safe to write in the middle of a walk. They live here rather than in either engine
+    // because both need them and neither should be the one that decides: an interpreter and an
+    // emitter with their own 'Distinct' agree until the day one of them is changed.
+
+    /// <summary>
+    /// <para>A run of this set, from <paramref name="start"/> up to but not including
+    /// <paramref name="end"/>.</para>
+    /// <para>The end is exclusive, which is the reading <c>until</c> has in a loop, and is what
+    /// makes <c>Subset(0, n)</c> and <c>Subset(n, Count)</c> put the whole set back together.
+    /// </para>
+    /// </summary>
+    /// <exception cref="IndexOutOfRangeException">The run is not inside the set.</exception>
+    public ProfiCSet<T> Subset(int start, int end)
+    {
+        if (start < 0 || start > _items.Count || end < start || end > _items.Count)
+        {
+            throw new IndexOutOfRangeException(
+                $"Cannot take the run from {start} to {end} of a set of {_items.Count} elements.");
+        }
+
+        return new ProfiCSet<T>(_items.Skip(start).Take(end - start));
+    }
+
+    /// <summary>A run from <paramref name="start"/> to the end.</summary>
+    public ProfiCSet<T> Subset(int start) => Subset(start, _items.Count);
+
+    /// <summary>
+    /// <para>This set followed by another, end to end.</para>
+    /// <para><b>Appends rather than merges.</b> A Profi-C set keeps its order and allows a value
+    /// twice, so what was in both is in the answer twice — this is not the union of mathematics,
+    /// and <see cref="Distinct"/> is how to ask for that.</para>
+    /// </summary>
+    public ProfiCSet<T> Union(ProfiCSet<T> other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return new ProfiCSet<T>(_items.Concat(other._items));
+    }
+
+    /// <summary>What is in both, in this set's order.</summary>
+    public ProfiCSet<T> Intersect(ProfiCSet<T> other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return new ProfiCSet<T>(_items.Where(other.Contains));
+    }
+
+    /// <summary>
+    /// What this set has that the other does not. The counterpart of <see cref="Intersect"/>:
+    /// between them they divide this set in two.
+    /// </summary>
+    public ProfiCSet<T> Except(ProfiCSet<T> other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return new ProfiCSet<T>(_items.Where(element => !other.Contains(element)));
+    }
+
+    /// <summary>
+    /// <para>One of each, in the order the values were first met.</para>
+    /// <para>Compared deeply, as <see cref="Contains"/> is, so two models holding the same fields
+    /// count as one value. This is what turns a Profi-C set into the set of mathematics, which it
+    /// is not until asked.</para>
+    /// </summary>
+    public ProfiCSet<T> Distinct()
+    {
+        ProfiCSet<T> kept = new();
+
+        foreach (T element in _items)
+        {
+            if (!kept.Contains(element))
+            {
+                kept.Insert(element);
+            }
+        }
+
+        return kept;
+    }
+
+    /// <summary>
+    /// <para>Every element written out, with <paramref name="separator"/> between.</para>
+    /// <para>Each is written the way it would be written on its own, so any set joins and not
+    /// only a set of strings — which is what a reader joining numbers expects, and what they
+    /// would otherwise have to write a loop for.</para>
+    /// </summary>
+    public string Join(string separator) =>
+        string.Join(separator, _items.Select(element => ModelOperations.ToDisplayString(element)));
+
     // ---- Deep equality ------------------------------------------------------------------
 
     object? IProfiCSet.GetElement(int index) => _items[index];

@@ -433,6 +433,18 @@ public sealed partial class CilEmitter
             return built;
         }
 
+        // A set is built from what it holds, which may itself be a set or a model this build is
+        // still writing — so the element is resolved the same way rather than looked up.
+        if (type is SetType set)
+        {
+            return CilTypes.SetOf(TypeOf(set.ElementType, what));
+        }
+
+        if (type is OptionalType optional)
+        {
+            return CilTypes.OptionalOf(TypeOf(optional.UnderlyingType, what));
+        }
+
         return Required(null, what);
     }
 

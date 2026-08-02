@@ -1694,6 +1694,12 @@ inner instance. Types may not be declared inside a function body — see [§4.4]
 it is a different type, so absence appears in the signature rather than lurking behind every
 reference.
 
+**One `?` and no more** (`PC0252`). `Node??` is refused, because the two ways of being empty it
+would create cannot be told apart: nothing an optional offers can see past the first level, so
+"absent" and "present, holding an absence" would answer alike to every question a program can
+ask. A language whose whole claim about absence is that the compiler can prove it should not
+offer a shape where it cannot. C# refuses the same thing for the same reason.
+
 ### 8.1 The three members
 
 ```
@@ -2533,6 +2539,7 @@ of a reader.
 | `PC0249` | error | 'this' is not available yet |
 | `PC0250` | error | Nothing here builds the parent |
 | `PC0251` | opinion | This 'base()' changes nothing |
+| `PC0252` | error | An optional of an optional |
 
 ### PC0300 to PC0399
 

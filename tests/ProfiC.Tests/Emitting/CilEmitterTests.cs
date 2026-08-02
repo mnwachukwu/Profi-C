@@ -393,6 +393,347 @@ public sealed class CilEmitterTests
             end model
             """);
 
+    // ---- Optionals --------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>The three members an optional has, on one that holds something and one that does
+    /// not.</para>
+    /// <para><c>Console.Read</c> with no input is the only way a program can come by an empty
+    /// optional without one being handed to it, which is why it appears in a test about
+    /// something else.</para>
+    /// </summary>
+    [Test]
+    public void AnOptionalAnswersAboutWhatItHolds() =>
+        Agrees("""
+                    integer? here = 5;
+                    string? gone = Console.Read();
+
+                    Console.WriteLine(here.HasValue());
+                    Console.WriteLine(gone.HasValue());
+                    Console.WriteLine(here);
+                    Console.WriteLine(gone);
+                    Console.WriteLine(here.Or(-1));
+                    Console.WriteLine(gone.Or("a fallback"));
+            """);
+
+    /// <summary>
+    /// <para>A guard is what makes reading one legal, and the reading is what it held.</para>
+    /// <para>Narrowing leaves no mark on the lowered tree, so this is where the emitter has to
+    /// notice it for itself: inside the guard the checker calls the name definite while the local
+    /// still holds an optional, and every read has to take the value out.</para>
+    /// </summary>
+    [Test]
+    public void AGuardMakesTheValueReadable() =>
+        Agrees("""
+                    integer? here = 5;
+
+                    if here.HasValue()
+                        Console.WriteLine(here.Value());
+
+                        # Narrowed, so this is arithmetic on the value rather than on the optional.
+                        Console.WriteLine(here + 1);
+                    end if
+            """);
+
+    /// <summary>
+    /// <para>The fallback does not run unless it is needed.</para>
+    /// <para>The whole of what <c>Or</c> promises, and the reason it is emitted as a branch
+    /// rather than as a call — a call would have evaluated the fallback before entering. Nothing
+    /// about the printed value would show that; the line the fallback prints is what shows it.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void TheFallbackRunsOnlyWhenItIsNeeded() =>
+        AgreesWholly("""
+            shared model Program
+
+                function Main()
+                    integer? here = 5;
+                    Console.WriteLine(here.Or(Program.Noisy()));
+
+                    string? gone = Console.Read();
+                    Console.WriteLine(gone.Or(Program.AlsoNoisy()));
+                end function
+
+                integer function Noisy()
+                    Console.WriteLine("  (this should not run)");
+                    yield -1;
+                end function
+
+                string function AlsoNoisy()
+                    Console.WriteLine("  (this one should)");
+                    yield "fell back";
+                end function
+
+            end model
+            """);
+
+    /// <summary>
+    /// <para>Chaining: an optional fallback keeps the chain going, a definite one ends it.</para>
+    /// <para>The two forms differ in what they give back rather than in what they do, and both
+    /// are one sequence — so this is what says the branch yields the right thing on each arm.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void OrChainsUntilSomethingIsDefinite() =>
+        Agrees("""
+                    string? first = Console.Read();
+                    string? second = Console.Read();
+                    string? third = "here";
+
+                    Console.WriteLine(first.Or(second).Or("all empty"));
+                    Console.WriteLine(first.Or(third).Or("all empty"));
+            """);
+
+    /// <summary>
+    /// A set of optionals holds them, counts them, and prints each as what it holds — which is
+    /// where an emitter that forgot to box the struct produces a program the runtime refuses.
+    /// </summary>
+    [Test]
+    public void ASetHoldsOptionals() =>
+        Agrees("""
+                    integer? here = 5;
+                    integer? also = 7;
+
+                    integer?[] held = {here, also};
+
+                    Console.WriteLine(held.Count);
+                    Console.WriteLine(held);
+                    Console.WriteLine(held[1]);
+            """);
+
+    // ---- Sets -------------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A set is built, read, written and counted.</para>
+    /// <para>The whole shape at once, since a set that can be made and not read is no use. What
+    /// it proves beyond the values is the boundary: Profi-C counts in 64 bits and the list
+    /// underneath addresses in 32, so every index narrows and every count widens, and getting
+    /// either backwards is a program that runs and reads the wrong element.</para>
+    /// </summary>
+    [Test]
+    public void ASetIsBuiltReadAndWritten() =>
+        Agrees("""
+                    integer[] scores = {70, 85, 90};
+
+                    Console.WriteLine(scores.Count);
+                    Console.WriteLine(scores[0]);
+                    Console.WriteLine(scores[2]);
+
+                    scores[1] = 99;
+                    Console.WriteLine(scores[1]);
+            """);
+
+    /// <summary>Every member of a set the emitter has a sequence for, and what each answers.</summary>
+    [Test]
+    public void TheMembersOfASetAnswerAsTheyDo() =>
+        Agrees("""
+                    integer[] xs = {1, 2, 3};
+
+                    xs.Insert(4);
+                    xs.InsertAt(0, 0);
+
+                    Console.WriteLine(xs.Count);
+                    Console.WriteLine(xs.Contains(4));
+                    Console.WriteLine(xs.Contains(9));
+                    Console.WriteLine(xs.IndexOf(3));
+                    Console.WriteLine(xs.Remove(2));
+                    Console.WriteLine(xs.Remove(2));
+
+                    xs.RemoveAt(0);
+                    Console.WriteLine(xs.Count);
+
+                    xs.Clear();
+                    Console.WriteLine(xs.Count);
+            """);
+
+    /// <summary>
+    /// <para>An empty set is a set, and grows from nothing.</para>
+    /// <para>Worth its own claim because a literal with no elements is where the element type
+    /// comes from the declaration rather than from anything written between the braces — so an
+    /// emitter that read the type off the first element has nothing to read.</para>
+    /// </summary>
+    [Test]
+    public void AnEmptySetGrows() =>
+        Agrees("""
+                    string[] names = {};
+
+                    Console.WriteLine(names.Count);
+
+                    names.Insert("Ada");
+                    names.Insert("Grace");
+
+                    Console.WriteLine(names.Count);
+                    Console.WriteLine(names[1]);
+            """);
+
+    /// <summary>
+    /// <para>A <c>loop each</c> walks what it was given.</para>
+    /// <para>By the time the emitter sees it this is an index loop with a mark around it, so what
+    /// is really being checked is that the mark is balanced and the loop reads every element
+    /// once — including the awkward ones, which are none and one.</para>
+    /// </summary>
+    [Test]
+    public void ALoopEachWalksEveryElement() =>
+        Agrees("""
+                    integer[] several = {1, 2, 3};
+                    integer[] one = {9};
+                    integer[] none = {};
+
+                    loop each n in several
+                        Console.Write(n + " ");
+                    end loop
+                    Console.WriteLine();
+
+                    loop each n in one
+                        Console.Write(n + " ");
+                    end loop
+                    Console.WriteLine();
+
+                    loop each n in none
+                        Console.Write("never");
+                    end loop
+                    Console.WriteLine("done");
+            """);
+
+    /// <summary>
+    /// <para>Yielding out of the middle of a walk leaves the set walkable.</para>
+    /// <para>The mark that refuses a change mid-walk is paired in a <c>finally</c>, and this is
+    /// what says so. <b>A <c>break</c> does not test it</b>: break jumps to the loop's own exit,
+    /// which is still inside the sequence the walk emits, so the unmark runs either way. Only
+    /// leaving the whole function does — and then the set is left marked forever, so the failure
+    /// surfaces at the next change with no walk anywhere in sight.</para>
+    /// </summary>
+    [Test]
+    public void YieldingOutOfAWalkLeavesTheSetUsable() =>
+        AgreesWholly("""
+            shared model Program
+
+                shared integer[] xs = {1, 2, 3, 4};
+
+                function Main()
+                    Console.WriteLine(Program.FirstOver(2));
+
+                    # Only legal if the walk that was abandoned unmarked the set on its way out.
+                    Program.xs.Insert(5);
+                    Console.WriteLine(Program.xs.Count);
+                end function
+
+                integer function FirstOver(integer limit)
+                    loop each n in Program.xs
+                        if n > limit
+                            yield n;
+                        end if
+                    end loop
+
+                    yield -1;
+                end function
+
+            end model
+            """);
+
+    /// <summary>A set of sets needs nothing of its own: the element type is simply another set.</summary>
+    [Test]
+    public void ASetOfSetsIsASetLikeAnyOther() =>
+        Agrees("""
+                    integer[][] grid = {{1, 2}, {3, 4, 5}};
+
+                    Console.WriteLine(grid.Count);
+                    Console.WriteLine(grid[1].Count);
+                    Console.WriteLine(grid[1][2]);
+
+                    loop each row in grid
+                        Console.Write(row.Count + " ");
+                    end loop
+                    Console.WriteLine();
+            """);
+
+    /// <summary>
+    /// <para>Reading one set into another: the six that give back a new set and change nothing.
+    /// </para>
+    /// <para>These moved into the runtime to be emitted at all, so what this really holds is that
+    /// the move worked — both engines now reach the same method, and the answers below are the
+    /// ones neither of them decides alone. The values are chosen to catch the readings that are
+    /// easy to get wrong: a repeated element, so <c>Union</c> appending rather than merging shows;
+    /// and <c>Subset</c> split at a point, so an inclusive end would not add back up.</para>
+    /// </summary>
+    [Test]
+    public void SetsAreReadIntoNewSets() =>
+        Agrees("""
+                    integer[] mine = {1, 2, 3, 3};
+                    integer[] yours = {3, 4};
+
+                    Console.WriteLine(mine.Union(yours).Join(","));
+                    Console.WriteLine(mine.Intersect(yours).Join(","));
+                    Console.WriteLine(mine.Except(yours).Join(","));
+                    Console.WriteLine(mine.Distinct().Join(","));
+                    Console.WriteLine(mine.Subset(1).Join(","));
+                    Console.WriteLine(mine.Subset(1, 3).Join(","));
+
+                    # The two halves put back together, which only holds where the end is exclusive.
+                    Console.WriteLine(mine.Subset(0, 2).Union(mine.Subset(2, 4)).Join(","));
+
+                    # Reading one leaves it as it was.
+                    Console.WriteLine(mine.Join(","));
+            """);
+
+    /// <summary>
+    /// <para>Any set joins, not only a set of strings.</para>
+    /// <para>Each element is written the way it would be written on its own, which is what makes
+    /// this worth having at all — and is the part an emitter gets wrong by reaching for the
+    /// framework's own joining, where a boolean reads <c>True</c>.</para>
+    /// </summary>
+    [Test]
+    public void AnySetJoins() =>
+        Agrees("""
+                    Console.WriteLine("{1, 2}: " + "");
+                    integer[] numbers = {1, 2, 3};
+                    string[] words = {"a", "b"};
+                    boolean[] answers = {true, false};
+
+                    Console.WriteLine(numbers.Join(" | "));
+                    Console.WriteLine(words.Join(" and "));
+                    Console.WriteLine(answers.Join(", "));
+            """);
+
+    /// <summary>
+    /// <para>A set of a model this build is still writing.</para>
+    /// <para>The case that needs its own machinery. Every other set closes over a type the CLR
+    /// already has, so ordinary reflection names its members; a set of a declared model closes
+    /// over a builder for a type that does not exist yet, where nothing can be looked up and the
+    /// member has to be reached another way.</para>
+    /// </summary>
+    [Test]
+    public void ASetOfADeclaredModelIsEmitted() =>
+        AgreesWholly("""
+            model Book
+
+                public string title;
+
+                public function Book(string named)
+                    this.title = named;
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Book[] shelf = {};
+
+                    shelf.Insert(new Book("Dune"));
+                    shelf.Insert(new Book("Emma"));
+
+                    Console.WriteLine(shelf.Count);
+
+                    loop each book in shelf
+                        Console.WriteLine(book.title);
+                    end loop
+
+                    Console.WriteLine(shelf[0].title);
+                end function
+            end model
+            """);
+
     // ---- Inheritance ------------------------------------------------------------------------
 
     /// <summary>
@@ -949,8 +1290,8 @@ public sealed class CilEmitterTests
             Does.Contain("PC0501"),
             what);
 
-    [TestCase("a set", "integer[] xs = {1, 2};")]
-    [TestCase("an optional", "integer? maybe = 4;")]
+    [TestCase("a set of something unemittable", "fraction[] halves = {1|2};")]
+    [TestCase("an optional of something unemittable", "fraction? half = 1|2;")]
     [TestCase("a fraction", "fraction half = 1|2;")]
     [TestCase("a lambda", "integer delegate(integer) f = (n) yield n + 1;")]
     [TestCase("a switch", """

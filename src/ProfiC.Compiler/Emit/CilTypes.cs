@@ -29,8 +29,38 @@ internal static class CilTypes
         _ => null,
     };
 
-    /// <summary>Whether the emitter has a CLR type for this one.</summary>
-    public static bool IsSupported(TypeSymbol type) => Of(type) is not null || IsDeclaredModel(type);
+    /// <summary>
+    /// <para>Whether the emitter has a CLR type for this one.</para>
+    /// <para>A set is supported when what it holds is, which is what lets <c>integer[][]</c> work
+    /// with nothing written for it: a set of sets is a set whose element type is a set, and the
+    /// question recurses until it reaches something with an answer of its own.</para>
+    /// </summary>
+    public static bool IsSupported(TypeSymbol type) =>
+        Of(type) is not null
+        || IsDeclaredModel(type)
+        || (type is SetType set && IsSupported(set.ElementType))
+        || (type is OptionalType optional && IsSupported(optional.UnderlyingType));
+
+    /// <summary>
+    /// <para>The runtime type a set becomes, for an element type already resolved.</para>
+    /// <para>The very type the interpreter uses, rather than a CLR array: inserting and removing
+    /// are part of a Profi-C set's surface and an array's length is fixed. Sharing it is also
+    /// what keeps the two engines agreeing about what <c>Remove</c> does to the order.</para>
+    /// </summary>
+    public static Type SetOf(Type element) =>
+        typeof(Runtime.ProfiCSet<>).MakeGenericType(element);
+
+    /// <summary>
+    /// <para>The runtime type an optional becomes.</para>
+    /// <para>One shape whatever it holds, unlike C#, where <c>int?</c> is a <c>Nullable</c> and
+    /// <c>string?</c> is the reference itself. Profi-C has no null to reuse for the second case,
+    /// and a single shape means the emitter never asks which kind it has — which is also why the
+    /// language could forbid <c>T??</c> without leaving a hole.</para>
+    /// <para>A struct, so an optional local allocates nothing and an absent one holds nothing.
+    /// </para>
+    /// </summary>
+    public static Type OptionalOf(Type underlying) =>
+        typeof(Runtime.Optional<>).MakeGenericType(underlying);
 
     /// <summary>
     /// <para>Whether this is a model the program itself declares, as against one the language
@@ -59,5 +89,5 @@ internal static class CilConversions
     /// produce: an optional to wrap into, a set to fill, a fraction to construct.
     /// </summary>
     public static bool IsSupported(ConversionOperation operation) =>
-        operation == ConversionOperation.IntegerToReal;
+        operation is ConversionOperation.IntegerToReal or ConversionOperation.WrapOptional;
 }

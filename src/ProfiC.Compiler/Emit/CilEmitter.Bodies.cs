@@ -66,9 +66,9 @@ public sealed partial class CilEmitter
         EmitStatements(declared.Function.Body);
 
         // A function that yields nothing has no yield to end it, and one that does has already
-        // returned down every path — proved by PC0404 rather than assumed. Either way the
-        // method needs a ret to be well formed, and an unreachable one costs a byte.
-        _il.Emit(OpCodes.Ret);
+        // left down every path — proved by PC0404 rather than assumed. Either way the method
+        // needs an end to be well formed, and an unreachable one costs a few bytes.
+        End();
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public sealed partial class CilEmitter
         // the parent twice.
         EmitStatements(chaining is null ? body : [.. body.Skip(1)]);
 
-        _il.Emit(OpCodes.Ret);
+        End();
     }
 
     /// <summary>
@@ -213,7 +213,7 @@ public sealed partial class CilEmitter
         EmitFieldInitializers(owner);
         EmitBaseConstructorCall(owner, written: null);
 
-        _il.Emit(OpCodes.Ret);
+        End();
     }
 
     private bool IsConstructor(FunctionDecl declaration) =>
@@ -265,7 +265,7 @@ public sealed partial class CilEmitter
             _il.Emit(OpCodes.Stsfld, _fields[(FieldSymbol)_model.GetSymbol(declared)!]);
         }
 
-        _il.Emit(OpCodes.Ret);
+        End();
     }
 
     /// <summary>The fields of one kind that were written with a value, in declaration order.</summary>
@@ -278,6 +278,20 @@ public sealed partial class CilEmitter
             : [];
 
     /// <summary>Starts a body: fresh locals, fresh loops, and the parameters where they will be.</summary>
+    /// <summary>
+    /// <para>Where every path out of the body meets, and what it carries.</para>
+    /// <para><b>One exit per method, always.</b> A <c>yield</c> cannot be a <c>ret</c> where it
+    /// sits inside a protected region — the CLR refuses the whole method — and a <c>loop each</c>
+    /// puts one around its body to unmark the set on the way out. So a yield stores its value and
+    /// leaves, and the single <c>ret</c> at the bottom is the only one there is.</para>
+    /// <para>Cheaper than deciding: working out whether a particular yield is inside a region
+    /// would mean tracking that everywhere, and this costs a local nobody reads in the methods
+    /// that did not need it.</para>
+    /// </summary>
+    private Label _exit;
+
+    private LocalBuilder? _result;
+
     private void Begin(ILGenerator il, FunctionSymbol? function, bool hasReceiver)
     {
         _il = il;
@@ -285,10 +299,17 @@ public sealed partial class CilEmitter
         _loops.Clear();
         _parameters.Clear();
         _hasReceiver = hasReceiver;
+        _exit = il.DefineLabel();
+        _result = null;
 
         if (function is null)
         {
             return;
+        }
+
+        if (function.ReturnType is not null && !function.IsConstructor)
+        {
+            _result = il.DeclareLocal(TypeOf(function.ReturnType, function.Name));
         }
 
         int first = hasReceiver ? 1 : 0;
@@ -336,6 +357,10 @@ public sealed partial class CilEmitter
 
             case WhileStmt loop:
                 EmitWhile(loop);
+                break;
+
+            case WalkStmt walk:
+                EmitWalk(walk);
                 break;
 
             case LoopUntilStmt loop:
@@ -407,6 +432,10 @@ public sealed partial class CilEmitter
         {
             case IdentifierExpr name:
                 EmitAssignToName(name, assignment.Value);
+                break;
+
+            case IndexExpr index:
+                EmitAssignToIndex(index, assignment.Value);
                 break;
 
             case MemberExpr member:
@@ -687,11 +716,34 @@ public sealed partial class CilEmitter
         _il.MarkLabel(after);
     }
 
+    /// <summary>
+    /// Leaves rather than returns, so that a yield written inside a <c>loop each</c> is legal:
+    /// the walk wraps its body to unmark the set, and a <c>ret</c> inside a protected region is
+    /// not something the CLR will run at all.
+    /// </summary>
     private void EmitYield(YieldStmt yield)
     {
         if (yield.Value is not null)
         {
             EmitExpression(yield.Value);
+            _il.Emit(OpCodes.Stloc, _result!);
+        }
+
+        _il.Emit(OpCodes.Leave, _exit);
+    }
+
+    /// <summary>
+    /// Closes a body: the one place every path arrives at, and the one <c>ret</c>. Where the
+    /// function yields a value the slot holds it, and where it yields none there is nothing to
+    /// load.
+    /// </summary>
+    private void End()
+    {
+        _il.MarkLabel(_exit);
+
+        if (_result is not null)
+        {
+            _il.Emit(OpCodes.Ldloc, _result);
         }
 
         _il.Emit(OpCodes.Ret);

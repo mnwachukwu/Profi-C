@@ -22,7 +22,13 @@ public static class ModelOperations
     /// </summary>
     public static string ToDisplayString(object? value) => value switch
     {
+        // Two spellings of the same absence. The interpreter holds an empty optional as null,
+        // being untyped; emitted code holds a typed Optional<T>, which cannot be null and says
+        // so instead. Both read as 'empty', which is what a program sees either way.
         null => "empty",
+        IProfiCOptional { HasValue: false } => "empty",
+        IProfiCOptional present => ToDisplayString(present.GetValue()),
+
         string text => text,
         bool flag => flag ? "true" : "false",
         char character => character.ToString(),
@@ -72,6 +78,11 @@ public static class ModelOperations
     {
         char character => $"'{character}'",
         string text => $"\"{text}\"",
+
+        // A present optional is written as what it holds, quoting included — so a set of
+        // optional strings reads the same as a set of strings, which is what it looks like.
+        IProfiCOptional { HasValue: true } present => ToElementString(present.GetValue()),
+
         _ => ToDisplayString(value),
     };
 

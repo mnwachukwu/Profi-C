@@ -1,6 +1,23 @@
 namespace ProfiC.Runtime;
 
 /// <summary>
+/// <para>Lets rendering and the deep-equality walk read an optional without knowing what it
+/// holds.</para>
+/// <para>The same arrangement <see cref="IProfiCSet"/> uses, and for the same reason: an
+/// <c>Optional&lt;T&gt;</c> arrives at those as a boxed <c>object</c> with its type argument
+/// unknown, and asking it anything through reflection would be both slow and a second place
+/// that knew the shape.</para>
+/// </summary>
+public interface IProfiCOptional
+{
+    /// <summary>True when a value is present.</summary>
+    bool HasValue { get; }
+
+    /// <summary>What is held, or null where nothing is.</summary>
+    object? GetValue();
+}
+
+/// <summary>
 /// <para>A value that may be absent. Profi-C has no null; this replaces it.</para>
 /// <para>The three members are all there is: <c>HasValue</c> tests presence, <c>Or</c>
 /// supplies a fallback, and <c>Value</c> asserts presence. Reading one the compiler cannot
@@ -9,7 +26,7 @@ namespace ProfiC.Runtime;
 /// <para>A struct, so an optional local costs nothing and an absent one allocates nothing.
 /// </para>
 /// </summary>
-public readonly struct Optional<T> : IEquatable<Optional<T>>
+public readonly struct Optional<T> : IEquatable<Optional<T>>, IProfiCOptional
 {
     private readonly T _value;
 
@@ -76,6 +93,8 @@ public readonly struct Optional<T> : IEquatable<Optional<T>>
     public static bool operator !=(Optional<T> left, Optional<T> right) => !left.Equals(right);
 
     public override string ToString() => HasValue ? _value?.ToString() ?? string.Empty : "empty";
+
+    object? IProfiCOptional.GetValue() => HasValue ? _value : null;
 }
 
 /// <summary>Helpers for building optionals without naming their type.</summary>

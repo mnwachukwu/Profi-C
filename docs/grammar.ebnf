@@ -173,6 +173,11 @@ ExprStmt       = Expr [ "=" Expr ] ";" ;
 
 (* ---- Types -------------------------------------------------------------- *)
 
+(* Two "?" in a row parse, and are then refused (PC0252): an optional of an
+   optional describes nothing a program can act on, since nothing an optional
+   offers sees past the first level. Kept in the grammar rather than excluded
+   from it, because refusing it while checking is what lets the message explain
+   itself — a parse error here would only say a type was expected. *)
 Type           = ( BaseType | DelegateType ) { TypeSuffix } ;
 TypeSuffix     = "[" "]" | "?" ;
 

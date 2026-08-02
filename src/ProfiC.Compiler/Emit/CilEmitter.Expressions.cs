@@ -57,14 +57,34 @@ public sealed partial class CilEmitter
                 EmitNew(construction);
                 break;
 
+            case CollectionExpr collection:
+                EmitCollection(collection);
+                break;
+
+            case IndexExpr index:
+                EmitIndexRead(index);
+                break;
+
             default:
                 throw Unhandled(expression.GetType().Name);
         }
     }
 
-    /// <summary>Reads a field through the instance it belongs to, or straight off the type.</summary>
+    /// <summary>
+    /// <para>Reads a field through the instance it belongs to, or straight off the type — or a
+    /// member of the language that is a value rather than something to call.</para>
+    /// <para>A set's <c>Count</c> is the second kind. It reaches here rather than through the
+    /// call path because it is written without parentheses, which is the whole difference
+    /// between the two and the only thing that decides which way it arrives.</para>
+    /// </summary>
     private void EmitMemberRead(MemberExpr member)
     {
+        if (_model.GetBuiltIn(member) is { } builtIn && CilBuiltIns.IsOnASet(builtIn))
+        {
+            EmitSetMember(member, [], builtIn);
+            return;
+        }
+
         if (_model.GetSymbol(member) is not FieldSymbol field
             || !_fields.TryGetValue(field, out FieldBuilder? slot))
         {
@@ -165,10 +185,12 @@ public sealed partial class CilEmitter
         {
             case LocalSymbol local when _locals.TryGetValue(local, out LocalBuilder? slot):
                 _il.Emit(OpCodes.Ldloc, slot);
+                UnwrapIfNarrowed(local.Type, name);
                 break;
 
             case ParameterSymbol parameter when _parameters.TryGetValue(parameter, out int at):
                 _il.Emit(OpCodes.Ldarg, at);
+                UnwrapIfNarrowed(parameter.Type, name);
                 break;
 
             // A field named on its own, which a field initializer may do without writing a
@@ -184,11 +206,37 @@ public sealed partial class CilEmitter
                     _il.Emit(OpCodes.Ldfld, slot);
                 }
 
+                UnwrapIfNarrowed(field.Type, name);
                 break;
 
             default:
                 throw Unhandled($"the name '{name.Name}'");
         }
+    }
+
+    /// <summary>
+    /// <para>Reads the value out of an optional the compiler has proved is present.</para>
+    /// <para><b>Narrowing leaves no mark on the tree</b>, which is what makes this necessary.
+    /// Inside <c>if maybe.HasValue()</c> the checker records every read of <c>maybe</c> as the
+    /// definite type, while the local it reads still holds an optional — a difference the
+    /// interpreter never notices, being untyped, and the emitter cannot survive.</para>
+    /// <para>So the two are compared here: where a name was declared optional and this reading of
+    /// it was not, the guard is what stands between them, and the value is taken out. That the
+    /// value is there has been settled by <c>PC0401</c> long before.</para>
+    /// </summary>
+    private void UnwrapIfNarrowed(TypeSymbol? declared, Expression read)
+    {
+        if (declared is not OptionalType optional || _model.GetType(read) is OptionalType)
+        {
+            return;
+        }
+
+        Type built = TypeOf(optional, "an optional");
+        LocalBuilder slot = _il.DeclareLocal(built);
+
+        _il.Emit(OpCodes.Stloc, slot);
+        _il.Emit(OpCodes.Ldloca, slot);
+        _il.Emit(OpCodes.Call, OptionalMethod(built, "get_Value"));
     }
 
     private void EmitUnary(UnaryExpr unary)
@@ -354,12 +402,18 @@ public sealed partial class CilEmitter
         _il.Emit(OpCodes.Call, ToDisplayString);
     }
 
+    /// <summary>
+    /// <para>Puts a value where an <c>object</c> is wanted, boxing it if it is not one.</para>
+    /// <para>Asked of the CLR type rather than of a list of primitives, because an optional is a
+    /// struct too — and the version that asked only about primitives passed one unboxed, which
+    /// the runtime rejects as an invalid program rather than as a wrong answer.</para>
+    /// </summary>
     private void EmitAsObject(Expression expression)
     {
         EmitExpression(expression);
 
         if (_model.GetType(expression) is { } type
-            && CilTypes.Of(type) is { IsValueType: true } clr)
+            && TypeOf(type, "a value") is { IsValueType: true } clr)
         {
             _il.Emit(OpCodes.Box, clr);
         }
@@ -372,6 +426,14 @@ public sealed partial class CilEmitter
 
     private void EmitConversion(ConversionExpr conversion)
     {
+        // Wrapping emits its own operand, since what it wraps into decides the call that
+        // follows and the operand has to sit beneath it.
+        if (conversion.Operation == ConversionOperation.WrapOptional)
+        {
+            EmitWrapOptional(conversion);
+            return;
+        }
+
         EmitExpression(conversion.Operand);
 
         switch (conversion.Operation)
@@ -439,11 +501,39 @@ public sealed partial class CilEmitter
     /// </summary>
     private void EmitBuiltIn(CallExpr call, BuiltInId builtIn)
     {
+        // A set's members are reached through the value on the left, so they need the receiver
+        // the call was written on rather than a sequence of their own.
+        if (CilBuiltIns.IsOnASet(builtIn))
+        {
+            if (call.Callee is not MemberExpr onASet)
+            {
+                throw Unhandled($"'{builtIn}' reached through nothing");
+            }
+
+            EmitSetMember(onASet, call.Arguments, builtIn);
+            return;
+        }
+
+        if (CilBuiltIns.IsOnAnOptional(builtIn))
+        {
+            if (call.Callee is not MemberExpr onAnOptional)
+            {
+                throw Unhandled($"'{builtIn}' reached through nothing");
+            }
+
+            EmitOptionalMember(onAnOptional, call.Arguments, builtIn);
+            return;
+        }
+
         switch (builtIn)
         {
             case BuiltInId.ConsoleWrite:
             case BuiltInId.ConsoleWriteLine:
                 EmitConsoleWrite(call, newline: builtIn == BuiltInId.ConsoleWriteLine);
+                break;
+
+            case BuiltInId.ConsoleRead:
+                _il.Emit(OpCodes.Call, ReadLine);
                 break;
 
             default:
@@ -490,6 +580,15 @@ public sealed partial class CilEmitter
 
     private static readonly MethodInfo WriteLineOfNothing =
         typeof(ProfiCConsole).GetMethod(nameof(ProfiCConsole.WriteLine), Type.EmptyTypes)!;
+
+    /// <summary>
+    /// <para>Reading a line, which already gives back an optional.</para>
+    /// <para>The boundary where a .NET reference that may be absent becomes an optional and
+    /// stops being null — so the emitter needs no wrapping of its own, and this is the one
+    /// built-in that hands an empty optional to a program that asked for nothing else.</para>
+    /// </summary>
+    private static readonly MethodInfo ReadLine =
+        typeof(ProfiCConsole).GetMethod(nameof(ProfiCConsole.Read), Type.EmptyTypes)!;
 
     /// <summary>
     /// Writing nothing without ending the line does nothing at all, and the runtime has no

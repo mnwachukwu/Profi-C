@@ -1106,6 +1106,21 @@ public static class DiagnosticDescriptors
         "'{0}' is built before this constructor's body whether or not 'base()' is written, so "
         + "this line does what would happen without it. Keep it if saying so helps.");
 
+    /// <summary>
+    /// <para>An optional of an optional.</para>
+    /// <para>A <c>?</c> says a value may be absent. A second one says it again, and describes
+    /// nothing more — there is no question a program can ask that separates "absent" from
+    /// "present, holding an absence", because the three members an optional has cannot see
+    /// past the first level.</para>
+    /// <para>So the two states are indistinguishable, and a language whose whole point about
+    /// absence is that the compiler can prove it should not offer a shape where it cannot. C#
+    /// refuses the same thing for the same reason.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor OptionalOfAnOptional = Error(
+        "PC0252",
+        "An optional of an optional",
+        "This is already optional, so the second '?' says nothing new. Write one '?'.");
+
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(

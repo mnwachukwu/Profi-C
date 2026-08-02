@@ -40,6 +40,15 @@ public sealed partial class Interpreter
         Environment scope,
         Instance? receiver)
     {
+        // 'Or' before anything is evaluated, because its fallback must not run unless it is
+        // wanted. Every other built-in takes its arguments as values and cannot tell how they
+        // were arrived at; this one is the only place in the language, besides 'and' and 'or',
+        // where whether an expression runs at all is part of what the member means.
+        if (_model.GetBuiltIn(member) is BuiltInId.OptionalOr)
+        {
+            return EvaluateOr(call, member, scope, receiver);
+        }
+
         List<object?> arguments = [.. call.Arguments.Select(a => Evaluate(a, scope, receiver))];
 
         // A type name on the left: either a built-in like Console, or a shared function.
@@ -136,6 +145,20 @@ public sealed partial class Interpreter
 
         return null;
     }
+
+    /// <summary>
+    /// <para>An optional's <c>Or</c>, which reaches its fallback only where there is nothing to
+    /// give back.</para>
+    /// <para>An empty optional is null here, so the whole of the rule is the null-coalescing
+    /// below — and the argument is an expression until that decides it is needed.</para>
+    /// </summary>
+    private object? EvaluateOr(
+        CallExpr call,
+        MemberExpr member,
+        Environment scope,
+        Instance? receiver) =>
+        Evaluate(member.Receiver, scope, receiver)
+        ?? Evaluate(call.Arguments[0], scope, receiver);
 
     private object? RunBaseConstructor(CallExpr call, Environment scope, Instance? receiver)
     {
@@ -452,20 +475,16 @@ public sealed partial class Interpreter
             // Both leave their two originals alone and hand back a new set, as Subset does.
             // Membership is asked of the other set, so it is the same structural question
             // '==' asks rather than a reference check.
-            BuiltInId.SetUnion => new StrongBox<object?>(
-                new ProfiCSet<object?>(Set().Concat(OtherSet(0)))),
-            BuiltInId.SetIntersect => new StrongBox<object?>(
-                new ProfiCSet<object?>(
-                    Set().Where(element => OtherSet(0).Contains(element)))),
-            BuiltInId.SetExcept => new StrongBox<object?>(
-                new ProfiCSet<object?>(
-                    Set().Where(element => !OtherSet(0).Contains(element)))),
-            BuiltInId.SetDistinct => new StrongBox<object?>(OneOfEach(Set())),
+            // Each of these is the set's own, so that the emitter calling the same method is
+            // calling the same code rather than a second version of it that agrees today.
+            BuiltInId.SetUnion => new StrongBox<object?>(Set().Union(OtherSet(0))),
+            BuiltInId.SetIntersect => new StrongBox<object?>(Set().Intersect(OtherSet(0))),
+            BuiltInId.SetExcept => new StrongBox<object?>(Set().Except(OtherSet(0))),
+            BuiltInId.SetDistinct => new StrongBox<object?>(Set().Distinct()),
 
-            BuiltInId.SetSubsetFrom => new StrongBox<object?>(
-                Subset(Set(), (int)Integer(0), Set().Count)),
+            BuiltInId.SetSubsetFrom => new StrongBox<object?>(Set().Subset((int)Integer(0))),
             BuiltInId.SetSubsetBetween => new StrongBox<object?>(
-                Subset(Set(), (int)Integer(0), (int)Integer(1))),
+                Set().Subset((int)Integer(0), (int)Integer(1))),
 
             // An element of a set of optionals is the value itself, or null for an empty one,
             // so dropping the empties is dropping the nulls.
@@ -478,10 +497,7 @@ public sealed partial class Interpreter
             BuiltInId.SetTrimAll => new StrongBox<object?>(
                 new ProfiCSet<object?>(Set().Where(element => element is not null))),
 
-            // Each element written the way it would be written on its own, so a set of
-            // anything joins and not only a set of strings.
-            BuiltInId.SetJoin => new StrongBox<object?>(
-                string.Join(Text(0), Set().Select(ModelOperations.ToDisplayString))),
+            BuiltInId.SetJoin => new StrongBox<object?>(Set().Join(Text(0))),
 
             BuiltInId.StringCount => new StrongBox<object?>((long)Subject().Length),
             BuiltInId.StringContains => new StrongBox<object?>(
@@ -739,29 +755,6 @@ public sealed partial class Interpreter
     private static readonly System.Text.UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     /// <summary>
-    /// <para>The elements of a set with the repeats taken out, keeping the first of each.
-    /// </para>
-    /// <para>Asked one at a time against what has been kept so far, rather than through a
-    /// hash of each value. Equality here is the deep, cycle-safe comparison <c>==</c> uses,
-    /// which no hash code is built to agree with — and asking the same way <c>Contains</c>
-    /// and <c>Intersect</c> already do means all three answer alike.</para>
-    /// </summary>
-    private static ProfiCSet<object?> OneOfEach(ProfiCSet<object?> values)
-    {
-        ProfiCSet<object?> kept = new();
-
-        foreach (object? value in values)
-        {
-            if (!kept.Contains(value))
-            {
-                kept.Insert(value);
-            }
-        }
-
-        return kept;
-    }
-
-    /// <summary>
     /// Deletes a file if there is one, saying whether there was. Asked and done in one step
     /// rather than checked first, so that nothing can slip in between the two.
     /// </summary>
@@ -926,22 +919,6 @@ public sealed partial class Interpreter
         }
 
         return text[start..end];
-    }
-
-    /// <summary>
-    /// <para>A run of a set, copied out, with the end exclusive.</para>
-    /// <para>Both bounds are checked against the set rather than clamped to it, so asking for
-    /// a run that is not there says so instead of quietly handing back a shorter one.</para>
-    /// </summary>
-    private static ProfiCSet<object?> Subset(ProfiCSet<object?> source, int start, int end)
-    {
-        if (start < 0 || start > source.Count || end < start || end > source.Count)
-        {
-            throw new IndexOutOfRangeException(
-                $"Cannot take the run from {start} to {end} of a set of {source.Count} elements.");
-        }
-
-        return new ProfiCSet<object?>(source.Skip(start).Take(end - start));
     }
 
     /// <summary>

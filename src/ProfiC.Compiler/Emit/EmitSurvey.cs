@@ -182,21 +182,17 @@ internal sealed class EmitSurvey : SyntaxVisitor
     }
 
     /// <summary>
-    /// A walk is what <c>loop each</c> lowers to, so this is the only place it can be met and
-    /// the name a reader would recognize is the one they wrote.
+    /// <para>A walk is what <c>loop each</c> lowers to, so this is the only shape that reaches
+    /// the emitter — a <c>ForEachStmt</c> is gone by then, and meeting one means lowering did
+    /// not run.</para>
+    /// <para>Nothing to refuse: what a walk needs is a set, and whether the set is one the
+    /// emitter has a type for is settled where the sequence is.</para>
     /// </summary>
-    public override void VisitWalkStmt(WalkStmt node)
-    {
-        ArgumentNullException.ThrowIfNull(node);
-
-        Refuse(node, "A 'loop each'");
-    }
-
     public override void VisitForEachStmt(ForEachStmt node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        Refuse(node, "A 'loop each'");
+        Refuse(node, "A 'loop each' that was never lowered");
     }
 
     public override void VisitLocalDeclStmt(LocalDeclStmt node)
@@ -251,18 +247,36 @@ internal sealed class EmitSurvey : SyntaxVisitor
         base.VisitNewExpr(node);
     }
 
+    /// <summary>
+    /// A literal is refused by what it holds, the same as a local — and a set with no type at all
+    /// is one the checker could not settle, which it has already reported.
+    /// </summary>
     public override void VisitCollectionExpr(CollectionExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        Refuse(node, "A set");
+        CheckType(node, _model.GetType(node), "A set");
+
+        base.VisitCollectionExpr(node);
     }
 
+    /// <summary>
+    /// <para>Indexing reaches a set, and a string.</para>
+    /// <para>A string is refused for now: it is indexed through a different sequence entirely,
+    /// since a CLR string is not the runtime's set and answers a character by another route.
+    /// </para>
+    /// </summary>
     public override void VisitIndexExpr(IndexExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        Refuse(node, "Indexing");
+        if (_model.GetType(node.Receiver) is not SetType)
+        {
+            Refuse(node, "Indexing something that is not a set");
+            return;
+        }
+
+        base.VisitIndexExpr(node);
     }
 
     public override void VisitInterpolatedStringExpr(InterpolatedStringExpr node)

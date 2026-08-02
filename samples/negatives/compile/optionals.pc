@@ -32,5 +32,10 @@ shared model Program
         if maybe.HasValue()
             Console.WriteLine(found.balance);
         end if
+
+        # One '?' and no more. A second says nothing new, and the two ways of being empty it
+        # would make cannot be told apart: nothing an optional offers sees past the first
+        # level, so "absent" and "present, holding an absence" answer alike to every question.
+        integer?? twice;
     end function
 end model

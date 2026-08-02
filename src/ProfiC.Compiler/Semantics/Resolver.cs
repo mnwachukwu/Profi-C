@@ -249,7 +249,20 @@ public sealed partial class Resolver
                 return new SetType(ResolveType(set.ElementType));
 
             case OptionalTypeSyntax optional:
-                return new OptionalType(ResolveType(optional.UnderlyingType));
+            {
+                TypeSymbol underlying = ResolveType(optional.UnderlyingType);
+
+                // An optional already says a value may be absent. Saying it twice describes
+                // nothing a program can act on — and the two ways of being empty it would create
+                // cannot be told apart by any member an optional has.
+                if (underlying is OptionalType)
+                {
+                    Report(DiagnosticDescriptors.OptionalOfAnOptional, optional);
+                    return underlying;
+                }
+
+                return new OptionalType(underlying);
+            }
 
             case FunctionTypeSyntax function:
                 return new FunctionType(

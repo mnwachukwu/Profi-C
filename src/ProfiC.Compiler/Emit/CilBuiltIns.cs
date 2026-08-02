@@ -13,7 +13,38 @@ namespace ProfiC.Compiler.Emit;
 internal static class CilBuiltIns
 {
     public static bool IsSupported(BuiltInId id) =>
-        id is BuiltInId.ConsoleWrite or BuiltInId.ConsoleWriteLine;
+        id is BuiltInId.ConsoleWrite or BuiltInId.ConsoleWriteLine or BuiltInId.ConsoleRead
+        || IsOnASet(id)
+        || IsOnAnOptional(id);
+
+    /// <summary>The three members an optional has, and there are only three.</summary>
+    public static bool IsOnAnOptional(BuiltInId id) =>
+        id is BuiltInId.OptionalHasValue
+           or BuiltInId.OptionalValue
+           or BuiltInId.OptionalOr;
+
+    /// <summary>
+    /// <para>The members of a set, each one call on the runtime's own.</para>
+    /// <para>What is missing is the <c>Trim</c> family, which is only on a set of optionals — and
+    /// an optional is not something the emitter has a type for yet, so there is no such set to
+    /// call it on.</para>
+    /// </summary>
+    public static bool IsOnASet(BuiltInId id) =>
+        id is BuiltInId.SetCount
+           or BuiltInId.SetInsert
+           or BuiltInId.SetInsertAt
+           or BuiltInId.SetRemove
+           or BuiltInId.SetRemoveAt
+           or BuiltInId.SetContains
+           or BuiltInId.SetIndexOf
+           or BuiltInId.SetClear
+           or BuiltInId.SetSubsetFrom
+           or BuiltInId.SetSubsetBetween
+           or BuiltInId.SetUnion
+           or BuiltInId.SetIntersect
+           or BuiltInId.SetExcept
+           or BuiltInId.SetDistinct
+           or BuiltInId.SetJoin;
 
     /// <summary>How a reader wrote it, for a message about it.</summary>
     public static string NameOf(BuiltInId id) => id switch

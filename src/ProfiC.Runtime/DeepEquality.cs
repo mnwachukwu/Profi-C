@@ -96,6 +96,22 @@ public static class DeepEquality
             case string text:
                 return text.Equals((string)b, StringComparison.Ordinal);
 
+            // Two optionals are equal when both are empty, or both hold values that are.
+            // Compared through the interface rather than by the struct's own Equals, so that
+            // what they hold is compared deeply too — a set inside an optional is still a set.
+            case IProfiCOptional optionalA:
+            {
+                IProfiCOptional optionalB = (IProfiCOptional)b;
+
+                if (optionalA.HasValue != optionalB.HasValue)
+                {
+                    return false;
+                }
+
+                return !optionalA.HasValue
+                    || Queue(optionalA.GetValue(), optionalB.GetValue(), pending);
+            }
+
             case IProfiCSet setA:
             {
                 IProfiCSet setB = (IProfiCSet)b;
