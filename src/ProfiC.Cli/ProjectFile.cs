@@ -82,11 +82,33 @@ public sealed class ProjectFile
     /// </summary>
     public string? EntryPoint { get; }
 
+    /// <summary>What a project is being read for, which decides how much of it has to be right.</summary>
+    public enum Reading
+    {
+        /// <summary>
+        /// To build it. Anything wrong means there is nothing to build, and the mistake has
+        /// already been reported.
+        /// </summary>
+        ToBuild,
+
+        /// <summary>
+        /// <para>To ask what it lists, without building it.</para>
+        /// <para>A mistake elsewhere in a project does not change which files it names. An
+        /// editor deciding what its Run button points at needs the answer either way — a project
+        /// that lists the open file and then fails to build should report its own failure, rather
+        /// than being passed over so quietly that the file runs on its own instead.</para>
+        /// </summary>
+        ToSeeWhatItLists,
+    }
+
     /// <summary>
     /// Reads a project file, or returns null if it could not be read. Anything wrong is
     /// reported rather than thrown, so a mistake in a project reads like a mistake in a program.
     /// </summary>
-    public static ProjectFile? Read(string path, DiagnosticBag diagnostics)
+    public static ProjectFile? Read(
+        string path,
+        DiagnosticBag diagnostics,
+        Reading reading = Reading.ToBuild)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(diagnostics);
@@ -105,10 +127,14 @@ public sealed class ProjectFile
 
         using DiagnosticBag.FileScope reporting = diagnostics.InFile(source);
 
-        return Parse(source, folder, diagnostics);
+        return Parse(source, folder, diagnostics, reading);
     }
 
-    private static ProjectFile? Parse(SourceText source, string folder, DiagnosticBag diagnostics)
+    private static ProjectFile? Parse(
+        SourceText source,
+        string folder,
+        DiagnosticBag diagnostics,
+        Reading reading)
     {
         // Errors rather than reports, because a project file may now say things that do not
         // stop it being read: an 'ignore' line naming the wrong thing is worth hearing and
@@ -265,7 +291,14 @@ public sealed class ProjectFile
             return null;
         }
 
-        return (files.Count == 0 && references.Count == 0) || diagnostics.Errors != failuresBefore
+        if (files.Count == 0 && references.Count == 0)
+        {
+            return null;
+        }
+
+        // A reader only asking what the project names keeps what was read; one about to build it
+        // does not, since a project with a mistake in it has nothing to hand a compilation.
+        return reading == Reading.ToBuild && diagnostics.Errors != failuresBefore
             ? null
             : new ProjectFile(name, source, files, references, entryPoint);
     }

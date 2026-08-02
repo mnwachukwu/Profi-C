@@ -1,6 +1,7 @@
 # Profi-C
 
-[![CI](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci.yml/badge.svg)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci.yml)
+[![CI (Windows)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-windows.yml)
+[![CI (Linux)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-linux.yml)
 
 A teaching language that compiles to CIL and runs on .NET.
 
@@ -232,7 +233,9 @@ read-only inside the body, which removes the classic closure-capture trap.
 
 ## Status
 
-**Profi-C runs.** Programs execute on a tree-walking interpreter.
+**Profi-C runs, and it debugs.** Programs execute on a tree-walking interpreter, breakpoints and
+stepping work in VS Code, and `pc build` writes a real .NET assembly for as much of the language
+as the emitter has reached.
 
 | Stage | State |
 |---|---|
@@ -242,12 +245,14 @@ read-only inside the body, which removes the classic closure-capture trap.
 | Type checker | Complete |
 | Definite assignment, optional narrowing | Complete |
 | Lowering | Complete |
+| Closure conversion | Complete |
 | Interpreter | Complete |
 | Multi-file compilation, projects, imports | Complete |
 | Namespaces, `using`, qualified names | Complete |
-| Closure conversion | Not started |
-| Standard library beyond the built-ins | Not started |
-| CIL emitter | Not started |
+| Standard library | Complete |
+| Debugger | Complete |
+| CIL emitter | In progress |
+| Language server | Not started |
 
 Source becomes a syntax tree, every name resolves, every expression has a type, nothing can be
 read before it holds a value, and an optional cannot be read at all until presence is proven.
@@ -259,21 +264,29 @@ nearest, and a qualified one — `Shapes.Circle`, `Standard.Math` — reaches pa
 `using` required. The library lives in `Standard`, which is in scope in every file without
 being asked for.
 
-**The front end is complete.** What comes next is closure conversion, then the standard
-library, then the emitter.
+**The back end is the work in progress.** Expressions, control flow, functions, and models with
+instance state and fields already emit and run as CIL; inheritance and virtual dispatch are next,
+and most of the corpus waits on them. Nothing is half-compiled in the meantime — a program using
+a construct the emitter has not reached is refused by name:
 
-The interpreter is not a stopgap. It runs the same lowered tree the emitter will, so once both
-exist it stays on as the oracle: where the two disagree about what a program means, the
-compiler has the bug.
+```
+samples/bank.pc(19,1): error PC0501: The model 'Book' cannot be compiled to an assembly yet.
+```
+
+That refusal is decided before anything is written, so what `pc build` accepts is exactly what it
+can be trusted with. Everything the emitter cannot take yet still **runs** on the interpreter.
+
+The interpreter is not a stopgap. It runs the same lowered tree the emitter does, so it stays on
+as the oracle: where the two disagree about what a program means, the compiler has the bug.
 
 [Writing and running a program](#writing-and-running-a-program) is everything needed to try it,
 and every file in [Samples](#samples) runs today.
 
 ## Writing and running a program
 
-You need the .NET 10 SDK and a clone of this repository. There is no installer yet — one
-arrives once the compiler emits assemblies. Until then you build the tool from source, which
-takes one command.
+You need the .NET 10 SDK and a clone of this repository. There is no installer yet — the compiler
+is not on NuGet, and putting it there before the emitter is finished would be shipping a tool
+that turns most programs away. Until then you build it from source, which takes one command.
 
 ### 1. Build the tool
 
@@ -342,7 +355,8 @@ pc run hello.pc
 
 `run` checks the program and then executes it on the interpreter. Nothing runs until
 everything checks, so a program that reaches execution has already been proved free of every
-mistake the front end can see. No file is produced — the CIL emitter is what will change that.
+mistake the front end can see. No file is produced; [`build`](#5-build-it) is the command that
+writes one.
 
 The extension can be left off — `pc run hello` finds `hello.pc`, and finds `hello.pcp` if that
 is what is there instead. Write it out when both exist and you mean one of them; anything that
@@ -364,6 +378,48 @@ scratch.pc(10,27): error PC0303: '+' is not defined for an integer? and an integ
 ```
 
 Three mistakes, three messages, one run — and each caught by a different part of the compiler.
+
+### 5. Build it
+
+`run` interprets. `build` compiles to a real .NET assembly and leaves it on disk:
+
+```bash
+pc build hello.pc
+```
+
+```
+hello.pc: wrote bin\hello.dll
+Run it with: bin\hello.exe
+```
+
+Four files land in `bin`: the assembly, its runtime configuration, the Profi-C runtime it leans
+on, and a **launcher** you can start without naming `dotnet`. A folder of its own rather than
+beside the source, because four files a tool made should not be mixed in with the one you wrote —
+and because every `.gitignore` already knows the name. `--out` puts them somewhere else.
+
+The launcher is the stock .NET apphost, the same one `dotnet publish` produces, with the name of
+the assembly written into the region reserved in it for exactly that. **The machine still needs
+.NET installed** — this is a launcher, not a self-contained copy of the runtime.
+
+**You can build for a machine that is not this one**, the way `dotnet publish -r` does:
+
+```bash
+pc build hello.pc --runtime linux-x64
+```
+
+The default is whatever this machine is, so the common case needs no flag. What may be named is
+whatever launcher the SDK has on hand, which `pc platforms` prints — and a platform that is not
+there is refused with the command that fetches it, rather than producing something that will not
+start:
+
+```
+pc: nothing here can build for 'freebsd-x64'. Available: linux-x64, osx-x64,
+win-arm, win-arm64, win-x64, win-x86. 'dotnet publish -r freebsd-x64' on any
+project fetches what is needed.
+```
+
+Building a program for another platform on Windows also prints the `chmod +x` you will need
+there, since a Windows file system has nowhere to record that a file may be run.
 
 ### More than one file
 
@@ -484,6 +540,21 @@ pc lower samples/sorting.pc
 with `loop each` already rewritten into an index loop and every implicit conversion made
 explicit.
 
+Three more exist for editors rather than for reading:
+
+- **`pc outline`** prints what a file declares as JSON, which is where VS Code's breadcrumbs and
+  Outline view come from. It answers for a file that does not compile — the state a file is in
+  most of the time it is being written.
+- **`pc project`** prints the `.pcp` that builds a given file, or says none does. That is how the
+  editor knows what "run the project this file belongs to" means.
+- **`pc debug`** speaks the Debug Adapter Protocol over its own standard input and output, so
+  every decision about where to stop and what to show lives here rather than in an editor plugin.
+
+None of the three is a convenience. Each answers a question about Profi-C that an editor would
+otherwise have to answer for itself — by parsing the language, or reading a project file, or
+deciding what one step means — and a second answer to any of those agrees with this one only
+until the day it does not.
+
 ### One thing to remember
 
 `dist` holds a **copy** of the tool from when you published it. If you change the compiler's
@@ -492,9 +563,15 @@ compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go s
 
 ## Syntax highlighting in VS Code
 
-**Editor support lives in its own repository**, [Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors):
-the VS Code extension today, and a debug adapter, project management, a language server and a
-formatter as they are written. Installing it, and the rest of what it does, is covered there.
+**Editor support lives in its own repository**, [Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors).
+The VS Code extension there gives a `.pc` file syntax highlighting, **breakpoints and stepping**,
+breadcrumbs and an Outline, and buttons to run or build what you are looking at — with
+diagnostics landing in the Problems panel. Project management, a language server and a formatter
+are what remain. Installing it, and the rest of what it does, is covered there.
+
+**Almost none of the debugger is over there**, which is the point. `pc debug` is the whole of it;
+the extension only says which command to start. Two implementations of one set of rules about
+where to stop would be two answers to every question about them.
 
 It is a separate repository because it answers to a different clock. The extension is
 declarative and ships whenever it is ready; the compiler is on a phase plan. Keeping them apart
@@ -678,10 +755,10 @@ else and belongs under `compile/` instead.
 
 ```
 src/
-  ProfiC.Compiler/     lexer, parser, semantic analysis, lowering
+  ProfiC.Compiler/     lexer, parser, semantic analysis, lowering, CIL emission
   ProfiC.Runtime/      the value types a program uses: fraction, set, deep equality
-  ProfiC.Interpreter/  runs the lowered tree
-  ProfiC.Cli/          the profi-c command
+  ProfiC.Interpreter/  runs the lowered tree, and decides where a debugger stops
+  ProfiC.Cli/          the profi-c command, and the debug adapter that speaks to editors
   ProfiC.Cli.Alias/    pc, the short name for the same command
 tests/
   ProfiC.Tests/

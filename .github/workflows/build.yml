@@ -1,20 +1,22 @@
-name: CI
+# The steps a CI run takes, held in one place.
+#
+# Windows and Linux each call this from a workflow file of their own, because a badge names a
+# workflow file and nothing smaller. One file per operating system is what makes "Linux is
+# broken, Windows is fine" readable from the README rather than only from the Actions tab.
+
+name: Build and test
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      os:
+        description: The runner to build and test on.
+        required: true
+        type: string
 
 jobs:
   build:
-    name: Build and test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ inputs.os }}
 
     steps:
       - name: Check out

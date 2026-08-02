@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
@@ -65,6 +66,7 @@ public static class Program
             "vocabulary" => RunVocabulary(),
             "platforms" => RunPlatforms(),
             "outline" => RunOutline(args),
+            "project" => RunProject(args),
             "debug" => RunDebug(),
             _ => UnknownCommand(args[0]),
         };
@@ -82,9 +84,10 @@ public static class Program
         Console.WriteLine($"  {ToolName} tokens <file>    Scan one .pc file and print its token stream");
         Console.WriteLine($"  {ToolName} ast <file>       Parse one .pc file and print its syntax tree");
         Console.WriteLine($"  {ToolName} outline <file>   Print what one .pc file declares, as JSON");
-        Console.WriteLine($"  {ToolName} vocabulary      Print every word the language reserves, as JSON");
-        Console.WriteLine($"  {ToolName} platforms       Print the platforms --runtime accepts, as JSON");
-        Console.WriteLine($"  {ToolName} debug           Debug a program, spoken to by an editor");
+        Console.WriteLine($"  {ToolName} project <file>   Print the .pcp that builds a file, as JSON");
+        Console.WriteLine($"  {ToolName} vocabulary       Print every word the language reserves, as JSON");
+        Console.WriteLine($"  {ToolName} platforms        Print the platforms --runtime accepts, as JSON");
+        Console.WriteLine($"  {ToolName} debug            Debug a program, spoken to by an editor");
         Console.WriteLine($"  {ToolName} --version        Print the compiler version");
         Console.WriteLine($"  {ToolName} --help           Print this message");
         Console.WriteLine();
@@ -251,6 +254,45 @@ public static class Program
         DiagnosticBag aside = new();
 
         Console.WriteLine(Outline.AsJson(Parser.Parse(source, aside), source));
+
+        return 0;
+    }
+
+    /// <summary>
+    /// <para>Which project builds a file, for an editor deciding what a button points at.</para>
+    /// <para>Answered here rather than by whatever asks, because the answer depends on how a
+    /// <c>.pcp</c> is read — and a second reader of that format would agree with this one until
+    /// the format gained a word. That disagreement is silent: the other reader finds no project,
+    /// says so, and runs the file on its own.</para>
+    /// <para>Nothing is compiled and nothing is checked, so this stays fast enough to sit on the
+    /// path between a click and what it does.</para>
+    /// </summary>
+    private static int RunProject(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine($"{ToolName}: 'project' requires a file path.");
+            return 1;
+        }
+
+        // Located rather than taken as written, so that 'project Program' answers about the same
+        // file 'run Program' would compile.
+        if (SourceDiscovery.Locate(args[1], out string problem) is not { } target)
+        {
+            Console.Error.WriteLine($"{ToolName}: {problem}");
+            return 1;
+        }
+
+        ProjectSearch.Claim claim = ProjectSearch.For(target.Path);
+
+        Console.WriteLine(JsonSerializer.Serialize(
+            new
+            {
+                file = Path.GetFullPath(target.Path),
+                project = claim.Project,
+                searched = claim.Searched,
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
 
         return 0;
     }
