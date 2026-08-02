@@ -492,33 +492,25 @@ compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go s
 
 ## Syntax highlighting in VS Code
 
-**Not on the Marketplace**, and not soon — Profi-C is young enough that publishing an
-extension would be a shopfront with nothing behind it. [editors/vscode/](editors/vscode/)
-holds it, and installing means copying that folder where VS Code looks. There is no build
-step; it is all declarative.
+**Editor support lives in its own repository**, [Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors):
+the VS Code extension today, and a debug adapter, project management, a language server and a
+formatter as they are written. Installing it, and the rest of what it does, is covered there.
 
-Change the first line to wherever you cloned this, then run the rest as-is.
+It is a separate repository because it answers to a different clock. The extension is
+declarative and ships whenever it is ready; the compiler is on a phase plan. Keeping them apart
+means neither waits for the other.
 
-```powershell
-$repo = "D:\Repos\Profi-C"
-$dest = "$env:USERPROFILE\.vscode\extensions\profi-c-0.1.0"
-Remove-Item -Recurse -Force $dest -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $dest | Out-Null
-Copy-Item "$repo\editors\vscode\*" $dest -Recurse -Force
-```
+**One thing here serves it.** `pc vocabulary` prints every reserved word and every built-in type
+name as JSON, and the result is committed as [docs/vocabulary.json](docs/vocabulary.json). The
+grammars over there are tested against that file, so a keyword added here cannot quietly stop
+being colored — which it did, three times, before the file existed. Regenerate it whenever the
+language gains or loses a word:
 
 ```bash
-repo=~/Profi-C
-dest=~/.vscode/extensions/profi-c-0.1.0
-rm -rf "$dest" && mkdir -p "$dest" && cp -R "$repo/editors/vscode/." "$dest"
+pc vocabulary > docs/vocabulary.json
 ```
 
-Reload the window afterwards and open a `.pc` file. You get color, bracket matching, `Ctrl+/`
-for comments, and indentation that follows `end`. You do not get diagnostics, completion, or
-hover — those need a language server, which is later work.
-
-[editors/vscode/README.md](editors/vscode/README.md) covers Insiders, versioning the folder,
-and linking rather than copying if you mean to edit the grammar.
+A test fails if you forget.
 
 ## Building
 

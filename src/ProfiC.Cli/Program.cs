@@ -60,6 +60,7 @@ public static class Program
             "check" => RunCheck(args),
             "lower" => RunLower(args),
             "run" => RunProgram(args),
+            "vocabulary" => RunVocabulary(),
             _ => UnknownCommand(args[0]),
         };
     }
@@ -74,6 +75,7 @@ public static class Program
         Console.WriteLine($"  {ToolName} lower <file>     Print the simplified tree the back end sees");
         Console.WriteLine($"  {ToolName} tokens <file>    Scan one .pc file and print its token stream");
         Console.WriteLine($"  {ToolName} ast <file>       Parse one .pc file and print its syntax tree");
+        Console.WriteLine($"  {ToolName} vocabulary      Print every word the language reserves, as JSON");
         Console.WriteLine($"  {ToolName} --version        Print the compiler version");
         Console.WriteLine($"  {ToolName} --help           Print this message");
         Console.WriteLine();
@@ -147,6 +149,22 @@ public static class Program
     /// still prints the tokens: the scanner recovers, so a file with a mistake in it still
     /// produces a usable stream.
     /// </summary>
+    /// <summary>
+    /// <para>Prints every word the language reserves and every type it provides, as JSON.</para>
+    /// <para>Written for the tooling that has to know the language's vocabulary without being
+    /// built against the compiler — a TextMate grammar, a language server's completion list, a
+    /// syntax highlighter in another editor. Those live in their own repository, and asking
+    /// them to reference this one would make every keyword a two-repository change.</para>
+    /// <para>The answer is read straight from the tables the compiler itself uses, so it cannot
+    /// describe a language other than the one that just printed it.</para>
+    /// </summary>
+    private static int RunVocabulary()
+    {
+        Console.WriteLine(Vocabulary.AsJson());
+
+        return 0;
+    }
+
     private static int RunTokens(string[] args)
     {
         if (SourceArgument(args, "tokens") is not { } path)

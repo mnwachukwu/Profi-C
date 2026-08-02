@@ -6,8 +6,8 @@ namespace ProfiC.Tests;
 /// to it. The drift is quiet: nothing fails, the sample is still run and still asserted on, and
 /// the only sign is a reader who never learns it exists. A catalog that is silently incomplete
 /// is worse than none, because it reads as though it were complete.</para>
-/// <para>The same argument as <see cref="DiagnosticsAppendixTests"/> and
-/// <see cref="EditorGrammarTests"/>, applied to the front page.</para>
+/// <para>The same argument as <see cref="DiagnosticsAppendixTests"/>, and as the editor
+/// grammar's tests in <c>Profi-C.Editors</c>, applied to the front page.</para>
 /// </summary>
 [TestFixture]
 public sealed class ReadmeSampleTests : LexerTestBase

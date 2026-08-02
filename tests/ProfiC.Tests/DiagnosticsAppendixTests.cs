@@ -11,7 +11,8 @@ namespace ProfiC.Tests;
 /// descriptor does nothing to it. Drift here is quiet in a way most drift is not: nothing
 /// fails, no color changes, and the only sign is a reader meeting an id the document has
 /// never heard of — at the moment they most need it to have.</para>
-/// <para>The same argument as <see cref="EditorGrammarTests"/>, applied to prose.</para>
+/// <para>The same argument the editor grammar's tests make in <c>Profi-C.Editors</c>, applied
+/// to prose.</para>
 /// </summary>
 [TestFixture]
 public sealed class DiagnosticsAppendixTests : LexerTestBase

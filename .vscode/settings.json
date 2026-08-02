@@ -5,9 +5,13 @@
   // rules sit between the two, so the language reads the same whichever theme is on, and
   // nobody has to change their theme to read a .pc file.
   //
-  // Editing a color here applies the moment the file is saved. Editing the grammar under
-  // editors/vscode does not: a grammar is read once when the extension loads, so a change
-  // there needs the window reloaded.
+  // Editing a color here applies the moment the file is saved. Editing the grammar, which
+  // lives in the Profi-C.Editors repository, does not: a grammar is read once when the
+  // extension loads, so a change there needs the window reloaded.
+  //
+  // This file is also read by that repository's tests, which hold every scope named here to
+  // one the grammar still produces. A scope renamed there and not here paints nothing, which
+  // is silent and looks exactly like a color that will not take.
   //
   // The palette avoids red entirely. Red is what a squiggle uses, and a language that spends
   // it on ordinary keywords has nothing left to say something is wrong with.
