@@ -44,7 +44,11 @@ internal static class CilBuiltIns
            or BuiltInId.SetIntersect
            or BuiltInId.SetExcept
            or BuiltInId.SetDistinct
-           or BuiltInId.SetJoin;
+           or BuiltInId.SetJoin
+           or BuiltInId.SetTrim
+           or BuiltInId.SetTrimStart
+           or BuiltInId.SetTrimEnd
+           or BuiltInId.SetTrimAll;
 
     /// <summary>How a reader wrote it, for a message about it.</summary>
     public static string NameOf(BuiltInId id) => id switch

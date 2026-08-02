@@ -1,0 +1,151 @@
+##
+    Trusting a proof past the point where it ran out.
+
+    This program does not compile. Storing a value in an optional proves it holds one, and
+    checking it does the same — but only until control reaches a point it could have reached
+    another way. Every mistake below is one of those points being read straight past.
+
+    The other way up is samples/narrowing.pc, which is where each of these works.
+##
+
+shared model Program
+    function Main()
+    end function
+
+    # A branch that may not run. Nothing stored when the condition failed.
+    function AnIfWithNoElse(boolean ready)
+        integer? n;
+
+        if ready
+            n = 5;
+        end if
+
+        integer total = n;
+    end function
+
+    ##
+        A loop, whose body may run no turns at all. The same holds for every loop the language
+        has: a 'while' may never enter, a set walked by 'loop each' may be empty, and a 'break'
+        leaves from wherever it is written rather than from the bottom.
+    ##
+    function ALoopThatMayNotRun(integer[] values)
+        integer? last;
+
+        loop each value in values
+            last = value;
+        end loop
+
+        integer total = last;
+    end function
+
+    ##
+        A body that does run, left early. 'until' tests at the bottom, so the body runs at
+        least once — but a 'break' can leave before the store, so the store still proves
+        nothing about the line below the loop.
+    ##
+    function LeftBeforeTheStore(boolean done)
+        integer? n;
+
+        loop
+            if done
+                break;
+            end if
+
+            n = 5;
+        until done
+
+        integer total = n;
+    end function
+
+    ##
+        What the loop stored last turn is not what it starts with. This reads correctly on the
+        first turn and wrongly on the second, which is the shape a check made once from the top
+        of the body would miss.
+    ##
+    function TheNextTurn(boolean again)
+        integer? n;
+        n = 5;
+
+        loop while again
+            integer total = n;
+            Console.WriteLine(total);
+
+            n = Program.Nothing();
+        end loop
+    end function
+
+    ##
+        An exception leaves the body from anywhere in it, the store included, so a 'catch'
+        does not begin knowing what the body had reached.
+    ##
+    function WhatTheCatchDoesNotKnow()
+        integer? n;
+
+        try
+            n = 5;
+            Console.WriteLine("fine");
+        catch Exception problem
+            integer total = n;
+            Console.WriteLine(total);
+        end try
+    end function
+
+    ##
+        An arm that only sometimes leaves is an arm that arrives. The inner 'if' has no 'else',
+        so there is a way through the outer arm that reaches the bottom of it — and what that
+        way knew has to agree with everything after.
+    ##
+    function OnlySometimesLeaves(integer? n, boolean c)
+        if not n.HasValue()
+            if c
+                yield;
+            end if
+        end if
+
+        integer total = n;
+    end function
+
+    ##
+        A name a kept function assigns is never narrowed. The lambda holds it and may be called
+        at any point, so a store made before a call says nothing about after it — the same
+        reason a field is never narrowed, arrived at from the other side.
+    ##
+    function WhatAClosureCanUndo()
+        integer? n;
+        n = 5;
+
+        delegate() forget = function()
+            n = Program.Nothing();
+        end function;
+
+        forget();
+
+        integer total = n;
+    end function
+
+    ##
+        And checking such a name does not rescue it, which is why that one has a message of its
+        own. Writing 'HasValue()' here proves something about the moment it runs, and the next
+        call is another moment.
+    ##
+    function CheckingItDoesNotHelp()
+        integer? n;
+        n = 5;
+
+        delegate() forget = function()
+            n = Program.Nothing();
+        end function;
+
+        forget();
+
+        if n.HasValue()
+            integer total = n;
+            Console.WriteLine(total);
+        end if
+    end function
+
+    integer? function Nothing()
+        integer? empty;
+        yield empty;
+    end function
+end model

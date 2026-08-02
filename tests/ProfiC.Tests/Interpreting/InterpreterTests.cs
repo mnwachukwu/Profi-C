@@ -844,6 +844,49 @@ public sealed class InterpreterTests
         """),
         Is.EqualTo("13\n"));
 
+    /// <summary>
+    /// <para>A switch is not a loop, and neither word notices it.</para>
+    /// <para>The one place the language reads differently from C#, where a <c>break</c> ends the
+    /// switch. It is needed there because a case falls through without it; a case here never
+    /// does, so there is nothing for a break to end and the word keeps the meaning it has
+    /// everywhere else. Turn 2 leaves the loop entirely, so no bottom line and no turn 3.</para>
+    /// </summary>
+    [Test]
+    public void ABreakInACaseLeavesTheLoopRatherThanTheSwitch() => Assert.That(
+        RunBody("""
+                loop for i = 1 to 3
+                    switch i
+                        case 2:
+                            break;
+                        default:
+                            Console.WriteLine("saw " + i);
+                    end switch
+                    Console.WriteLine("  bottom of turn " + i);
+                end loop
+                Console.WriteLine("after the loop");
+        """),
+        Is.EqualTo("saw 1\n  bottom of turn 1\nafter the loop\n"));
+
+    /// <summary>
+    /// The same for <c>continue</c>, which a switch has no next turn to offer either. Both
+    /// pinned, because getting one right and the other wrong is what the two engines did.
+    /// </summary>
+    [Test]
+    public void AContinueInACaseGoesToTheLoopsNextTurn() => Assert.That(
+        RunBody("""
+                loop for i = 1 to 3
+                    switch i
+                        case 2:
+                            continue;
+                        default:
+                            Console.WriteLine("saw " + i);
+                    end switch
+                    Console.WriteLine("  bottom of turn " + i);
+                end loop
+                Console.WriteLine("after the loop");
+        """),
+        Is.EqualTo("saw 1\n  bottom of turn 1\nsaw 3\n  bottom of turn 3\nafter the loop\n"));
+
     [Test]
     public void SwitchHasNoFallthroughButCaseLabelsGroup() => Assert.That(
         RunBody("""

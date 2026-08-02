@@ -1364,6 +1364,23 @@ public static class DiagnosticDescriptors
         + "fallback, or 'Value()' to insist.");
 
     /// <summary>
+    /// <para>The same mistake, where the usual advice would not work.</para>
+    /// <para>A name a lambda or a nested function assigns is never narrowed, so telling its
+    /// author to write <c>HasValue()</c> sends them to write the check they may already have
+    /// written and watch it change nothing. Checking proves something about the moment it runs,
+    /// and a closure holding the name can be called at any moment after — so what a guard proved
+    /// does not survive the next call, whatever that call was.</para>
+    /// <para>Naming the copy is the whole value of the message: a local the closure cannot see
+    /// holds still, and narrowing works on it as it does everywhere else.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor OptionalIsReachableFromAClosure = Error(
+        "PC0345",
+        "Optional is changed by something that captured it",
+        "This is {0}, and checking it cannot prove otherwise, because '{1}' is assigned by a "
+        + "function that captured it and may be called at any point. Copy it into a local first "
+        + "and check that, or use 'Or(...)' or 'Value()' here.");
+
+    /// <summary>
     /// <para>A function the language provides, named without being called.</para>
     /// <para>A reader coming from a language with properties writes <c>xs.Count</c>, means
     /// the number, and would otherwise get something that is not one.</para>
@@ -1503,6 +1520,24 @@ public static class DiagnosticDescriptors
         "This loop has no condition, and nothing in it breaks, yields, or throws — so nothing "
         + "written here will stop it. Add a 'break' where it should end, or write "
         + "'loop while' or 'until' and say the condition.");
+
+    /// <summary>
+    /// <para>A <c>break</c> or a <c>continue</c> with no loop around it to act on.</para>
+    /// <para>An error rather than an opinion, because there is no reading of it to prefer. The
+    /// interpreter ended the function where it stood and said nothing, and the emitter reached
+    /// for a loop that was not on its stack and stopped with a fault of its own — two answers,
+    /// neither of them one the program asked for.</para>
+    /// <para>A <c>switch</c> does not count as something to leave, which is why this can fire
+    /// on a <c>break</c> written in a case. That is deliberate: a case cannot fall through, so
+    /// the word has nothing to end there, and one written out of habit with no loop anywhere
+    /// around it is a mistake worth naming rather than a statement worth inventing a meaning
+    /// for.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NoLoopToActOn = Error(
+        "PC0407",
+        "Nothing here for this to leave",
+        "'{0}' needs a loop around it, and there is none here. A 'switch' is not one: it runs "
+        + "one arm and stops, so there is nothing about it to leave or to go on with.");
 
     public static readonly DiagnosticDescriptor CalledBeforeWhatItUsesIsReady = Error(
         "PC0405",

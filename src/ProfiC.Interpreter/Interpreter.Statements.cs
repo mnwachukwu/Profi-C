@@ -373,8 +373,11 @@ public sealed partial class Interpreter
     }
 
     /// <summary>
-    /// A switch runs one arm and stops. Nothing falls through, which is what keeps
-    /// <c>break</c> meaning exactly one thing in the language.
+    /// <para>A switch runs one arm and stops. Nothing falls through, which is what keeps
+    /// <c>break</c> meaning exactly one thing in the language.</para>
+    /// <para>So a switch has nothing for <c>break</c> to end and no next turn for
+    /// <c>continue</c> to go to, and both are handed onward to the loop around it untouched. A
+    /// switch is not a thing control flow has to be got out of.</para>
     /// </summary>
     private ExecutionResult ExecuteSwitch(
         SwitchStmt switchStmt,
@@ -392,8 +395,7 @@ public sealed partial class Interpreter
                     continue;
                 }
 
-                ExecutionResult result = ExecuteStatements(group.Body, scope.Push(), receiver);
-                return result.Completion == Completion.Break ? ExecutionResult.Normal : result;
+                return ExecuteStatements(group.Body, scope.Push(), receiver);
             }
         }
 
@@ -402,8 +404,7 @@ public sealed partial class Interpreter
             return ExecutionResult.Normal;
         }
 
-        ExecutionResult fallback = ExecuteStatements(switchStmt.DefaultBody, scope.Push(), receiver);
-        return fallback.Completion == Completion.Break ? ExecutionResult.Normal : fallback;
+        return ExecuteStatements(switchStmt.DefaultBody, scope.Push(), receiver);
     }
 
     /// <summary>

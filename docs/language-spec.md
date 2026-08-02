@@ -1450,7 +1450,30 @@ that catches people in languages where the variable is shared and every function
 last value.
 
 `break` leaves the innermost loop and `continue` goes to its next turn. Neither may appear
-outside one.
+outside one, and writing one where there is no loop is refused (`PC0407`) rather than given a
+meaning it does not have.
+
+**A `switch` is not a loop, and neither word notices it.** A switch runs one arm and stops, so
+there is nothing about it for a `break` to end and no next turn for a `continue` to go to. Both
+pass straight through to the loop around them:
+
+```
+loop for i = 1 to 3
+    switch i
+        case 2:
+            break;             leaves the loop, not the case
+    end switch
+
+    Console.WriteLine(i);      not reached when i is 2
+end loop
+```
+
+This is the one place the language deliberately reads differently from C#, where a `break` is
+required at the end of every case and ends the switch. It is required there because a case falls
+through into the next one without it; a Profi-C case never does, so the word was free to keep the
+single meaning it has everywhere else. A `break` written at the end of a case out of habit is not
+harmless — it leaves the loop — which is why a `break` with no loop around it at all is refused
+rather than quietly given one.
 
 ### 6.4 Other statements
 
@@ -1739,6 +1762,50 @@ end if
 
 Console.WriteLine(found + 1);          narrowed for everything after
 ```
+
+An arm that always leaves — by `yield`, `throw`, `break` or `continue` — never arrives at the
+join after it, so it has no say in what holds there. That is what makes the example above work,
+and it is not only about guards: where one arm leaves, what the other one stored is what holds.
+
+**Assignment narrows too, and stops at the same joins.** Storing a value in an optional proves
+presence exactly as a guard does, and it survives a join only where every way through the branch
+stored one:
+
+```
+integer? n;
+if ready
+    n = 5;
+end if
+Console.WriteLine(n + 1);              refused: nothing ran when ready was false
+```
+
+**Nothing a loop stores is narrowed after the loop.** A loop may run no turns at all, a turn
+after the first begins wherever the one before it ended, and a `break` leaves from wherever it is
+written. A value stored in a loop is still there — it is an optional, and `Or` and `Value` reach
+it — but the compiler will not read it as its underlying type. The same goes for a `try`: an
+exception leaves the body from anywhere in it, so a `catch` does not begin knowing what the body
+had stored.
+
+**A name something else can change is never narrowed.** Only locals and parameters are narrowed
+at all; a field is not, because any call in between could replace it and a check made before that
+call says nothing about after it. A local is in the same position the moment a lambda or a nested
+function assigns it, since that function holds the name and may be called at any point:
+
+```
+integer? n;
+n = 5;
+
+delegate() clear = function()
+    n = Program.Nothing();      n is written from inside a closure
+end function;
+
+clear();
+Console.WriteLine(n + 1);       refused (PC0345), and rightly: n is empty here
+```
+
+Writing `HasValue()` does not help, and the message says so rather than sending its author to
+write a check that changes nothing. **Copy it into a local first** — one nothing else holds sits
+still, and narrowing works on it as it does everywhere else.
 
 ### 8.3 Narrowing settles which member is meant
 
@@ -2590,6 +2657,7 @@ of a reader.
 | `PC0342` | error | This works on bits, not on booleans |
 | `PC0343` | error | This shift is outside the width of an integer |
 | `PC0344` | warning | This exception cannot be caught |
+| `PC0345` | error | Optional is changed by something that captured it |
 
 ### PC0400 to PC0499
 
@@ -2602,6 +2670,7 @@ of a reader.
 | `PC0404` | error | Not every path yields a value |
 | `PC0405` | error | Called before a name it uses is ready |
 | `PC0406` | opinion | Nothing here can end this loop |
+| `PC0407` | error | Nothing here for this to leave |
 
 ### PC0500 to PC0599
 

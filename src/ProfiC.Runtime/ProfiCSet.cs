@@ -271,6 +271,65 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
     }
 
     /// <summary>
+    /// <para>Whether an element is an optional holding nothing.</para>
+    /// <para>Two shapes, because the two engines hold an empty one differently: the interpreter
+    /// is untyped and keeps it as a null, and an emitted program keeps a real
+    /// <see cref="Optional{T}"/> that says so. Asking both questions here is what lets one
+    /// definition of trimming serve both — and the rule for what counts as empty is the part
+    /// that would quietly drift if each engine kept its own.</para>
+    /// </summary>
+    private static bool Absent(T element) =>
+        element is null || (element is IProfiCOptional optional && !optional.HasValue);
+
+    /// <summary>
+    /// <para>This set with the empties dropped from both ends, keeping everything between the
+    /// first and the last that hold something.</para>
+    /// <para>From the ends only, so an empty in the middle survives — which is why the element
+    /// type still says one may be absent. <see cref="TrimAll"/> is the one that drops every
+    /// empty wherever it sits.</para>
+    /// </summary>
+    public ProfiCSet<T> Trim() => Trimmed(start: true, end: true);
+
+    /// <summary>This set with the empties dropped from the front.</summary>
+    public ProfiCSet<T> TrimStart() => Trimmed(start: true, end: false);
+
+    /// <summary>This set with the empties dropped from the back.</summary>
+    public ProfiCSet<T> TrimEnd() => Trimmed(start: false, end: true);
+
+    /// <summary>
+    /// <para>This set with every empty dropped, wherever it sat.</para>
+    /// <para>The element type is unchanged here. What the language calls <c>TrimAll</c> also
+    /// stops the elements being optional, and where that is a real change of representation it
+    /// is <see cref="ProfiCSet.WithoutEmpties{TValue}"/> that makes it — in the untyped engine
+    /// there is nothing to unwrap, so this is the whole of it.</para>
+    /// </summary>
+    public ProfiCSet<T> TrimAll() => new(_items.Where(element => !Absent(element)));
+
+    private ProfiCSet<T> Trimmed(bool start, bool end)
+    {
+        int first = 0;
+        int last = _items.Count - 1;
+
+        if (start)
+        {
+            while (first <= last && Absent(_items[first]))
+            {
+                first++;
+            }
+        }
+
+        if (end)
+        {
+            while (last >= first && Absent(_items[last]))
+            {
+                last--;
+            }
+        }
+
+        return Subset(first, last + 1);
+    }
+
+    /// <summary>
     /// <para>Every element written out, with <paramref name="separator"/> between.</para>
     /// <para>Each is written the way it would be written on its own, so any set joins and not
     /// only a set of strings — which is what a reader joining numbers expects, and what they
@@ -299,4 +358,37 @@ public sealed class ProfiCSet<T> : IProfiCSet, IEnumerable<T>
 
     public override string ToString() =>
         "{" + string.Join(", ", _items.Select(item => ModelOperations.ToElementString(item))) + "}";
+}
+
+/// <summary>
+/// What a set can be asked without naming what it holds.
+/// </summary>
+public static class ProfiCSet
+{
+    /// <summary>
+    /// <para>A set of optionals with the empties dropped and the rest unwrapped — which is what
+    /// the language calls <c>TrimAll</c>.</para>
+    /// <para>Its own method rather than one on the set, because it is the one member of the
+    /// family whose answer is not the same kind of set it was asked of: taking every empty out
+    /// leaves a set where nothing can be absent, so the element type loses its optional and the
+    /// caller stops having to unwrap.</para>
+    /// <para><see cref="ProfiCSet{T}.TrimAll"/> is the same idea where there is nothing to
+    /// unwrap, which is how the interpreter holds one.</para>
+    /// </summary>
+    public static ProfiCSet<TValue> WithoutEmpties<TValue>(ProfiCSet<Optional<TValue>> source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        ProfiCSet<TValue> kept = new();
+
+        foreach (Optional<TValue> element in source)
+        {
+            if (element.HasValue)
+            {
+                kept.Insert(element.Value);
+            }
+        }
+
+        return kept;
+    }
 }

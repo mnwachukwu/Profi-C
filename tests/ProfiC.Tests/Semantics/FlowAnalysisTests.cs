@@ -696,6 +696,112 @@ public sealed class FlowAnalysisTests
                 """)),
             Is.EqualTo(new[] { "PC0406" }));
 
+    /// <summary>
+    /// <para>A <c>break</c> inside a <c>switch</c> does count, because a switch is not something
+    /// a break ends — it runs one arm and stops, so the break belongs to the loop like any
+    /// other.</para>
+    /// <para>The pair with the test above: the walk stops at a nested loop and does not stop at
+    /// a switch, and stating only the first would leave the second to be guessed at.</para>
+    /// </summary>
+    [Test]
+    public void ABreakInsideASwitchIsAWayOutOfTheLoopAroundIt() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Serve()
+                        integer i = 0;
+
+                        loop
+                            i = i + 1;
+
+                            switch i
+                                case 3:
+                                    break;
+                                default:
+                                    Console.WriteLine("on we go");
+                            end switch
+                        end loop
+                    end function
+                """)),
+            Is.Empty);
+
+    /// <summary>
+    /// <para>A <c>break</c> or a <c>continue</c> with no loop around it is refused.</para>
+    /// <para>Not a nicety. Before this, the interpreter ended the function where the word stood
+    /// and said nothing, while the emitter reached for a loop that was not on its stack and
+    /// stopped with a fault of its own — so the same program had two answers and neither was
+    /// one it asked for.</para>
+    /// </summary>
+    [TestCase("break")]
+    [TestCase("continue")]
+    public void AWordThatNeedsALoopIsRefusedWithoutOne(string word) =>
+        Assert.That(
+            IdsOf(CheckMember($$"""
+                    function Serve()
+                        Console.WriteLine("before");
+                        {{word}};
+                    end function
+                """)),
+            Does.Contain("PC0407"));
+
+    /// <summary>
+    /// A <c>switch</c> is not a loop, so it does not satisfy the rule. This is the C# habit —
+    /// a break ending a case — written where there is no loop for it to mean anything in.
+    /// </summary>
+    [Test]
+    public void ASwitchIsNotSomethingABreakCanLeave() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Serve()
+                        switch 1
+                            case 1:
+                                Console.WriteLine("one");
+                                break;
+                        end switch
+                    end function
+                """)),
+            Does.Contain("PC0407"));
+
+    /// <summary>
+    /// The same break inside a loop is fine, wherever in the loop it sits. This is the pair to
+    /// the test above: what is refused is the absence of a loop, not the switch.
+    /// </summary>
+    [Test]
+    public void TheSameBreakInsideALoopIsFine() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Serve()
+                        loop for i = 1 to 3
+                            switch i
+                                case 1:
+                                    break;
+                                default:
+                                    Console.WriteLine("on we go");
+                            end switch
+                        end loop
+                    end function
+                """)),
+            Is.Empty);
+
+    /// <summary>
+    /// A lambda is a separate run, so a loop it was written inside is not one it is in. The
+    /// break below has a loop above it on the page and none at run time.
+    /// </summary>
+    [Test]
+    public void ALoopOutsideALambdaIsNotOneItsBreakCanLeave() =>
+        Assert.That(
+            IdsOf(CheckMember("""
+                    function Serve()
+                        loop for i = 1 to 3
+                            delegate() escape = function()
+                                break;
+                            end function;
+
+                            escape();
+                        end loop
+                    end function
+                """)),
+            Does.Contain("PC0407"));
+
     [Test]
     public void YieldingOnOnlyOneBranchIsNotEnough() =>
         Assert.That(

@@ -38,21 +38,20 @@ public sealed partial class TypeChecker
 
                 // What the condition proves holds inside the body, since the body only runs
                 // while it does.
-                WithNarrowing(AnalyzeCondition(loop.Condition).WhenTrue,
-                              () => CheckStatements(loop.Body));
+                CheckRepeatedly(loop.Body, AnalyzeCondition(loop.Condition).WhenTrue);
                 break;
 
             // No narrowing to carry inward: the condition is tested after the body, so nothing
             // it proves was known when the body ran.
             case LoopUntilStmt loop:
-                CheckStatements(loop.Body);
+                CheckRepeatedly(loop.Body, NothingProven);
                 RequireBoolean(
                     CheckExpression(loop.Condition), loop.Condition, "An until condition");
                 break;
 
             // No condition to check. That is the whole of it.
             case LoopForeverStmt loop:
-                CheckStatements(loop.Body);
+                CheckRepeatedly(loop.Body, NothingProven);
                 break;
 
             case ForStmt loop:
@@ -68,19 +67,7 @@ public sealed partial class TypeChecker
                 break;
 
             case TryStmt tryStmt:
-                CheckStatements(tryStmt.Body);
-
-                foreach (CatchClause clause in tryStmt.Catches)
-                {
-                    CheckCatchIsReachable(clause);
-                    CheckStatements(clause.Body);
-                }
-
-                if (tryStmt.FinallyBody is not null)
-                {
-                    CheckStatements(tryStmt.FinallyBody);
-                }
-
+                CheckTry(tryStmt);
                 break;
 
             case ThrowStmt throwStmt:
@@ -106,33 +93,110 @@ public sealed partial class TypeChecker
     /// body it guards.</para>
     /// <para>An else-if sees that every condition before it failed, which is what lets a
     /// chain of checks narrow progressively.</para>
+    /// <para>Afterwards only what every arm agrees on is known. A chain with no <c>else</c> has
+    /// one more way through than it has arms — the one where nothing ran — and counting it is
+    /// what stops a value stored under a condition being trusted where the condition
+    /// failed.</para>
     /// </summary>
     private void CheckIf(IfStmt branch)
     {
         RequireBoolean(CheckExpression(branch.Condition), branch.Condition, "An if condition");
 
         NarrowingFacts facts = AnalyzeCondition(branch.Condition);
-        WithNarrowing(facts.WhenTrue, () => CheckStatements(branch.ThenBody));
+        HashSet<Symbol> entry = Known();
+        List<HashSet<Symbol>> arms = [];
+
+        // Checked either way, since an arm that leaves still has to be right about what it does.
+        // Only what arrives at the join is collected.
+        Arrive(branch.ThenBody, CheckArm(entry, facts.WhenTrue, () => CheckStatements(branch.ThenBody)));
 
         // Everything an earlier condition proved by failing still holds further down.
         HashSet<Symbol> failedSoFar = [.. facts.WhenFalse];
 
         foreach (ElseIfClause clause in branch.ElseIfClauses)
         {
-            WithNarrowing(failedSoFar, () =>
-            {
-                RequireBoolean(CheckExpression(clause.Condition), clause.Condition, "An else-if condition");
+            // The condition is reached only where every one before it failed, so it is read
+            // knowing that much and nothing an arm did.
+            KnowOnly(entry);
+            _narrowed.UnionWith(failedSoFar);
 
-                NarrowingFacts clauseFacts = AnalyzeCondition(clause.Condition);
-                WithNarrowing(clauseFacts.WhenTrue, () => CheckStatements(clause.Body));
-                failedSoFar.UnionWith(clauseFacts.WhenFalse);
-            });
+            RequireBoolean(
+                CheckExpression(clause.Condition), clause.Condition, "An else-if condition");
+
+            NarrowingFacts clauseFacts = AnalyzeCondition(clause.Condition);
+
+            Arrive(
+                clause.Body,
+                CheckArm(Known(), clauseFacts.WhenTrue, () => CheckStatements(clause.Body)));
+
+            failedSoFar.UnionWith(clauseFacts.WhenFalse);
         }
 
         if (branch.ElseBody is not null)
         {
-            WithNarrowing(failedSoFar, () => CheckStatements(branch.ElseBody));
+            Arrive(
+                branch.ElseBody,
+                CheckArm(entry, failedSoFar, () => CheckStatements(branch.ElseBody)));
         }
+        else
+        {
+            // The way through where no arm ran: every condition failed, and none of the bodies
+            // happened. It always arrives, being the one that did nothing.
+            HashSet<Symbol> nothingRan = [.. entry];
+            nothingRan.UnionWith(failedSoFar);
+            arms.Add(nothingRan);
+        }
+
+        KeepWhatEveryArmAgreesOn(entry, arms);
+
+        void Arrive(IReadOnlyList<Statement> body, HashSet<Symbol> ended)
+        {
+            if (ReachesItsEnd(body))
+            {
+                arms.Add(ended);
+            }
+        }
+    }
+
+    /// <summary>
+    /// <para>Checks a try, its catches and its finally.</para>
+    /// <para>An exception may leave the body from anywhere in it, so a catch begins knowing only
+    /// what the body could not have taken away, and so does what follows the whole
+    /// statement.</para>
+    /// </summary>
+    private void CheckTry(TryStmt tryStmt)
+    {
+        HashSet<Symbol> throughout = Known();
+        throughout.ExceptWith(AssignedIn(tryStmt.Body));
+
+        foreach (CatchClause clause in tryStmt.Catches)
+        {
+            throughout.ExceptWith(AssignedIn(clause.Body));
+        }
+
+        if (tryStmt.FinallyBody is not null)
+        {
+            throughout.ExceptWith(AssignedIn(tryStmt.FinallyBody));
+        }
+
+        // The body itself does begin where the statement was reached: it is the one part that
+        // is not entered part-way through.
+        CheckStatements(tryStmt.Body);
+
+        foreach (CatchClause clause in tryStmt.Catches)
+        {
+            CheckCatchIsReachable(clause);
+            KnowOnly(throughout);
+            CheckStatements(clause.Body);
+        }
+
+        if (tryStmt.FinallyBody is not null)
+        {
+            KnowOnly(throughout);
+            CheckStatements(tryStmt.FinallyBody);
+        }
+
+        KnowOnly(throughout);
     }
 
     private void CheckVarDecl(VarDeclStmt declaration)
@@ -210,7 +274,7 @@ public sealed partial class TypeChecker
             RequireInteger(CheckExpression(loop.Step), loop.Step);
         }
 
-        CheckStatements(loop.Body);
+        CheckRepeatedly(loop.Body, NothingProven);
     }
 
     private void RequireInteger(TypeSymbol type, SyntaxNode node)
@@ -242,7 +306,7 @@ public sealed partial class TypeChecker
             variable.Type = element;
         }
 
-        CheckStatements(loop.Body);
+        CheckRepeatedly(loop.Body, NothingProven);
 
         // After the body, not before: which member a call reaches is settled by checking it,
         // and nothing in the body is bound to a built-in until then.
@@ -350,8 +414,14 @@ public sealed partial class TypeChecker
         // at the same mistake from further away.
         bool everyLabelLanded = true;
 
+        HashSet<Symbol> entry = Known();
+        List<HashSet<Symbol>> arms = [];
+
         foreach (CaseGroup group in switchStmt.Cases)
         {
+            // Labels are reached however the switch was, not by way of the arm before them.
+            KnowOnly(entry);
+
             foreach (Expression label in group.Labels)
             {
                 TypeSymbol labelType = CheckExpression(label);
@@ -380,16 +450,33 @@ public sealed partial class TypeChecker
                 }
             }
 
-            CheckStatements(group.Body);
+            HashSet<Symbol> ended = CheckArm(entry, NothingProven, () => CheckStatements(group.Body));
+
+            if (ReachesItsEnd(group.Body))
+            {
+                arms.Add(ended);
+            }
         }
 
         if (switchStmt.DefaultBody is not null)
         {
-            CheckStatements(switchStmt.DefaultBody);
-            return;
+            HashSet<Symbol> ended =
+                CheckArm(entry, NothingProven, () => CheckStatements(switchStmt.DefaultBody));
+
+            if (ReachesItsEnd(switchStmt.DefaultBody))
+            {
+                arms.Add(ended);
+            }
+        }
+        else
+        {
+            // Nothing says one of the cases matched, so the way through where none did counts.
+            arms.Add(entry);
         }
 
-        if (!everyLabelLanded)
+        KeepWhatEveryArmAgreesOn(entry, arms);
+
+        if (switchStmt.DefaultBody is not null || !everyLabelLanded)
         {
             return;
         }

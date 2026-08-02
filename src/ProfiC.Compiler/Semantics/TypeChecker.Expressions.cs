@@ -898,9 +898,14 @@ public sealed partial class TypeChecker
         // against the function the lambda was written inside.
         FunctionSymbol? savedFunction = _currentFunction;
         List<TypeSymbol>? savedYields = _lambdaYields;
+        HashSet<Symbol> savedNarrowing = Known();
 
         _currentFunction = null;
         _lambdaYields = [];
+
+        // Nothing proven outside reaches inside, for the same reason it does not reach into a
+        // nested function: a lambda is written in one place and called in another.
+        _narrowed.Clear();
 
         try
         {
@@ -913,6 +918,7 @@ public sealed partial class TypeChecker
         {
             _currentFunction = savedFunction;
             _lambdaYields = savedYields;
+            KnowOnly(savedNarrowing);
         }
     }
 

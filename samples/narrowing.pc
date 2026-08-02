@@ -1,0 +1,220 @@
+##
+    What the compiler knows about an optional, and where it stops knowing it.
+
+    An optional cannot be read as a plain value until something proves it holds one. Once
+    something has, it reads as the value for as long as the proof lasts — that is narrowing,
+    and it is why a guarded block does not have to unwrap the same name twice.
+
+    A proof lasts until control reaches a point that could have been reached another way. This
+    file is mostly about where those points are, because that is the part worth knowing: the
+    proof itself is one line, and where it stops is the rest.
+
+    The refusals are in samples/negatives/compile/narrowing.pc, which is the same list written
+    the other way up.
+##
+
+shared model Program
+
+    function Main()
+        Program.CheckingIt();
+        Program.LeavingEarly();
+        Program.EveryWayThrough();
+        Program.WhereItStops();
+        Program.WhatAClosureTakesAway();
+    end function
+
+    # ---- Checking it -------------------------------------------------------------------
+
+    ##
+        @summary: A check proves it for the block it guards.
+
+        @remarks: Inside the block the name reads as an integer, so it adds and prints
+        without unwrapping. Outside it, it is an optional again — the check said nothing
+        about out there.
+
+        @value: one that may hold nothing.
+    ##
+    function Describe(integer? value)
+        if value.HasValue()
+            Console.WriteLine("  holding " + (value + 1) + " once one is added");
+        else
+            Console.WriteLine("  holding nothing");
+        end if
+    end function
+
+    # @summary: Shows a check proving a value for the block it guards.
+    function CheckingIt()
+        Console.WriteLine("== checking it ==");
+
+        Program.Describe(41);
+        Program.Describe(Program.Nothing());
+    end function
+
+    # ---- Leaving early -----------------------------------------------------------------
+
+    ##
+        @summary: The first even number in a set, doubled, or zero where there is none.
+
+        @remarks: The guard leaves rather than wrapping the rest of the function in a block.
+        An arm that always leaves never arrives at the line below it, so the only way to be
+        standing there is the other one — and the compiler reads it that way. This is the
+        shape most guards want, and it is why the body is not indented one level per check.
+
+        @values: the numbers to look through.
+        @yields: twice the first even one, or zero.
+    ##
+    integer function TwiceTheFirstEven(integer[] values)
+        integer? found;
+
+        loop each value in values
+            if value % 2 == 0
+                found = value;
+                break;
+            end if
+        end loop
+
+        # Nothing a loop stored is narrowed after it, so this is where the proof is made.
+        if not found.HasValue()
+            yield 0;
+        end if
+
+        yield found * 2;
+    end function
+
+    # @summary: Shows a guard that leaves, rather than one that wraps.
+    function LeavingEarly()
+        Console.WriteLine("== leaving early ==");
+
+        Console.WriteLine("  {7, 3, 12, 5} -> " + Program.TwiceTheFirstEven({7, 3, 12, 5}));
+        Console.WriteLine("  {7, 3, 5}     -> " + Program.TwiceTheFirstEven({7, 3, 5}));
+    end function
+
+    # ---- Every way through -------------------------------------------------------------
+
+    ##
+        @summary: A label for a score, where every arm settles on one.
+
+        @remarks: Storing a value proves presence exactly as a check does. What makes it hold
+        after the branch is that every way through stores one — including the way where no arm
+        runs at all, which is why a chain with no 'else' proves nothing.
+
+        @score: the score to label.
+        @yields: the label, read as a plain string.
+    ##
+    string function LabelFor(integer score)
+        string? label;
+
+        if score >= 90
+            label = "excellent";
+        else if score >= 50
+            label = "a pass";
+        else
+            label = "not yet";
+        end if
+
+        # Every arm stored one, so this is a string here and needs no unwrapping.
+        yield label;
+    end function
+
+    # @summary: Shows a store in every arm proving a value after them.
+    function EveryWayThrough()
+        Console.WriteLine("== every way through ==");
+
+        Console.WriteLine("  95 -> " + Program.LabelFor(95));
+        Console.WriteLine("  61 -> " + Program.LabelFor(61));
+        Console.WriteLine("  12 -> " + Program.LabelFor(12));
+    end function
+
+    # ---- Where it stops ----------------------------------------------------------------
+
+    ##
+        @summary: The three places a proof runs out.
+
+        @remarks: A branch that may not run, a loop, and a try. Each is a point control could
+        have reached another way, so what held on one way is not what holds at the join.
+
+        A value stored in any of them is still there — 'Or' and 'Value' reach it — and what
+        stops is only the reading of it as a plain value. That is the trade: the compiler says
+        no where it cannot be sure, and the two members are how a program says it is sure.
+    ##
+    function WhereItStops()
+        Console.WriteLine("== where it stops ==");
+
+        integer? fromABranch;
+
+        if 1 == 2
+            fromABranch = 5;
+        end if
+
+        # The store may not have happened, so this asks rather than assumes.
+        Console.WriteLine("  from a branch: " + fromABranch.Or(0));
+
+        integer? fromALoop;
+
+        loop each value in {10, 20}
+            fromALoop = value;
+        end loop
+
+        # A set may be empty, so a loop proves nothing either.
+        Console.WriteLine("  from a loop:   " + fromALoop.Or(0));
+
+        integer? fromATry;
+
+        try
+            fromATry = 30;
+        catch Exception problem
+            Console.WriteLine("  unreachable");
+        end try
+
+        # An exception leaves the body from anywhere in it, this line included.
+        Console.WriteLine("  from a try:    " + fromATry.Or(0));
+    end function
+
+    # ---- What a closure takes away -----------------------------------------------------
+
+    ##
+        @summary: A name a kept function assigns is never narrowed at all.
+
+        @remarks: Only a local or a parameter is ever narrowed, and only while nothing else
+        can reach it. A field never qualifies, because any call in between could replace it.
+        The moment a lambda assigns a local, the local is in the same position — the lambda
+        holds the name and may be called at any point, so a proof made before a call says
+        nothing about after it.
+
+        Checking such a name does not help, and the compiler says so (PC0345) rather than
+        sending its author to write a check that changes nothing. Copying it into a local
+        does help: one nothing else holds sits still.
+    ##
+    function WhatAClosureTakesAway()
+        Console.WriteLine("== what a closure takes away ==");
+
+        integer? counted;
+        counted = 7;
+
+        delegate() forget = function()
+            counted = Program.Nothing();
+        end function;
+
+        # Before the call and after it, the name is read the same way — because the compiler
+        # cannot know which calls run, only that one of them could.
+        Console.WriteLine("  before: " + counted.Or(0));
+        forget();
+        Console.WriteLine("  after:  " + counted.Or(0));
+
+        # A copy nothing else holds narrows as any local does.
+        integer? held = counted;
+
+        if held.HasValue()
+            Console.WriteLine("  held " + (held + 1));
+        else
+            Console.WriteLine("  the copy is empty too, and reads as a plain value inside a check");
+        end if
+    end function
+
+    # @summary: An optional holding nothing, for the examples above.
+    integer? function Nothing()
+        integer? empty;
+        yield empty;
+    end function
+
+end model

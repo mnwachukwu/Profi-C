@@ -1,0 +1,18 @@
+== checking it ==
+  holding 42 once one is added
+  holding nothing
+== leaving early ==
+  {7, 3, 12, 5} -> 24
+  {7, 3, 5}     -> 0
+== every way through ==
+  95 -> excellent
+  61 -> a pass
+  12 -> not yet
+== where it stops ==
+  from a branch: 0
+  from a loop:   20
+  from a try:    30
+== what a closure takes away ==
+  before: 7
+  after:  0
+  the copy is empty too, and reads as a plain value inside a check

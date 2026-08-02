@@ -419,6 +419,346 @@ public sealed class TypeCheckerTests
             """)), Is.Empty);
     }
 
+    // ---- Narrowing, and where it stops ----------------------------------------------------------
+
+    /// <summary>
+    /// What the analysis is for. Everything below says where it stops, and none of that is worth
+    /// anything if it stopped everywhere.
+    /// </summary>
+    [Test]
+    public void AGuardNarrowsWhatItProved()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? maybe;
+                    if maybe.HasValue()
+                        integer definite = maybe;
+                        Console.WriteLine(definite);
+                    end if
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// <para>A value stored one way through is not there the other way.</para>
+    /// <para>Every form of block that may be skipped or repeated, because the join is a
+    /// different one each time and getting it right for an <c>if</c> says nothing about a
+    /// loop. The last two are the ones a body running at least once does not save: a
+    /// <c>break</c> leaves from wherever it is written, which for narrowing is the same as
+    /// the body never having finished.</para>
+    /// </summary>
+    [TestCase("if 1 == 2", "", "end if")]
+    [TestCase("loop while 1 == 2", "", "end loop")]
+    [TestCase("loop for i = 1 to 3", "", "end loop")]
+    [TestCase("loop each item in xs", "", "end loop")]
+    [TestCase("loop", "", "until 1 == 2")]
+    [TestCase("loop", "break;", "end loop")]
+    public void AStoreOnOneWayThroughIsNotKnownAfterTheJoin(
+        string opens,
+        string alsoDoes,
+        string closes)
+    {
+        Assert.That(IdsOf(CheckBody(
+            $$"""
+                    integer[] xs = {1, 2};
+                    integer? n;
+                    {{opens}}
+                        n = 5;
+                        {{alsoDoes}}
+                    {{closes}}
+                    integer definite = n;
+            """)), Is.EqualTo(new[] { "PC0329" }));
+    }
+
+    /// <summary>The other half of it: where every arm stores one, it is there afterwards.</summary>
+    [Test]
+    public void AStoreEveryArmMakesIsKnownAfterThem()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? n;
+                    if 1 == 2
+                        n = 5;
+                    else
+                        n = 7;
+                    end if
+                    integer definite = n;
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// <para>A turn after the first begins where the one before it ended, so what held at the
+    /// top of the loop the first time round need not hold the second.</para>
+    /// <para>This is the case a block checked once from the state it was reached in gets
+    /// wrong, and it reads as correct until the loop runs twice.</para>
+    /// </summary>
+    [Test]
+    public void WhatALoopStoresIsNotKnownAtTheTopOfTheNextTurn()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? maybe;
+                    integer? n;
+                    n = 5;
+                    loop while 1 == 2
+                        integer definite = n;
+                        Console.WriteLine(definite);
+                        n = maybe;
+                    end loop
+            """)), Is.EqualTo(new[] { "PC0329" }));
+    }
+
+    /// <summary>
+    /// <para>A guard written as an early exit narrows everything after it, since the only way to
+    /// still be standing there is the case that did not leave.</para>
+    /// <para>Both ways out of a function, because they are separate statements and only one of
+    /// them looks like leaving.</para>
+    /// </summary>
+    [TestCase("yield;")]
+    [TestCase("throw new Exception(\"none\");")]
+    public void AnEarlyExitNarrowsEverythingAfterIt(string leaves)
+    {
+        Assert.That(IdsOf(CheckBody(
+            $$"""
+                    integer? n;
+                    if not n.HasValue()
+                        {{leaves}}
+                    end if
+                    integer definite = n;
+                    Console.WriteLine(definite);
+            """)), Is.Empty);
+    }
+
+    /// <summary>The same, for the two ways out of a turn of a loop rather than out of a function.</summary>
+    [TestCase("break;")]
+    [TestCase("continue;")]
+    public void LeavingATurnEarlyNarrowsTheRestOfIt(string leaves)
+    {
+        Assert.That(IdsOf(CheckBody(
+            $$"""
+                    integer? n;
+                    loop while 1 == 2
+                        if not n.HasValue()
+                            {{leaves}}
+                        end if
+                        integer definite = n;
+                        Console.WriteLine(definite);
+                    end loop
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// It is not only guards. An arm that leaves cannot disagree with one that stored a value,
+    /// so what the arm that stayed knows is what holds afterwards.
+    /// </summary>
+    [Test]
+    public void AnArmThatLeavesLetsTheOtherOnesStoreThrough()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? n;
+                    if 1 == 2
+                        n = 5;
+                    else
+                        yield;
+                    end if
+                    integer definite = n;
+                    Console.WriteLine(definite);
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// Leaving on some turns is not leaving. An arm that may fall out of the bottom arrives like
+    /// any other, and what it knew has to agree with the rest.
+    /// </summary>
+    [Test]
+    public void AnArmThatMayFallThroughNarrowsNothingAfterIt()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? n;
+                    if not n.HasValue()
+                        if 1 == 2
+                            yield;
+                        end if
+                    end if
+                    integer definite = n;
+            """)), Is.EqualTo(new[] { "PC0329" }));
+    }
+
+    /// <summary>
+    /// <para>A local a closure assigns is never narrowed, however plainly it was proved.</para>
+    /// <para>The closure holds the name and may be called at any point, so a proof made before a
+    /// call says nothing about after it — the same reasoning that keeps a field out of the
+    /// analysis, arrived at from the other side.</para>
+    /// </summary>
+    [Test]
+    public void AStoreIsNotKnownWhereAClosureCanUndoIt()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            shared model Program
+                function Main()
+                    integer? n;
+                    n = 5;
+
+                    delegate() clear = function()
+                        n = Program.Nothing();
+                    end function;
+
+                    clear();
+
+                    integer definite = n;
+                    Console.WriteLine(definite);
+                end function
+
+                integer? function Nothing()
+                    integer? empty;
+                    yield empty;
+                end function
+            end model
+            """)), Is.EqualTo(new[] { "PC0345" }));
+    }
+
+    /// <summary>
+    /// <para>And a guard does not rescue it, which is why the message is its own rather than the
+    /// usual advice to write one.</para>
+    /// <para>Without this the reader is sent in a circle: told to check, they check, and are told
+    /// to check.</para>
+    /// </summary>
+    [Test]
+    public void CheckingOneAClosureCanUndoIsSaidToBeNoHelp()
+    {
+        DiagnosticBag reported = Check(
+            """
+            shared model Program
+                function Main()
+                    integer? n;
+                    n = 5;
+
+                    delegate() clear = function()
+                        n = Program.Nothing();
+                    end function;
+
+                    clear();
+
+                    if n.HasValue()
+                        integer definite = n;
+                        Console.WriteLine(definite);
+                    end if
+                end function
+
+                integer? function Nothing()
+                    integer? empty;
+                    yield empty;
+                end function
+            end model
+            """);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(IdsOf(reported), Is.EqualTo(new[] { "PC0345" }));
+            Assert.That(reported.Single().Message, Does.Contain("Copy it into a local"));
+        });
+    }
+
+    /// <summary>
+    /// The way out the message names has to work, or naming it is worse than saying nothing. A
+    /// local nothing else holds sits still, and narrows as any other does.
+    /// </summary>
+    [Test]
+    public void ACopyNothingElseHoldsNarrowsAsUsual()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            shared model Program
+                function Main()
+                    integer? n;
+                    n = 5;
+
+                    delegate() clear = function()
+                        n = Program.Nothing();
+                    end function;
+
+                    clear();
+
+                    integer? held = n;
+
+                    if held.HasValue()
+                        integer definite = held;
+                        Console.WriteLine(definite);
+                    end if
+                end function
+
+                integer? function Nothing()
+                    integer? empty;
+                    yield empty;
+                end function
+            end model
+            """)), Is.Empty);
+    }
+
+    /// <summary>
+    /// A closure that only reads the name takes nothing away. What matters is assignment, not
+    /// capture — otherwise every optional mentioned in a lambda would stop narrowing.
+    /// </summary>
+    [Test]
+    public void AClosureThatOnlyReadsLeavesNarrowingAlone()
+    {
+        Assert.That(IdsOf(Check(
+            """
+            shared model Program
+                function Main()
+                    integer? n;
+                    n = 5;
+
+                    delegate() show = function()
+                        Console.WriteLine(n.Or(0));
+                    end function;
+
+                    show();
+
+                    integer definite = n;
+                    Console.WriteLine(definite);
+                end function
+            end model
+            """)), Is.Empty);
+    }
+
+    /// <summary>An exception leaves the body from anywhere in it, the store included.</summary>
+    [Test]
+    public void ACatchDoesNotTrustWhatTheBodyStored()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? n;
+                    try
+                        n = 5;
+                        Console.WriteLine("working");
+                    catch Exception problem
+                        integer definite = n;
+                        Console.WriteLine(definite);
+                    end try
+            """)), Is.EqualTo(new[] { "PC0329" }));
+    }
+
+    /// <summary>
+    /// A lambda is written in one place and called in another, so what was proven where it was
+    /// written says nothing about where it runs.
+    /// </summary>
+    [Test]
+    public void NothingProvenOutsideALambdaIsKnownInsideIt()
+    {
+        Assert.That(IdsOf(CheckBody(
+            """
+                    integer? n;
+                    n = 5;
+                    integer delegate() read = function()
+                        integer definite = n;
+                        yield definite;
+                    end function;
+            """)), Is.EqualTo(new[] { "PC0329" }));
+    }
+
     // ---- Switch ------------------------------------------------------------------------------------
 
     [TestCase("real", "1.5")]

@@ -486,16 +486,13 @@ public sealed partial class Interpreter
             BuiltInId.SetSubsetBetween => new StrongBox<object?>(
                 Set().Subset((int)Integer(0), (int)Integer(1))),
 
-            // An element of a set of optionals is the value itself, or null for an empty one,
-            // so dropping the empties is dropping the nulls.
-            BuiltInId.SetTrim => new StrongBox<object?>(
-                new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: true, end: true))),
-            BuiltInId.SetTrimStart => new StrongBox<object?>(
-                new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: true, end: false))),
-            BuiltInId.SetTrimEnd => new StrongBox<object?>(
-                new ProfiCSet<object?>(WithoutEmptyEnds(Set(), start: false, end: true))),
-            BuiltInId.SetTrimAll => new StrongBox<object?>(
-                new ProfiCSet<object?>(Set().Where(element => element is not null))),
+            // An element of a set of optionals is the value itself, or null for an empty one, so
+            // there is nothing to unwrap here and TrimAll is the plain filter. The runtime knows
+            // both shapes, which is what keeps this and an emitted program agreeing.
+            BuiltInId.SetTrim => new StrongBox<object?>(Set().Trim()),
+            BuiltInId.SetTrimStart => new StrongBox<object?>(Set().TrimStart()),
+            BuiltInId.SetTrimEnd => new StrongBox<object?>(Set().TrimEnd()),
+            BuiltInId.SetTrimAll => new StrongBox<object?>(Set().TrimAll()),
 
             BuiltInId.SetJoin => new StrongBox<object?>(Set().Join(Text(0))),
 
@@ -919,40 +916,6 @@ public sealed partial class Interpreter
         }
 
         return text[start..end];
-    }
-
-    /// <summary>
-    /// Drops the empty elements from one or both ends of a set of optionals, keeping
-    /// everything between the first and last that hold something.
-    /// </summary>
-    private static IEnumerable<object?> WithoutEmptyEnds(
-        ProfiCSet<object?> source,
-        bool start,
-        bool end)
-    {
-        int first = 0;
-        int last = source.Count - 1;
-
-        if (start)
-        {
-            while (first <= last && source[first] is null)
-            {
-                first++;
-            }
-        }
-
-        if (end)
-        {
-            while (last >= first && source[last] is null)
-            {
-                last--;
-            }
-        }
-
-        for (int i = first; i <= last; i++)
-        {
-            yield return source[i];
-        }
     }
 
     /// <summary>

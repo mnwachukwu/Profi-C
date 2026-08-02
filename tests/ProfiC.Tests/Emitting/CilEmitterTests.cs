@@ -860,6 +860,132 @@ public sealed class CilEmitterTests
             """);
 
     /// <summary>
+    /// <para>The four ways to drop the empties out of a set of optionals.</para>
+    /// <para><c>TrimAll</c> is the one worth the trouble: it answers with a different kind of set
+    /// than it was asked of, so it is a call to a method of its own that unwraps as it filters,
+    /// while the other three are ordinary members of the set. The interpreter needs no unwrapping
+    /// at all, holding an empty as a null — which is exactly the sort of gap that lets two
+    /// engines drift, so both are held to one answer here.</para>
+    /// </summary>
+    [Test]
+    public void TheTrimFamilyDropsTheEmptiesInBothEngines() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    integer?[] sparse = {1, 2, 3, 4, 5};
+                    sparse[0] = Program.Nothing();
+                    sparse[2] = Program.Nothing();
+                    sparse[4] = Program.Nothing();
+
+                    Console.WriteLine(sparse.Trim().Count);
+                    Console.WriteLine(sparse.TrimStart().Count);
+                    Console.WriteLine(sparse.TrimEnd().Count);
+                    Console.WriteLine(sparse.TrimAll());
+
+                    string?[] words = {"x", "y"};
+                    words[0] = Program.NoWord();
+                    Console.WriteLine(words.TrimAll());
+
+                    integer?[] nothingAbsent = {1, 2};
+                    Console.WriteLine(nothingAbsent.Trim().Count);
+                end function
+
+                integer? function Nothing()
+                    integer? empty;
+                    yield empty;
+                end function
+
+                string? function NoWord()
+                    string? none;
+                    yield none;
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// The same over a set of a model this build has not finished writing, which is the case that
+    /// makes <c>TrimAll</c> awkward: the method it calls has to be made for a type that does not
+    /// exist yet.
+    /// </summary>
+    [Test]
+    public void TrimAllWorksOverASetOfAModelBeingBuilt() =>
+        AgreesWholly("""
+            model Tag
+                public string name;
+
+                public function Tag(string name)
+                    this.name = name;
+                end function
+
+                public override string function ToString()
+                    yield this.name;
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    Tag?[] tags = {new Tag("a"), new Tag("b"), new Tag("c")};
+                    tags[0] = Program.NoTag();
+                    tags[2] = Program.NoTag();
+
+                    Console.WriteLine(tags.Trim().Count);
+                    Console.WriteLine(tags.TrimAll());
+                end function
+
+                Tag? function NoTag()
+                    Tag? none;
+                    yield none;
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>What the checker narrowed, the emitter unwraps — including where the narrowing came
+    /// from an arm leaving rather than from a guard around the code.</para>
+    /// <para>Nothing in the lowered tree marks a read as narrowed, so the emitter works it out
+    /// again from the type. Any place the checker starts narrowing and the emitter does not is a
+    /// program that compiles and then reads an optional as though it were a value, which is not
+    /// something either engine reports — it is only visible by running both.</para>
+    /// </summary>
+    [Test]
+    public void AnEarlyExitNarrowsForTheEmitterToo() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    Console.WriteLine(Program.PlusOne(5));
+                    Console.WriteLine(Program.PlusOne(Program.Nothing()));
+                    Console.WriteLine(Program.Either(true));
+                    Console.WriteLine(Program.Either(false));
+                end function
+
+                integer? function Nothing()
+                    integer? empty;
+                    yield empty;
+                end function
+
+                integer function PlusOne(integer? found)
+                    if not found.HasValue()
+                        yield 0;
+                    end if
+
+                    yield found + 1;
+                end function
+
+                integer function Either(boolean take)
+                    integer? n;
+
+                    if take
+                        n = 7;
+                    else
+                        yield -1;
+                    end if
+
+                    yield n * 2;
+                end function
+            end model
+            """);
+
+    /// <summary>
     /// <para><c>base.Member()</c> reaches past the override that is running.</para>
     /// <para>The one call in the language that must not dispatch. Emitted as an ordinary virtual
     /// call it finds the override it was written inside, and the program does not print the wrong

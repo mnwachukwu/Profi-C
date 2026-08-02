@@ -1,0 +1,336 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'CheckingIt'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'LeavingEarly'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'EveryWayThrough'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhereItStops'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatAClosureTakesAway'
+            IdentifierExpr 'Program'
+    FunctionDecl 'Describe'
+      ParameterDecl 'value'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'value'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  holding " [String]
+                ParenthesizedExpr
+                  BinaryExpr '+'
+                    IdentifierExpr 'value'
+                    LiteralExpr 1 [Integer]
+              LiteralExpr " once one is added" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  holding nothing" [String]
+    FunctionDecl 'CheckingIt'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== checking it ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Describe'
+            IdentifierExpr 'Program'
+          LiteralExpr 41 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Describe'
+            IdentifierExpr 'Program'
+          CallExpr
+            MemberExpr 'Nothing'
+              IdentifierExpr 'Program'
+    FunctionDecl 'TwiceTheFirstEven'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'values'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+      VarDeclStmt 'found'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      ForEachStmt 'value'
+        IdentifierExpr 'values'
+        IfStmt
+          BinaryExpr '=='
+            BinaryExpr '%'
+              IdentifierExpr 'value'
+              LiteralExpr 2 [Integer]
+            LiteralExpr 0 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'found'
+            IdentifierExpr 'value'
+          BreakStmt
+      IfStmt
+        UnaryExpr 'not'
+          CallExpr
+            MemberExpr 'HasValue'
+              IdentifierExpr 'found'
+        YieldStmt
+          LiteralExpr 0 [Integer]
+      YieldStmt
+        BinaryExpr '*'
+          IdentifierExpr 'found'
+          LiteralExpr 2 [Integer]
+    FunctionDecl 'LeavingEarly'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== leaving early ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  {7, 3, 12, 5} -> " [String]
+            CallExpr
+              MemberExpr 'TwiceTheFirstEven'
+                IdentifierExpr 'Program'
+              CollectionExpr
+                LiteralExpr 7 [Integer]
+                LiteralExpr 3 [Integer]
+                LiteralExpr 12 [Integer]
+                LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  {7, 3, 5}     -> " [String]
+            CallExpr
+              MemberExpr 'TwiceTheFirstEven'
+                IdentifierExpr 'Program'
+              CollectionExpr
+                LiteralExpr 7 [Integer]
+                LiteralExpr 3 [Integer]
+                LiteralExpr 5 [Integer]
+    FunctionDecl 'LabelFor'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'score'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'label'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'string'
+      IfStmt
+        BinaryExpr '>='
+          IdentifierExpr 'score'
+          LiteralExpr 90 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'label'
+          LiteralExpr "excellent" [String]
+        ElseIfClause
+          BinaryExpr '>='
+            IdentifierExpr 'score'
+            LiteralExpr 50 [Integer]
+          AssignmentStmt
+            IdentifierExpr 'label'
+            LiteralExpr "a pass" [String]
+        AssignmentStmt
+          IdentifierExpr 'label'
+          LiteralExpr "not yet" [String]
+      YieldStmt
+        IdentifierExpr 'label'
+    FunctionDecl 'EveryWayThrough'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== every way through ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  95 -> " [String]
+            CallExpr
+              MemberExpr 'LabelFor'
+                IdentifierExpr 'Program'
+              LiteralExpr 95 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  61 -> " [String]
+            CallExpr
+              MemberExpr 'LabelFor'
+                IdentifierExpr 'Program'
+              LiteralExpr 61 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  12 -> " [String]
+            CallExpr
+              MemberExpr 'LabelFor'
+                IdentifierExpr 'Program'
+              LiteralExpr 12 [Integer]
+    FunctionDecl 'WhereItStops'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== where it stops ==" [String]
+      VarDeclStmt 'fromABranch'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr '=='
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'fromABranch'
+          LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from a branch: " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'fromABranch'
+              LiteralExpr 0 [Integer]
+      VarDeclStmt 'fromALoop'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      ForEachStmt 'value'
+        CollectionExpr
+          LiteralExpr 10 [Integer]
+          LiteralExpr 20 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'fromALoop'
+          IdentifierExpr 'value'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from a loop:   " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'fromALoop'
+              LiteralExpr 0 [Integer]
+      VarDeclStmt 'fromATry'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      TryStmt
+        AssignmentStmt
+          IdentifierExpr 'fromATry'
+          LiteralExpr 30 [Integer]
+        CatchClause 'problem'
+          NamedTypeSyntax 'Exception'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  unreachable" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from a try:    " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'fromATry'
+              LiteralExpr 0 [Integer]
+    FunctionDecl 'WhatAClosureTakesAway'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== what a closure takes away ==" [String]
+      VarDeclStmt 'counted'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      AssignmentStmt
+        IdentifierExpr 'counted'
+        LiteralExpr 7 [Integer]
+      VarDeclStmt 'forget'
+        FunctionTypeSyntax
+        LambdaExpr block
+          AssignmentStmt
+            IdentifierExpr 'counted'
+            CallExpr
+              MemberExpr 'Nothing'
+                IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  before: " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'counted'
+              LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          IdentifierExpr 'forget'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  after:  " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'counted'
+              LiteralExpr 0 [Integer]
+      VarDeclStmt 'held'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        IdentifierExpr 'counted'
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'held'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "  held " [String]
+              ParenthesizedExpr
+                BinaryExpr '+'
+                  IdentifierExpr 'held'
+                  LiteralExpr 1 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  the copy is empty too, and reads as a plain value inside a check" [String]
+    FunctionDecl 'Nothing'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'empty'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      YieldStmt
+        IdentifierExpr 'empty'

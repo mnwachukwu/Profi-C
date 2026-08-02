@@ -44,6 +44,7 @@ before it has still read the trades.
   - [11.3 Control and sequence](#113-control-and-sequence)
   - [11.4 Reaching other code](#114-reaching-other-code)
   - [11.5 What is scheduled, and what is not](#115-what-is-scheduled-and-what-is-not)
+- [12. The same code, a different answer](#12-the-same-code-a-different-answer)
 
 ---
 
@@ -1015,3 +1016,28 @@ The rest are **decisions**. No `null`, no ternary, no fallthrough, no compound a
 it right, and each cost something a working developer would miss. That trade is the language's
 whole premise — see [§2 of the summary](language-summary.md#2-reserved-models) and the
 [README](../README.md#what-it-is-for).
+
+---
+
+## 12. The same code, a different answer
+
+Every other section here compares two ways of writing a thing. This one is the short list of
+places where **the same source is legal in both languages and means something different**. None
+of them is reported, because each is a correct program — just not the one a C# reader would
+predict.
+
+| Written | Profi-C | C# |
+|---|---|---|
+| a `break` ending a `switch` case, inside a loop | leaves the **loop** | leaves the switch |
+| `2 ^ 3` | `8` — `^` raises to a power | `1` — `^` is exclusive-or |
+| `a == b` on two models holding equal fields | `true` — equality is deep and structural | `false` — reference identity, unless `Equals` was written |
+| arithmetic that overflows | `OverflowException`, naming the bound | wraps silently, unless `checked` was written |
+
+The first row is the one to watch, because writing it is a C# habit rather than a decision. A
+case here cannot fall through, so a `break` has nothing to end and keeps the meaning it has
+everywhere else in the language — which means a habitual one at the end of a case quietly ends
+the loop instead. Nothing warns about it: it is a legal statement, and the program that meant it
+is as ordinary as the program that did not.
+
+A `break` with no loop around it at all is a different matter, and that one **is** refused —
+there is nothing it could mean.

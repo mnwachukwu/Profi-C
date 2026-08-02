@@ -189,11 +189,25 @@ public sealed partial class TypeChecker
     {
         FunctionSymbol? saved = _currentFunction;
         List<TypeSymbol>? savedYields = _lambdaYields;
+        HashSet<Symbol> savedNarrowing = Known();
 
         _currentFunction = _model.GetSymbol(function) as FunctionSymbol;
 
         // A named function nested inside a lambda is checked against its own signature.
         _lambdaYields = null;
+
+        // Nothing proven outside reaches inside. A function nested in another one is written
+        // here and called somewhere else, so what was known where it was written says nothing
+        // about what is true where it runs.
+        _narrowed.Clear();
+
+        // Worked out before a line of the body is read, since a closure written at the bottom
+        // may be called from the top.
+        // Only what this body adds is taken away again, so that a nested function finishing does
+        // not forget what the one around it had established.
+        Symbol[] closedOver =
+            [.. AssignedByAClosureIn(function.Body ?? [])
+                .Where(symbol => _reachableFromAClosure.Add(symbol))];
 
         try
         {
@@ -203,6 +217,8 @@ public sealed partial class TypeChecker
         {
             _currentFunction = saved;
             _lambdaYields = savedYields;
+            KnowOnly(savedNarrowing);
+            _reachableFromAClosure.ExceptWith(closedOver);
         }
     }
 
@@ -254,6 +270,21 @@ public sealed partial class TypeChecker
                 if (from is OptionalType optional
                     && Conversions.IsAssignable(optional.UnderlyingType, to))
                 {
+                    // Where a closure can change it, the three members are not all equally
+                    // useful, and one of them is no use at all.
+                    if (node is Expression read
+                        && _model.GetSymbol(read) is { } named
+                        && _reachableFromAClosure.Contains(named))
+                    {
+                        Report(
+                            DiagnosticDescriptors.OptionalIsReachableFromAClosure,
+                            node,
+                            from.WithArticle(),
+                            named.Name);
+
+                        return false;
+                    }
+
                     Report(DiagnosticDescriptors.OptionalMustBeUnwrapped, node, from.WithArticle());
                     return false;
                 }

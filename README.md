@@ -630,6 +630,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [scanning.pc](samples/scanning.pc) | `break` and `continue`, and which loop a `break` leaves |
 | [looping.pc](samples/looping.pc) | **How far a loop counts, and when it decides.** `to` against `until`, a bound and a step that move while the loop runs, and why `loop each` is the one that does not |
 | [card-table.pc](samples/card-table.pc) | **`switch`.** Grouped labels, `default`, and the warning for a member left unhandled |
+| [narrowing.pc](samples/narrowing.pc) | **What the compiler knows about an optional, and where it stops knowing it.** A check, a guard that leaves rather than wraps, every arm storing one — and the three joins a proof does not survive |
 | [structures.pc](samples/structures.pc) | **Values against references.** What copying changes, and what a structure holding a model shares |
 | [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
@@ -720,6 +721,7 @@ Programs the compiler rejects:
 | [ignoring.pc](samples/negatives/compile/ignoring.pc) | An `ignore` naming no diagnostic, one naming a diagnostic nothing here reports, and one trying to silence an error — which fires anyway |
 | [documenting.pc](samples/negatives/compile/documenting.pc) | A documented parameter the function does not take, `@yields:` on a function that yields nothing, a label written twice, and a doc above a statement |
 | [abstract.pc](samples/negatives/compile/abstract.pc) | A function left open on a model that can be constructed, a body where there should be none and none where there should be one, and a model that never writes what it inherited |
+| [narrowing.pc](samples/negatives/compile/narrowing.pc) | A proof read past the point it ran out — a branch that may not run, a loop, a turn after the first, a `catch`, an arm that only sometimes leaves, and a name a kept function assigns |
 | [constructing.pc](samples/negatives/compile/constructing.pc) | **Building a thing in the wrong order.** A `base(...)` written below a line that reads the parent, a child with no way to build a parent that needs something, and a field's starting value reaching for `this` |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot

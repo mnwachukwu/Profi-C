@@ -215,6 +215,24 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Callvirt, SetMethod(built, "Join"));
                 return;
 
+            case BuiltInId.SetTrim:
+                _il.Emit(OpCodes.Callvirt, SetMethod(built, "Trim"));
+                return;
+
+            case BuiltInId.SetTrimStart:
+                _il.Emit(OpCodes.Callvirt, SetMethod(built, "TrimStart"));
+                return;
+
+            case BuiltInId.SetTrimEnd:
+                _il.Emit(OpCodes.Callvirt, SetMethod(built, "TrimEnd"));
+                return;
+
+            // The one that answers with a different kind of set than it was asked of, so it is a
+            // call to a method of its own rather than one on the set.
+            case BuiltInId.SetTrimAll:
+                _il.Emit(OpCodes.Call, WithoutEmpties(built));
+                return;
+
             default:
                 throw Unhandled($"the set member '{id}'");
         }
@@ -251,6 +269,21 @@ public sealed partial class CilEmitter
                 ? built.GetMethod(name, [.. definition.GetParameters()
                                               .Select(p => Substituted(p.ParameterType, built))])!
                 : built.GetMethod(name)!;
+    }
+
+    /// <summary>
+    /// <para><c>TrimAll</c>, made for the value a set's optionals hold.</para>
+    /// <para>The set is <c>ProfiCSet&lt;Optional&lt;V&gt;&gt;</c> and the answer is a
+    /// <c>ProfiCSet&lt;V&gt;</c>, so what is needed is the <c>V</c> — one level in past the
+    /// optional, rather than the set's own element type.</para>
+    /// </summary>
+    private static MethodInfo WithoutEmpties(Type built)
+    {
+        Type held = built.GetGenericArguments()[0].GetGenericArguments()[0];
+
+        return typeof(Runtime.ProfiCSet)
+            .GetMethod(nameof(Runtime.ProfiCSet.WithoutEmpties))!
+            .MakeGenericMethod(held);
     }
 
     /// <summary>

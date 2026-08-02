@@ -1,0 +1,8 @@
+narrowing.pc(23,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(38,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(57,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(70,29): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(88,29): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(105,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(123,25): error PC0345: This is an integer?, and checking it cannot prove otherwise, because 'n' is assigned by a function that captured it and may be called at any point. Copy it into a local first and check that, or use 'Or(...)' or 'Value()' here.
+narrowing.pc(142,29): error PC0345: This is an integer?, and checking it cannot prove otherwise, because 'n' is assigned by a function that captured it and may be called at any point. Copy it into a local first and check that, or use 'Or(...)' or 'Value()' here.

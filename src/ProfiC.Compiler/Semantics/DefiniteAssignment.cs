@@ -189,6 +189,8 @@ public sealed class DefiniteAssignment
             return;
         }
 
+        RequireALoopAround(body);
+
         FlowState state = FlowState.Empty();
 
         // What each function declared among statements reaches for, so that naming one can be
@@ -436,19 +438,75 @@ public sealed class DefiniteAssignment
 
     /// <summary>
     /// <para>Whether a <c>break</c> in here belongs to the loop around it.</para>
-    /// <para>One nested inside another loop or a <c>switch</c> belongs to that instead, so the
-    /// walk stops at each. A lambda or a local function is a separate run, and nothing written
-    /// inside one leaves a loop out here however it is spelled.</para>
+    /// <para>One nested inside another loop belongs to that instead, so the walk stops at each. A
+    /// lambda or a local function is a separate run, and nothing written inside one leaves a loop
+    /// out here however it is spelled.</para>
+    /// <para>A <c>switch</c> is walked into rather than stopped at. It runs one arm and stops, so
+    /// there is nothing about it for a <c>break</c> to end, and one written in a case belongs to
+    /// the loop like any other.</para>
     /// </summary>
     private static bool HasABreakOfItsOwn(SyntaxNode node) => node switch
     {
         BreakStmt => true,
 
         WhileStmt or LoopUntilStmt or LoopForeverStmt or ForStmt or ForEachStmt or WalkStmt
-            or SwitchStmt or LambdaExpr or LocalDeclStmt => false,
+            or LambdaExpr or LocalDeclStmt => false,
 
         _ => node.Children.Any(HasABreakOfItsOwn),
     };
+
+    /// <summary>
+    /// <para>Reports a <c>break</c> or a <c>continue</c> with no loop around it to act on.</para>
+    /// <para>Walked rather than counted while analyzing, because the answer is about where the
+    /// statement sits and not about anything the flow worked out on the way there.</para>
+    /// <para>A lambda or a local function ends the walk: it is a separate run, and a loop out
+    /// here is not one that anything written inside it is in. A <c>switch</c> does not end it,
+    /// for the same reason a break inside one belongs to the loop.</para>
+    /// </summary>
+    private void RequireALoopAround(IReadOnlyList<Statement> body)
+    {
+        foreach (Statement statement in body)
+        {
+            Walk(statement, insideALoop: false);
+        }
+
+        void Walk(SyntaxNode node, bool insideALoop)
+        {
+            switch (node)
+            {
+                case LambdaExpr or LocalDeclStmt:
+                    return;
+
+                case WhileStmt or LoopUntilStmt or LoopForeverStmt or ForStmt or ForEachStmt
+                    or WalkStmt:
+                    foreach (SyntaxNode child in node.Children)
+                    {
+                        Walk(child, insideALoop: true);
+                    }
+
+                    return;
+
+                case BreakStmt when !insideALoop:
+                    Report(node, "break");
+                    return;
+
+                case ContinueStmt when !insideALoop:
+                    Report(node, "continue");
+                    return;
+
+                default:
+                    foreach (SyntaxNode child in node.Children)
+                    {
+                        Walk(child, insideALoop);
+                    }
+
+                    return;
+            }
+        }
+
+        void Report(SyntaxNode node, string word) =>
+            _diagnostics.Report(DiagnosticDescriptors.NoLoopToActOn, node.Span, word);
+    }
 
     /// <summary>
     /// Whether anything in here leaves the whole function. Unlike a <c>break</c>, this passes
@@ -660,6 +718,8 @@ public sealed class DefiniteAssignment
 
         if (lambda.Body is not null)
         {
+            // Its own run, so a loop the lambda was written inside is not one it is in.
+            RequireALoopAround(lambda.Body);
             AnalyzeStatements(lambda.Body, inside);
         }
     }
