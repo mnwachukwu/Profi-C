@@ -219,23 +219,39 @@ public sealed class DebugAdapter : IDisposable
         _wire.Respond(request);
     }
 
+    /// <summary>How many refusals are worth putting in a message box before it stops being read.</summary>
+    private const int RefusalsShown = 10;
+
     /// <summary>
     /// <para>Why a launch was refused, as one piece of text for an editor to show.</para>
-    /// <para>Capped, because this lands in a message box rather than a scrolling terminal, and a
-    /// hundred errors there is a wall nobody reads. The first few are the ones worth acting on
-    /// anyway — the rest of a compilation's complaints usually follow from them.</para>
+    /// <para>Each carries where it is, in the same form every other Profi-C diagnostic is
+    /// written. Without it, several complaints about one name read as one complaint repeated —
+    /// <c>Book</c> named five times is five errors that are identical apart from the position,
+    /// and a list of five identical lines looks like the debugger stuttering rather than like
+    /// the program having five mistakes.</para>
+    /// <para>Capped, because this lands in a message box rather than a scrolling terminal and a
+    /// hundred errors there is a wall nobody reads. What was left out is counted rather than
+    /// dropped in silence: a list that stops without saying so reads as the whole of it.</para>
     /// </summary>
     private static string Refusals(DiagnosticBag diagnostics)
     {
-        string[] errors =
+        Diagnostic[] errors =
         [
-            .. diagnostics.Sorted()
-                          .Where(d => d.Severity == DiagnosticSeverity.Error)
-                          .Select(d => $"{d.Id}: {d.Message}")
-                          .Take(10),
+            .. diagnostics.Sorted().Where(d => d.Severity == DiagnosticSeverity.Error),
         ];
 
-        return errors.Length > 0 ? string.Join("\n", errors) : "the program could not be compiled";
+        if (errors.Length == 0)
+        {
+            return "the program could not be compiled";
+        }
+
+        string said = string.Join(
+            "\n",
+            errors.Take(RefusalsShown).Select(DiagnosticRenderer.Format));
+
+        return errors.Length <= RefusalsShown
+            ? said
+            : $"{said}\n... and {Wording.Count(errors.Length - RefusalsShown, "more error")}";
     }
 
     /// <summary>

@@ -229,6 +229,48 @@ public sealed class DebugAdapterTests
     }
 
     /// <summary>
+    /// <para>Several complaints about one name are told apart.</para>
+    /// <para>A name written five times and never declared is five errors whose messages are
+    /// word for word identical — so without the position they render as one complaint printed
+    /// five times, which reads as the debugger stuttering rather than as the program having
+    /// five mistakes. The position is the only thing that distinguishes them, and it is also
+    /// the thing a reader needs in order to go and fix them.</para>
+    /// </summary>
+    [Test]
+    public void RefusalsAreToldApartByWhereTheyAre()
+    {
+        List<JsonObject> sent = Session(
+            """
+            shared model Program
+                function Main()
+                    Book first = new Book();
+                    Book second = new Book();
+                    Book third = new Book();
+                end function
+            end model
+            """,
+            """{"seq":1,"type":"request","command":"initialize","arguments":{}}""",
+            """{"seq":2,"type":"request","command":"launch","arguments":{"program":"PROGRAM"}}""",
+            """{"seq":3,"type":"request","command":"disconnect","arguments":{}}""");
+
+        string message = (string?)ResponseTo(sent, "launch")!["message"] ?? string.Empty;
+
+        string[] lines = [.. message.Split('\n', StringSplitOptions.RemoveEmptyEntries)];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lines, Has.Length.GreaterThan(1),
+                        "three mentions of an undeclared type is more than one error");
+
+            Assert.That(lines, Is.Unique,
+                        "and no two of them read the same, or they cannot be acted on");
+
+            Assert.That(lines[0], Does.Contain("Program.pc(").And.Contain("PC0201"),
+                        "each says which file and where, as every other diagnostic does");
+        });
+    }
+
+    /// <summary>
     /// <para>A breakpoint stops the program, and the stop names where it is.</para>
     /// <para>The whole point of the exercise, end to end: set a breakpoint, start, and be told.
     /// </para>
