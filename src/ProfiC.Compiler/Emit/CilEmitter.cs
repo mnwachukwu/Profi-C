@@ -117,6 +117,12 @@ public sealed partial class CilEmitter
             DefineFields(model);
         }
 
+        // After the fields, since what a model answers about its own parts is the list of them.
+        foreach (ModelDecl model in models)
+        {
+            ImplementDeepEquality(model);
+        }
+
         foreach (Declared function in functions)
         {
             DefineSignature(function);

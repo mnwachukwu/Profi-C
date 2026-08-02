@@ -10,6 +10,26 @@ A string's members deliberately mirror [a set's](sets.md), so that the two read 
 a run of characters, and asking how long it is, whether it contains something, or for a piece of
 it are the same questions in both places.
 
+**Text that is empty changes nothing.** Asked to replace nothing, remove nothing, or trim nothing
+from an end, a string comes back as it was — and the questions answer the way an empty argument
+should: `"ab".Contains("")` is `true`, `"ab".IndexOf("")` is `0`, and `"ab".Split("")` is one
+piece holding the whole string. One rule covers the family, so nothing here raises for an empty
+argument and nothing quietly does something surprising with one:
+
+```
+string pair = "ab";
+
+Console.WriteLine(pair.Replace("", "X"));   # ab — replacing nothing is nothing to do
+Console.WriteLine(pair.Remove(""));         # ab
+Console.WriteLine(pair.Trim(""));           # ab
+Console.WriteLine(pair.Contains(""));       # true
+Console.WriteLine(pair.IndexOf(""));        # 0
+```
+
+C# refuses the first two outright, and Python and JavaScript read an empty search as matching
+between every character, so `"ab".Replace("", "X")` is `"XaXbX"` there. Neither is what somebody
+writing it means, and neither agrees with `Trim("")` leaving a string alone.
+
 ## Asking about it
 
 | Member | Yields | What it does |

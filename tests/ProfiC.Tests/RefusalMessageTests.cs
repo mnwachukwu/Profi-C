@@ -38,6 +38,10 @@ public sealed class RefusalMessageTests : LexerTestBase
         ("Console.WriteLine(\"abc\"[99]);", typeof(IndexOutOfRangeException),
          "Index 99 is outside a string of 3 characters."),
 
+        // Taking a character out names a position rather than a run, so it says so its own way.
+        ("Console.WriteLine(\"abc\".RemoveAt(99));", typeof(IndexOutOfRangeException),
+         "There is no position 99 in a string of 3."),
+
         ("integer[] xs = {1};\n        xs.InsertAt(9, 5);", typeof(IndexOutOfRangeException),
          "Cannot insert at 9; the set holds 1 elements."),
 

@@ -334,11 +334,23 @@ public sealed partial class CilEmitter
     /// differently would come out unequal — which is not what <c>==</c> means in Profi-C, where
     /// a string is a value to a reader.</para>
     /// </summary>
+    /// <summary>
+    /// <para>Equality, which in this language compares what a value holds rather than where it
+    /// lives.</para>
+    /// <para>Three sequences, because the answer is the same and the way to it is not. A number
+    /// or a boolean is one instruction. A string is a call, since two equal strings are rarely
+    /// the same object. Anything else — a model, a set — is the runtime's deep walk, and
+    /// <c>ceq</c> there would compare references and find two equal values different.</para>
+    /// </summary>
     private void EmitEquality(BinaryExpr binary, bool wanted)
     {
         if (IsString(binary.Left))
         {
             _il.Emit(OpCodes.Call, StringEquals);
+        }
+        else if (IsComparedDeeply(binary.Left) || IsComparedDeeply(binary.Right))
+        {
+            _il.Emit(OpCodes.Call, DeepEquals);
         }
         else
         {
@@ -423,6 +435,14 @@ public sealed partial class CilEmitter
 
     private bool IsString(Expression expression) =>
         ReferenceEquals(_model.GetType(expression), PrimitiveType.String);
+
+    /// <summary>
+    /// <para>Whether a value is one the runtime compares by walking it.</para>
+    /// <para>The shapes that hold other values: a model and a set. Both arrive as references, so
+    /// they are already what the walk takes and need no boxing on the way in.</para>
+    /// </summary>
+    private bool IsComparedDeeply(Expression expression) =>
+        _model.GetType(expression) is ModelSymbol or SetType;
 
     private void EmitConversion(ConversionExpr conversion)
     {
@@ -536,10 +556,44 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Call, ReadLine);
                 break;
 
+            // Written on a value rather than taking one, so the receiver is what is loaded. The
+            // runtime's rather than the framework's, for the same reason Console is: how a value
+            // reads is the language's decision, and the two answers differ.
+            case BuiltInId.ModelToString:
+                EmitAsObject(ReceiverOf(call, builtIn));
+                _il.Emit(OpCodes.Call, ToDisplayString);
+                break;
+
+            // The other question: not whether two values hold the same thing, but whether there
+            // is one of them. The one place identity is what is being asked about, so it is the
+            // one place the framework's own answer is the right one.
+            case BuiltInId.ReferenceEquals:
+                EmitAsObject(call.Arguments[0]);
+                EmitAsObject(call.Arguments[1]);
+                _il.Emit(OpCodes.Call, SameObject);
+                break;
+
+            // The same walk '==' is, written as a call. Both sides are boxed rather than left as
+            // they are, since a number reaching it has to arrive as something to look inside.
+            case BuiltInId.ModelEquals:
+                EmitAsObject(ReceiverOf(call, builtIn));
+                EmitAsObject(call.Arguments[0]);
+                _il.Emit(OpCodes.Call, DeepEquals);
+                break;
+
             default:
                 throw Unhandled($"a call to {CilBuiltIns.NameOf(builtIn)}");
         }
     }
+
+    /// <summary>
+    /// The value a member was written on. A member reached through nothing is not something the
+    /// checker produces, so this says so rather than emitting a sequence with a hole in it.
+    /// </summary>
+    private Expression ReceiverOf(CallExpr call, BuiltInId builtIn) =>
+        call.Callee is MemberExpr member
+            ? member.Receiver
+            : throw Unhandled($"'{builtIn}' reached through nothing");
 
     private void EmitConsoleWrite(CallExpr call, bool newline)
     {
@@ -568,6 +622,14 @@ public sealed partial class CilEmitter
     private static readonly MethodInfo ToDisplayString =
         typeof(ModelOperations).GetMethod(
             nameof(ModelOperations.ToDisplayString), [typeof(object)])!;
+
+    private static readonly MethodInfo SameObject =
+        typeof(object).GetMethod(
+            nameof(ReferenceEquals), [typeof(object), typeof(object)])!;
+
+    private static readonly MethodInfo DeepEquals =
+        typeof(ModelOperations).GetMethod(
+            nameof(ModelOperations.DeepEquals), [typeof(object), typeof(object)])!;
 
     private static readonly MethodInfo StringEquals =
         typeof(string).GetMethod(nameof(string.Equals), [typeof(string), typeof(string)])!;

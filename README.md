@@ -631,6 +631,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [looping.pc](samples/looping.pc) | **How far a loop counts, and when it decides.** `to` against `until`, a bound and a step that move while the loop runs, and why `loop each` is the one that does not |
 | [card-table.pc](samples/card-table.pc) | **`switch`.** Grouped labels, `default`, and the warning for a member left unhandled |
 | [narrowing.pc](samples/narrowing.pc) | **What the compiler knows about an optional, and where it stops knowing it.** A check, a guard that leaves rather than wraps, every arm storing one — and the three joins a proof does not survive |
+| [equality.pc](samples/equality.pc) | **When two values are equal.** Deep and structural without either value saying how — through a set, through a model holding models, and around a ring that points back at itself — against `Reference.Equals`, which asks whether there is one of them |
 | [structures.pc](samples/structures.pc) | **Values against references.** What copying changes, and what a structure holding a model shares |
 | [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |

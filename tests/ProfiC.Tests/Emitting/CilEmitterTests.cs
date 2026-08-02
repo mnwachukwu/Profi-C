@@ -860,6 +860,150 @@ public sealed class CilEmitterTests
             """);
 
     /// <summary>
+    /// <para><c>ToString</c>, which every value answers, <c>Model</c> being the root of them
+    /// all.</para>
+    /// <para>It goes to the runtime rather than the framework, and the difference shows: a
+    /// boolean reads as <c>true</c> and not <c>True</c>, and a set reads with its braces. A
+    /// model that declares its own is asked that one, which is the part that needs the virtual
+    /// dispatch underneath to be right.</para>
+    /// <para>An interpolated string is lowered to these same calls, so it rides along.</para>
+    /// </summary>
+    [Test]
+    public void EveryValueAnswersToString() =>
+        AgreesWholly("""
+            model Point
+                public integer x;
+                public integer y;
+
+                public function Point(integer x, integer y)
+                    this.x = x;
+                    this.y = y;
+                end function
+            end model
+
+            model Named
+                public string what;
+
+                public function Named(string what)
+                    this.what = what;
+                end function
+
+                public override string function ToString()
+                    yield "the " + this.what;
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    Console.WriteLine((5).ToString());
+                    Console.WriteLine(true.ToString());
+                    Console.WriteLine("plain".ToString());
+                    Console.WriteLine(new Named("thing").ToString());
+
+                    integer[] xs = {1, 2};
+                    Console.WriteLine(xs.ToString());
+
+                    # An interpolated string is this same call, written shorter.
+                    integer n = 7;
+                    Console.WriteLine("n is {{n}}, and a point reads as {{new Point(1, 2)}}");
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>Equality is deep and structural, and an emitted program says so too.</para>
+    /// <para>The instruction a stack machine reaches for here compares references, which finds
+    /// two equal values different — so this is a call into the runtime's walk, and a model is
+    /// made to answer that walk about its own fields. What is checked is the whole of it: a
+    /// field inherited from a parent counts, two types are never equal however well their
+    /// fields line up, a set and an optional held inside are walked in turn, and a graph that
+    /// points back at itself is compared without looping forever.</para>
+    /// </summary>
+    [Test]
+    public void EqualityComparesWhatAValueHoldsRatherThanWhereItLives() =>
+        AgreesWholly("""
+            model Animal
+                public string name;
+
+                public function Animal(string name)
+                    this.name = name;
+                end function
+            end model
+
+            model Dog extends Animal
+                public integer legs;
+
+                public function Dog(string name, integer legs)
+                    base(name);
+                    this.legs = legs;
+                end function
+            end model
+
+            model Cat extends Animal
+                public integer lives;
+
+                public function Cat(string name, integer lives)
+                    base(name);
+                    this.lives = lives;
+                end function
+            end model
+
+            model Holder
+                public integer[] numbers;
+                public integer? maybe;
+
+                public function Holder(integer[] numbers, integer? maybe)
+                    this.numbers = numbers;
+                    this.maybe = maybe;
+                end function
+            end model
+
+            model Node
+                public integer value;
+                public Node? next;
+
+                public function Node(integer value)
+                    this.value = value;
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    # A field the parent declared counts as much as one this model did.
+                    Console.WriteLine(new Dog("rex", 4) == new Dog("rex", 4));
+                    Console.WriteLine(new Dog("rex", 4) == new Dog("rex", 3));
+                    Console.WriteLine(new Dog("rex", 4) == new Dog("bo", 4));
+
+                    # Two types are never equal, however well the fields line up.
+                    Animal one = new Dog("x", 4);
+                    Animal two = new Cat("x", 9);
+                    Console.WriteLine(one == two);
+
+                    # A set and an optional held inside are walked in their turn.
+                    Console.WriteLine(new Holder({1, 2}, 5) == new Holder({1, 2}, 5));
+                    Console.WriteLine(new Holder({1, 2}, 5) == new Holder({1, 3}, 5));
+
+                    # Two sets on their own, which is the other reference type.
+                    integer[] left = {1, 2};
+                    integer[] right = {1, 2};
+                    Console.WriteLine(left == right);
+                    Console.WriteLine(left != right);
+
+                    # A graph pointing back at itself ends rather than running forever.
+                    Node first = new Node(1);
+                    Node second = new Node(1);
+                    first.next = first;
+                    second.next = second;
+                    Console.WriteLine(first == second);
+
+                    # And the member says what the operator says.
+                    Console.WriteLine(new Dog("rex", 4).Equals(new Dog("rex", 4)));
+                    Console.WriteLine(new Dog("rex", 4).Equals(new Dog("bo", 4)));
+                end function
+            end model
+            """);
+
+    /// <summary>
     /// <para>The four ways to drop the empties out of a set of optionals.</para>
     /// <para><c>TrimAll</c> is the one worth the trouble: it answers with a different kind of set
     /// than it was asked of, so it is a call to a method of its own that unwraps as it filters,
@@ -1426,10 +1570,6 @@ public sealed class CilEmitterTests
                         Console.WriteLine("one");
                 end switch
         """)]
-    [TestCase("an interpolated string", """"
-                integer n = 1;
-                Console.WriteLine("n is {{n}}");
-        """")]
     public void AStatementItCannotEmitIsRefused(string what, string body) =>
         Assert.That(
             RefusalsFor($$"""

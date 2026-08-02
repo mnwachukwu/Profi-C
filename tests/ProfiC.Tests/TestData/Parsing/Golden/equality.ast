@@ -1,0 +1,395 @@
+CompilationUnit
+  ModelDecl 'Point'
+    FieldDecl 'across' [public]
+      NamedTypeSyntax 'integer'
+    FieldDecl 'down' [public]
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Point' [public]
+      ParameterDecl 'across'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'down'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'across'
+          ThisExpr
+        IdentifierExpr 'across'
+      AssignmentStmt
+        MemberExpr 'down'
+          ThisExpr
+        IdentifierExpr 'down'
+    FunctionDecl 'ToString' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "(" [String]
+                MemberExpr 'across'
+                  ThisExpr
+              LiteralExpr ", " [String]
+            MemberExpr 'down'
+              ThisExpr
+          LiteralExpr ")" [String]
+  ModelDecl 'Step'
+    FieldDecl 'across' [public]
+      NamedTypeSyntax 'integer'
+    FieldDecl 'down' [public]
+      NamedTypeSyntax 'integer'
+    FunctionDecl 'Step' [public]
+      ParameterDecl 'across'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'down'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'across'
+          ThisExpr
+        IdentifierExpr 'across'
+      AssignmentStmt
+        MemberExpr 'down'
+          ThisExpr
+        IdentifierExpr 'down'
+  ModelDecl 'Route'
+    FieldDecl 'name' [public]
+      NamedTypeSyntax 'string'
+    FieldDecl 'stops' [public]
+      SetTypeSyntax
+        NamedTypeSyntax 'Point'
+    FunctionDecl 'Route' [public]
+      ParameterDecl 'name'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'stops'
+        SetTypeSyntax
+          NamedTypeSyntax 'Point'
+      AssignmentStmt
+        MemberExpr 'name'
+          ThisExpr
+        IdentifierExpr 'name'
+      AssignmentStmt
+        MemberExpr 'stops'
+          ThisExpr
+        IdentifierExpr 'stops'
+  ModelDecl 'Link'
+    FieldDecl 'value' [public]
+      NamedTypeSyntax 'integer'
+    FieldDecl 'next' [public]
+      OptionalTypeSyntax
+        NamedTypeSyntax 'Link'
+    FunctionDecl 'Link' [public]
+      ParameterDecl 'value'
+        NamedTypeSyntax 'integer'
+      AssignmentStmt
+        MemberExpr 'value'
+          ThisExpr
+        IdentifierExpr 'value'
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TwoOfTheSameThing'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AllTheWayDown'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatItIsNot'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'OneOfThemOrTwo'
+            IdentifierExpr 'Program'
+    FunctionDecl 'TwoOfTheSameThing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== two of the same thing ==" [String]
+      VarDeclStmt 'here'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'there'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  BinaryExpr '+'
+                    LiteralExpr "  " [String]
+                    IdentifierExpr 'here'
+                  LiteralExpr " == " [String]
+                IdentifierExpr 'there'
+              LiteralExpr " -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'here'
+                IdentifierExpr 'there'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  BinaryExpr '+'
+                    LiteralExpr "  " [String]
+                    IdentifierExpr 'here'
+                  LiteralExpr " == " [String]
+                NewExpr 'Point'
+                  LiteralExpr 9 [Integer]
+                  LiteralExpr 9 [Integer]
+              LiteralExpr " -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'here'
+                NewExpr 'Point'
+                  LiteralExpr 9 [Integer]
+                  LiteralExpr 9 [Integer]
+      VarDeclStmt 'left'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'right'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  {1, 2, 3} == {1, 2, 3} -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'left'
+                IdentifierExpr 'right'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  {1, 2, 3} == {3, 2, 1} -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'left'
+                CollectionExpr
+                  LiteralExpr 3 [Integer]
+                  LiteralExpr 2 [Integer]
+                  LiteralExpr 1 [Integer]
+    FunctionDecl 'AllTheWayDown'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== all the way down ==" [String]
+      VarDeclStmt 'north'
+        NamedTypeSyntax 'Route'
+        NewExpr 'Route'
+          LiteralExpr "north" [String]
+          CollectionExpr
+            NewExpr 'Point'
+              LiteralExpr 0 [Integer]
+              LiteralExpr 0 [Integer]
+            NewExpr 'Point'
+              LiteralExpr 0 [Integer]
+              LiteralExpr 1 [Integer]
+      VarDeclStmt 'same'
+        NamedTypeSyntax 'Route'
+        NewExpr 'Route'
+          LiteralExpr "north" [String]
+          CollectionExpr
+            NewExpr 'Point'
+              LiteralExpr 0 [Integer]
+              LiteralExpr 0 [Integer]
+            NewExpr 'Point'
+              LiteralExpr 0 [Integer]
+              LiteralExpr 1 [Integer]
+      VarDeclStmt 'other'
+        NamedTypeSyntax 'Route'
+        NewExpr 'Route'
+          LiteralExpr "north" [String]
+          CollectionExpr
+            NewExpr 'Point'
+              LiteralExpr 0 [Integer]
+              LiteralExpr 0 [Integer]
+            NewExpr 'Point'
+              LiteralExpr 9 [Integer]
+              LiteralExpr 9 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the same route twice   -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'north'
+                IdentifierExpr 'same'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  one stop moved         -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'north'
+                IdentifierExpr 'other'
+      VarDeclStmt 'first'
+        NamedTypeSyntax 'Link'
+        NewExpr 'Link'
+          LiteralExpr 1 [Integer]
+      VarDeclStmt 'second'
+        NamedTypeSyntax 'Link'
+        NewExpr 'Link'
+          LiteralExpr 1 [Integer]
+      AssignmentStmt
+        MemberExpr 'next'
+          IdentifierExpr 'first'
+        IdentifierExpr 'first'
+      AssignmentStmt
+        MemberExpr 'next'
+          IdentifierExpr 'second'
+        IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a ring against a ring  -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'first'
+                IdentifierExpr 'second'
+    FunctionDecl 'WhatItIsNot'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== what it is not ==" [String]
+      VarDeclStmt 'point'
+        NamedTypeSyntax 'Point'
+        NewExpr 'Point'
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'step'
+        NamedTypeSyntax 'Step'
+        NewExpr 'Step'
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a Point and a Step, both (2, 3) -> " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'point'
+              IdentifierExpr 'step'
+      VarDeclStmt 'held'
+        NamedTypeSyntax 'Point'
+        IdentifierExpr 'point'
+      AssignmentStmt
+        MemberExpr 'across'
+          IdentifierExpr 'held'
+        LiteralExpr 99 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  changed through a second name   -> " [String]
+            IdentifierExpr 'point'
+    FunctionDecl 'OneOfThemOrTwo'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== one of them, or two ==" [String]
+      VarDeclStmt 'first'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'second'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'alsoFirst'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  first == second               -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'first'
+                IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Reference.Equals(first, second) -> " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'first'
+              IdentifierExpr 'second'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Reference.Equals(first, alsoFirst) -> " [String]
+            CallExpr
+              MemberExpr 'Equals'
+                IdentifierExpr 'Reference'
+              IdentifierExpr 'first'
+              IdentifierExpr 'alsoFirst'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Insert'
+            IdentifierExpr 'alsoFirst'
+          LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  after alsoFirst.Insert(4), first is " [String]
+            IdentifierExpr 'first'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and second is still            " [String]
+            IdentifierExpr 'second'

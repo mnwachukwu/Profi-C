@@ -1,0 +1,18 @@
+== two of the same thing ==
+  (2, 3) == (2, 3) -> true
+  (2, 3) == (9, 9) -> false
+  {1, 2, 3} == {1, 2, 3} -> true
+  {1, 2, 3} == {3, 2, 1} -> false
+== all the way down ==
+  the same route twice   -> true
+  one stop moved         -> false
+  a ring against a ring  -> true
+== what it is not ==
+  a Point and a Step, both (2, 3) -> false
+  changed through a second name   -> (99, 3)
+== one of them, or two ==
+  first == second               -> true
+  Reference.Equals(first, second) -> false
+  Reference.Equals(first, alsoFirst) -> true
+  after alsoFirst.Insert(4), first is {1, 2, 3, 4}
+  and second is still            {1, 2, 3}

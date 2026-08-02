@@ -244,9 +244,13 @@ public sealed partial class Interpreter
         ProfiCSet<object?> OtherSet(int index) => (ProfiCSet<object?>)Argument(index)!;
         string Subject() => (string)target!;
 
-        char[] Characters(int index) => Argument(index) is ProfiCSet<object?> given
-            ? [.. given.OfType<char>()]
-            : [];
+        ProfiCSet<object?> CharacterSet(int index) =>
+            Argument(index) as ProfiCSet<object?> ?? [];
+
+        // An optional the runtime answered with, put back into the shape this engine holds one
+        // in: the value itself, or a null where there is none.
+        static object? Held<T>(Optional<T> answered) =>
+            answered.HasValue ? answered.Value : null;
 
         // The generator being asked: the one the program is holding, or the one the language
         // keeps for everything that did not ask for its own.
@@ -497,67 +501,55 @@ public sealed partial class Interpreter
             BuiltInId.SetJoin => new StrongBox<object?>(Set().Join(Text(0))),
 
             BuiltInId.StringCount => new StrongBox<object?>((long)Subject().Length),
-            BuiltInId.StringContains => new StrongBox<object?>(
-                Subject().Contains(Text(0), StringComparison.Ordinal)),
-            BuiltInId.StringIndexOf => new StrongBox<object?>(
-                (long)Subject().IndexOf(Text(0), StringComparison.Ordinal)),
+            BuiltInId.StringContains =>
+                new StrongBox<object?>(ProfiCText.Contains(Subject(), Text(0))),
+            BuiltInId.StringIndexOf =>
+                new StrongBox<object?>(ProfiCText.IndexOf(Subject(), Text(0))),
             BuiltInId.StringSubstring => new StrongBox<object?>(Substring(Subject(), arguments)),
 
-            BuiltInId.StringSubsetFrom => new StrongBox<object?>(
-                Subrun(Subject(), (int)Integer(0), Subject().Length)),
-            BuiltInId.StringSubsetBetween => new StrongBox<object?>(
-                Subrun(Subject(), (int)Integer(0), (int)Integer(1))),
-            BuiltInId.StringInsert => new StrongBox<object?>(Subject() + Text(0)),
-            BuiltInId.StringInsertAt => new StrongBox<object?>(
-                Subject().Insert((int)Integer(0), Text(1))),
-            BuiltInId.StringRemove => new StrongBox<object?>(
-                Subject().Replace(Text(0), string.Empty, StringComparison.Ordinal)),
-            BuiltInId.StringRemoveAt => new StrongBox<object?>(
-                Subject().Remove((int)Integer(0), 1)),
-            BuiltInId.StringToCharacters => new StrongBox<object?>(
-                new ProfiCSet<object?>(Subject().Select(c => (object?)c))),
+            BuiltInId.StringSubsetFrom =>
+                new StrongBox<object?>(ProfiCText.Subset(Subject(), Integer(0))),
+            BuiltInId.StringSubsetBetween =>
+                new StrongBox<object?>(ProfiCText.Subset(Subject(), Integer(0), Integer(1))),
+            BuiltInId.StringInsert =>
+                new StrongBox<object?>(ProfiCText.Insert(Subject(), Text(0))),
+            BuiltInId.StringInsertAt =>
+                new StrongBox<object?>(ProfiCText.InsertAt(Subject(), Integer(0), Text(1))),
+            BuiltInId.StringRemove =>
+                new StrongBox<object?>(ProfiCText.Remove(Subject(), Text(0))),
+            BuiltInId.StringRemoveAt =>
+                new StrongBox<object?>(ProfiCText.RemoveAt(Subject(), Integer(0))),
+            BuiltInId.StringToCharacters =>
+                new StrongBox<object?>(ProfiCText.ToCharacters(Subject())),
 
-            BuiltInId.StringTrim => new StrongBox<object?>(Subject().Trim()),
-            BuiltInId.StringTrimText => new StrongBox<object?>(Subject().Trim(Text(0).ToCharArray())),
-            BuiltInId.StringTrimSet => new StrongBox<object?>(Subject().Trim(Characters(0))),
+            BuiltInId.StringTrim => new StrongBox<object?>(ProfiCText.Trim(Subject())),
+            BuiltInId.StringTrimText =>
+                new StrongBox<object?>(ProfiCText.Trim(Subject(), Text(0))),
+            BuiltInId.StringTrimSet =>
+                new StrongBox<object?>(ProfiCText.Trim(Subject(), CharacterSet(0))),
 
-            BuiltInId.StringTrimStart => new StrongBox<object?>(Subject().TrimStart()),
+            BuiltInId.StringTrimStart => new StrongBox<object?>(ProfiCText.TrimStart(Subject())),
             BuiltInId.StringTrimStartText =>
-                new StrongBox<object?>(Subject().TrimStart(Text(0).ToCharArray())),
+                new StrongBox<object?>(ProfiCText.TrimStart(Subject(), Text(0))),
             BuiltInId.StringTrimStartSet =>
-                new StrongBox<object?>(Subject().TrimStart(Characters(0))),
+                new StrongBox<object?>(ProfiCText.TrimStart(Subject(), CharacterSet(0))),
 
-            BuiltInId.StringTrimEnd => new StrongBox<object?>(Subject().TrimEnd()),
+            BuiltInId.StringTrimEnd => new StrongBox<object?>(ProfiCText.TrimEnd(Subject())),
             BuiltInId.StringTrimEndText =>
-                new StrongBox<object?>(Subject().TrimEnd(Text(0).ToCharArray())),
+                new StrongBox<object?>(ProfiCText.TrimEnd(Subject(), Text(0))),
             BuiltInId.StringTrimEndSet =>
-                new StrongBox<object?>(Subject().TrimEnd(Characters(0))),
+                new StrongBox<object?>(ProfiCText.TrimEnd(Subject(), CharacterSet(0))),
 
-            // Splitting on an empty separator would give one empty piece per character with
-            // nothing to show for it, so the whole string comes back as the only piece.
-            BuiltInId.StringSplit => new StrongBox<object?>(
-                new ProfiCSet<object?>(
-                    Text(0).Length == 0
-                        ? [Subject()]
-                        : Subject().Split(Text(0), StringSplitOptions.None)
-                                   .Select(piece => (object?)piece))),
+            BuiltInId.StringSplit =>
+                new StrongBox<object?>(ProfiCText.Split(Subject(), Text(0))),
 
-            BuiltInId.StringReplace => new StrongBox<object?>(
-                Text(0).Length == 0
-                    ? Subject()
-                    : Subject().Replace(Text(0), Text(1), StringComparison.Ordinal)),
+            BuiltInId.StringReplace =>
+                new StrongBox<object?>(ProfiCText.Replace(Subject(), Text(0), Text(1))),
 
-            BuiltInId.StringToUpper => new StrongBox<object?>(
-                Subject().ToUpperInvariant()),
-            BuiltInId.StringToLower => new StrongBox<object?>(
-                Subject().ToLowerInvariant()),
-
-            // The first letter raised, the rest untouched. An empty string has no first
-            // letter and comes back as it went in, rather than as an index nobody asked for.
-            BuiltInId.StringCapitalize => new StrongBox<object?>(
-                Subject().Length == 0
-                    ? Subject()
-                    : char.ToUpperInvariant(Subject()[0]) + Subject()[1..]),
+            BuiltInId.StringToUpper => new StrongBox<object?>(ProfiCText.ToUpper(Subject())),
+            BuiltInId.StringToLower => new StrongBox<object?>(ProfiCText.ToLower(Subject())),
+            BuiltInId.StringCapitalize =>
+                new StrongBox<object?>(ProfiCText.Capitalize(Subject())),
 
             // An optional is the value itself, or nothing at all, so absence is a null target
             // rather than a wrapper to look inside.
@@ -567,21 +559,14 @@ public sealed partial class Interpreter
                 ? new StrongBox<object?>(target)
                 : throw new EmptyOptionalException(),
 
-            BuiltInId.StringToInteger => new StrongBox<object?>(
-                long.TryParse(Subject(), NumberStyles.Integer, CultureInfo.InvariantCulture,
-                              out long whole)
-                    ? whole
-                    : null),
-            BuiltInId.StringToReal => new StrongBox<object?>(
-                double.TryParse(Subject(), NumberStyles.Float, CultureInfo.InvariantCulture,
-                                out double measured)
-                    ? measured
-                    : null),
-
-            // Only the two words the language writes, so "yes" and "1" are not truths. Read
-            // without regard to case, since a person typing one is not thinking about that.
-            BuiltInId.StringToBoolean => new StrongBox<object?>(
-                bool.TryParse(Subject().Trim(), out bool truth) ? truth : null),
+            // Each reads as an optional, and this engine holds an empty one as a null — so
+            // what the runtime answers is unwrapped on the way out rather than kept.
+            BuiltInId.StringToInteger =>
+                new StrongBox<object?>(Held(ProfiCText.ToInteger(Subject()))),
+            BuiltInId.StringToReal =>
+                new StrongBox<object?>(Held(ProfiCText.ToReal(Subject()))),
+            BuiltInId.StringToBoolean =>
+                new StrongBox<object?>(Held(ProfiCText.ToBoolean(Subject()))),
 
             BuiltInId.StringToFraction => new StrongBox<object?>(ReadFraction(Subject())),
 

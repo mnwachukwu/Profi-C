@@ -1,0 +1,164 @@
+##
+    When two values are equal.
+
+    '==' compares what a value holds, not where it lives. Two models built separately, holding
+    the same things, are equal — and nothing had to be written on either of them to make that
+    so. There is no Equals to override and no GetHashCode to keep in step with it.
+
+    That goes all the way down. A model holding a set holding models compares by walking the
+    whole of it, and a graph that points back at itself is compared without going round forever.
+
+    Two things it is not. Two different types are never equal however well their fields line up,
+    which is the rule a C# record follows. And a model is still a reference: two names for one
+    model are one model, so changing it through either changes it for both. Equality asks what
+    they hold; it does not say there is one of them.
+##
+
+model Point
+    public integer across;
+    public integer down;
+
+    public function Point(integer across, integer down)
+        this.across = across;
+        this.down = down;
+    end function
+
+    public override string function ToString()
+        yield "(" + this.across + ", " + this.down + ")";
+    end function
+end model
+
+model Step
+    public integer across;
+    public integer down;
+
+    public function Step(integer across, integer down)
+        this.across = across;
+        this.down = down;
+    end function
+end model
+
+model Route
+    public string name;
+    public Point[] stops;
+
+    public function Route(string name, Point[] stops)
+        this.name = name;
+        this.stops = stops;
+    end function
+end model
+
+model Link
+    public integer value;
+    public Link? next;
+
+    public function Link(integer value)
+        this.value = value;
+    end function
+end model
+
+shared model Program
+
+    function Main()
+        Program.TwoOfTheSameThing();
+        Program.AllTheWayDown();
+        Program.WhatItIsNot();
+        Program.OneOfThemOrTwo();
+    end function
+
+    # @summary: Two models built apart, holding the same things.
+    function TwoOfTheSameThing()
+        Console.WriteLine("== two of the same thing ==");
+
+        Point here = new Point(2, 3);
+        Point there = new Point(2, 3);
+
+        Console.WriteLine("  " + here + " == " + there + " -> " + (here == there));
+        Console.WriteLine("  " + here + " == " + new Point(9, 9) + " -> " + (here == new Point(9, 9)));
+
+        # A set is the same idea: what it holds, in order.
+        integer[] left = {1, 2, 3};
+        integer[] right = {1, 2, 3};
+
+        Console.WriteLine("  {1, 2, 3} == {1, 2, 3} -> " + (left == right));
+        Console.WriteLine("  {1, 2, 3} == {3, 2, 1} -> " + (left == {3, 2, 1}));
+    end function
+
+    ##
+        @summary: A model holding a set holding models.
+
+        @remarks: Nothing here declares how to compare anything. The walk goes through the
+        string, into the set, and into each model in it.
+    ##
+    function AllTheWayDown()
+        Console.WriteLine("== all the way down ==");
+
+        Route north = new Route("north", {new Point(0, 0), new Point(0, 1)});
+        Route same = new Route("north", {new Point(0, 0), new Point(0, 1)});
+        Route other = new Route("north", {new Point(0, 0), new Point(9, 9)});
+
+        Console.WriteLine("  the same route twice   -> " + (north == same));
+        Console.WriteLine("  one stop moved         -> " + (north == other));
+
+        # A ring, compared without going round forever.
+        Link first = new Link(1);
+        Link second = new Link(1);
+        first.next = first;
+        second.next = second;
+
+        Console.WriteLine("  a ring against a ring  -> " + (first == second));
+    end function
+
+    ##
+        @summary: The two things equality does not say.
+
+        @remarks: A Point and a Step hold the same two numbers and are never equal, because they
+        are not the same kind of thing. And two names for one model are one model — equality is
+        about what a value holds, not about how many of them there are.
+    ##
+    function WhatItIsNot()
+        Console.WriteLine("== what it is not ==");
+
+        Point point = new Point(2, 3);
+        Step step = new Step(2, 3);
+
+        Console.WriteLine("  a Point and a Step, both (2, 3) -> " + point.Equals(step));
+
+        Point held = point;
+        held.across = 99;
+
+        Console.WriteLine("  changed through a second name   -> " + point);
+    end function
+
+    ##
+        @summary: The other question — whether there is one of them.
+
+        @remarks: 'Reference.Equals' asks what most languages give '==' to mean: not whether two
+        values hold the same thing, but whether they are the same thing. Two equal sets are
+        equal and are still two sets, so inserting into one leaves the other as it was; two
+        names for one set are one set, and inserting shows in both.
+
+        Most languages make you remember which meaning '==' has. Here it always has the first,
+        and the second is asked for by name.
+    ##
+    function OneOfThemOrTwo()
+        Console.WriteLine("== one of them, or two ==");
+
+        integer[] first = {1, 2, 3};
+        integer[] second = {1, 2, 3};
+        integer[] alsoFirst = first;
+
+        Console.WriteLine("  first == second               -> " + (first == second));
+        Console.WriteLine("  Reference.Equals(first, second) -> "
+                          + Reference.Equals(first, second));
+        Console.WriteLine("  Reference.Equals(first, alsoFirst) -> "
+                          + Reference.Equals(first, alsoFirst));
+
+        # Which matters, because alsoFirst and first are one set under two names.
+        alsoFirst.Insert(4);
+
+        Console.WriteLine("  after alsoFirst.Insert(4), first is " + first);
+        Console.WriteLine("  and second is still            " + second);
+    end function
+
+end model
