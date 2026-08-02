@@ -1,6 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
+using ProfiC.Compiler.Emit;
 using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
@@ -60,7 +61,10 @@ public static class Program
             "check" => RunCheck(args),
             "lower" => RunLower(args),
             "run" => RunProgram(args),
+            "build" => RunBuild(args),
             "vocabulary" => RunVocabulary(),
+            "platforms" => RunPlatforms(),
+            "outline" => RunOutline(args),
             "debug" => RunDebug(),
             _ => UnknownCommand(args[0]),
         };
@@ -72,11 +76,14 @@ public static class Program
         Console.WriteLine();
         Console.WriteLine("Usage:");
         Console.WriteLine($"  {ToolName} run <file>       Run a .pc program or a .pcp project");
+        Console.WriteLine($"  {ToolName} build <file>     Compile one to a .NET assembly, into bin");
         Console.WriteLine($"  {ToolName} check <file>     Check a .pc program or a .pcp project");
         Console.WriteLine($"  {ToolName} lower <file>     Print the simplified tree the back end sees");
         Console.WriteLine($"  {ToolName} tokens <file>    Scan one .pc file and print its token stream");
         Console.WriteLine($"  {ToolName} ast <file>       Parse one .pc file and print its syntax tree");
+        Console.WriteLine($"  {ToolName} outline <file>   Print what one .pc file declares, as JSON");
         Console.WriteLine($"  {ToolName} vocabulary      Print every word the language reserves, as JSON");
+        Console.WriteLine($"  {ToolName} platforms       Print the platforms --runtime accepts, as JSON");
         Console.WriteLine($"  {ToolName} debug           Debug a program, spoken to by an editor");
         Console.WriteLine($"  {ToolName} --version        Print the compiler version");
         Console.WriteLine($"  {ToolName} --help           Print this message");
@@ -87,6 +94,13 @@ public static class Program
         Console.WriteLine();
         Console.WriteLine("The extension may be left off: 'run Program' finds Program.pc or");
         Console.WriteLine("Program.pcp. Write it when both are there and you mean one.");
+        Console.WriteLine();
+        Console.WriteLine("'build' writes into a 'bin' beside the program, with a launcher you");
+        Console.WriteLine("can run without naming dotnet. Two options change what it makes:");
+        Console.WriteLine($"  {ToolName} build hello.pc --out dist");
+        Console.WriteLine($"  {ToolName} build hello.pc --runtime linux-x64");
+        Console.WriteLine();
+        Console.WriteLine("The machine it runs on still needs .NET installed.");
     }
 
     /// <summary>
@@ -188,6 +202,55 @@ public static class Program
     private static int RunVocabulary()
     {
         Console.WriteLine(Vocabulary.AsJson());
+
+        return 0;
+    }
+
+    /// <summary>
+    /// <para>The platforms a build can target here, and which one it targets by default.</para>
+    /// <para>Written for an editor, which has to offer the choice and cannot work it out: what
+    /// is available depends on which launchers the SDK installed and which any project has ever
+    /// published for, and both of those are facts about the machine. Asking the compiler is the
+    /// same bridge <c>vocabulary</c> is — one place knows, and everything else reads it rather
+    /// than keeping a second list that drifts.</para>
+    /// </summary>
+    private static int RunPlatforms()
+    {
+        // Qualified: the interpreter has an Environment of its own, and a scope chain is not
+        // the place to ask for a newline.
+        string installed = string.Join(
+            $",{System.Environment.NewLine}",
+            AppHost.Installed().Select(rid => $"    \"{rid}\""));
+
+        Console.WriteLine("{");
+        Console.WriteLine($"  \"default\": \"{AppHost.ThisPlatform}\",");
+        Console.WriteLine("  \"installed\": [");
+        Console.WriteLine(installed);
+        Console.WriteLine("  ]");
+        Console.WriteLine("}");
+
+        return 0;
+    }
+
+    /// <summary>
+    /// <para>What one file declares, for an editor's outline and breadcrumbs.</para>
+    /// <para>Parsed and nothing more — not resolved, not checked. An outline is wanted most
+    /// while a file is being written, which is exactly when it does not compile, and the parser
+    /// recovers where the rest of the front end would refuse. Diagnostics are collected and
+    /// dropped for the same reason: a reader looking at the shape of their file is not asking
+    /// about its mistakes, and the editor reports those from a build.</para>
+    /// </summary>
+    private static int RunOutline(string[] args)
+    {
+        if (SourceArgument(args, "outline") is not { } path)
+        {
+            return 1;
+        }
+
+        SourceText source = SourceText.FromFile(path);
+        DiagnosticBag aside = new();
+
+        Console.WriteLine(Outline.AsJson(Parser.Parse(source, aside), source));
 
         return 0;
     }
@@ -337,6 +400,156 @@ public static class Program
 
         return 0;
     }
+
+    /// <summary>
+    /// <para>Checks a program and compiles it to a .NET assembly.</para>
+    /// <para>The back end is unfinished, so a program using something it cannot emit yet is
+    /// refused with <c>PC0501</c> naming the construct — and nothing is written, since an
+    /// assembly missing part of a program still loads and fails only once a run reaches the
+    /// gap.</para>
+    /// <para>What is emitted is the closure-converted tree rather than the lowered one. The
+    /// emitter is the reason that pass exists: it receives a tree with no captures left in it
+    /// and never reasons about them.</para>
+    /// </summary>
+    private static int RunBuild(string[] args)
+    {
+        if (Target(args, "build") is not { } target)
+        {
+            return 1;
+        }
+
+        DiagnosticBag diagnostics = new();
+
+        if (Compile(target.Path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
+        {
+            DiagnosticRenderer.WriteAll(diagnostics);
+            return 1;
+        }
+
+        if (diagnostics.HasErrors)
+        {
+            DiagnosticRenderer.WriteAll(diagnostics);
+            return 1;
+        }
+
+        if (BuildOptions(args, target) is not { } options)
+        {
+            return 1;
+        }
+
+        string name = Path.GetFileNameWithoutExtension(compilation.Label);
+        string output = Path.Combine(options.Folder, name + ".dll");
+
+        IReadOnlyList<CompilationUnit> emitting = ClosureConversion.Convert(
+            Lowering.Lower(compilation.Units, model), model);
+
+        bool emitted = CilEmitter.Emit(emitting, model, name, output, diagnostics);
+
+        DiagnosticRenderer.WriteAll(diagnostics);
+
+        if (!emitted)
+        {
+            return 1;
+        }
+
+        Console.WriteLine($"{compilation.Label}: wrote {output}");
+
+        if (AppHost.Create(output, options.Runtime, out string why) is not { } launcher)
+        {
+            // Said rather than failed. The assembly is built and runs; what is missing is only
+            // the convenience of starting it without naming 'dotnet'.
+            Console.Error.WriteLine($"{ToolName}: no launcher was made — {why}");
+
+            // Written as a path from where the reader is standing, so the line can be pasted.
+            Console.WriteLine($"Run it with: dotnet {Path.GetRelativePath(".", output)}");
+
+            return 0;
+        }
+
+        Console.WriteLine($"Run it with: {Path.GetRelativePath(".", launcher)}");
+
+        if (!AppHost.IsWindows(options.Runtime) && OperatingSystem.IsWindows())
+        {
+            // A Windows file system has nowhere to record that a file may be run, so the bit
+            // has to be set wherever it lands. Better said here than found there.
+            Console.WriteLine(
+                $"On {options.Runtime}, mark it runnable first: chmod +x {Path.GetFileName(launcher)}");
+        }
+
+        return 0;
+    }
+
+    /// <summary>What a build was asked for beyond the program itself.</summary>
+    private readonly record struct Build(string Folder, string Runtime);
+
+    /// <summary>The folder a build writes into, when nothing says otherwise.</summary>
+    private const string DefaultOutputFolder = "bin";
+
+    /// <summary>
+    /// <para>Reads what a build was asked for: where to put it, and what to build it for.</para>
+    /// <para><c>bin</c> is a folder of its own rather than beside the source, because a build
+    /// writes four files — the assembly, its runtime configuration, the runtime, and a launcher
+    /// — and dropping those next to the program mixes what somebody wrote with what a tool
+    /// made. The name because every .gitignore already knows it.</para>
+    /// <para>Null where the arguments could not be read, having already said why.</para>
+    /// </summary>
+    private static Build? BuildOptions(string[] args, SourceDiscovery.FileTarget target)
+    {
+        string beside = Path.GetDirectoryName(Path.GetFullPath(target.Path)) ?? ".";
+        string? folder = null;
+        string? runtime = null;
+
+        // From the third argument on: the first two are the command and the file it names.
+        for (int i = 2; i < args.Length; i++)
+        {
+            string flag = args[i];
+
+            if (flag is not ("--out" or "--runtime"))
+            {
+                Console.Error.WriteLine($"{ToolName}: 'build' does not take '{flag}'.");
+                return null;
+            }
+
+            if (i + 1 >= args.Length)
+            {
+                Console.Error.WriteLine(
+                    $"{ToolName}: '{flag}' needs "
+                    + (flag == "--out" ? "a folder to write into." : "a platform to build for."));
+
+                return null;
+            }
+
+            string value = args[++i];
+
+            if (flag == "--out")
+            {
+                folder = value;
+            }
+            else
+            {
+                runtime = value;
+            }
+        }
+
+        if (runtime is not null && !AppHost.CanTarget(runtime))
+        {
+            Console.Error.WriteLine(
+                $"{ToolName}: nothing here can build for '{runtime}'. "
+                + $"Available: {string.Join(", ", AppHost.Installed())}. "
+                + $"'dotnet publish -r {runtime}' on any project fetches what is needed.");
+
+            return null;
+        }
+
+        // A written folder is taken as the reader meant it — relative to where they are, which
+        // is what every other tool does with a path typed on a command line. The default is
+        // relative to the program instead, so that building the same file from two directories
+        // puts the result in one place.
+        return new Build(
+            folder is null ? Path.Combine(beside, DefaultOutputFolder) : Path.GetFullPath(folder),
+            runtime ?? AppHost.ThisPlatform);
+    }
+
 
     /// <summary>
     /// <para>Checks a program and runs it.</para>

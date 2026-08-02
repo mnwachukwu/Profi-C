@@ -115,6 +115,7 @@ This document is the normative one: where they disagree, this is right.
   - [PC0200 to PC0299](#pc0200-to-pc0299)
   - [PC0300 to PC0399](#pc0300-to-pc0399)
   - [PC0400 to PC0499](#pc0400-to-pc0499)
+  - [PC0500 to PC0599](#pc0500-to-pc0599)
   - [PC0600 to PC0699](#pc0600-to-pc0699)
 
 ## 0. Overview
@@ -2905,6 +2906,12 @@ of a reader.
 | `PC0404` | error | Not every path yields a value |
 | `PC0405` | error | Called before a name it uses is ready |
 | `PC0406` | opinion | Nothing here can end this loop |
+
+### PC0500 to PC0599
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC0501` | error | The compiler cannot emit this yet |
 
 ### PC0600 to PC0699
 

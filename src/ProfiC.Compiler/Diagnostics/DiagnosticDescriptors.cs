@@ -1593,4 +1593,20 @@ public static class DiagnosticDescriptors
         "Two projects claim one file",
         "'{0}' is listed by {1} and by {2}. A file belongs to one project. Let the project "
         + "that owns it keep it, and have the other reference that project.");
+
+    /// <summary>
+    /// <para>A construct the emitter cannot turn into CIL yet.</para>
+    /// <para>Temporary, and says so: the language accepts the program and the interpreter runs
+    /// it, so nothing is wrong with what was written. What is missing is the back end, and the
+    /// message points at the way to run it in the meantime rather than leaving a reader to
+    /// wonder what they did.</para>
+    /// <para>Reported before anything is written, so a build either produces a whole assembly
+    /// or produces no file at all. Emitting what is understood and leaving the rest out would
+    /// write an assembly that verifies and then fails partway through a run, which is a worse
+    /// answer than not building.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CannotEmitYet = Error(
+        "PC0501",
+        "The compiler cannot emit this yet",
+        "{0} cannot be compiled to an assembly yet. Run the program with 'run' until it can.");
 }
