@@ -450,15 +450,15 @@ public sealed class BuiltInCatalogTests
     /// needs a different shape — so nothing makes the declaration and the implementation agree.
     /// Running each and comparing the answer is the whole of the protection they have.</para>
     /// </summary>
-    [TestCase("integer[] xs = {3, 1, 2};\n        Console.WriteLine(xs.Count())", "3\n")]
+    [TestCase("integer[] xs = {3, 1, 2};\n        Console.WriteLine(xs.Count)", "3\n")]
     [TestCase("integer[] xs = {3, 1, 2};\n        Console.WriteLine(xs.Contains(1))", "true\n")]
     [TestCase("integer[] xs = {3, 1, 2};\n        Console.WriteLine(xs.IndexOf(2))", "2\n")]
-    [TestCase("integer[] xs = {1};\n        xs.Insert(2);\n        Console.WriteLine(xs.Count())", "2\n")]
+    [TestCase("integer[] xs = {1};\n        xs.Insert(2);\n        Console.WriteLine(xs.Count)", "2\n")]
     [TestCase("integer[] xs = {1};\n        xs.InsertAt(0, 9);\n        Console.WriteLine(xs[0])", "9\n")]
     [TestCase("integer[] xs = {1};\n        Console.WriteLine(xs.Remove(1))", "true\n")]
     [TestCase("integer[] xs = {1, 2};\n        xs.RemoveAt(0);\n        Console.WriteLine(xs[0])", "2\n")]
-    [TestCase("integer[] xs = {1};\n        xs.Clear();\n        Console.WriteLine(xs.Count())", "0\n")]
-    [TestCase("Console.WriteLine(\"hello\".Count())", "5\n")]
+    [TestCase("integer[] xs = {1};\n        xs.Clear();\n        Console.WriteLine(xs.Count)", "0\n")]
+    [TestCase("Console.WriteLine(\"hello\".Count)", "5\n")]
     [TestCase("Console.WriteLine(\"hello\".Contains(\"ell\"))", "true\n")]
     [TestCase("Console.WriteLine(\"hello\".IndexOf(\"l\"))", "2\n")]
     [TestCase("Console.WriteLine(\"hello\".Substring(1, 3))", "ell\n")]
@@ -583,7 +583,7 @@ public sealed class BuiltInCatalogTests
     [TestCase("xs.Subset(1, 3)", "{20, 30}")]
     [TestCase("xs.Subset(0, 0)", "{}")]
     [TestCase("xs.Subset(5)", "{}")]
-    [TestCase("xs.Subset(0, 2).Count() + xs.Subset(2).Count()", "5")]
+    [TestCase("xs.Subset(0, 2).Count + xs.Subset(2).Count", "5")]
     public void ASubsetIsARunOfASet(string call, string expected) => Assert.That(
         RunProgram($$"""
             shared model Program
@@ -602,9 +602,9 @@ public sealed class BuiltInCatalogTests
     /// the type says so — which is why the last row can hold the answer in an integer set.
     /// </para>
     /// </summary>
-    [TestCase("sparse.Trim().Count()", "3")]
-    [TestCase("sparse.TrimStart().Count()", "4")]
-    [TestCase("sparse.TrimEnd().Count()", "4")]
+    [TestCase("sparse.Trim().Count", "3")]
+    [TestCase("sparse.TrimStart().Count", "4")]
+    [TestCase("sparse.TrimEnd().Count", "4")]
     [TestCase("sparse.TrimAll()", "{1, 2}")]
     public void ASetOfOptionalsDropsItsEmpties(string call, string expected) => Assert.That(
         RunProgram($$"""
@@ -685,7 +685,7 @@ public sealed class BuiltInCatalogTests
     /// as much a check that nothing intercepts them as a check of the members themselves —
     /// <c>yyyy-MM-dd</c> arriving intact matters more than any one of the answers.</para>
     /// </summary>
-    [TestCase("\"the quick brown\".Split(\" \").Count()", "3")]
+    [TestCase("\"the quick brown\".Split(\" \").Count", "3")]
     [TestCase("\"a-b-c\".Split(\"-\").Join(\"+\")", "a+b+c")]
     [TestCase("{1, 2, 3}.Join(\", \")", "1, 2, 3")]
     [TestCase("{1, 2}.Union({3, 4})", "{1, 2, 3, 4}")]

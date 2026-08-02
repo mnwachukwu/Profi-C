@@ -589,8 +589,6 @@
  223:22   Identifier           'readings'
  223:30   Dot                  '.'
  223:31   Identifier           'Count'
- 223:36   LeftParen            '('
- 223:37   RightParen           ')'
  224:17   Break                'break'
  224:22   Semicolon            ';'
  225:13   End                  'end'

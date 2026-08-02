@@ -89,7 +89,7 @@ shared model Program
 
         string[] lines = File.ReadLines(path).Or({});
 
-        Console.WriteLine("  how many        {{lines.Count()}}");
+        Console.WriteLine("  how many        {{lines.Count}}");
         Console.WriteLine("  each one        {{lines.Join(", ")}}");
         Console.WriteLine("  no endings left {{lines[0] == "bread"}}");
 
@@ -167,8 +167,8 @@ shared model Program
         File.Write(Program.In("gamma.txt"), "");
         File.Write(Program.In("alpha.txt"), "");
 
-        Console.WriteLine("  files            {{Directory.Files(Program.Folder).Or({}).Count()}}");
-        Console.WriteLine("  folders          {{Directory.Folders(Program.Folder).Or({}).Count()}}");
+        Console.WriteLine("  files            {{Directory.Files(Program.Folder).Or({}).Count}}");
+        Console.WriteLine("  folders          {{Directory.Folders(Program.Folder).Or({}).Count}}");
 
         # A folder that is not there lists nothing, for the same reason a file that is not
         # there reads as nothing.

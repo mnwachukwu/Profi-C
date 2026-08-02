@@ -10,7 +10,7 @@ shared model Program
         integer[] scores = {90, 72, 88};
 
         # One past the last, which is the classic off-by-one: the last index is 2.
-        loop for i = 0 to scores.Count()
+        loop for i = 0 to scores.Count
             Console.WriteLine(scores[i]);
         end loop
     end function

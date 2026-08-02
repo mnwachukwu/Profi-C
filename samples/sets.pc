@@ -70,7 +70,7 @@ shared model Program
 
         string[] shopping = {"bread", "milk", "eggs"};
 
-        Console.WriteLine("  how many      {{shopping.Count()}}");
+        Console.WriteLine("  how many      {{shopping.Count}}");
         Console.WriteLine("  any milk      {{shopping.Contains("milk")}}");
         Console.WriteLine("  where is milk {{shopping.IndexOf("milk")}}");
         Console.WriteLine("  any jam       {{shopping.Contains("jam")}}");
@@ -145,7 +145,7 @@ shared model Program
 
         let text = "Profi-C";
 
-        Console.WriteLine("  how many        {{text.Count()}}");
+        Console.WriteLine("  how many        {{text.Count}}");
         Console.WriteLine("  any 'fi'        {{text.Contains("fi")}}");
         Console.WriteLine("  where is 'fi'   {{text.IndexOf("fi")}}");
         Console.WriteLine("  from 5 on       {{text.Subset(5)}}");
@@ -202,7 +202,7 @@ shared model Program
         Console.WriteLine("  split into words   {{words}}");
         Console.WriteLine("  joined again       {{words.Join(" ")}}");
         Console.WriteLine("  as characters      {{letters}}");
-        Console.WriteLine("  how many words     {{words.Count()}}");
+        Console.WriteLine("  how many words     {{words.Count}}");
 
         # A set of anything joins, so this works on the numbers too.
         integer[] counts = {1, 2, 3};

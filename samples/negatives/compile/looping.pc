@@ -43,7 +43,7 @@ shared model Program
             amounts.Insert(amount * 10);
         end loop
 
-        Console.WriteLine(amounts.Count());
+        Console.WriteLine(amounts.Count);
     end function
 
     # Removing. The walk still runs to the length the set had, which is now past its end.
@@ -54,7 +54,7 @@ shared model Program
             amounts.Remove(amount);
         end loop
 
-        Console.WriteLine(amounts.Count());
+        Console.WriteLine(amounts.Count);
     end function
 
     ##
@@ -69,7 +69,7 @@ shared model Program
             amounts.Clear();
         end loop
 
-        Console.WriteLine(amounts.Count());
+        Console.WriteLine(amounts.Count);
     end function
 
 end model

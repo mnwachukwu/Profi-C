@@ -18,7 +18,7 @@ shared model Program
     end function
 
     integer? function IndexOf(integer[] values, integer wanted)
-        loop for i = 0 until values.Count()
+        loop for i = 0 until values.Count
             if values[i] == wanted
                 yield i;
             end if

@@ -353,9 +353,8 @@ CompilationUnit
         IfStmt
           BinaryExpr '>='
             IdentifierExpr 'at'
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'readings'
+            MemberExpr 'Count'
+              IdentifierExpr 'readings'
           BreakStmt
         IfStmt
           BinaryExpr '=='

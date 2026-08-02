@@ -34,7 +34,7 @@ shared model Program
             result.Insert(value);
         end loop
 
-        loop for i = 1 until result.Count()
+        loop for i = 1 until result.Count
             integer current = result[i];
             integer j = i - 1;
 
@@ -61,7 +61,7 @@ shared model Program
     string function Render(integer[] values)
         string text = "";
 
-        loop for i = 0 until values.Count()
+        loop for i = 0 until values.Count
             if i > 0
                 text = text + ", ";
             end if
@@ -85,8 +85,8 @@ shared model Program
     string function RenderBackwards(integer[] values)
         string text = "";
 
-        loop for i = values.Count() - 1 to 0 stepby -1
-            if i < values.Count() - 1
+        loop for i = values.Count - 1 to 0 stepby -1
+            if i < values.Count - 1
                 text = text + ", ";
             end if
 

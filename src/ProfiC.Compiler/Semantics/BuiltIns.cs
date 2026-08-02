@@ -832,7 +832,7 @@ public static class BuiltIns
 
     public static IReadOnlyList<BuiltInMember> OnSet(SetType set) =>
     [
-        Member(BuiltInId.SetCount, "Count", PrimitiveType.Integer),
+        Value(BuiltInId.SetCount, "Count", PrimitiveType.Integer),
         Member(BuiltInId.SetInsert, "Insert", null, set.ElementType),
         Member(BuiltInId.SetInsertAt, "InsertAt", null, PrimitiveType.Integer, set.ElementType),
 
@@ -907,7 +907,7 @@ public static class BuiltIns
     /// </summary>
     public static IReadOnlyList<BuiltInMember> OnString() =>
     [
-        Member(BuiltInId.StringCount, "Count", PrimitiveType.Integer),
+        Value(BuiltInId.StringCount, "Count", PrimitiveType.Integer),
         Member(BuiltInId.StringContains, "Contains", PrimitiveType.Boolean, PrimitiveType.String),
         Member(BuiltInId.StringIndexOf, "IndexOf", PrimitiveType.Integer, PrimitiveType.String),
         Member(BuiltInId.StringSubstring, "Substring", PrimitiveType.String,

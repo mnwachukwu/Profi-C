@@ -68,9 +68,8 @@ CompilationUnit
             IdentifierExpr 'value'
       ForStmt 'i' until
         LiteralExpr 1 [Integer]
-        CallExpr
-          MemberExpr 'Count'
-            IdentifierExpr 'result'
+        MemberExpr 'Count'
+          IdentifierExpr 'result'
         VarDeclStmt 'current'
           NamedTypeSyntax 'integer'
           IndexExpr
@@ -124,9 +123,8 @@ CompilationUnit
         LiteralExpr "" [String]
       ForStmt 'i' until
         LiteralExpr 0 [Integer]
-        CallExpr
-          MemberExpr 'Count'
-            IdentifierExpr 'values'
+        MemberExpr 'Count'
+          IdentifierExpr 'values'
         IfStmt
           BinaryExpr '>'
             IdentifierExpr 'i'
@@ -155,9 +153,8 @@ CompilationUnit
         LiteralExpr "" [String]
       ForStmt 'i' to
         BinaryExpr '-'
-          CallExpr
-            MemberExpr 'Count'
-              IdentifierExpr 'values'
+          MemberExpr 'Count'
+            IdentifierExpr 'values'
           LiteralExpr 1 [Integer]
         LiteralExpr 0 [Integer]
         UnaryExpr '-'
@@ -166,9 +163,8 @@ CompilationUnit
           BinaryExpr '<'
             IdentifierExpr 'i'
             BinaryExpr '-'
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'values'
+              MemberExpr 'Count'
+                IdentifierExpr 'values'
               LiteralExpr 1 [Integer]
           AssignmentStmt
             IdentifierExpr 'text'

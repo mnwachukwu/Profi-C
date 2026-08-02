@@ -117,7 +117,7 @@ public sealed class FileMemberTests
 
                     string[] read = File.ReadLines("notes.txt").Or({});
 
-                    Console.WriteLine(read.Count());
+                    Console.WriteLine(read.Count);
                     Console.WriteLine(read.Join("|"));
             """),
         Is.EqualTo("3\nfirst|second|third\n"));
@@ -269,8 +269,8 @@ public sealed class FileMemberTests
                     Directory.Create("zeta");
                     Directory.Create("delta");
 
-                    Console.WriteLine(Directory.Files(".").Or({}).Count());
-                    Console.WriteLine(Directory.Folders(".").Or({}).Count());
+                    Console.WriteLine(Directory.Files(".").Or({}).Count);
+                    Console.WriteLine(Directory.Folders(".").Or({}).Count);
             """),
         Is.EqualTo("3\n2\n"));
 

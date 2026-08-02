@@ -175,11 +175,10 @@ CompilationUnit
       VarDeclStmt 'nested' [inferred]
         InterpolatedStringExpr '' ''
           InterpolationPart
-            CallExpr
-              MemberExpr 'Count'
-                CollectionExpr
-                  LiteralExpr 1 [Integer]
-                  LiteralExpr 2 [Integer]
+            MemberExpr 'Count'
+              CollectionExpr
+                LiteralExpr 1 [Integer]
+                LiteralExpr 2 [Integer]
     FieldDecl 'Yes' [constant]
       NamedTypeSyntax 'boolean'
       LiteralExpr true [Boolean]

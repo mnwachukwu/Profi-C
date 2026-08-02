@@ -153,9 +153,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  how many      ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'shopping'
+              MemberExpr 'Count'
+                IdentifierExpr 'shopping'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -379,9 +378,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  how many        ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'text'
+              MemberExpr 'Count'
+                IdentifierExpr 'text'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -570,9 +568,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  how many words     ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'words'
+              MemberExpr 'Count'
+                IdentifierExpr 'words'
       VarDeclStmt 'counts'
         SetTypeSyntax
           NamedTypeSyntax 'integer'

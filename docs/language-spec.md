@@ -93,18 +93,9 @@ This document is the normative one: where they disagree, this is right.
   - [10.2 Throwing and catching](#102-throwing-and-catching)
   - [10.3 Declaring an exception](#103-declaring-an-exception)
 - [11. The standard library](#11-the-standard-library) — the built-in models and what they provide
-  - [11.1 On every type](#111-on-every-type)
-  - [11.2 On a set](#112-on-a-set)
-  - [3.2b Only on a set of optionals](#32b-only-on-a-set-of-optionals)
-  - [11.3 On a string](#113-on-a-string)
-  - [11.4 On a value of a particular type](#114-on-a-value-of-a-particular-type)
-  - [11.5 The standard models](#115-the-standard-models)
-  - [11.5b Chance](#115b-chance)
-  - [11.5c Moments](#115c-moments)
-  - [11.5d Spans, days, and times of day](#115d-spans-days-and-times-of-day)
-  - [11.5e Files and folders](#115e-files-and-folders)
-  - [11.5a How far a real answer can be trusted](#115a-how-far-a-real-answer-can-be-trusted)
-  - [11.6 How a value prints](#116-how-a-value-prints)
+  - [11.1 The reference](#111-the-reference)
+  - [11.2 Two rules the reference relies on](#112-two-rules-the-reference-relies-on)
+  - [11.3 How a value prints](#113-how-a-value-prints)
 - [12. Execution and entry point](#12-execution-and-entry-point) — compilations, which `Program` starts, namespaces
   - [12.1 What a compilation is made of](#121-what-a-compilation-is-made-of)
   - [12.2 A name belongs to one type](#122-a-name-belongs-to-one-type)
@@ -533,7 +524,7 @@ with a prefix: the cost is paid only where interpolation is used, instead of by 
 that happens to contain a brace. To write a literal pair, escape the first: `"\{{"`.
 
 **A hole holds any expression**, including a call, a conditional, or a string that interpolates
-in turn. The scanner counts braces opened inside a hole, so `"{{ {1, 2}.Count() }}"` closes at
+in turn. The scanner counts braces opened inside a hole, so `"{{ {1, 2}.Count }}"` closes at
 the right pair.
 
 **A colon says how to write the value.** What follows it is a pattern rather than code, taken
@@ -1520,6 +1511,31 @@ end model
 `base.Member()` reaches its members. `sealed` forbids extending; `abstract` forbids
 constructing.
 
+**A parent is finished before a child begins**, which fixes three things about construction:
+
+- **`base(...)` is the first statement in a constructor** (`PC0248`). Statements above it would
+  read the parent's fields before the parent had decided what they hold.
+- **A constructor reaches its parent's whether or not it says so.** Where nothing is written, the
+  one that takes nothing is used — so `base()` with no arguments changes nothing about what runs.
+  Where the parent has nothing to choose between, writing it anyway is an opinion (`PC0251`)
+  rather than a mistake; where the parent declares several constructors, `base()` says which one
+  builds it and nothing is reported.
+- **A constructor must be able to reach one** (`PC0250`). Where the parent declares constructors
+  and none of them takes nothing, the child has to write `base(...)` — nobody else knows what to
+  hand over. A parent that declares no constructor at all takes nothing, so nothing is required.
+- **Field initializers run before any constructor body**, nearest type first: a child's starting
+  values, then its parent's, then the parent's constructor, then the child's. Which of the two
+  sets ran first is observable only through a side effect, and the order is fixed so that it is
+  fixed rather than incidental.
+
+**`this` is not available in a field's starting value** (`PC0249`). Nothing is built yet — the
+fields hold nothing until their own initializers have run — so a name reached through `this`
+would answer with whatever it happened to hold, and which fields had run would depend on the
+order they were written in. A field whose value depends on another belongs in a constructor.
+
+All four are C#'s rules, chosen for that reason: construction is a place where a wrong mental
+model is expensive, and this is one a reader carries forward rather than unlearns.
+
 **An `abstract` function is declared and left open**, ending at a semicolon where a body would
 begin:
 
@@ -1902,7 +1918,7 @@ Eleven exception types, and every one descends from `Exception`:
 | `ArgumentException` | An argument a function will not accept |
 | `OverflowException` | A result too large for the type to hold |
 | `RecursionTooDeepException` | Calls nested deeper than the language will follow. The one no `catch` takes ([§10.1b](#101b-calling-too-deeply)) |
-| `IOException` | Anything going wrong with a file except its not being there, which is an absent optional instead ([§11.5e](#115e-files-and-folders)) |
+| `IOException` | Anything going wrong with a file except its not being there, which is an absent optional instead ([`File`](standard-library/input-output.md#file)) |
 
 Every one carries a `Message()`. A name the language can raise is a name a program can write,
 because the two come from one list — so nothing can be thrown that cannot be named.
@@ -2046,377 +2062,46 @@ values all the same, since every model converts to one and every function to the
 Every other name here is reached through the name itself; writing `new Math()` is reported
 (`PC0328`).
 
-### 11.1 On every type
+### 11.1 The reference
 
-Inherited from `Model` by every type, values included. Calling one on a value does not box.
+**The members themselves are in [docs/standard-library/](standard-library/README.md)**, one page
+per area, each listing what every member takes and yields with worked examples beside it. This
+section says what the library *is*; that says what is *in* it.
 
-| | |
+| Page | What is on it |
 |---|---|
-| `ToString()` | `string`. Virtual; a structure prints field by field, an enumeration prints its member name, a model prints its type name |
-| `Equals(other)` | `boolean`. The deep comparison `==` uses |
-
-### 11.2 On a set
-
-| | |
-|---|---|
-| `Count()` | `integer` |
-| `Insert(value)` | adds at the end |
-| `InsertAt(index, value)` | adds at a position |
-| `Remove(value)` | `boolean`; removes the first match |
-| `RemoveAt(index)` | removes by position |
-| `Contains(value)` | `boolean` |
-| `IndexOf(value)` | `integer`; -1 if absent |
-| `Clear()` | empties it |
-| `Subset(start)` | a copy of everything from `start` on |
-| `Subset(start, end)` | a copy of the run from `start` up to but not including `end` |
-| `Union(other)` | a new set: this one's elements then the other's |
-| `Intersect(other)` | a new set: the elements also in the other, in this one's order |
-| `Except(other)` | a new set: the elements not in the other |
-| `Distinct()` | a new set: one of each, keeping the first of every repeat |
-| `Join(separator)` | `string`; every element written out, with the separator between |
-
-`Subset`'s end is **exclusive**, the reading `until` has, which is what makes
-`xs.Subset(0, n)` and `xs.Subset(n)` add back up to the whole set.
-
-**These are not the operations of the same name in mathematics**, because a Profi-C set is not
-one: it keeps its order and a value may appear in it twice. So `Union` **appends** rather than
-merging, and `{1, 2}.Union({2, 3})` is `{1, 2, 2, 3}`. `Distinct` is how a program asks for one
-of each, and `xs.Union(ys).Distinct()` is the union of mathematics said in two steps — which is
-two steps because they are two decisions: put them together, then decide about the repeats.
-
-`Intersect` and `Except` divide a set in two between them: every element goes to exactly one
-answer. Putting those back together therefore returns every element, though in the order they
-were divided rather than the order they started in.
-
-Membership everywhere here — `Contains`, `IndexOf`, `Intersect`, `Except`, `Distinct` — is the
-same deep comparison `==` makes ([§11.1](#111-on-every-type)), so all of them agree about what counts as the same
-value.
-
-`Join` reads on the set rather than on a string, because the thing being joined is the
-collection; it is the counterpart of `Split` on a string ([§11.3](#113-on-a-string)). Any set answers it, not only
-a set of strings: each element is written the way it would be written on its own.
-
-**Nothing that yields a set changes one.** `Subset` and the four in [§3.2b](#32b-only-on-a-set-of-optionals) hand back a new set;
-`Insert`, `InsertAt`, `RemoveAt` and `Clear` change the set and yield nothing, and `Remove`
-yields only whether it found something. So the two groups are told apart by their result, and
-a set you were given is never quietly the set someone else is holding.
-
-The copy is **shallow**, which is the depth the rest of the language uses: assigning a model
-copies the reference ([§3.4](#34-values-and-references)), so a set copied out holds the very same models.
-
-### 3.2b Only on a set of optionals
-
-Four more appear when the element type is an optional, since only there is there anything
-empty to drop:
-
-| | |
-|---|---|
-| `TrimStart()`, `TrimEnd()`, `Trim()` | `T?[]`; drops empties from one or both ends |
-| `TrimAll()` | **`T[]`**; drops every empty, anywhere |
-
-`TrimAll` is the one that changes the type. Removing every empty leaves a set where nothing
-can be absent, so it yields the underlying type and the caller stops having to unwrap. The
-other three take from the ends only, so an empty in the middle survives and the type has to
-keep saying so.
-
-The narrower type is safe because the set is a **new one**. `TrimAll` promises that nothing in
-*what it hands back* is absent, and since the original is untouched and separate, nothing can
-put an empty into it afterwards. Had it filtered in place, the promise would have been about a
-set someone else was still holding, and the type would have been a lie waiting to happen.
-
-### 11.3 On a string
-
-| | |
-|---|---|
-| `Count()` | `integer` |
-| `Contains(text)` | `boolean` |
-| `IndexOf(text)` | `integer` |
-| `Substring(start, length)` | `string` |
-| `Insert(text)`, `InsertAt(index, text)` | `string` |
-| `Remove(text)`, `RemoveAt(index)` | `string` |
-| `ToCharacters()` | `character[]` |
-| `Subset(start)`, `Subset(start, end)` | `string`; the run, with the end exclusive |
-| `Trim()`, `TrimStart()`, `TrimEnd()` | `string`; whitespace goes |
-| `Trim(text)`, and the same for the other two | `string`; any of that string's characters go |
-| `Trim(characters)`, and the same for the other two | `string`; any character in the set goes |
-
-A string never changes, so each of these returns a new one.
-
-The three trims each take nothing, a string, or a set of characters. The set form is the one
-to reach for when the characters were worked out rather than typed.
-
-**`Substring` and `Subset` both cut a run out, and differ in their second argument**:
-`Substring(start, length)` takes how many, `Subset(start, end)` takes where to stop. Whichever
-number you have to hand is the one to write. Both give back a `string`, because a run of a
-string is a string — the same rule `Subset` follows on a set, where a run of one is a set.
-
-### 11.4 On a value of a particular type
-
-| | |
-|---|---|
-| `optional.HasValue()`, `Or(fallback)`, `Value()` | [§8](#8-optionals) |
-| `fraction.ToReal()` | `real` |
-| `fraction.Reciprocal()` | `fraction`; the fraction turned over. Zero has no reciprocal and refuses |
-| `real.ToFraction()` | `fraction` |
-| `enumeration.ToInteger()` | `integer` |
-| `exception.Message()` | `string` |
-
-### 11.5 The standard models
-
-| | |
-|---|---|
-| `Console.Write(value)` | writes, no newline |
-| `Console.WriteLine(value)` | writes and ends the line |
-| `Console.Read()` | `string?`; absent at end of input |
-| `Reference.Equals(a, b)` | `boolean`; identity, which is what `==` deliberately is not |
-| `Math.Pi`, `Math.E` | `real`. **Values, so written without `()`** |
-| `Math.Sqrt(x)`, `Math.Cbrt(x)` | `real` from a `real` |
-| `Math.Root(x, degree)` | `real`; the roots with no name of their own |
-| `Math.Pow(base, exponent)` | `real`; `^` is the operator form |
-| `Math.Log(x)` | `real`. **The NATURAL logarithm** — see below |
-| `Math.Log(x, base)`, `Math.Log10(x)`, `Math.Log2(x)` | `real` |
-| `Math.Sin`, `Cos`, `Tan`, `Asin`, `Acos`, `Atan` | `real` from a `real`, in radians |
-| `Math.Sinh`, `Cosh`, `Tanh`, `Asinh`, `Acosh`, `Atanh` | the hyperbolic six, and their inverses |
-| `Math.Atan2(y, x)` | `real`; takes the two sides, so it knows the quadrant |
-| `Math.Abs(x)` | the type it was given — `integer`, `real`, or `fraction` |
-| `Math.Min(a, b)`, `Math.Max(a, b)` | the type they were given |
-| `Math.Floor(x)`, `Math.Ceiling(x)`, `Math.Round(x)` | `integer`, from a `real` or a `fraction` |
-| `Math.Factorial(n)` | `integer`; overflows past 20 |
-| `Fraction.Create(numerator, denominator)` | `fraction` |
-| `Fraction.Create(whole)` | `fraction`; a whole number over one |
-| `Random.Next()`, `Next(below)`, `Next(low, high)` | `integer`; the high bound is **excluded** |
-| `Random.NextDouble()` | `real`, from zero up to but never reaching one |
-| `DateTime.Now`, `DateTime.Today` | `DateTime`. **Values, so written without `()`** |
-| `Format(pattern)` | `string`. On `integer`, `real`, `fraction`, and all four date and time types |
-| `ToInteger()`, `ToReal()`, `ToBoolean()`, `ToFraction()` | On `string`; `integer?`, `real?`, `boolean?`, `fraction?` |
-| `DateTime.Date`, `DateTime.Time` | `Date` and `Time`. **Values, so written without `()`** |
-| `new DateTime(date)`, `new DateTime(date, time)` | A moment built from its halves; the first takes midnight |
-| `DateTime.Parse(text)`, `Parse(text, pattern)` | `DateTime?`, and the same pair on `Date`, `Time` and `TimeSpan` |
-
-**`Format` and `Parse` are the two directions of the same thing**, and both take .NET's own
-patterns unchanged — `F2`, `N0`, `yyyy-MM-dd`, `dddd` — so a pattern learned here is one that
-works in C#. Everything is invariant unless the pattern says otherwise, which is what lets a
-program print and read the same on any machine. A pattern the runtime cannot use raises
-`FormatException`; a pattern given to a type that has no `Format` is `PC0341`, caught while
-compiling.
-
-**`Parse` yields an optional rather than raising.** Text that will not read is the ordinary
-case, not an exceptional one, since most of it arrives from a person typing — so there is
-nothing to catch and no second variable to pass in, and the type says the answer may be absent
-where C# needs either an exception or a `TryParse`. Given a pattern, it reads exactly that
-pattern, which is how a value written by one is read back by the same one.
-
-**A number, a truth or a ratio is read off the text rather than off the type**, because
-`integer` is a reserved word and cannot stand in front of a dot: `"42".ToInteger()`, not
-`integer.Parse("42")`. Each yields an optional for the same reason `Parse` does. `ToFraction`
-accepts either mark between the halves — the language writes `22|7` because a slash already
-means division, a person writes `22/7` because that is what a fraction looks like everywhere
-else, and reading takes both. A bare whole number reads as a ratio over one.
-
-Together with `Console.Read`, which yields `string?` at the end of input, this is what makes
-asking a person for a number two questions rather than one: was anything typed, and did what
-was typed read. Neither can be skipped, because an optional cannot be used until its presence
-is proven.
-
-**`Math.Log` of one number is the natural logarithm** — log to base `e`, what mathematicians
-write as `ln`. C#, Java and C all mean the same by the name, so a program moved between them
-gives the same answer. For base ten, write `Math.Log10(x)`, or `Math.Log(x, 10)`.
-
-**A root, a power and a logarithm leave the rationals**, so all of them answer in reals
-whatever they were given: the square root of a fraction is usually irrational. Everything else
-has a version for each number the language has, because an answer that arrives as a `real`
-cannot be counted with and a `fraction` that widens to one stops being exact.
-
-### 11.5b Chance
-
-Two shapes, and both are .NET's, unchanged:
-
-```
-Random rolls = new Random(42);        a generator of your own, seeded
-Random any = new Random();            seeded from the clock
-
-rolls.Next(1, 7)                      a die: 1 to 6
-Random.Next(1, 7)                     the same, from the one the language keeps
-```
-
-**`Next` excludes its upper bound**, so a die is `Next(1, 7)` rather than `Next(1, 6)`. Everyone
-reads that wrong once; reading it the other way here would mean reading it wrong a second time
-in whatever language they moved to afterwards.
-
-**The shared generator cannot be seeded**, as .NET's shared one cannot. A program that needs
-the same sequence twice holds its own — and holding its own is the thing that makes it
-reproducible, since nothing else can then disturb it.
-
-### 11.5c Moments
-
-A `DateTime` is constructed from a date, or from a date and a time:
-
-```
-DateTime landing = new DateTime(1969, 7, 20);
-DateTime liftoff = new DateTime(1969, 7, 16, 13, 32, 0);
-```
-
-**What .NET reads as a property is read as one here** — `landing.Year`, `landing.DayOfWeek`,
-`DateTime.Now` — without parentheses. `AddDays`, `AddHours`, `AddMinutes`, `AddSeconds`,
-`AddYears` and `AddMonths` are functions and are called.
-
-A moment never changes: adding to one yields another and leaves the first alone, as adding to
-a string does. Two moments holding the same instant are equal, since `==` compares values.
-
-Ordering is `CompareTo`, which yields a negative number when this moment comes first, zero
-when they are the same, and a positive number when it comes after. There are no comparison
-operators on it.
-
-A date that is not one — the thirty-first of February — throws `ArgumentException` naming the
-numbers that were written.
-
-### 11.5d Spans, days, and times of day
-
-Three more types sit beside `DateTime`, and the difference between them is what each leaves
-out:
-
-| | Holds | Leaves out |
-|---|---|---|
-| `DateTime` | a moment | nothing |
-| `Date` | a day | the time of day |
-| `Time` | a time of day | the day |
-| `TimeSpan` | how long something lasted | when it happened |
-
-**`TimeSpan` is what subtracting one moment from another leaves behind**, and what adding to a
-moment takes:
-
-```
-TimeSpan mission = landing.Subtract(liftoff);     4.06:45:40
-Console.WriteLine(mission.TotalHours);            102.76...
-Console.WriteLine(mission.Days);                  4
-liftoff.Add(mission)                              back to landing
-```
-
-Its **parts** and its **totals** answer different questions. An hour and a half has `Hours` of
-1 and `Minutes` of 30 — how you would say it — and `TotalMinutes` of 90, which is how you would
-measure it. A span may run backwards, and the sign survives being printed: `-00:30:00`.
-
-**`Date` is a day with no time of day.** A birthday is one: it is the same day wherever you are
-and whatever hour it is, and holding it as a moment forces a midnight onto it that nobody
-meant. **`Time` is a time of day with no day** — opening hours are these. Adding to a `Time`
-wraps around midnight, because a clock does.
-
-The two make a moment together, and a moment comes apart into them:
-
-```
-birthday.ToDateTime(opening)      a Date and a Time make a DateTime
-Date.FromDateTime(moment)         and a moment comes apart
-Time.FromDateTime(moment)
-```
-
-.NET calls these two `DateOnly` and `TimeOnly`.
-
-A `Time` is not a `TimeSpan`, though both are written with colons. A span is how long something
-lasted, may exceed a day, and may run backwards; a `Time` is a reading on a clock and always
-sits between midnight and the next one.
-
-### 11.5e Files and folders
-
-**A file is read whole or written whole.** There is nothing to open and nothing to close, and
-no way to read part of one. Holding a file open needs an object with state that must be
-released afterwards, and v1 has neither interfaces nor anything that releases itself — but the
-restriction is not only that: whole-file is what a program being learned on wants, and it
-removes the mistake every beginner makes with the other kind.
-
-| `File` | |
-|---|---|
-| `Read(path)` | `string?`; the whole file as text |
-| `ReadLines(path)` | `string[]?`; one entry per line, endings removed |
-| `Write(path, text)` | replaces what was there, making the file if there is none |
-| `WriteLines(path, lines)` | the same, one line per entry |
-| `Append(path, text)` | adds to the end |
-| `Exists(path)` | `boolean` |
-| `Delete(path)` | `boolean`; whether there was one to delete |
-| `Copy(from, to)`, `Move(from, to)` | both replace what is at the destination |
-| `Size(path)` | `integer?`; bytes |
-| `Changed(path)` | `DateTime?`; when it was last written |
-
-| `Directory` | |
-|---|---|
-| `Current` | `string`. **A value, so written without `()`** |
-| `Exists(path)` | `boolean` |
-| `Create(path)` | makes every folder on the way |
-| `Delete(path)` | `boolean`; takes what is inside with it |
-| `Files(path)`, `Folders(path)` | `string[]?`; sorted |
-
-**A missing file is an absent optional; everything else raises `IOException`.** These are
-different questions and the language keeps them apart. Whether a file is there is ordinary, and
-answering it with absence means the common case — read it if it is there — needs no guard, and
-no `Exists` check that the file could slip out from under between the asking and the reading.
-A locked file, a folder that is not there, a path the system will not take, a disk with no room:
-none of those can be said with absence, because absence cannot say which happened.
-
-`Folders` rather than `Directories` only because `Directory.Directories` reads as a stutter;
-the two words mean the same thing. Both members correspond to .NET's `GetFiles` and
-`GetDirectories`, with the `Get` dropped as it is everywhere else here.
-
-**Text is UTF-8 with no byte-order mark.** Writing ends every line with `\n`; reading accepts
-either that or `\r\n` and returns neither, so a file written on one machine reads as the same
-lines on another. Listings come back sorted rather than in whatever order the file system
-offers, so a program prints the same list twice and on two machines.
-
-**Writing does not create the folder it writes into.** A path with a typo in it fails, rather
-than quietly building somewhere nobody meant. `Directory.Create` is the way to say it on
-purpose, and it does make every folder on the way.
-
-Paths are handed to the system as written. A forward slash separates folders on every platform.
-
-### 11.5a How far a real answer can be trusted
-
-`Sqrt` is required by IEEE 754 to be correctly rounded, so it gives the same answer on every
-machine. **The rest of the transcendental members are not, and may differ in the last bit
-between one machine and another.** That is true of C, C#, Java and Python alike: each defers
-to the arithmetic library the platform ships, and those libraries are permitted to disagree by
-a fraction of an ulp.
-
-Two guarantees are made against that:
-
-**A root of an exact power is exact.** `Math.Cbrt(27.0)` is `3`, and `Math.Root(32.0, 5.0)` is
-`2`, on every machine. Where raising the nearest whole number by the degree gives the value
-back exactly, that whole number *is* a root of it, so it is used — which is a better answer as
-well as the same one everywhere.
-
-**Nothing else is corrected.** `Math.Cbrt(28.0)` is left as the library worked it out. A
-program that needs a real answer to be identical across machines should round it to as many
-places as it means to claim, which is what saying "to four places" amounts to.
-
-**`Math.Pi` and `Math.E` are values, not functions.** Writing `Math.Pi()` is reported
-(`PC0338`), as is naming a function without calling it (`PC0330`) — the two diagnostics are a
-pair, so whichever a reader guesses, the compiler says which it is.
-
-**Rounding lands on a whole number**, so each of the three yields an `integer` and can be used
-as a count, an index, or a bound. Between them they are the three honest ways from a `real` to
-an `integer`, which is why no single `ToInteger` exists: it would have to pick one of the three
-silently, and which one is the question being asked.
-
-A half goes **away from zero** — `Math.Round(2.5)` is `3` — the rule taught in school, rather
-than .NET's default of rounding to the even neighbor.
-
-`Console.Write` and `Console.WriteLine` take a value of **any** type, and behave as in C#:
-only the second ends the line. Neither is an overload set; both are known to the compiler,
-which chooses how to render the value from its static type.
-
-**`Fraction.Create(numerator, denominator)`** builds a `fraction` from
-two integers. A fraction literal is two numerals fixed when the program is written, so this
-is the only way to make one from values that exist only while it runs. The result is an
-ordinary fraction — reduced, with its sign carried on the numerator. A denominator of zero is
-rejected while compiling where it can be seen, exactly as `1 / 0` is, and throws
-`DivideByZeroException` where it cannot.
-
-Given one integer, `Fraction.Create(n)` reads it as a whole number over one. An integer
-already widens to a fraction wherever one is wanted, so this earns its place only where
-nothing says a fraction is wanted: `let f = 3;` holds an integer, and
-`let f = Fraction.Create(3);` holds `3|1`.
-
-Note the two spellings: `fraction` is the type and a reserved word; `Fraction` is the model
-beside it, holding what a fraction needs that is not a member of one.
-
-### 11.6 How a value prints
+| [Every value](standard-library/every-value.md) | `ToString`, `Equals`, `Reference.Equals`, an enumeration's `ToInteger` |
+| [Text](standard-library/text.md) | Every member of a `string` |
+| [Sets](standard-library/sets.md) | Every member of a `T[]` |
+| [Optionals](standard-library/optionals.md) | The three members of a `T?` |
+| [Numbers](standard-library/numbers.md) | `Math`, `Fraction`, `Random`, and the members of a number |
+| [Dates and times](standard-library/dates-and-times.md) | `DateTime`, `Date`, `Time`, `TimeSpan` |
+| [Input and output](standard-library/input-output.md) | `Console`, `File`, `Directory` |
+| [Exceptions](standard-library/exceptions.md) | `Message`, and every exception the language raises |
+
+It is kept apart from this document for the reason every reference is: the two are read
+differently. A specification is read once, in order, to learn what the language does; a reference
+is opened at one member, answered, and closed. Written into one file they crowd each other out,
+which is what the member tables here had begun to do.
+
+**A test holds the two together.** Every member the compiler provides must appear in the
+reference, and every page must be reachable from its index — so a member added to the language
+and left undocumented fails the build rather than going quietly unlearned.
+
+### 11.2 Two rules the reference relies on
+
+**A member written without parentheses is a value rather than something to call.** `Math.Pi` and
+`landing.Year` are read; `word.ToUpper()` is called. Writing parentheses on a value is reported
+(`PC0338`), as is naming a function without them (`PC0330`) — the two diagnostics are a pair, so
+whichever a reader guesses, the compiler says which it is.
+
+**A member that may have no answer yields an optional** rather than raising: `File.Read` yields
+`string?`, `"12".ToInteger()` yields `integer?`, `Console.Read` yields `string?`. Absence is an
+ordinary outcome and is handled by [§8](#8-optionals); a fault is an exception. Which of the two
+a member chooses is the single most useful thing to know about it, and every table in the
+reference says so.
+
+### 11.3 How a value prints
 
 A set prints its elements between braces, separated by a comma and a space, and a structure
 prints its fields **in the order they were declared**.
@@ -2844,6 +2529,10 @@ of a reader.
 | `PC0245` | warning | This documents a parameter that is not there |
 | `PC0246` | warning | This describes a value that is never given back |
 | `PC0247` | opinion | This is documented twice |
+| `PC0248` | error | 'base' has to come first |
+| `PC0249` | error | 'this' is not available yet |
+| `PC0250` | error | Nothing here builds the parent |
+| `PC0251` | opinion | This 'base()' changes nothing |
 
 ### PC0300 to PC0399
 

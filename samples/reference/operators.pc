@@ -45,7 +45,7 @@ shared model Operators
         # Parentheses, brackets, braces, comma, semicolon, and dot.
         integer[] literal = {1, 2, 3};
         let indexed = items[0];
-        let member = text.Count();
+        let member = text.Count;
 
         # A call is punctuation too, but this one yields nothing, so there is no
         # result to give a name to.

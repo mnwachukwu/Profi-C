@@ -618,9 +618,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "held: " [String]
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'assorted'
+            MemberExpr 'Count'
+              IdentifierExpr 'assorted'
       VarDeclStmt 'asModel'
         NamedTypeSyntax 'Model'
         IndexExpr

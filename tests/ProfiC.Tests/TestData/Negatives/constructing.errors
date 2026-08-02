@@ -1,0 +1,3 @@
+constructing.pc(34,9): error PC0248: 'base(...)' must be the first statement in a constructor, so that 'Person' is fully built before anything here runs.
+constructing.pc(46,5): error PC0250: 'Volunteer' extends 'Person', which cannot be built without being given something. Begin this constructor with 'base(...)': 'Person' takes (string).
+constructing.pc(59,27): error PC0249: 'Rectangle' is still being built here, so 'this' cannot be reached from a field's starting value. Give 'area' its value in a constructor instead.

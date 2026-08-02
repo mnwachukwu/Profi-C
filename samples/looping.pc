@@ -220,7 +220,7 @@ shared model Program
         Console.Write("  up to the first zero: ");
 
         loop
-            if at >= readings.Count()
+            if at >= readings.Count
                 break;
             end if
 

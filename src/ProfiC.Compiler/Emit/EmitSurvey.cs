@@ -63,24 +63,24 @@ internal sealed class EmitSurvey : SyntaxVisitor
     // ---- Declarations -----------------------------------------------------------------------
 
     /// <summary>
-    /// <para>A model may be emitted when it stands on its own.</para>
-    /// <para>Inheritance is what is missing, and it is missing as a whole: a base type brings
-    /// with it a constructor to chain to, virtual dispatch, and members reached through a parent
-    /// — so a model extending another is refused rather than emitted as though it did not.</para>
+    /// <para>A model may be emitted when what it extends is another model this program declares,
+    /// or nothing.</para>
+    /// <para>What is left is a model built on one the language provides — an exception. That
+    /// parent is a type in the runtime rather than one being written here, so deriving from it
+    /// means knowing how to reach its constructor and its members, which is the same work
+    /// <c>throw</c> and <c>try</c> are waiting on.</para>
     /// </summary>
     public override void VisitModelDecl(ModelDecl node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        if (node.BaseTypeName is not null)
+        // 'Model' is the root every model has anyway, and is System.Object here, so naming it
+        // changes nothing. Any other built-in parent is an exception.
+        if (_model.GetSymbol(node) is ModelSymbol { BaseType: { } parent }
+            && !CilTypes.IsDeclaredModel(parent)
+            && !ReferenceEquals(parent, BuiltInTypes.Of("Model")))
         {
-            Refuse(node, $"The model '{node.Name}', which extends another");
-            return;
-        }
-
-        if (node.Modifiers.HasFlag(DeclarationModifiers.Abstract))
-        {
-            Refuse(node, $"The model '{node.Name}', which is abstract");
+            Refuse(node, $"The model '{node.Name}', which extends '{parent.Name}'");
             return;
         }
 
@@ -127,7 +127,10 @@ internal sealed class EmitSurvey : SyntaxVisitor
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        if (node.Body is null)
+        // An abstract function is declared and left open on purpose, and becomes an abstract
+        // method — which has no body in the metadata either. Any other function without one
+        // has nothing to emit.
+        if (node.Body is null && !node.Modifiers.HasFlag(DeclarationModifiers.Abstract))
         {
             Refuse(node, $"The function '{node.Name}', which declares no body");
             return;
@@ -312,6 +315,15 @@ internal sealed class EmitSurvey : SyntaxVisitor
     {
         ArgumentNullException.ThrowIfNull(node);
 
+        // A member of a built-in read rather than called — a set's Count, Math.Pi. It resolves
+        // to no symbol of the program's, so without this it passes as though it were nothing at
+        // all and reaches the emitter, which has no sequence for it and throws.
+        if (_model.GetBuiltIn(node) is { } builtIn && !CilBuiltIns.IsSupported(builtIn))
+        {
+            Refuse(node, $"Reading {CilBuiltIns.NameOf(builtIn)}");
+            return;
+        }
+
         switch (_model.GetSymbol(node))
         {
             case FieldSymbol field:
@@ -367,6 +379,15 @@ internal sealed class EmitSurvey : SyntaxVisitor
     public override void VisitCallExpr(CallExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
+
+        // 'base(...)' calls nothing: it names the parent's constructor, which the checker bound
+        // to the call rather than to the callee, and which the emitter chains to. Whether that
+        // parent can be emitted at all is settled where the model is.
+        if (node.Callee is ReceiverExpr { Receiver: ReceiverKind.Base })
+        {
+            base.VisitCallExpr(node);
+            return;
+        }
 
         if (_model.GetBuiltIn(node.Callee) is { } builtIn)
         {

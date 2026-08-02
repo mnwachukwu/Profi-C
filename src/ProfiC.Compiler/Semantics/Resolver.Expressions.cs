@@ -249,6 +249,22 @@ public sealed partial class Resolver
             return;
         }
 
+        // Nothing is built yet inside a field's starting value: the fields hold nothing until
+        // their own initializers have run, and no constructor has started. A name reached
+        // through 'this' here would answer with whatever it happened to hold, and which fields
+        // had run would depend on the order they were written in.
+        if (_initializingField is { } beingBuilt)
+        {
+            Report(
+                DiagnosticDescriptors.ThisInFieldInitializer,
+                receiver,
+                word,
+                _currentType.Name,
+                beingBuilt);
+
+            return;
+        }
+
         if (receiver.Receiver == ReceiverKind.Base)
         {
             if (_currentModel?.BaseType is null)

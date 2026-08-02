@@ -18,7 +18,7 @@ model Text
     end function
 
     public shared string function Pad(string what, integer width)
-        yield what + Text.Repeat(" ", Math.Max(0, width - what.Count()));
+        yield what + Text.Repeat(" ", Math.Max(0, width - what.Count));
     end function
 
 end model

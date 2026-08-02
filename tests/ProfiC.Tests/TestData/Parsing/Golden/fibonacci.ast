@@ -96,9 +96,8 @@ CompilationUnit
         NamedTypeSyntax 'string'
         IdentifierExpr 'text'
       ForStmt 'i' until
-        CallExpr
-          MemberExpr 'Count'
-            IdentifierExpr 'text'
+        MemberExpr 'Count'
+          IdentifierExpr 'text'
         LiteralExpr 12 [Integer]
         AssignmentStmt
           IdentifierExpr 'padded'

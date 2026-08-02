@@ -30,8 +30,12 @@ shared model Program
         Counter wrongType = new Counter("ten");
         Counter tooMany = new Counter(1, 2);
 
-        # There are no properties, so this is a function that was not called.
+        # 'Distinct' is something to do rather than something a set has, so it is a function
+        # and naming it is not calling it. 'Count' beside it is a value and reads correctly
+        # without parentheses — which is the whole reason the two mistakes are worth telling
+        # apart, and why each names which kind of member it found.
         Console.WriteLine(xs.Count);
+        Console.WriteLine(xs.Distinct);
 
         # 'count' belongs to each Counter, not to the Counter type.
         Console.WriteLine(Counter.count);

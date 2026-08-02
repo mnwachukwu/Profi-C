@@ -78,6 +78,21 @@ public sealed partial class Resolver
                         break;
                 }
             }
+
+            // A model that writes no constructor still gets one, and that one has the same
+            // parent to build as any other. Checked here rather than in BindFunction, which
+            // never runs for a constructor nobody wrote.
+            if (symbol is ModelSymbol { BaseType: { } parent } model
+                && !members.OfType<FunctionDecl>().Any(IsConstructorOf)
+                && NeedsArgumentsToBuild(parent))
+            {
+                Report(
+                    DiagnosticDescriptors.NoParentConstructorToReach,
+                    declaration,
+                    model.Name,
+                    parent.Name,
+                    Wording.Either([.. TakenBy(parent)]));
+            }
         }
         finally
         {
@@ -105,8 +120,19 @@ public sealed partial class Resolver
         if (field.Initializer is not null)
         {
             // A field initializer runs before the constructor body and has no locals around
-            // it, so it binds in an empty scope.
-            InScope(() => BindExpression(field.Initializer));
+            // it, so it binds in an empty scope — and with nothing built yet, so 'this' and
+            // 'base' are out of reach until a constructor starts.
+            string? savedField = _initializingField;
+            _initializingField = field.Name;
+
+            try
+            {
+                InScope(() => BindExpression(field.Initializer));
+            }
+            finally
+            {
+                _initializingField = savedField;
+            }
         }
     }
 
@@ -165,10 +191,125 @@ public sealed partial class Resolver
 
                 BindStatements(function.Body ?? []);
             });
+
+            if (isMember && symbol is { IsConstructor: true })
+            {
+                CheckHowTheParentIsBuilt(function);
+            }
         }
         finally
         {
             _inSharedMember = savedShared;
+        }
+    }
+
+    /// <summary>
+    /// <para>Holds a constructor to the two rules about its parent: that <c>base(...)</c> comes
+    /// first if it is written, and that it is written where the parent needs it.</para>
+    /// <para>Both exist because a parent decides its own state before a child adds to it. A call
+    /// written lower down would run statements against fields the parent had not filled in yet;
+    /// a call left out entirely leaves them holding nothing at all, which is the worse of the two
+    /// because the program runs and simply reads empty.</para>
+    /// </summary>
+    private void CheckHowTheParentIsBuilt(FunctionDecl constructor)
+    {
+        if (_currentModel?.BaseType is not { } parent)
+        {
+            return;
+        }
+
+        IReadOnlyList<Statement> body = constructor.Body ?? [];
+        Expression? opening = body is [ExpressionStmt first, ..] ? first.Expression : null;
+
+        BaseCalls written = new();
+
+        foreach (Statement statement in body)
+        {
+            statement.Accept(written);
+        }
+
+        foreach (CallExpr call in written.Found)
+        {
+            if (!ReferenceEquals(call, opening))
+            {
+                Report(DiagnosticDescriptors.BaseCallMustComeFirst, call, parent.Name);
+            }
+            else if (call.Arguments.Count == 0 && Constructors(parent).Count() <= 1)
+            {
+                // The parent this reaches is the one that takes nothing, which is the one a
+                // constructor reaches without being told. Saying so runs nothing extra.
+                //
+                // Only where the parent has nothing to choose between. Where it declares
+                // several, 'base()' picks the one taking nothing out of them, and which
+                // constructor a parent is built by is worth reading off the line.
+                Report(DiagnosticDescriptors.BaseCallSaysWhatHappensAnyway, call, parent.Name);
+            }
+        }
+
+        if (written.Found.Count == 0 && NeedsArgumentsToBuild(parent))
+        {
+            Report(
+                DiagnosticDescriptors.NoParentConstructorToReach,
+                constructor,
+                _currentModel.Name,
+                parent.Name,
+                Wording.Either([.. TakenBy(parent)]));
+        }
+    }
+
+    private bool IsConstructorOf(FunctionDecl declaration) =>
+        _model.GetSymbol(declaration) is FunctionSymbol { IsConstructor: true };
+
+    /// <summary>
+    /// <para>Whether a model can only be built by handing it something.</para>
+    /// <para>A model that declares no constructor at all takes nothing, which is why the absence
+    /// of one is not the same as having none that fit.</para>
+    /// </summary>
+    private static bool NeedsArgumentsToBuild(ModelSymbol parent)
+    {
+        FunctionSymbol[] declared = [.. Constructors(parent)];
+
+        return declared.Length > 0 && !declared.Any(c => c.Parameters.Count == 0);
+    }
+
+    private static IEnumerable<FunctionSymbol> Constructors(ModelSymbol model) =>
+        model.Lookup(model.Name).OfType<FunctionSymbol>().Where(c => c.IsConstructor);
+
+    /// <summary>How each of a parent's constructors reads, for a message that shows the choice.</summary>
+    private static IEnumerable<string> TakenBy(ModelSymbol parent) =>
+        Constructors(parent)
+            .Select(c => $"({string.Join(", ", c.Parameters.Select(p => p.Type?.Display ?? "?"))})");
+
+    /// <summary>
+    /// <para>Every <c>base(...)</c> written in a constructor, wherever it sits.</para>
+    /// <para>Found by walking rather than by reading the first statement, so that one buried in
+    /// an <c>if</c> or a loop is reported too — which is the shape somebody reaches for when they
+    /// want a parent built one way or another, and the shape the rule most needs to catch.</para>
+    /// </summary>
+    private sealed class BaseCalls : SyntaxVisitor
+    {
+        public List<CallExpr> Found { get; } = [];
+
+        public override void VisitCallExpr(CallExpr node)
+        {
+            ArgumentNullException.ThrowIfNull(node);
+
+            if (node.Callee is ReceiverExpr { Receiver: ReceiverKind.Base })
+            {
+                Found.Add(node);
+            }
+
+            base.VisitCallExpr(node);
+        }
+
+        // A function written inside a constructor has a body of its own, and a 'base' in there
+        // belongs to that body rather than to this constructor's opening.
+        public override void VisitLocalDeclStmt(LocalDeclStmt node)
+        {
+        }
+
+        public override void VisitLambdaExpr(LambdaExpr node)
+        {
         }
     }
 

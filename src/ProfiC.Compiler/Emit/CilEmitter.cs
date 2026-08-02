@@ -101,7 +101,7 @@ public sealed partial class CilEmitter
 
     private void Write(IReadOnlyList<CompilationUnit> units, string path)
     {
-        ModelDecl[] models = [.. units.SelectMany(Models)];
+        ModelDecl[] models = [.. BasesFirst([.. units.SelectMany(Models)])];
         Declared[] functions = [.. models.SelectMany(Functions)];
 
         // Pass one: every type, then every field and signature. All of it before any body, so
@@ -189,12 +189,64 @@ public sealed partial class CilEmitter
         model.Members.OfType<FunctionDecl>().Select(f => new Declared(model, f));
 
     /// <summary>
-    /// <para>Defines a model's type.</para>
+    /// <para>The models ordered so that a parent always comes before what extends it.</para>
+    /// <para>A type is defined with its base named, and a base has to exist to be named — so
+    /// this ordering is what lets the rest of the emitter treat the list as flat. Declaration
+    /// order will not do: a file may declare a child above its parent, and two files have no
+    /// order between them at all.</para>
+    /// </summary>
+    private IEnumerable<ModelDecl> BasesFirst(IReadOnlyList<ModelDecl> models)
+    {
+        Dictionary<DeclaredTypeSymbol, ModelDecl> byType = [];
+
+        foreach (ModelDecl model in models)
+        {
+            if (_model.GetSymbol(model) is DeclaredTypeSymbol owner)
+            {
+                byType.TryAdd(owner, model);
+            }
+        }
+
+        List<ModelDecl> ordered = new(models.Count);
+        HashSet<ModelDecl> placed = [];
+        HashSet<ModelDecl> walking = [];
+
+        foreach (ModelDecl model in models)
+        {
+            Place(model);
+        }
+
+        return ordered;
+
+        void Place(ModelDecl model)
+        {
+            // 'walking' guards against an inheritance cycle, which the resolver reports and
+            // which would otherwise be followed forever here.
+            if (!placed.Add(model) || !walking.Add(model))
+            {
+                return;
+            }
+
+            if (_model.GetSymbol(model) is ModelSymbol { BaseType: { } parent }
+                && byType.TryGetValue(parent, out ModelDecl? above))
+            {
+                Place(above);
+            }
+
+            walking.Remove(model);
+            ordered.Add(model);
+        }
+    }
+
+    /// <summary>
+    /// <para>Defines a model's type, with whatever it extends.</para>
     /// <para>A <c>shared</c> model becomes a sealed abstract class, which is what a C# static
     /// class is: it has no instances by definition, and saying so in the metadata means the
-    /// runtime enforces it rather than the convention holding by luck. Any other model becomes
-    /// an ordinary class deriving from <c>System.Object</c> — which is what Profi-C's
-    /// <c>Model</c> is, so the base needs no adapter.</para>
+    /// runtime enforces it rather than the convention holding by luck.</para>
+    /// <para>Anything else derives from the model it extends, or from <c>System.Object</c> where
+    /// it extends nothing — which is what Profi-C's <c>Model</c> is, so the root of every chain
+    /// needs no adapter. <c>sealed</c> and <c>abstract</c> are written into the metadata for the
+    /// same reason <c>shared</c> is: the runtime then enforces what the language promised.</para>
     /// </summary>
     private void DefineType(ModelDecl declaration)
     {
@@ -208,11 +260,30 @@ public sealed partial class CilEmitter
             ? TypeAttributes.Sealed | TypeAttributes.Abstract
             : TypeAttributes.BeforeFieldInit;
 
+        if (declaration.Modifiers.HasFlag(DeclarationModifiers.Abstract))
+        {
+            shape |= TypeAttributes.Abstract;
+        }
+
+        if (declaration.Modifiers.HasFlag(DeclarationModifiers.Sealed))
+        {
+            shape |= TypeAttributes.Sealed;
+        }
+
         _types[owner] = _module.DefineType(
             owner.Name,
             TypeAttributes.Public | TypeAttributes.Class | shape,
-            typeof(object));
+            BaseOf(owner));
     }
+
+    /// <summary>
+    /// The CLR type a model derives from: the builder for the model it extends, or
+    /// <c>System.Object</c> where it extends nothing a program declared.
+    /// </summary>
+    private Type BaseOf(DeclaredTypeSymbol owner) =>
+        owner is ModelSymbol { BaseType: { } parent } && _types.TryGetValue(parent, out TypeBuilder? built)
+            ? built
+            : typeof(object);
 
     /// <summary>
     /// Defines a model's fields, and remembers which of them were written with a value so that
@@ -276,16 +347,9 @@ public sealed partial class CilEmitter
             return;
         }
 
-        // A shared function has no receiver; anything else is called on one, and the CLR puts
-        // that receiver in argument zero.
-        MethodAttributes shape = function.Modifiers.HasFlag(DeclarationModifiers.Shared)
-            || declared.Owner.Modifiers.HasFlag(DeclarationModifiers.Shared)
-                ? MethodAttributes.Public | MethodAttributes.Static
-                : MethodAttributes.Public;
-
         MethodBuilder method = type.DefineMethod(
             function.Name,
-            shape,
+            ShapeOf(function, declared.Owner),
             Returning(function),
             parameters);
 
@@ -296,6 +360,56 @@ public sealed partial class CilEmitter
         }
 
         _functions[function] = method;
+    }
+
+    /// <summary>
+    /// <para>How a function is declared in the metadata.</para>
+    /// <para>A shared function has no receiver; anything else is called on one, and the CLR puts
+    /// that receiver in argument zero.</para>
+    /// <para><b>The slot is what makes dispatch work.</b> A virtual method may either take a slot
+    /// of its own or reuse the one its parent already has, and which of those it does is the
+    /// whole difference between overriding and hiding. <c>virtual</c> starts a slot;
+    /// <c>override</c> reuses the one above it, so a call written against the parent reaches the
+    /// child. Getting that backwards costs nothing at build time and everything at run time — the
+    /// program works, and every call through a parent reaches the parent's version.</para>
+    /// <para><c>HideBySig</c> throughout, so a name is hidden by a matching signature rather than
+    /// by the name alone. Without it a child declaring <c>Area(integer)</c> would hide the
+    /// parent's <c>Area()</c> as well, which is not what either of them said.</para>
+    /// </summary>
+    private static MethodAttributes ShapeOf(FunctionSymbol function, ModelDecl owner)
+    {
+        MethodAttributes shape = MethodAttributes.Public | MethodAttributes.HideBySig;
+
+        if (function.Modifiers.HasFlag(DeclarationModifiers.Shared)
+            || owner.Modifiers.HasFlag(DeclarationModifiers.Shared))
+        {
+            return shape | MethodAttributes.Static;
+        }
+
+        if (function.Modifiers.HasFlag(DeclarationModifiers.Override))
+        {
+            shape |= MethodAttributes.Virtual;
+        }
+        else if (function.Modifiers.HasFlag(DeclarationModifiers.Virtual)
+                 || function.Modifiers.HasFlag(DeclarationModifiers.Abstract))
+        {
+            shape |= MethodAttributes.Virtual | MethodAttributes.NewSlot;
+        }
+
+        if (function.Modifiers.HasFlag(DeclarationModifiers.Abstract))
+        {
+            shape |= MethodAttributes.Abstract;
+        }
+
+        // Final only alongside Virtual: sealing is a statement about a slot, and a method with
+        // no slot has nothing to seal. The CLR rejects the pair written any other way.
+        if (function.Modifiers.HasFlag(DeclarationModifiers.Sealed)
+            && shape.HasFlag(MethodAttributes.Virtual))
+        {
+            shape |= MethodAttributes.Final;
+        }
+
+        return shape;
     }
 
     private Type Returning(FunctionSymbol function) =>

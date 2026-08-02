@@ -372,7 +372,7 @@ Errors come back all at once rather than one per run, with positions, in the for
 already parse. A file with several mistakes in it reports like this:
 
 ```
-scratch.pc(4,27): error PC0330: 'Count' is a function, so it has to be called: write 'Count()'.
+scratch.pc(4,27): error PC0330: 'Total' is a function, so it has to be called: write 'Total()'.
 scratch.pc(7,27): error PC0400: 'total' is used here before it has been given a value.
 scratch.pc(10,27): error PC0303: '+' is not defined for an integer? and an integer.
 ```
@@ -720,6 +720,7 @@ Programs the compiler rejects:
 | [ignoring.pc](samples/negatives/compile/ignoring.pc) | An `ignore` naming no diagnostic, one naming a diagnostic nothing here reports, and one trying to silence an error — which fires anyway |
 | [documenting.pc](samples/negatives/compile/documenting.pc) | A documented parameter the function does not take, `@yields:` on a function that yields nothing, a label written twice, and a doc above a statement |
 | [abstract.pc](samples/negatives/compile/abstract.pc) | A function left open on a model that can be constructed, a body where there should be none and none where there should be one, and a model that never writes what it inherited |
+| [constructing.pc](samples/negatives/compile/constructing.pc) | **Building a thing in the wrong order.** A `base(...)` written below a line that reads the parent, a child with no way to build a parent that needs something, and a field's starting value reaching for `this` |
 
 Programs that compile and then fail, because the answer depends on a value the compiler cannot
 see:

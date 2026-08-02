@@ -1,0 +1,73 @@
+##
+    Building a thing in the wrong order.
+
+    This program does not compile. Every mistake here is the same one told three ways: something
+    is read before whatever decides its value has run.
+
+    A parent settles its own state before a child adds to it, so 'base(...)' comes first and a
+    child that cannot reach a parent's constructor has to say so. A field's starting value runs
+    before any constructor at all, so nothing there can look at the instance it belongs to.
+
+    All three are also C#'s rules. That is the point of them being rules here: what a reader
+    learns about construction in Profi-C is what they will find waiting for them.
+##
+
+model Person
+
+    public string name;
+
+    public function Person(string given)
+        this.name = given;
+    end function
+
+end model
+
+model Employee extends Person
+
+    public string title;
+
+    public function Employee(string given, string role)
+        # Wrong: the parent has to be built before anything reads what it holds. Written here,
+        # this line sees 'name' still empty, because Person's constructor has not run yet.
+        Console.WriteLine("building " + this.name);
+
+        base(given);
+
+        this.title = role;
+    end function
+
+end model
+
+model Volunteer extends Person
+
+    # Wrong: Person cannot be built without being given a name, and nothing here gives it one.
+    # Without the rule this compiles and runs, and every Volunteer has an empty name — which
+    # looks like a mistake in whatever printed it rather than one here.
+    public function Volunteer()
+        Console.WriteLine("a volunteer");
+    end function
+
+end model
+
+model Rectangle
+
+    public integer width = 4;
+
+    # Wrong: nothing is built yet. 'width' above has run, but only because it was written first
+    # — reorder the two lines and this reads zero instead, with nothing anywhere reporting it.
+    # A value that depends on another belongs in a constructor.
+    public integer area = this.width * 3;
+
+end model
+
+shared model Program
+
+    function Main()
+        Employee worker = new Employee("Ada", "engineer");
+        Volunteer helper = new Volunteer();
+        Rectangle shape = new Rectangle();
+
+        Console.WriteLine(worker.title + " " + helper.name + " " + shape.area);
+    end function
+
+end model

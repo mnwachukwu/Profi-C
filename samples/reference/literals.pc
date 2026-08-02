@@ -94,7 +94,7 @@ shared model Literals
         let adjacent = "{{count}}{{count}}";
         let formatted = "{{count:N2}}";
         let holding = "{{ "a string in a hole" }}";
-        let nested = "{{ {1, 2}.Count() }}";
+        let nested = "{{ {1, 2}.Count }}";
     end function
 
     # ---- Booleans ---------------------------------------------------------------

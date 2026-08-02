@@ -18,7 +18,7 @@ model Shelf
     end function
 
     public integer function Count()
-        yield this.books.Count();
+        yield this.books.Count;
     end function
 
     public string function Describe(integer index)

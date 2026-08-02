@@ -192,9 +192,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  how many        ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'lines'
+              MemberExpr 'Count'
+                IdentifierExpr 'lines'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -443,32 +442,30 @@ CompilationUnit
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  files            ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  CallExpr
-                    MemberExpr 'Or'
-                      CallExpr
-                        MemberExpr 'Files'
-                          IdentifierExpr 'Directory'
-                        MemberExpr 'Folder'
-                          IdentifierExpr 'Program'
-                    CollectionExpr
+              MemberExpr 'Count'
+                CallExpr
+                  MemberExpr 'Or'
+                    CallExpr
+                      MemberExpr 'Files'
+                        IdentifierExpr 'Directory'
+                      MemberExpr 'Folder'
+                        IdentifierExpr 'Program'
+                  CollectionExpr
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  folders          ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  CallExpr
-                    MemberExpr 'Or'
-                      CallExpr
-                        MemberExpr 'Folders'
-                          IdentifierExpr 'Directory'
-                        MemberExpr 'Folder'
-                          IdentifierExpr 'Program'
-                    CollectionExpr
+              MemberExpr 'Count'
+                CallExpr
+                  MemberExpr 'Or'
+                    CallExpr
+                      MemberExpr 'Folders'
+                        IdentifierExpr 'Directory'
+                      MemberExpr 'Folder'
+                        IdentifierExpr 'Program'
+                  CollectionExpr
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

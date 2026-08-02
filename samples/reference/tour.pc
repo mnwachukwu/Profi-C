@@ -217,7 +217,7 @@ namespace Tour
             let pair = new Pair(3, 4);
             let first = numbers[0];
             let described = square.Describe();
-            let total = numbers.Count();
+            let total = numbers.Count;
 
             # Every operator, across all nine precedence levels.
             let arithmetic = 1 + 2 - 3 * 4 / 5 % 6;

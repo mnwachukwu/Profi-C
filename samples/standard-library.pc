@@ -88,7 +88,7 @@ shared model Program
         Console.WriteLine("== members of a set ==");
         integer[] values = {40, 10, 30};
 
-        Console.WriteLine("  Count()        = " + values.Count());
+        Console.WriteLine("  Count()        = " + values.Count);
         Console.WriteLine("  IndexOf(30)    = " + values.IndexOf(30));
         Console.WriteLine("  Contains(99)   = " + values.Contains(99));
 
@@ -102,7 +102,7 @@ shared model Program
         Console.WriteLine("  after removals = " + Program.Render(values));
 
         values.Clear();
-        Console.WriteLine("  after Clear()  = " + values.Count() + " left");
+        Console.WriteLine("  after Clear()  = " + values.Count + " left");
 
         ##
             Subset copies a run out. The end is exclusive, which is the reading 'until' has
@@ -159,7 +159,7 @@ shared model Program
         Console.WriteLine("== members of a string ==");
         let word = "programming";
 
-        Console.WriteLine("  Count()            = " + word.Count());
+        Console.WriteLine("  Count()            = " + word.Count);
         Console.WriteLine("  Contains(\"gram\")   = " + word.Contains("gram"));
         Console.WriteLine("  IndexOf(\"gram\")    = " + word.IndexOf("gram"));
         ##
@@ -379,7 +379,7 @@ shared model Program
     string function Render(integer[] values)
         string text = "{";
 
-        loop for i = 0 until values.Count()
+        loop for i = 0 until values.Count
             if i > 0
                 text = text + ", ";
             end if

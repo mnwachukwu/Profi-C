@@ -39,7 +39,7 @@ shared model Program
 
         # Any expression, not only a name.
         Console.WriteLine("  in capitals: {{name.ToUpper()}}");
-        Console.WriteLine("  the longer word: {{if name.Count() > 4 then name else "Profi-C"}}");
+        Console.WriteLine("  the longer word: {{if name.Count > 4 then name else "Profi-C"}}");
 
         # A brace on its own, and a pair written on purpose.
         Console.WriteLine("  a set looks like {1, 2, 3}");
@@ -140,7 +140,7 @@ shared model Program
         let sentence = "the quick brown fox";
         string[] words = sentence.Split(" ");
 
-        Console.WriteLine("  words:      {{words.Count()}}");
+        Console.WriteLine("  words:      {{words.Count}}");
         Console.WriteLine("  hyphenated: {{words.Join("-")}}");
         Console.WriteLine("  shouted:    {{sentence.ToUpper()}}");
         Console.WriteLine("  quietly:    {{sentence.ToLower()}}");

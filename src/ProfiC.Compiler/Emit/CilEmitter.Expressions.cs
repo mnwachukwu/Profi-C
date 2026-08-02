@@ -412,10 +412,20 @@ public sealed partial class CilEmitter
             EmitExpression(argument);
         }
 
-        // 'callvirt' on an instance method even though nothing overrides yet: it is what makes
-        // a call on a missing receiver fail where the call is written rather than inside the
-        // method, and it is what virtual dispatch will need without changing this line.
-        _il.Emit(method.IsStatic ? OpCodes.Call : OpCodes.Callvirt, method);
+        // 'callvirt' on an instance method, which dispatches on what the receiver turned out to
+        // be — so an override wins over the version the declaring type wrote. It also makes a
+        // call on a missing receiver fail where the call is written rather than inside the
+        // method, which is true even of a method nothing overrides.
+        //
+        // 'base.Member()' is the exception, and 'call' is the whole of what makes it mean
+        // anything: written inside an override, a virtual call would find that same override and
+        // go round forever. Reaching past the child is what 'base' is for.
+        bool reachingPastTheChild =
+            call.Callee is MemberExpr { Receiver: ReceiverExpr { Receiver: ReceiverKind.Base } };
+
+        _il.Emit(
+            method.IsStatic || reachingPastTheChild ? OpCodes.Call : OpCodes.Callvirt,
+            method);
     }
 
     /// <summary>

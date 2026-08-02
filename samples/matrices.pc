@@ -43,8 +43,8 @@ shared model Program
                               {4, 5, 6},
                               {7, 8, 9}};
 
-        Console.WriteLine("  rows:        " + square.Count());
-        Console.WriteLine("  columns:     " + square[0].Count());
+        Console.WriteLine("  rows:        " + square.Count);
+        Console.WriteLine("  columns:     " + square[0].Count);
         Console.WriteLine("  square[1][2] is " + square[1][2]);
 
         Program.WriteGrid("  the whole of it", square);
@@ -63,7 +63,7 @@ shared model Program
         integer[][][] cube = {{{1, 2}, {3, 4}},
                               {{5, 6}, {7, 8}}};
 
-        Console.WriteLine("  layers:         " + cube.Count());
+        Console.WriteLine("  layers:         " + cube.Count);
         Console.WriteLine("  cube[1][0][1] is " + cube[1][0][1]);
 
         Program.WriteCube("  the whole of it", cube);
@@ -87,7 +87,7 @@ shared model Program
         Console.Write("  row lengths: ");
 
         loop each row in ragged
-            Console.Write(row.Count() + " ");
+            Console.Write(row.Count + " ");
         end loop
 
         Console.WriteLine();
@@ -96,10 +96,10 @@ shared model Program
         integer[] middle = ragged[1];
         middle.Insert(99);
 
-        Console.WriteLine("  a row kept and grown: " + ragged[1].Count() + " long now");
+        Console.WriteLine("  a row kept and grown: " + ragged[1].Count + " long now");
 
         ragged.Insert({7, 8});
-        Console.WriteLine("  a row added:          " + ragged.Count() + " rows now");
+        Console.WriteLine("  a row added:          " + ragged.Count + " rows now");
     end function
 
     # ---- Transforms ---------------------------------------------------------------------
@@ -239,10 +239,10 @@ shared model Program
     integer[][] function Transpose(integer[][] grid)
         integer[][] turned = {};
 
-        loop for column = 0 to grid[0].Count() - 1
+        loop for column = 0 to grid[0].Count - 1
             integer[] built = {};
 
-            loop for row = 0 to grid.Count() - 1
+            loop for row = 0 to grid.Count - 1
                 built.Insert(grid[row][column]);
             end loop
 
@@ -266,13 +266,13 @@ shared model Program
     integer[][] function Multiply(integer[][] left, integer[][] right)
         integer[][] product = {};
 
-        loop for row = 0 to left.Count() - 1
+        loop for row = 0 to left.Count - 1
             integer[] built = {};
 
-            loop for column = 0 to right[0].Count() - 1
+            loop for column = 0 to right[0].Count - 1
                 integer total = 0;
 
-                loop for along = 0 to right.Count() - 1
+                loop for along = 0 to right.Count - 1
                     total = total + (left[row][along] * right[along][column]);
                 end loop
 
@@ -321,10 +321,10 @@ shared model Program
     integer[] function Apply(integer[][] transform, integer[] point)
         integer[] moved = {};
 
-        loop for row = 0 to transform.Count() - 1
+        loop for row = 0 to transform.Count - 1
             integer total = 0;
 
-            loop for column = 0 to point.Count() - 1
+            loop for column = 0 to point.Count - 1
                 total = total + (transform[row][column] * point[column]);
             end loop
 
@@ -349,10 +349,10 @@ shared model Program
         loop each layer in cube
             integer[][] built = {};
 
-            loop for column = 0 to layer[0].Count() - 1
+            loop for column = 0 to layer[0].Count - 1
                 integer[] line = {};
 
-                loop for row = layer.Count() - 1 until -1 stepby -1
+                loop for row = layer.Count - 1 until -1 stepby -1
                     line.Insert(layer[row][column]);
                 end loop
 
@@ -390,7 +390,7 @@ shared model Program
     function WriteCube(string label, integer[][][] cube)
         Console.WriteLine(label + ":");
 
-        loop for layer = 0 to cube.Count() - 1
+        loop for layer = 0 to cube.Count - 1
             Console.WriteLine("    layer " + layer + ":");
 
             loop each row in cube[layer]

@@ -380,7 +380,7 @@ public sealed class TypeCheckerTests
         Assert.That(IdsOf(CheckBody(
             """
                     integer[] numbers = {1, 2};
-                    let count = numbers.Count();
+                    let count = numbers.Count;
                     let has = numbers.Contains(1);
                     let removed = numbers.Remove(1);
                     numbers.Insert(3);
@@ -391,7 +391,7 @@ public sealed class TypeCheckerTests
     [Test]
     public void AStringReportsItsLengthWithCountJustAsASetDoes()
     {
-        Assert.That(IdsOf(CheckBody("        let n = \"abc\".Count();")), Is.Empty);
+        Assert.That(IdsOf(CheckBody("        let n = \"abc\".Count;")), Is.Empty);
     }
 
     // ---- Optionals -------------------------------------------------------------------------------
@@ -982,7 +982,7 @@ public sealed class TypeCheckerTests
     // found on it — every type inherits them from Model — so the absence rendered as "empty".
     [TestCase("        let a = Console.WriteLine(\"hi\").ToString();")]
     [TestCase("        let b = Console.WriteLine(\"hi\").Equals(1);")]
-    [TestCase("        let c = Console.WriteLine(\"hi\").Count();")]
+    [TestCase("        let c = Console.WriteLine(\"hi\").Count;")]
     public void UsingTheResultOfAFunctionThatYieldsNothingIsRejected(string body) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0332" }));
 
@@ -1137,7 +1137,7 @@ public sealed class TypeCheckerTests
                     function Main()
                         Shape[] shapes = {new Rectangle(), new Circle()};
                         shapes = {new Circle()};
-                        Console.WriteLine(Program.Make().Count());
+                        Console.WriteLine(Program.Make().Count);
                     end function
 
                     Shape[] function Make()
@@ -1188,19 +1188,27 @@ public sealed class TypeCheckerTests
     // ---- The members the language provides ------------------------------------------------------
 
     /// <summary>
-    /// The language has no properties, so every member it provides is a function and every
-    /// use of one is a call.
+    /// A member the language provides that is something to do is a function, and naming one
+    /// without calling it is reported.
     /// </summary>
-    [TestCase("        integer[] xs = {1};\n        let n = xs.Count;")]
-    [TestCase("        let n = \"abc\".Count;")]
     [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue;")]
+    [TestCase("        integer[] xs = {1};\n        let n = xs.Distinct;")]
     public void ABuiltInMemberHasToBeCalled(string body) =>
         Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(new[] { "PC0330" }));
 
-    [TestCase("        integer[] xs = {1};\n        let n = xs.Count();")]
-    [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue();")]
-    public void CallingItIsFine(string body) =>
-        Assert.That(IdsOf(CheckBody(body)), Is.Empty);
+    /// <summary>
+    /// <para>A member that is a value is read, and calling one is reported.</para>
+    /// <para><c>Count</c> is the one this is really about. It reads as <c>.NET</c>'s does, which
+    /// it did not always — and the mirror of the diagnostic above is what makes either mistake
+    /// name itself rather than leaving a reader to guess which kind of member they have.</para>
+    /// </summary>
+    [TestCase("        integer[] xs = {1};\n        let n = xs.Count;", new string[0])]
+    [TestCase("        let n = \"abc\".Count;", new string[0])]
+    [TestCase("        integer[] xs = {1};\n        let n = xs.Count();", new[] { "PC0338" })]
+    [TestCase("        let n = \"abc\".Count();", new[] { "PC0338" })]
+    [TestCase("        integer? maybe = 1;\n        let present = maybe.HasValue();", new string[0])]
+    public void AValueMemberIsReadRatherThanCalled(string body, string[] expected) =>
+        Assert.That(IdsOf(CheckBody(body)), Is.EqualTo(expected));
 
     // ---- Exceptions -----------------------------------------------------------------------------
 
@@ -1698,7 +1706,7 @@ public sealed class TypeCheckerTests
                     end function
 
                     public integer function Size()
-                        yield this.held.Count();
+                        yield this.held.Count;
                     end function
                 end model
                 """)),
@@ -1750,7 +1758,7 @@ public sealed class TypeCheckerTests
             "", "model M end model", "model M function F() yield; end function end model",
             "shared model Program function Main() let x = ; end function end model",
             "model M function F() this.x.y.z(); end function end model",
-            "model M function F() let a = {}.Count(); end function end model",
+            "model M function F() let a = {}.Count; end function end model",
         ];
 
         foreach (string source in hostile)

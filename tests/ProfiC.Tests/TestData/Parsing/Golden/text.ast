@@ -66,9 +66,8 @@ CompilationUnit
             InterpolationPart
               IfExpr
                 BinaryExpr '>'
-                  CallExpr
-                    MemberExpr 'Count'
-                      IdentifierExpr 'name'
+                  MemberExpr 'Count'
+                    IdentifierExpr 'name'
                   LiteralExpr 4 [Integer]
                 IdentifierExpr 'name'
                 LiteralExpr "Profi-C" [String]
@@ -220,9 +219,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           InterpolatedStringExpr '  words:      ' ''
             InterpolationPart
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'words'
+              MemberExpr 'Count'
+                IdentifierExpr 'words'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

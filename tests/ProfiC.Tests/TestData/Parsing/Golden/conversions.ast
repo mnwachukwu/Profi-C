@@ -250,9 +250,8 @@ CompilationUnit
                   LiteralExpr "word:    " [String]
                   IdentifierExpr 'word'
                 LiteralExpr ", now " [String]
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'letters'
+              MemberExpr 'Count'
+                IdentifierExpr 'letters'
             LiteralExpr " letters" [String]
       VarDeclStmt 'spoken'
         OptionalTypeSyntax
@@ -270,13 +269,12 @@ CompilationUnit
           BinaryExpr '+'
             BinaryExpr '+'
               LiteralExpr "spelled: " [String]
-              CallExpr
-                MemberExpr 'Count'
-                  CallExpr
-                    MemberExpr 'Or'
-                      IdentifierExpr 'spelled'
-                    CollectionExpr
-                      LiteralExpr '?' [Character]
+              MemberExpr 'Count'
+                CallExpr
+                  MemberExpr 'Or'
+                    IdentifierExpr 'spelled'
+                  CollectionExpr
+                    LiteralExpr '?' [Character]
             LiteralExpr " letters" [String]
       VarDeclStmt 'unsaid'
         OptionalTypeSyntax

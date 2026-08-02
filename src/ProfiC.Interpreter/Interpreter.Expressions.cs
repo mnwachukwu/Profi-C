@@ -448,15 +448,29 @@ public sealed partial class Interpreter
         {
             RunConstructor(body, instance, arguments, type);
         }
+        else
+        {
+            // A model that wrote no constructor has none to run, and still has a parent to
+            // build. Without this the parent's constructor is skipped for exactly the models
+            // that added nothing of their own, which is the least likely place to look.
+            BuildTheParent(instance, type);
+        }
 
         return instance;
     }
 
-    /// <summary>Runs field initializers, walking from the base type down so a parent's run first.</summary>
+    /// <summary>
+    /// <para>Runs field initializers, walking from the type outward so a child's run first.</para>
+    /// <para>Nearest first, which is C#'s order and is the order the emitter has to produce: a
+    /// constructor's first act is reaching its parent's, so everything the child wrote as a
+    /// starting value has already run by the time the parent's constructor body does. Nothing
+    /// can observe which of the two sets ran first except a side effect, and a reader who
+    /// learned one order here would have to unlearn it.</para>
+    /// </summary>
     private void InitializeFields(Instance instance, DeclaredTypeSymbol type)
     {
         IEnumerable<DeclaredTypeSymbol> chain = type is ModelSymbol model
-            ? model.SelfAndAncestors().Reverse()
+            ? model.SelfAndAncestors()
             : [type];
 
         foreach (DeclaredTypeSymbol current in chain)
@@ -501,6 +515,15 @@ public sealed partial class Interpreter
 
         try
         {
+            // A constructor that says nothing about its parent still has one to build. Written
+            // here rather than left out, because leaving it out is silent: the parent's fields
+            // keep whatever their starting values were, and a name the parent's constructor
+            // would have settled reads as empty from every corner of the program.
+            if (!OpensWithBaseCall(constructor))
+            {
+                BuildTheParent(instance, declaring);
+            }
+
             Invoke(
                 new FunctionValue(
                     constructor.Parameters, constructor.Body, expressionBody: null, _shared, instance),
@@ -511,6 +534,39 @@ public sealed partial class Interpreter
         {
             _constructing = outer;
         }
+    }
+
+    /// <summary>
+    /// Whether a constructor reaches its parent itself. Only the first statement is looked at,
+    /// since <c>PC0248</c> is what allows a <c>base(...)</c> to be anywhere else.
+    /// </summary>
+    private static bool OpensWithBaseCall(FunctionDecl constructor) =>
+        constructor.Body is [ExpressionStmt
+        {
+            Expression: CallExpr { Callee: ReceiverExpr { Receiver: ReceiverKind.Base } },
+        }, ..];
+
+    /// <summary>
+    /// <para>Runs the parent's constructor for a child that did not write <c>base(...)</c>.</para>
+    /// <para>The one it takes is the one that needs nothing, which is the only one a child could
+    /// have meant without saying — and <c>PC0250</c> has already refused the program where the
+    /// parent has none. A parent that declares no constructor at all has nothing to run and its
+    /// own parent to think about, so the walk carries on upward.</para>
+    /// </summary>
+    private void BuildTheParent(Instance instance, DeclaredTypeSymbol declaring)
+    {
+        if (declaring is not ModelSymbol { BaseType: { } parent })
+        {
+            return;
+        }
+
+        if (FindConstructor(parent, 0) is { } takingNothing && BodyOf(takingNothing) is { } body)
+        {
+            RunConstructor(body, instance, [], parent);
+            return;
+        }
+
+        BuildTheParent(instance, parent);
     }
 
     /// <summary>Constructs one of the exceptions the language provides.</summary>

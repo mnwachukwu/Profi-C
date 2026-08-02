@@ -295,7 +295,7 @@ shared model Program
             (string what) yield Console.WriteLine("* " + what)
         };
 
-        Console.WriteLine("held: " + assorted.Count());
+        Console.WriteLine("held: " + assorted.Count);
 
         # Every reference type is a Model, and a Function is a reference type.
         Model asModel = assorted[0];

@@ -87,9 +87,8 @@ CompilationUnit
       VarDeclStmt 'high'
         NamedTypeSyntax 'integer'
         BinaryExpr '-'
-          CallExpr
-            MemberExpr 'Count'
-              IdentifierExpr 'sorted'
+          MemberExpr 'Count'
+            IdentifierExpr 'sorted'
           LiteralExpr 1 [Integer]
       WhileStmt
         BinaryExpr '<='

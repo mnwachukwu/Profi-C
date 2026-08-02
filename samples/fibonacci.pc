@@ -67,7 +67,7 @@ shared model Program
         let text = "" + value;
         string padded = text;
 
-        loop for i = text.Count() until 12
+        loop for i = text.Count until 12
             padded = padded + " ";
         end loop
 

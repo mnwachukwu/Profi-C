@@ -72,13 +72,18 @@ public sealed partial class CilEmitter
     }
 
     /// <summary>
-    /// <para>A constructor: the base first, then the fields, then what was written.</para>
-    /// <para>The order is the language's. A field written with a value holds it before any
-    /// constructor body runs, so a constructor that reads one sees the initializer rather than
-    /// a zero — and a constructor that assigns one overwrites it, which is what a reader of
-    /// those two lines expects.</para>
-    /// <para>The base constructor comes before either. The CLR requires it of every constructor
-    /// and will not verify one without it.</para>
+    /// <para>A constructor: this model's own fields, then the parent, then what was written.
+    /// </para>
+    /// <para>The order is the language's, and it is C#'s. A field written with a value holds it
+    /// before any constructor body runs, so a constructor that reads one sees the initializer
+    /// rather than a zero — and a constructor that assigns one overwrites it, which is what a
+    /// reader of those two lines expects. Running only <em>this</em> model's initializers here is
+    /// what makes the chain come out right: the parent's constructor runs the parent's, so every
+    /// starting value in the whole chain has run by the time any constructor body does.</para>
+    /// <para>The parent is reached before the body, which the CLR requires of every constructor
+    /// and will not verify one without. <c>PC0248</c> is what makes that possible to honor while
+    /// still running <c>base(...)</c> where it was written: it can only have been written
+    /// first.</para>
     /// </summary>
     private void EmitConstructor(Declared declared, FunctionSymbol function)
     {
@@ -90,13 +95,86 @@ public sealed partial class CilEmitter
 
         Begin(constructor.GetILGenerator(), function, hasReceiver: true);
 
-        _il.Emit(OpCodes.Ldarg_0);
-        _il.Emit(OpCodes.Call, ObjectConstructor);
+        IReadOnlyList<Statement> body = declared.Function.Body!;
+        CallExpr? chaining = BaseCallOpening(body);
 
         EmitFieldInitializers(owner);
-        EmitStatements(declared.Function.Body!);
+        EmitBaseConstructorCall(owner, chaining);
+
+        // The chaining call has been emitted already; emitting the statement again would build
+        // the parent twice.
+        EmitStatements(chaining is null ? body : [.. body.Skip(1)]);
 
         _il.Emit(OpCodes.Ret);
+    }
+
+    /// <summary>
+    /// The <c>base(...)</c> a constructor opens with, or null where it wrote none. Only the
+    /// first statement is looked at, since <c>PC0248</c> is what put it there.
+    /// </summary>
+    private static CallExpr? BaseCallOpening(IReadOnlyList<Statement> body) =>
+        body is [ExpressionStmt { Expression: CallExpr { Callee: ReceiverExpr
+        {
+            Receiver: ReceiverKind.Base,
+        } } opening }, ..]
+            ? opening
+            : null;
+
+    /// <summary>
+    /// <para>Reaches the parent's constructor, whether or not one was written.</para>
+    /// <para>A constructor that wrote no <c>base(...)</c> still has a parent to build, and
+    /// <c>PC0250</c> has already established that the parent can be built with nothing — so the
+    /// call is to whichever constructor takes no arguments. Where the parent is not a model this
+    /// program declared, the chain ends at <c>System.Object</c>, which is what Profi-C's
+    /// <c>Model</c> is.</para>
+    /// </summary>
+    private void EmitBaseConstructorCall(DeclaredTypeSymbol owner, CallExpr? written)
+    {
+        _il.Emit(OpCodes.Ldarg_0);
+
+        if (written is not null)
+        {
+            foreach (Expression argument in written.Arguments)
+            {
+                EmitExpression(argument);
+            }
+        }
+
+        _il.Emit(OpCodes.Call, ParentConstructorFor(owner, written));
+    }
+
+    /// <summary>The parent constructor to chain to, taking nothing where nothing was written.</summary>
+    private System.Reflection.ConstructorInfo ParentConstructorFor(
+        DeclaredTypeSymbol owner,
+        CallExpr? written)
+    {
+        // What the checker settled the call to, which is the overload the arguments picked.
+        if (written is not null
+            && _model.GetSymbol(written) is FunctionSymbol chosen
+            && _constructors.TryGetValue(chosen, out ConstructorBuilder? built))
+        {
+            return built;
+        }
+
+        if (owner is not ModelSymbol { BaseType: { } parent } || !_types.ContainsKey(parent))
+        {
+            return ObjectConstructor;
+        }
+
+        FunctionSymbol? takingNothing = parent.Lookup(parent.Name)
+            .OfType<FunctionSymbol>()
+            .FirstOrDefault(c => c.IsConstructor && c.Parameters.Count == 0);
+
+        if (takingNothing is not null && _constructors.TryGetValue(takingNothing, out ConstructorBuilder? declared))
+        {
+            return declared;
+        }
+
+        // The one made for a parent that wrote none, which is the ordinary case for a model
+        // whose child does all the work.
+        return _defaultConstructors.TryGetValue(parent, out ConstructorBuilder? supplied)
+            ? supplied
+            : throw Unhandled($"a constructor on '{parent.Name}' to build it from '{owner.Name}'");
     }
 
     /// <summary>
@@ -121,7 +199,7 @@ public sealed partial class CilEmitter
             Type.EmptyTypes);
     }
 
-    /// <summary>Fills in that constructor: the base, then whatever the fields were written with.</summary>
+    /// <summary>Fills in that constructor: this model's fields, then the parent.</summary>
     private void EmitDefaultConstructor(ModelDecl declaration)
     {
         if (_model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
@@ -132,10 +210,8 @@ public sealed partial class CilEmitter
 
         Begin(constructor.GetILGenerator(), function: null, hasReceiver: true);
 
-        _il.Emit(OpCodes.Ldarg_0);
-        _il.Emit(OpCodes.Call, ObjectConstructor);
-
         EmitFieldInitializers(owner);
+        EmitBaseConstructorCall(owner, written: null);
 
         _il.Emit(OpCodes.Ret);
     }

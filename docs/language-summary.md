@@ -324,7 +324,7 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **`x as Dog` yields `Dog?`**, an empty optional where C# yields `null`. The two spellings agree and the results do not, so a C# reader carries the syntax across and has to leave the habit of a null check behind: what comes back is proved present or it is not read at all.
 
-**Deferred to v2:** generics, interfaces, and properties. Every C# property becomes a method here, which is why `Count()` has parentheses.
+**Deferred to v2:** generics, interfaces, and properties a program can declare. The library has properties — `scores.Count`, `Math.Pi`, `landing.Year` are read rather than called — but they are the compiler's, and a model a program writes cannot offer one.
 
 **Fractions are a primitive** with exact rational arithmetic. `fraction` and `real` never implicitly convert in either direction; both are explicit.
 
@@ -383,7 +383,7 @@ everywhere without one. See §12.3 of the specification.
 
 **Warnings are few and each one names its fix.** Fifteen exist: more quotes in a row than close a block string, a type shadowing one the language provides, a test that is always true, a test that is always false, a `switch` leaving enumeration members unhandled, unreachable code, a `catch` naming the one exception nothing catches, an import naming an absolute path, imports that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one naming a diagnostic that stops compilation, and one in a project file naming neither a severity nor a diagnostic — and three about documentation that has come apart from what it documents: one above nothing that can carry it, one naming a parameter that is not there, and one describing a value never given back.
 
-**Opinions are the language having taste, and nearly every one says a written token has no effect.** Eleven exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, `virtual` beside `abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences nothing, and a doc that says the same thing twice.
+**Opinions are the language having taste, and nearly every one says a written token has no effect.** Twelve exist: an unnecessary `@` on a name, a type on a range loop's counter, a lambda parameter type the surrounding code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a name it sits inside, an `entry` where only one program exists to choose, `virtual` beside `abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences nothing, a `base()` reaching the parent a constructor reaches anyway, and a doc that says the same thing twice.
 
 The eleventh is the exception to that shape: a `loop` with no condition that nothing inside can break, yield, or throw out of. Nothing written is redundant there — something is missing, and the language says so as an opinion because a program meaning to run until stopped from outside is one somebody may write.
 

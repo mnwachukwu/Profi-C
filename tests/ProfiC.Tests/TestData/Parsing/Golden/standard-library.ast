@@ -251,9 +251,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "  Count()        = " [String]
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'values'
+            MemberExpr 'Count'
+              IdentifierExpr 'values'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -333,9 +332,8 @@ CompilationUnit
           BinaryExpr '+'
             BinaryExpr '+'
               LiteralExpr "  after Clear()  = " [String]
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'values'
+              MemberExpr 'Count'
+                IdentifierExpr 'values'
             LiteralExpr " left" [String]
       VarDeclStmt 'row'
         SetTypeSyntax
@@ -486,9 +484,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "  Count()            = " [String]
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'word'
+            MemberExpr 'Count'
+              IdentifierExpr 'word'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -1267,9 +1264,8 @@ CompilationUnit
         LiteralExpr "{" [String]
       ForStmt 'i' until
         LiteralExpr 0 [Integer]
-        CallExpr
-          MemberExpr 'Count'
-            IdentifierExpr 'values'
+        MemberExpr 'Count'
+          IdentifierExpr 'values'
         IfStmt
           BinaryExpr '>'
             IdentifierExpr 'i'

@@ -52,7 +52,7 @@ shared model Program
     ##
     integer? function IndexOf(integer[] sorted, integer wanted)
         integer low = 0;
-        integer high = sorted.Count() - 1;
+        integer high = sorted.Count - 1;
 
         loop while low <= high
             integer middle = (low + high) / 2;

@@ -99,6 +99,7 @@ public sealed class InterpreterTests
 
             model Middle extends Root
                 public function Middle()
+                    # ignore opinion
                     base();
                     this.Trail = this.Trail + " middle";
                 end function
@@ -106,6 +107,7 @@ public sealed class InterpreterTests
 
             model Leaf extends Middle
                 public function Leaf()
+                    # ignore opinion
                     base();
                     this.Trail = this.Trail + " leaf";
                 end function
@@ -118,6 +120,44 @@ public sealed class InterpreterTests
             end model
             """),
         Is.EqualTo("root middle leaf\n"));
+
+    /// <summary>
+    /// <para>A parent's constructor runs without a child asking it to.</para>
+    /// <para>Every model here builds the one above it and only <c>Leaf</c> says so, which is the
+    /// ordinary shape: a child adds nothing to construction and writes no constructor at all, or
+    /// writes one and has nothing to hand the parent. The version of this that was wrong did not
+    /// fail — it ran, and printed a trail with the middle of it missing, so the value pinned here
+    /// matters as much as the fact that it runs.</para>
+    /// </summary>
+    [Test]
+    public void AParentIsBuiltWithoutTheChildAskingItTo() => Assert.That(
+        Run("""
+            model Root
+                public string Trail;
+
+                public function Root()
+                    this.Trail = "root";
+                end function
+            end model
+
+            # No constructor at all, so nothing here could have said 'base()'.
+            model Middle extends Root
+            end model
+
+            # One that says nothing about its parent.
+            model Leaf extends Middle
+                public function Leaf()
+                    this.Trail = this.Trail + " leaf";
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    Console.WriteLine(new Leaf().Trail);
+                end function
+            end model
+            """),
+        Is.EqualTo("root leaf\n"));
 
     // ---- Reading what somebody typed --------------------------------------------------
 
@@ -396,7 +436,7 @@ public sealed class InterpreterTests
     public void ConcatenationConvertsTheOtherSide(string expression, string expected) =>
         Assert.That(Print(expression), Is.EqualTo(expected));
 
-    [TestCase("\"hello\".Count()", "5")]
+    [TestCase("\"hello\".Count", "5")]
     [TestCase("\"hello\".Substring(1, 3)", "ell")]
     [TestCase("\"hello\".IndexOf(\"ll\")", "2")]
     [TestCase("\"hello\".Contains(\"ell\")", "true")]
@@ -409,7 +449,7 @@ public sealed class InterpreterTests
     public void ASetIsIndexedAndCounted() => Assert.That(
         RunBody("""
                 integer[] xs = {10, 20, 30};
-                Console.WriteLine(xs.Count());
+                Console.WriteLine(xs.Count);
                 Console.WriteLine(xs[0]);
                 Console.WriteLine(xs[2]);
         """),
@@ -421,7 +461,7 @@ public sealed class InterpreterTests
                 integer[] xs = {1};
                 xs.Insert(2);
                 xs.Insert(3);
-                Console.WriteLine(xs.Count());
+                Console.WriteLine(xs.Count);
                 xs.RemoveAt(0);
                 Console.WriteLine(xs[0]);
                 Console.WriteLine(xs.Contains(3));
@@ -618,7 +658,7 @@ public sealed class InterpreterTests
                 grid[0][1] = 9;
 
                 Console.WriteLine(grid[0][1] + " " + grid[1][0]);
-                Console.WriteLine(cube[1][0][1] + " " + cube.Count() + " " + cube[0].Count());
+                Console.WriteLine(cube[1][0][1] + " " + cube.Count + " " + cube[0].Count);
         """),
         Is.EqualTo("9 3\n6 2 2\n"));
 
@@ -635,14 +675,14 @@ public sealed class InterpreterTests
                 integer[][] ragged = {{1}, {2, 3}, {4, 5, 6}};
 
                 loop each row in ragged
-                    Console.Write(row.Count() + " ");
+                    Console.Write(row.Count + " ");
                 end loop
 
                 integer[] kept = ragged[1];
                 kept.Insert(99);
 
                 Console.WriteLine();
-                Console.WriteLine("grown through the name it was given: " + ragged[1].Count());
+                Console.WriteLine("grown through the name it was given: " + ragged[1].Count);
         """),
         Is.EqualTo("1 2 3 \ngrown through the name it was given: 3\n"));
 
@@ -753,7 +793,7 @@ public sealed class InterpreterTests
                 items.Insert(99);
 
                 Console.WriteLine();
-                Console.WriteLine("count " + items.Count());
+                Console.WriteLine("count " + items.Count);
         """),
         Is.EqualTo("1\ncount 4\n"));
 
@@ -1631,7 +1671,7 @@ public sealed class InterpreterTests
 
                 integer function BalanceOf(Account account)
                     let described = account.Describe();
-                    yield described.Count();
+                    yield described.Count;
                 end function
             end model
             """));
@@ -1818,7 +1858,7 @@ public sealed class InterpreterTests
                     string? present = "hi";
                     character[]? asLetters = present;
                     Console.WriteLine(asLetters.HasValue());
-                    Console.WriteLine(asLetters.Value().Count());
+                    Console.WriteLine(asLetters.Value().Count);
 
                     string? absent = Program.Nothing();
                     character[]? stillAbsent = absent;
@@ -1849,7 +1889,7 @@ public sealed class InterpreterTests
                         (string s) yield Console.WriteLine(s)
                     };
 
-                    Console.WriteLine(all.Count());
+                    Console.WriteLine(all.Count);
 
                     Model held = all[0];
                     Console.WriteLine(Reference.Equals(held, all[0]));

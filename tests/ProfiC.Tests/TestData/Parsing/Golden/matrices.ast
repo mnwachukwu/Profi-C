@@ -62,20 +62,18 @@ CompilationUnit
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "  rows:        " [String]
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'square'
+            MemberExpr 'Count'
+              IdentifierExpr 'square'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "  columns:     " [String]
-            CallExpr
-              MemberExpr 'Count'
-                IndexExpr
-                  IdentifierExpr 'square'
-                  LiteralExpr 0 [Integer]
+            MemberExpr 'Count'
+              IndexExpr
+                IdentifierExpr 'square'
+                LiteralExpr 0 [Integer]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -125,9 +123,8 @@ CompilationUnit
             IdentifierExpr 'Console'
           BinaryExpr '+'
             LiteralExpr "  layers:         " [String]
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'cube'
+            MemberExpr 'Count'
+              IdentifierExpr 'cube'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -179,9 +176,8 @@ CompilationUnit
             MemberExpr 'Write'
               IdentifierExpr 'Console'
             BinaryExpr '+'
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'row'
+              MemberExpr 'Count'
+                IdentifierExpr 'row'
               LiteralExpr " " [String]
       ExpressionStmt
         CallExpr
@@ -205,11 +201,10 @@ CompilationUnit
           BinaryExpr '+'
             BinaryExpr '+'
               LiteralExpr "  a row kept and grown: " [String]
-              CallExpr
-                MemberExpr 'Count'
-                  IndexExpr
-                    IdentifierExpr 'ragged'
-                    LiteralExpr 1 [Integer]
+              MemberExpr 'Count'
+                IndexExpr
+                  IdentifierExpr 'ragged'
+                  LiteralExpr 1 [Integer]
             LiteralExpr " long now" [String]
       ExpressionStmt
         CallExpr
@@ -225,9 +220,8 @@ CompilationUnit
           BinaryExpr '+'
             BinaryExpr '+'
               LiteralExpr "  a row added:          " [String]
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'ragged'
+              MemberExpr 'Count'
+                IdentifierExpr 'ragged'
             LiteralExpr " rows now" [String]
     FunctionDecl 'Transposing'
       ExpressionStmt
@@ -535,11 +529,10 @@ CompilationUnit
       ForStmt 'column' to
         LiteralExpr 0 [Integer]
         BinaryExpr '-'
-          CallExpr
-            MemberExpr 'Count'
-              IndexExpr
-                IdentifierExpr 'grid'
-                LiteralExpr 0 [Integer]
+          MemberExpr 'Count'
+            IndexExpr
+              IdentifierExpr 'grid'
+              LiteralExpr 0 [Integer]
           LiteralExpr 1 [Integer]
         VarDeclStmt 'built'
           SetTypeSyntax
@@ -548,9 +541,8 @@ CompilationUnit
         ForStmt 'row' to
           LiteralExpr 0 [Integer]
           BinaryExpr '-'
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'grid'
+            MemberExpr 'Count'
+              IdentifierExpr 'grid'
             LiteralExpr 1 [Integer]
           ExpressionStmt
             CallExpr
@@ -588,9 +580,8 @@ CompilationUnit
       ForStmt 'row' to
         LiteralExpr 0 [Integer]
         BinaryExpr '-'
-          CallExpr
-            MemberExpr 'Count'
-              IdentifierExpr 'left'
+          MemberExpr 'Count'
+            IdentifierExpr 'left'
           LiteralExpr 1 [Integer]
         VarDeclStmt 'built'
           SetTypeSyntax
@@ -599,11 +590,10 @@ CompilationUnit
         ForStmt 'column' to
           LiteralExpr 0 [Integer]
           BinaryExpr '-'
-            CallExpr
-              MemberExpr 'Count'
-                IndexExpr
-                  IdentifierExpr 'right'
-                  LiteralExpr 0 [Integer]
+            MemberExpr 'Count'
+              IndexExpr
+                IdentifierExpr 'right'
+                LiteralExpr 0 [Integer]
             LiteralExpr 1 [Integer]
           VarDeclStmt 'total'
             NamedTypeSyntax 'integer'
@@ -611,9 +601,8 @@ CompilationUnit
           ForStmt 'along' to
             LiteralExpr 0 [Integer]
             BinaryExpr '-'
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'right'
+              MemberExpr 'Count'
+                IdentifierExpr 'right'
               LiteralExpr 1 [Integer]
             AssignmentStmt
               IdentifierExpr 'total'
@@ -702,9 +691,8 @@ CompilationUnit
       ForStmt 'row' to
         LiteralExpr 0 [Integer]
         BinaryExpr '-'
-          CallExpr
-            MemberExpr 'Count'
-              IdentifierExpr 'transform'
+          MemberExpr 'Count'
+            IdentifierExpr 'transform'
           LiteralExpr 1 [Integer]
         VarDeclStmt 'total'
           NamedTypeSyntax 'integer'
@@ -712,9 +700,8 @@ CompilationUnit
         ForStmt 'column' to
           LiteralExpr 0 [Integer]
           BinaryExpr '-'
-            CallExpr
-              MemberExpr 'Count'
-                IdentifierExpr 'point'
+            MemberExpr 'Count'
+              IdentifierExpr 'point'
             LiteralExpr 1 [Integer]
           AssignmentStmt
             IdentifierExpr 'total'
@@ -763,11 +750,10 @@ CompilationUnit
         ForStmt 'column' to
           LiteralExpr 0 [Integer]
           BinaryExpr '-'
-            CallExpr
-              MemberExpr 'Count'
-                IndexExpr
-                  IdentifierExpr 'layer'
-                  LiteralExpr 0 [Integer]
+            MemberExpr 'Count'
+              IndexExpr
+                IdentifierExpr 'layer'
+                LiteralExpr 0 [Integer]
             LiteralExpr 1 [Integer]
           VarDeclStmt 'line'
             SetTypeSyntax
@@ -775,9 +761,8 @@ CompilationUnit
             CollectionExpr
           ForStmt 'row' until
             BinaryExpr '-'
-              CallExpr
-                MemberExpr 'Count'
-                  IdentifierExpr 'layer'
+              MemberExpr 'Count'
+                IdentifierExpr 'layer'
               LiteralExpr 1 [Integer]
             UnaryExpr '-'
               LiteralExpr 1 [Integer]
@@ -856,9 +841,8 @@ CompilationUnit
       ForStmt 'layer' to
         LiteralExpr 0 [Integer]
         BinaryExpr '-'
-          CallExpr
-            MemberExpr 'Count'
-              IdentifierExpr 'cube'
+          MemberExpr 'Count'
+            IdentifierExpr 'cube'
           LiteralExpr 1 [Integer]
         ExpressionStmt
           CallExpr

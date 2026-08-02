@@ -63,6 +63,12 @@ public sealed partial class Resolver
     /// <summary>True while resolving a member that has no instance, so <c>this</c> is absent.</summary>
     private bool _inSharedMember;
 
+    /// <summary>
+    /// The field whose starting value is being resolved, or null anywhere else. Named rather
+    /// than a flag because the field is what a reader is told to move into a constructor.
+    /// </summary>
+    private string? _initializingField;
+
     /// <summary>The innermost run of locals and parameters.</summary>
     private Scope _scope = new(parent: null);
 

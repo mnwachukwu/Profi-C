@@ -1,0 +1,160 @@
+# Text
+
+[← Back to the index](README.md)
+
+Everything a `string` answers. Every member here yields a **new** string and leaves the original
+exactly as it was — a Profi-C `string` cannot be changed once it exists, which is why `Insert`
+gives you something back rather than doing something.
+
+A string's members deliberately mirror [a set's](sets.md), so that the two read alike: a string is
+a run of characters, and asking how long it is, whether it contains something, or for a piece of
+it are the same questions in both places.
+
+## Asking about it
+
+| Member | Yields | What it does |
+|---|---|---|
+| `Count` | `integer` | How many characters |
+| `Contains(string what)` | `boolean` | Whether `what` appears anywhere |
+| `IndexOf(string what)` | `integer` | Where `what` starts, or `-1` where it does not appear |
+
+```
+string greeting = "Hello, world";
+
+Console.WriteLine(greeting.Count);            # 12
+Console.WriteLine(greeting.Contains("world"));  # true
+Console.WriteLine(greeting.IndexOf("world"));   # 7
+Console.WriteLine(greeting.IndexOf("moon"));    # -1
+```
+
+## Taking a piece
+
+| Member | Yields | What it does |
+|---|---|---|
+| `Substring(integer start, integer length)` | `string` | `length` characters from `start` |
+| `Subset(integer start)` | `string` | From `start` to the end |
+| `Subset(integer start, integer end)` | `string` | From `start` up to but not including `end` |
+
+**`Substring` and `Subset` do the same job and differ only in their second number.** `Substring`
+takes *how many*; `Subset` takes *where to stop*. Whichever number you already have is the one to
+write, and `Substring` is there because it is what a reader arriving from C# will type.
+
+`Subset`'s end is exclusive — the same reading `until` has in a loop — so `Subset(0, n)` and
+`Subset(n, count)` put the whole string back together.
+
+```
+string word = "computer";
+
+Console.WriteLine(word.Substring(0, 3));   # com
+Console.WriteLine(word.Subset(0, 3));      # com — same three characters, other number
+Console.WriteLine(word.Subset(3));         # puter
+```
+
+## Building a new one
+
+| Member | Yields | What it does |
+|---|---|---|
+| `Insert(string what)` | `string` | `what` added to the end |
+| `InsertAt(integer where, string what)` | `string` | `what` put in at `where` |
+| `Remove(string what)` | `string` | The first `what` taken out |
+| `RemoveAt(integer where)` | `string` | The character at `where` taken out |
+| `Replace(string what, string with)` | `string` | Every `what` swapped for `with` |
+
+```
+string name = "Ada";
+
+Console.WriteLine(name.Insert(" Lovelace"));       # Ada Lovelace
+Console.WriteLine(name.InsertAt(1, "----"));       # A----da
+Console.WriteLine("banana".Replace("a", "o"));     # bonono
+Console.WriteLine("banana".Remove("na"));          # bana — the first one only
+```
+
+## Trimming
+
+Three members, three forms each. Written with nothing, whitespace goes; written with a string, any
+of *its* characters go; written with a set of characters, any in the set goes.
+
+| Member | Yields | What it does |
+|---|---|---|
+| `Trim()` | `string` | Whitespace off both ends |
+| `Trim(string characters)` | `string` | Any of those characters off both ends |
+| `Trim(character[] characters)` | `string` | The same, from a set |
+| `TrimStart()` · `TrimStart(string)` · `TrimStart(character[])` | `string` | The front only |
+| `TrimEnd()` · `TrimEnd(string)` · `TrimEnd(character[])` | `string` | The end only |
+
+The string form is the one people reach for. The set form is there because a set of characters is
+what you already have when the characters were worked out rather than typed.
+
+```
+Console.WriteLine("  spaced  ".Trim());          # spaced
+Console.WriteLine("xxhellox".Trim("x"));         # hello
+Console.WriteLine("xxhellox".TrimStart("x"));    # hellox
+```
+
+## Case
+
+| Member | Yields | What it does |
+|---|---|---|
+| `ToUpper()` | `string` | Every letter raised |
+| `ToLower()` | `string` | Every letter lowered |
+| `Capitalize()` | `string` | The first letter raised, the rest left exactly as it was |
+
+**`Capitalize` is the language's own** rather than .NET's. .NET's title-casing also *lowers*
+everything it did not raise, which is wrong for a name somebody typed — `capitalize` on
+`"McDonald"` should not give back `"Mcdonald"`.
+
+```
+Console.WriteLine("hello".ToUpper());        # HELLO
+Console.WriteLine("McDonald".Capitalize());  # McDonald
+Console.WriteLine("hello".Capitalize());     # Hello
+```
+
+## Splitting and joining
+
+| Member | Yields | What it does |
+|---|---|---|
+| `Split(string separator)` | `string[]` | The pieces between each `separator` |
+| `ToCharacters()` | `character[]` | Every character as a set |
+
+**Joining is a member of the set, not of the string** — see [`Join`](sets.md#joining). The thing
+being joined is the collection, and reading it off the separator would put the sentence the wrong
+way round.
+
+```
+string[] words = "one,two,three".Split(",");
+
+Console.WriteLine(words.Count);     # 3
+Console.WriteLine(words.Join(" & "));  # one & two & three
+```
+
+## Reading a value back out
+
+Each of these yields an [optional](optionals.md) rather than raising, because text that will not
+read is the ordinary case — most of it was typed by somebody.
+
+| Member | Yields | What it does |
+|---|---|---|
+| `ToInteger()` | `integer?` | The whole number the text spells, or nothing |
+| `ToReal()` | `real?` | The number the text spells, or nothing |
+| `ToBoolean()` | `boolean?` | `true` or `false`, or nothing |
+| `ToFraction()` | `fraction?` | The ratio the text spells, or nothing |
+
+**`ToFraction` reads either mark between the halves.** The language writes `22|7`, because a slash
+already means division; a person writes `22/7`, because that is what a fraction looks like
+everywhere outside a compiler. Reading takes both.
+
+```
+string typed = Console.Read().Or("");
+
+if typed.ToInteger().HasValue()
+    Console.WriteLine("that is " + typed.ToInteger().Value());
+else
+    Console.WriteLine("that is not a whole number");
+end if
+```
+
+## Writing a number into text
+
+See [`Format`](numbers.md#writing-a-number-out) on `integer`, `real` and `fraction`, and the
+[interpolated string](../language-spec.md#10-strings) form `"{{ value }}"`, which is usually what
+you want instead of joining with `+`.

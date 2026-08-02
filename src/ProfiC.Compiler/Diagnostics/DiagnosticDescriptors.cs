@@ -1041,6 +1041,71 @@ public static class DiagnosticDescriptors
         "'{0}' already has a line above this one, and the first is the one that shows. For a "
         + "second paragraph, leave a blank line and keep writing.");
 
+    /// <summary>
+    /// <para><c>base(...)</c> written somewhere other than the top of a constructor.</para>
+    /// <para>A parent is finished before a child begins. Statements written above the call would
+    /// run against a half-built instance — the parent's fields still holding nothing, its
+    /// constructor not yet given a chance to say what they are — and every one of them would be
+    /// reading values the parent had not decided yet.</para>
+    /// <para>This is also C#'s rule, where the call is written in the header for the same
+    /// reason. A reader who learns it here does not have to learn it again.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BaseCallMustComeFirst = Error(
+        "PC0248",
+        "'base' has to come first",
+        "'base(...)' must be the first statement in a constructor, so that '{0}' is fully built "
+        + "before anything here runs.");
+
+    /// <summary>
+    /// <para><c>this</c> reached from a field's initializer.</para>
+    /// <para>Nothing is built yet. The instance exists but its fields hold nothing until their
+    /// initializers have run, and a constructor has not started — so a name reached through
+    /// <c>this</c> here answers with whatever it happens to hold rather than with a value
+    /// somebody decided, and which fields have run depends on the order they were written
+    /// in.</para>
+    /// <para>The fix is a constructor, which is the place for a field whose value depends on
+    /// another. C# forbids the same thing for the same reason.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ThisInFieldInitializer = Error(
+        "PC0249",
+        "'{0}' is not available yet",
+        "'{1}' is still being built here, so '{0}' cannot be reached from a field's starting "
+        + "value. Give '{2}' its value in a constructor instead.");
+
+    /// <summary>
+    /// <para>A constructor with no way to reach its parent's.</para>
+    /// <para>Every parent gets to decide its own state before a child adds to it. Where the
+    /// parent takes something to do that with, only the child knows what to hand over, so the
+    /// child has to say — and a child that says nothing leaves the parent's fields holding
+    /// whatever they started as.</para>
+    /// <para>Worth an error rather than a warning because nothing about the result looks wrong:
+    /// the program runs, and a name the parent would have set reads as empty.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NoParentConstructorToReach = Error(
+        "PC0250",
+        "Nothing here builds the parent",
+        "'{0}' extends '{1}', which cannot be built without being given something. Begin this "
+        + "constructor with 'base(...)': '{1}' takes {2}.");
+
+    /// <summary>
+    /// <para><c>base()</c> written where the parent would have been built anyway.</para>
+    /// <para>Every constructor reaches its parent's whether or not it says so, and the one it
+    /// reaches without being told is the one that takes nothing — which is exactly what
+    /// <c>base()</c> names. So the line changes nothing about what runs.</para>
+    /// <para>An opinion rather than a warning, because writing it is a defensible taste: it says
+    /// out loud what a reader would otherwise have to know. Nothing about the program is
+    /// unpredictable either way, which is the whole test for an opinion — and
+    /// <c># ignore opinion</c> silences it for anyone who prefers the longer form.</para>
+    /// <para><b>Only where the parent has nothing to choose between.</b> A parent declaring
+    /// several constructors is built by one of them, and <c>base()</c> is how a reader is told
+    /// which — that line carries information, and this says nothing about it.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor BaseCallSaysWhatHappensAnyway = Opinion(
+        "PC0251",
+        "This 'base()' changes nothing",
+        "'{0}' is built before this constructor's body whether or not 'base()' is written, so "
+        + "this line does what would happen without it. Keep it if saying so helps.");
+
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
     public static readonly DiagnosticDescriptor CannotConvert = Error(

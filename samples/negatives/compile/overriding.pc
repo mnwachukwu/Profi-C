@@ -7,7 +7,7 @@
 
     The way an unchecked override fails is quiet, which is the reason for checking it. Rename a
     base function, or let a parameter type drift by one, and a function stays marked 'override'
-    loop while overriding nothing at all. It compiles, it runs, and every call through the base type
+    while overriding nothing at all. It compiles, it runs, and every call through the base type
     reaches the old version.
 ##
 

@@ -110,9 +110,8 @@ CompilationUnit
           IdentifierExpr 'items'
           LiteralExpr 0 [Integer]
       VarDeclStmt 'member' [inferred]
-        CallExpr
-          MemberExpr 'Count'
-            IdentifierExpr 'text'
+        MemberExpr 'Count'
+          IdentifierExpr 'text'
       ExpressionStmt
         CallExpr
           MemberExpr 'Arithmetic'

@@ -344,9 +344,8 @@ CompilationUnit
             MemberExpr 'Describe'
               IdentifierExpr 'square'
         VarDeclStmt 'total' [inferred]
-          CallExpr
-            MemberExpr 'Count'
-              IdentifierExpr 'numbers'
+          MemberExpr 'Count'
+            IdentifierExpr 'numbers'
         VarDeclStmt 'arithmetic' [inferred]
           BinaryExpr '-'
             BinaryExpr '+'

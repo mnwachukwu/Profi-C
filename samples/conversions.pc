@@ -154,7 +154,7 @@ shared model Program
         letters.Insert('s');
 
         Console.WriteLine("letters: " + letters);
-        Console.WriteLine("word:    " + word + ", now " + letters.Count() + " letters");
+        Console.WriteLine("word:    " + word + ", now " + letters.Count + " letters");
 
         ##
             The two views converting into each other is not a rule about strings. An optional
@@ -166,7 +166,7 @@ shared model Program
         ##
         string? spoken = "hello";
         character[]? spelled = spoken;
-        Console.WriteLine("spelled: " + spelled.Or({'?'}).Count() + " letters");
+        Console.WriteLine("spelled: " + spelled.Or({'?'}).Count + " letters");
 
         string? unsaid = Program.NothingToSay();
         character[]? unspelled = unsaid;

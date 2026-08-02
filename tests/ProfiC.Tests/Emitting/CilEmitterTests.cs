@@ -393,6 +393,322 @@ public sealed class CilEmitterTests
             end model
             """);
 
+    // ---- Inheritance ------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A child reaches what its parent declared, and builds it on the way in.</para>
+    /// <para>The smallest inheritance there is: one field, set by a parent's constructor the
+    /// child chains to, read back through a method the child never wrote. An emitter that puts
+    /// the base call in the wrong place, or hangs the field on the wrong type, fails here rather
+    /// than somewhere further along where the cause is harder to see.</para>
+    /// </summary>
+    [Test]
+    public void AChildBuildsItsParentAndReachesWhatItDeclared() =>
+        AgreesWholly("""
+            model Animal
+
+                protected string name;
+
+                public function Animal(string given)
+                    this.name = given;
+                end function
+
+                public string function Name()
+                    yield this.name;
+                end function
+
+            end model
+
+            model Dog extends Animal
+
+                public function Dog()
+                    base("rex");
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Dog pet = new Dog();
+                    Console.WriteLine(pet.Name());
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>A call through a parent-typed name reaches the child's version.</para>
+    /// <para>The whole of what virtual dispatch is, and the one an emitter gets wrong in a way
+    /// nothing else notices: mark the override as taking a slot of its own rather than reusing
+    /// its parent's and the assembly still builds, still verifies, and quietly runs the parent's
+    /// version every time it is reached through a parent.</para>
+    /// </summary>
+    [Test]
+    public void ACallThroughTheParentReachesTheChildsVersion() =>
+        AgreesWholly("""
+            model Greeter
+
+                public virtual string function Greeting()
+                    yield "hello";
+                end function
+
+            end model
+
+            model LoudGreeter extends Greeter
+
+                public override string function Greeting()
+                    yield "HELLO";
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Greeter plain = new Greeter();
+                    Greeter loud = new LoudGreeter();
+
+                    Console.WriteLine(plain.Greeting());
+                    Console.WriteLine(loud.Greeting());
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>An abstract model is never made, and the function it left open dispatches.</para>
+    /// <para>Two claims in one program because they only make sense together: the parent declares
+    /// what every child must answer without answering it, and a name of the parent's type reaches
+    /// whichever child it turned out to be.</para>
+    /// </summary>
+    [Test]
+    public void AnAbstractParentDeclaresWhatItsChildrenAnswer() =>
+        AgreesWholly("""
+            abstract model Shape
+
+                public abstract integer function Sides();
+
+                public string function Described()
+                    yield "a shape with " + this.Sides() + " sides";
+                end function
+
+            end model
+
+            model Triangle extends Shape
+
+                public override integer function Sides()
+                    yield 3;
+                end function
+
+            end model
+
+            model Square extends Shape
+
+                public override integer function Sides()
+                    yield 4;
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Shape one = new Triangle();
+                    Shape two = new Square();
+
+                    Console.WriteLine(one.Described());
+                    Console.WriteLine(two.Described());
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para><c>base.Member()</c> reaches past the override that is running.</para>
+    /// <para>The one call in the language that must not dispatch. Emitted as an ordinary virtual
+    /// call it finds the override it was written inside, and the program does not print the wrong
+    /// answer — it never prints anything, because it recurses until the stack is gone.</para>
+    /// </summary>
+    [Test]
+    public void BaseReachesPastTheOverrideItIsWrittenIn() =>
+        AgreesWholly("""
+            model Label
+
+                public virtual string function Text()
+                    yield "plain";
+                end function
+
+            end model
+
+            model Fancy extends Label
+
+                public override string function Text()
+                    yield "very " + base.Text();
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Console.WriteLine(new Fancy().Text());
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>Starting values run down the whole chain, in the order the language says.</para>
+    /// <para>Nearest type first, all of them before any constructor body — so what this prints is
+    /// the order itself rather than only the values. C#'s order, and the reason the emitter runs
+    /// a model's own initializers and leaves its parent's to the parent's constructor.</para>
+    /// </summary>
+    [Test]
+    public void StartingValuesRunDownTheChainBeforeAnyConstructor() =>
+        AgreesWholly("""
+            model Parent
+
+                integer first = Parent.Announce("parent field");
+
+                public function Parent()
+                    Console.WriteLine("parent constructor");
+                end function
+
+                public shared integer function Announce(string what)
+                    Console.WriteLine(what);
+                    yield 0;
+                end function
+
+            end model
+
+            model Child extends Parent
+
+                integer second = Parent.Announce("child field");
+
+                public function Child()
+                    base();
+                    Console.WriteLine("child constructor");
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Child made = new Child();
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// A parent that declares no constructor is still built, through the one made for it — the
+    /// case where a child chains to something nobody wrote.
+    /// </summary>
+    [Test]
+    public void AChildBuildsAParentThatDeclaredNoConstructor() =>
+        AgreesWholly("""
+            model Base
+
+                integer held = 7;
+
+                public integer function Held()
+                    yield this.held;
+                end function
+
+            end model
+
+            model Derived extends Base
+
+                public integer function Twice()
+                    yield this.Held() * 2;
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Console.WriteLine(new Derived().Twice());
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>A parent's constructor runs whether or not the child said to run it.</para>
+    /// <para>The two engines disagreed about this once, and in the direction that hides it: the
+    /// emitter had to find a parent constructor because the CLR will not verify one that reaches
+    /// none, while the interpreter simply skipped it. The program ran either way, printing a
+    /// value the parent's constructor would have settled and did not.</para>
+    /// </summary>
+    [Test]
+    public void AParentIsBuiltWithoutTheChildAskingItTo() =>
+        AgreesWholly("""
+            model Root
+
+                public string trail;
+
+                public function Root()
+                    this.trail = "root";
+                end function
+
+                public function Root(string given)
+                    this.trail = given;
+                end function
+
+            end model
+
+            model Middle extends Root
+            end model
+
+            model Leaf extends Middle
+
+                public function Leaf()
+                    this.trail = this.trail + " leaf";
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    Console.WriteLine(new Leaf().trail);
+                    Console.WriteLine(new Middle().trail);
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>Three deep, with the middle one overriding and the last reaching past it.</para>
+    /// <para>A chain rather than a pair, because everything about slots and base calls can be
+    /// wrong in a way two types cannot show: a child that reuses the wrong slot, or a base call
+    /// that reaches the root instead of the parent, both look correct until there is a middle.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void AChainOfThreeDispatchesAndChainsCorrectly() =>
+        AgreesWholly("""
+            model One
+
+                public virtual string function Say()
+                    yield "one";
+                end function
+
+            end model
+
+            model Two extends One
+
+                public override string function Say()
+                    yield "two on " + base.Say();
+                end function
+
+            end model
+
+            model Three extends Two
+
+                public override string function Say()
+                    yield "three on " + base.Say();
+                end function
+
+            end model
+
+            shared model Program
+                function Main()
+                    One held = new Three();
+                    Console.WriteLine(held.Say());
+                end function
+            end model
+            """);
+
     /// <summary>
     /// <para>Two instances hold their own state.</para>
     /// <para>The claim that separates a field from a shared one, and the one an emitter gets
@@ -608,20 +924,6 @@ public sealed class CilEmitterTests
 
     private static string[] RefusalsFor(string source) => Refused(source).Refusals;
 
-    [TestCase("a model extending another", """
-        model Book
-            string title;
-        end model
-
-        model Manual extends Book
-            integer pages;
-        end model
-        """)]
-    [TestCase("an abstract model", """
-        abstract model Shape
-            public abstract real function Area();
-        end model
-        """)]
     [TestCase("structure", """
         structure Point
             integer x;

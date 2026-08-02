@@ -652,7 +652,7 @@ integer[] scores = {90, 85, 77};
 scores.Insert(60);
 
 Console.WriteLine(scores[0]);
-Console.WriteLine(scores.Count());
+Console.WriteLine(scores.Count);
 ```
 
 **C#**
@@ -940,7 +940,7 @@ Both languages have these. C#'s version is better, and the Profi-C choice was ma
 |---|---|---|---|
 | **Accumulating** | `total = total + n;` | `total += n;` | Absent so that a beginner reads one form of assignment rather than eleven. It costs every counter and every accumulator an extra reading of the name |
 | **Counting up** | `n = n + 1;` | `n++;` | Same reasoning, and `++` carries the pre/post distinction that is a classic first-year trap. The cost is that the commonest statement in programming is the long one |
-| **Reading a member** | `scores.Count()` | `scores.Count` | No properties, so every member access is a call. Honest about the cost of a lookup, noisier on every line |
+| **Reading a member** | `scores.Count` | `scores.Count` | The same. A program cannot declare a property, but the library provides them, and a member that is a value is read rather than called |
 | **Matching a shape** | `if x is Dog` then `x as Dog` | `if (x is Dog d)` | No pattern variables, so a test and a cast are written separately. C#'s form cannot get them out of step |
 | **Choosing on a value** | `switch` over constants | switch expressions, type and property patterns, `when` guards | Profi-C's switch is a jump table with better defaults. C#'s is a small pattern language, and for anything past equality it is far less code |
 | **Returning two things** | a `structure` declared for it | `(int, string)` tuple, deconstructed at the call | Naming the pair is often the better design. When it is not, C# costs a line and Profi-C costs a type |
