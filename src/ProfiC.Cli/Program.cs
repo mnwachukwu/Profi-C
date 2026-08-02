@@ -61,6 +61,7 @@ public static class Program
             "lower" => RunLower(args),
             "run" => RunProgram(args),
             "vocabulary" => RunVocabulary(),
+            "debug" => RunDebug(),
             _ => UnknownCommand(args[0]),
         };
     }
@@ -76,6 +77,7 @@ public static class Program
         Console.WriteLine($"  {ToolName} tokens <file>    Scan one .pc file and print its token stream");
         Console.WriteLine($"  {ToolName} ast <file>       Parse one .pc file and print its syntax tree");
         Console.WriteLine($"  {ToolName} vocabulary      Print every word the language reserves, as JSON");
+        Console.WriteLine($"  {ToolName} debug           Debug a program, spoken to by an editor");
         Console.WriteLine($"  {ToolName} --version        Print the compiler version");
         Console.WriteLine($"  {ToolName} --help           Print this message");
         Console.WriteLine();
@@ -158,6 +160,31 @@ public static class Program
     /// <para>The answer is read straight from the tables the compiler itself uses, so it cannot
     /// describe a language other than the one that just printed it.</para>
     /// </summary>
+    /// <summary>
+    /// <para>Debugs a program, speaking the Debug Adapter Protocol on standard input and
+    /// output.</para>
+    /// <para>Takes no file. Which program to debug arrives in the protocol's <c>launch</c>
+    /// request, because the editor is what knows — a reader presses a button beside a file
+    /// rather than typing a path, and the same running adapter may be asked for a different
+    /// program next.</para>
+    /// <para><b>Nothing else may write to standard output while this runs.</b> The stream is the
+    /// protocol, and a stray line of ordinary text is a framing error the editor cannot recover
+    /// from. What the program being debugged prints goes out as <c>output</c> events instead,
+    /// which is also what puts it in the editor's debug console rather than nowhere.</para>
+    /// <para>Meant to be launched by an editor rather than typed. Run by hand it will sit
+    /// waiting for a request that never comes, which is correct and looks like a hang.</para>
+    /// </summary>
+    private static int RunDebug()
+    {
+        using Stream input = Console.OpenStandardInput();
+        using Stream output = Console.OpenStandardOutput();
+        using Debugging.DebugAdapter adapter = new(input, output);
+
+        adapter.Run();
+
+        return 0;
+    }
+
     private static int RunVocabulary()
     {
         Console.WriteLine(Vocabulary.AsJson());
@@ -243,7 +270,7 @@ public static class Program
     /// project file. Everything else is reported into the bag and left for the caller to
     /// decide about, since some commands have something worth printing even so.</para>
     /// </summary>
-    private static (SourceDiscovery.Compilation Compilation, SemanticModel Model)? Compile(
+    internal static (SourceDiscovery.Compilation Compilation, SemanticModel Model)? Compile(
         string path,
         DiagnosticBag diagnostics,
         bool requireEntryPoint)

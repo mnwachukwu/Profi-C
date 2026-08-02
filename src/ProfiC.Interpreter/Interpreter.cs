@@ -61,13 +61,55 @@ public sealed partial class Interpreter
     /// <summary>How deep the call stack is, so that runaway recursion fails cleanly.</summary>
     private int _depth;
 
+    /// <summary>
+    /// <para>The calls in progress, outermost first, kept only while something is watching.
+    /// </para>
+    /// <para>A debugger needs a name and a line per call, and <see cref="_depth"/> is a count.
+    /// Kept behind the host check so that an ordinary run allocates nothing and does no
+    /// bookkeeping: a stack that is never read is a cost with no reader.</para>
+    /// </summary>
+    private readonly List<WatchedFrame> _frames = [];
+
+    /// <summary>A call in progress, with the file it is in and the line it is currently on.</summary>
+    private sealed class WatchedFrame(string? name, string file)
+    {
+        public string? Name { get; } = name;
+
+        public string File { get; } = file;
+
+        public int Line { get; set; }
+    }
+
+    /// <summary>
+    /// <para>The file whose code is running.</para>
+    /// <para>Moved as calls are entered and put back as they return, which is the only way it
+    /// can be right: a function in one file calling one in another is two files at once, and
+    /// only the stack knows which is which.</para>
+    /// </summary>
+    private string _file = string.Empty;
+
+    /// <summary>Which file each function was declared in, noted while the units are walked.</summary>
+    private readonly Dictionary<FunctionDecl, string> _fileOf = [];
+
+
     private const int MaximumDepth = 512;
 
-    private Interpreter(SemanticModel model, TextWriter output, TextReader input)
+    /// <summary>
+    /// Something watching the run, or null. Null is the ordinary case and costs one check per
+    /// statement, which is why the gate can sit on the path every statement takes.
+    /// </summary>
+    private readonly IDebugHost? _host;
+
+    private Interpreter(
+        SemanticModel model,
+        TextWriter output,
+        TextReader input,
+        IDebugHost? host = null)
     {
         _model = model;
         _output = output;
         _input = input;
+        _host = host;
     }
 
     /// <summary>
@@ -79,12 +121,13 @@ public sealed partial class Interpreter
         IReadOnlyList<CompilationUnit> lowered,
         SemanticModel model,
         TextWriter? output = null,
-        TextReader? input = null)
+        TextReader? input = null,
+        IDebugHost? host = null)
     {
         ArgumentNullException.ThrowIfNull(lowered);
         ArgumentNullException.ThrowIfNull(model);
 
-        Interpreter interpreter = new(model, output ?? Console.Out, input ?? Console.In);
+        Interpreter interpreter = new(model, output ?? Console.Out, input ?? Console.In, host);
 
         try
         {
@@ -113,20 +156,28 @@ public sealed partial class Interpreter
         CompilationUnit lowered,
         SemanticModel model,
         TextWriter? output = null,
-        TextReader? input = null)
+        TextReader? input = null,
+        IDebugHost? host = null)
     {
         ArgumentNullException.ThrowIfNull(lowered);
 
-        return Run([lowered], model, output, input);
+        return Run([lowered], model, output, input, host);
     }
 
     private int Execute(IReadOnlyList<CompilationUnit> units)
     {
         // Types across every file are collected before any shared field is initialized, so that
         // an initializer in one file may name a type declared in another.
-        foreach (Declaration declaration in units.SelectMany(unit => unit.Declarations))
+        foreach (CompilationUnit unit in units)
         {
-            CollectTypes(declaration);
+            // Walked a unit at a time so that each function is noted against the file it was
+            // declared in. This is the one moment both are in hand.
+            _file = unit.Source.FileName;
+
+            foreach (Declaration declaration in unit.Declarations)
+            {
+                CollectTypes(declaration);
+            }
         }
 
         foreach (Declaration declaration in units.SelectMany(unit => unit.Declarations))
@@ -151,7 +202,9 @@ public sealed partial class Interpreter
                 declarationOfMain.Body,
                 expressionBody: null,
                 _shared,
-                receiver: null),
+                receiver: null,
+                declarationOfMain.Name,
+                _fileOf.GetValueOrDefault(declarationOfMain, _file)),
             arguments: [],
             declarationOfMain.Parameters.Count == 0 ? [] : [new ProfiCSet<object?>()]);
 
@@ -196,6 +249,7 @@ public sealed partial class Interpreter
 
             case FunctionDecl function when _model.GetSymbol(function) is FunctionSymbol symbol:
                 _bodies[symbol] = function;
+                _fileOf[function] = _file;
                 break;
 
             case FieldDecl { Initializer: { } start } field
@@ -285,6 +339,18 @@ public sealed partial class Interpreter
             throw new RecursionTooDeepException(MaximumDepth);
         }
 
+        string callersFile = _file;
+
+        if (function.File is { } declaredIn)
+        {
+            _file = declaredIn;
+        }
+
+        if (_host is not null)
+        {
+            _frames.Add(new WatchedFrame(function.Name, _file));
+        }
+
         try
         {
             Environment scope = function.Closure.Push();
@@ -319,6 +385,12 @@ public sealed partial class Interpreter
         finally
         {
             _depth--;
+            _file = callersFile;
+
+            if (_host is not null && _frames.Count > 0)
+            {
+                _frames.RemoveAt(_frames.Count - 1);
+            }
         }
     }
 
@@ -338,7 +410,7 @@ public sealed partial class Interpreter
         }
 
         return instance => Invoke(
-            new FunctionValue(body.Parameters, body.Body, null, _shared, instance),
+            new FunctionValue(body.Parameters, body.Body, null, _shared, instance, body.Name, _fileOf.GetValueOrDefault(body, _file)),
             [],
             []) as string ?? string.Empty;
     }

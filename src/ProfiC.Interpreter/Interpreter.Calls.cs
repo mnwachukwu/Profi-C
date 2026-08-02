@@ -57,7 +57,7 @@ public sealed partial class Interpreter
                 && BodyOf(callee) is { } shared)
             {
                 return Invoke(
-                    new FunctionValue(shared.Parameters, shared.Body, null, _shared, null),
+                    new FunctionValue(shared.Parameters, shared.Body, null, _shared, null, shared.Name, _fileOf.GetValueOrDefault(shared, _file)),
                     call.Arguments,
                     arguments);
             }
@@ -74,7 +74,7 @@ public sealed partial class Interpreter
             && BodyOf(parent) is { } parentMethod)
         {
             return Invoke(
-                new FunctionValue(parentMethod.Parameters, parentMethod.Body, null, _shared, receiver),
+                new FunctionValue(parentMethod.Parameters, parentMethod.Body, null, _shared, receiver, parentMethod.Name, _fileOf.GetValueOrDefault(parentMethod, _file)),
                 call.Arguments,
                 arguments);
         }
@@ -96,7 +96,7 @@ public sealed partial class Interpreter
                 && BodyOf(found) is { } method)
             {
                 return Invoke(
-                    new FunctionValue(method.Parameters, method.Body, null, _shared, instance),
+                    new FunctionValue(method.Parameters, method.Body, null, _shared, instance, method.Name, _fileOf.GetValueOrDefault(method, _file)),
                     call.Arguments,
                     arguments);
             }

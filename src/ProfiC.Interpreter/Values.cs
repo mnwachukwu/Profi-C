@@ -121,9 +121,29 @@ public sealed class FunctionValue(
     IReadOnlyList<Statement>? body,
     Expression? expressionBody,
     Environment closure,
-    Instance? receiver)
+    Instance? receiver,
+    string? name = null,
+    string? file = null)
 {
+    /// <summary>
+    /// <para>The file this body was written in, for a debugger that has to say where a pause is.
+    /// </para>
+    /// <para>Carried here because nothing else knows it. A source span holds a
+    /// position and not the file it is a position in, and by the time a call is running, the
+    /// unit it was declared in is long out of reach. Across several files a line number alone
+    /// names nothing.</para>
+    /// </summary>
+    public string? File { get; } = file;
+
     public IReadOnlyList<ParameterDecl> Parameters { get; } = parameters;
+
+    /// <summary>
+    /// <para>What to call this in a call stack, or null where there is nothing to call it.</para>
+    /// <para>A lambda has no name, and giving one an invented one would put a word on screen
+    /// that appears nowhere in the program. Null says so, and a debugger can render it however
+    /// suits it.</para>
+    /// </summary>
+    public string? Name { get; } = name;
 
     /// <summary>The statements of a block-bodied function, or null for an expression body.</summary>
     public IReadOnlyList<Statement>? Body { get; } = body;

@@ -42,4 +42,12 @@ public sealed class Environment(Environment? parent)
 
         return null;
     }
+
+    /// <summary>
+    /// <para>What this one scope holds, without looking outward.</para>
+    /// <para>For a debugger's variables pane, which walks the chain itself so that a name
+    /// declared inside can be shown to hide one outside — the same answer the program gets by
+    /// reading the name.</para>
+    /// </summary>
+    internal IEnumerable<KeyValuePair<Symbol, Cell>> Declared => _cells;
 }

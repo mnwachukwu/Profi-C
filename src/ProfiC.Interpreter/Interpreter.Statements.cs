@@ -48,33 +48,83 @@ public sealed partial class Interpreter
         return ExecutionResult.Normal;
     }
 
+    /// <summary>
+    /// <para>Runs one statement, telling a watching debugger where it is first.</para>
+    /// <para>The gate is here rather than anywhere else because this is the one place every
+    /// statement passes through, whatever construct it sits in. Nothing is asked of the host
+    /// but that it return when the program should go on, so a run with no host attached does
+    /// one null check per statement and nothing else.</para>
+    /// </summary>
     private ExecutionResult ExecuteStatement(
         Statement statement,
         Environment scope,
-        Instance? receiver) => statement switch
+        Instance? receiver)
     {
-        // Already made, before the first statement of the run it belongs to.
-        LocalDeclStmt => ExecutionResult.Normal,
+        if (_host is not null)
+        {
+            _host.Reached(new ExecutionPoint(statement, _file, _depth, scope, StackHere(statement)));
+        }
 
-        BlockStmt block => ExecuteStatements(block.Statements, scope.Push(), receiver),
-        VarDeclStmt declaration => ExecuteVarDecl(declaration, scope, receiver),
-        IfStmt branch => ExecuteIf(branch, scope, receiver),
-        WhileStmt loop => ExecuteWhile(loop, scope, receiver),
-        LoopUntilStmt loop => ExecuteLoopUntil(loop, scope, receiver),
-        LoopForeverStmt loop => ExecuteLoopForever(loop, scope, receiver),
-        ForStmt loop => ExecuteFor(loop, scope, receiver),
-        WalkStmt walk => ExecuteWalk(walk, scope, receiver),
-        SwitchStmt switchStmt => ExecuteSwitch(switchStmt, scope, receiver),
-        TryStmt tryStmt => ExecuteTry(tryStmt, scope, receiver),
-        ThrowStmt throwStmt => ExecuteThrow(throwStmt, scope, receiver),
-        YieldStmt yieldStmt => ExecutionResult.Yield(
-            yieldStmt.Value is null ? null : Evaluate(yieldStmt.Value, scope, receiver)),
-        BreakStmt => ExecutionResult.Break,
-        ContinueStmt => ExecutionResult.Continue,
-        ExpressionStmt expression => Discard(expression, scope, receiver),
-        AssignmentStmt assignment => ExecuteAssignment(assignment, scope, receiver),
-        _ => ExecutionResult.Normal,
-    };
+        // The switch is written out here rather than called through a second method, and that
+        // is not style. Statements nest, so a frame added here is added once per level of
+        // nesting per call — and 512 calls deep, which is what the recursion guard allows, one
+        // extra frame per statement was enough to overflow the real stack before the guard
+        // could report. Measured: it crashed the test host about one run in three.
+        return statement switch
+        {
+            // Already made, before the first statement of the run it belongs to.
+            LocalDeclStmt => ExecutionResult.Normal,
+
+            BlockStmt block => ExecuteStatements(block.Statements, scope.Push(), receiver),
+            VarDeclStmt declaration => ExecuteVarDecl(declaration, scope, receiver),
+            IfStmt branch => ExecuteIf(branch, scope, receiver),
+            WhileStmt loop => ExecuteWhile(loop, scope, receiver),
+            LoopUntilStmt loop => ExecuteLoopUntil(loop, scope, receiver),
+            LoopForeverStmt loop => ExecuteLoopForever(loop, scope, receiver),
+            ForStmt loop => ExecuteFor(loop, scope, receiver),
+            WalkStmt walk => ExecuteWalk(walk, scope, receiver),
+            SwitchStmt switchStmt => ExecuteSwitch(switchStmt, scope, receiver),
+            TryStmt tryStmt => ExecuteTry(tryStmt, scope, receiver),
+            ThrowStmt throwStmt => ExecuteThrow(throwStmt, scope, receiver),
+            YieldStmt yieldStmt => ExecutionResult.Yield(
+                yieldStmt.Value is null ? null : Evaluate(yieldStmt.Value, scope, receiver)),
+            BreakStmt => ExecutionResult.Break,
+            ContinueStmt => ExecutionResult.Continue,
+            ExpressionStmt expression => Discard(expression, scope, receiver),
+            AssignmentStmt assignment => ExecuteAssignment(assignment, scope, receiver),
+            _ => ExecutionResult.Normal,
+        };
+    }
+
+    /// <summary>
+    /// <para>The calls in progress, innermost first, with this statement's line put on the
+    /// innermost.</para>
+    /// <para>A frame's line is only known when a statement inside it runs, so it is written
+    /// here rather than when the call was entered. Every frame below the innermost keeps the
+    /// line of whichever statement it was last on, which is the call that is still waiting —
+    /// exactly what a stack trace should show.</para>
+    /// <para>Copied rather than handed over live: the stack unwinds as the program goes on, and
+    /// a debugger reading it later would be told about a call that had already returned.</para>
+    /// </summary>
+    private IReadOnlyList<CallFrame> StackHere(Statement statement)
+    {
+        if (_frames.Count > 0)
+        {
+            _frames[^1].Line = statement.Span.Start.Line;
+        }
+
+        CallFrame[] stack = new CallFrame[_frames.Count];
+
+        for (int i = 0; i < _frames.Count; i++)
+        {
+            stack[i] = new CallFrame(
+                _frames[^(i + 1)].Name, _frames[^(i + 1)].File, _frames[^(i + 1)].Line);
+        }
+
+        return stack;
+    }
+
+
 
     private ExecutionResult Discard(ExpressionStmt statement, Environment scope, Instance? receiver)
     {
@@ -112,7 +162,8 @@ public sealed partial class Interpreter
         if (local.Declaration is FunctionDecl function && _model.GetSymbol(function) is { } symbol)
         {
             scope.Declare(symbol, new FunctionValue(
-                function.Parameters, function.Body, expressionBody: null, scope, receiver));
+                function.Parameters, function.Body, expressionBody: null, scope, receiver,
+                function.Name, _file));
         }
 
         return ExecutionResult.Normal;
