@@ -2,6 +2,21 @@ using ProfiC.Compiler.Ast;
 
 namespace ProfiC.Interpreter;
 
+/// <summary>
+/// <para>Why the program stopped.</para>
+/// <para>Worth telling apart because an editor shows it: "Paused on breakpoint" and "Paused on
+/// step" answer different questions, and a reader who has both a breakpoint and a step in play
+/// is the one who most needs to know which arrived.</para>
+/// </summary>
+public enum StopReason
+{
+    /// <summary>A breakpoint the reader set is on this line.</summary>
+    Breakpoint,
+
+    /// <summary>The end of the step the reader asked for.</summary>
+    Step,
+}
+
 /// <summary>What the reader last asked for, which decides where the program stops next.</summary>
 public enum StepMode
 {
@@ -40,7 +55,7 @@ public sealed class StopPolicy
     private readonly Dictionary<string, HashSet<int>> _breakpoints = new(SameFile);
 
     /// <summary>
-    /// Resolved paths, kept because <see cref="ShouldStopAt"/> runs on every statement of every
+    /// Resolved paths, kept because <see cref="WhyStopAt"/> runs on every statement of every
     /// run and resolving a path touches the file system. The set of files a program is written
     /// in is small and fixed, so this fills once and answers from memory thereafter.
     /// </summary>
@@ -131,7 +146,8 @@ public sealed class StopPolicy
     }
 
     /// <summary>
-    /// <para>Whether to stop here, and if so remembers it as the stop that was made.</para>
+    /// <para>Why to stop here, or null to carry on — and where it does stop, remembers it as the
+    /// stop that was made.</para>
     /// <para>Two rules, and the second is the one that took measuring. A construct rewritten by
     /// lowering makes several statements that share one source line — a <c>loop each</c> makes
     /// six — and stopping at each would report the same line six times for one step. So a
@@ -140,17 +156,19 @@ public sealed class StopPolicy
     /// <para>But the <em>same</em> statement again is not: that is a loop coming round, and a
     /// breakpoint in a loop body has to fire on every turn. By line alone the two cases are
     /// identical, which is why the statement is what tells them apart.</para>
+    /// <para>Null rather than a reason meaning "none", so that a reason cannot be read where
+    /// there was no stop to have one.</para>
     /// </summary>
-    public bool ShouldStopAt(ExecutionPoint point)
+    public StopReason? WhyStopAt(ExecutionPoint point)
     {
         ArgumentNullException.ThrowIfNull(point);
 
         if (StillOnTheLineJustStopped(point))
         {
-            return false;
+            return null;
         }
 
-        bool stop = _mode switch
+        bool stepped = _mode switch
         {
             StepMode.Into => true,
             StepMode.Over => point.Depth <= _depthWhenAsked,
@@ -160,16 +178,21 @@ public sealed class StopPolicy
 
         // A breakpoint is honored whatever was asked for, so stepping over a call that contains
         // one stops inside it — which is what a reader who set it there meant.
-        stop = stop || BreakpointAt(point);
+        bool atBreakpoint = BreakpointAt(point);
 
-        if (stop)
+        if (!stepped && !atBreakpoint)
         {
-            _stoppedAt = point.Statement;
-            _stoppedLine = point.Line;
-            _stoppedDepth = point.Depth;
+            return null;
         }
 
-        return stop;
+        _stoppedAt = point.Statement;
+        _stoppedLine = point.Line;
+        _stoppedDepth = point.Depth;
+
+        // The breakpoint wins where both apply. Stepping onto a line somebody marked is arriving
+        // at their breakpoint, and saying "step" there would answer a question nobody asked
+        // while leaving the interesting one alone.
+        return atBreakpoint ? StopReason.Breakpoint : StopReason.Step;
     }
 
     /// <summary>

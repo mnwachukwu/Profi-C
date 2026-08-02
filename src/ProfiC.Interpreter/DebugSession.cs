@@ -15,7 +15,7 @@ public sealed class DebugSession : IDebugHost, IDisposable
     private readonly StopPolicy _policy = new();
 
     /// <summary>Raised while the program is stopped, before anyone is told it may go on.</summary>
-    private readonly Action<ExecutionPoint>? _stopped;
+    private readonly Action<ExecutionPoint, StopReason>? _stopped;
 
     /// <summary>Held by the program while it waits, released by whoever lets it go on.</summary>
     private readonly SemaphoreSlim _mayContinue = new(0, 1);
@@ -29,13 +29,13 @@ public sealed class DebugSession : IDebugHost, IDisposable
 
     /// <summary>
     /// <param name="stopped">
-    /// Called on the program's own thread each time it stops, with the point it stopped at.
-    /// Called before the program is released, so the point's locals are still readable — they
-    /// are a live view of a scope rather than a copy, and afterwards they answer about a
-    /// program that has moved on.
+    /// Called on the program's own thread each time it stops, with the point it stopped at and
+    /// why it stopped there. Called before the program is released, so the point's locals are
+    /// still readable — they are a live view of a scope rather than a copy, and afterwards they
+    /// answer about a program that has moved on.
     /// </param>
     /// </summary>
-    public DebugSession(Action<ExecutionPoint>? stopped = null) => _stopped = stopped;
+    public DebugSession(Action<ExecutionPoint, StopReason>? stopped = null) => _stopped = stopped;
 
     /// <summary>Where the program is stopped, or null while it is running or finished.</summary>
     public ExecutionPoint? Where => _where;
@@ -68,7 +68,7 @@ public sealed class DebugSession : IDebugHost, IDisposable
     /// </summary>
     public void Reached(ExecutionPoint point)
     {
-        if (_finished || !_policy.ShouldStopAt(point))
+        if (_finished || _policy.WhyStopAt(point) is not { } why)
         {
             return;
         }
@@ -81,7 +81,7 @@ public sealed class DebugSession : IDebugHost, IDisposable
 
         // Announced before waiting, and on this thread, so that whoever is told can read the
         // point's locals while the scope it views is still the one in force.
-        _stopped?.Invoke(point);
+        _stopped?.Invoke(point, why);
 
         _mayContinue.Wait();
 

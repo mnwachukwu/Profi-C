@@ -79,7 +79,7 @@ public sealed class DebugFilesTests
 
         public void Reached(ExecutionPoint point)
         {
-            if (!_policy.ShouldStopAt(point))
+            if (_policy.WhyStopAt(point) is null)
             {
                 return;
             }
@@ -165,7 +165,7 @@ public sealed class DebugFilesTests
             TextReader.Null,
             new Watching(point =>
             {
-                if (policy.ShouldStopAt(point))
+                if (policy.WhyStopAt(point) is not null)
                 {
                     stopped.Add($"{point.File}:{point.Line}");
                     policy.Resume(StepMode.Run, point.Depth);
@@ -202,7 +202,7 @@ public sealed class DebugFilesTests
             TextReader.Null,
             new Watching(point =>
             {
-                if (policy.ShouldStopAt(point))
+                if (policy.WhyStopAt(point) is not null)
                 {
                     stopped.Add($"{point.File}:{point.Line}");
                     policy.Resume(StepMode.Run, point.Depth);

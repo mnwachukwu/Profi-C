@@ -62,7 +62,7 @@ public sealed class DebugSessionTests
 
         public void Reached(ExecutionPoint point)
         {
-            if (!_policy.ShouldStopAt(point))
+            if (_policy.WhyStopAt(point) is null)
             {
                 return;
             }
@@ -139,7 +139,7 @@ public sealed class DebugSessionTests
             """);
 
         using SemaphoreSlim stopped = new(0);
-        using DebugSession session = new(_ => stopped.Release());
+        using DebugSession session = new((_, _) => stopped.Release());
 
         // A session runs by default, so something has to ask it to stop. Breakpoints are set
         // before the program starts, which is the order the protocol's handshake enforces.
@@ -197,7 +197,7 @@ public sealed class DebugSessionTests
             """);
 
         using SemaphoreSlim stopped = new(0);
-        using DebugSession session = new(_ => stopped.Release());
+        using DebugSession session = new((_, _) => stopped.Release());
 
         session.BreakpointsAt(TheFile, [4, 5]);
 

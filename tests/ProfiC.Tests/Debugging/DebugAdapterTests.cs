@@ -64,13 +64,17 @@ public sealed class DebugAdapterTests
             foreach (string request in requests)
             {
                 string filled = Fill(request, paths);
+                int settled = TimesSettled(sent);
 
                 Write(toAdapter, filled);
 
-                // Once started, wait for the program to be somewhere before asking about it.
-                if (filled.Contains("configurationDone", StringComparison.Ordinal))
+                // Anything that lets the program move is waited on before the next request goes
+                // in. Writing them back to back would let a later one overtake: a step and a
+                // continue sent together are read together, and the continue changes what the
+                // step was going to do before the step has done it.
+                if (LetsTheProgramMove(filled))
                 {
-                    WaitForStopOrEnd(sent);
+                    WaitForItToSettleAgain(sent, settled);
                 }
             }
 
@@ -106,20 +110,35 @@ public sealed class DebugAdapterTests
         to.Flush();
     }
 
-    /// <summary>Waits until the program has stopped or finished, or gives up.</summary>
-    private static void WaitForStopOrEnd(MemoryStream sent)
+    /// <summary>The requests that release the program, after which it will stop or end again.</summary>
+    private static bool LetsTheProgramMove(string request) =>
+        new[] { "configurationDone", "continue", "next", "stepIn", "stepOut" }
+            .Any(command => request.Contains($"\"{command}\"", StringComparison.Ordinal));
+
+    /// <summary>
+    /// How many times the program has come to rest, counting a stop and an ending alike — both
+    /// are the program no longer moving, and either may be what a resume leads to.
+    /// </summary>
+    private static int TimesSettled(MemoryStream sent)
+    {
+        List<JsonObject> far = ReadAll(sent.ToArray());
+
+        return EventsNamed(far, "stopped").Count() + EventsNamed(far, "terminated").Count();
+    }
+
+    /// <summary>
+    /// <para>Waits for the program to come to rest once more than it had, or gives up.</para>
+    /// <para>Counted rather than merely looked for, because after the first stop there is always
+    /// one in the record. "Has it stopped" is answered yes by the stop before the one being
+    /// waited on, which would let every later request go in while the program was still running.
+    /// </para>
+    /// </summary>
+    private static void WaitForItToSettleAgain(MemoryStream sent, int settled)
     {
         DateTime giveUp = DateTime.UtcNow.AddSeconds(5);
 
-        while (DateTime.UtcNow < giveUp)
+        while (DateTime.UtcNow < giveUp && TimesSettled(sent) <= settled)
         {
-            List<JsonObject> far = ReadAll(sent.ToArray());
-
-            if (EventsNamed(far, "stopped").Any() || EventsNamed(far, "terminated").Any())
-            {
-                return;
-            }
-
             Thread.Sleep(20);
         }
     }
@@ -232,6 +251,44 @@ public sealed class DebugAdapterTests
 
             Assert.That(EventsNamed(sent, "stopped"), Is.Not.Empty,
                         "the program should stop at the breakpoint");
+
+            Assert.That(
+                (string?)EventsNamed(sent, "stopped").First()["body"]!["reason"],
+                Is.EqualTo("breakpoint"),
+                "and say it was a breakpoint, which is what an editor shows above the stack");
+        });
+    }
+
+    /// <summary>
+    /// <para>A step reports itself as a step, which is the other half of the reason.</para>
+    /// <para>Worth its own test rather than trusting the pair: a reason hard-coded to either
+    /// word passes one of these two and fails the other, and a reason hard-coded to "breakpoint"
+    /// is exactly the mistake that reads as correct while you are looking at a breakpoint.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void AStepSaysItWasAStep()
+    {
+        List<JsonObject> sent = Session(
+            Counting,
+            """{"seq":1,"type":"request","command":"initialize","arguments":{}}""",
+            """{"seq":2,"type":"request","command":"launch","arguments":{"program":"PROGRAM"}}""",
+            """{"seq":3,"type":"request","command":"setBreakpoints","arguments":{"source":{"path":"PROGRAM"},"breakpoints":[{"line":3}]}}""",
+            """{"seq":4,"type":"request","command":"configurationDone","arguments":{}}""",
+            """{"seq":5,"type":"request","command":"next","arguments":{"threadId":1}}""",
+            """{"seq":6,"type":"request","command":"continue","arguments":{}}""");
+
+        string?[] reasons =
+        [
+            .. EventsNamed(sent, "stopped").Select(e => (string?)e["body"]!["reason"]),
+        ];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reasons.First(), Is.EqualTo("breakpoint"), "arrived at the breakpoint");
+
+            Assert.That(reasons, Does.Contain("step"),
+                        "and stepping off it onto a line with no breakpoint is a step");
         });
     }
 

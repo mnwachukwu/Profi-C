@@ -28,19 +28,26 @@ public sealed class StopPolicyTests
     {
         public List<int> Stops { get; } = [];
 
+        /// <summary>Why each stop happened, in the same order as <see cref="Stops"/>.</summary>
+        public List<StopReason> Reasons { get; } = [];
+
         public void Reached(ExecutionPoint point)
         {
-            if (!policy.ShouldStopAt(point))
+            if (policy.WhyStopAt(point) is not { } why)
             {
                 return;
             }
 
             Stops.Add(point.Line);
+            Reasons.Add(why);
             policy.Resume(after, point.Depth);
         }
     }
 
-    private static List<int> StopsIn(string body, StopPolicy policy, StepMode after)
+    private static List<int> StopsIn(string body, StopPolicy policy, StepMode after) =>
+        SteppingThrough(body, policy, after).Stops;
+
+    private static Stepper SteppingThrough(string body, StopPolicy policy, StepMode after)
     {
         string source = $$"""
             shared model Program
@@ -70,7 +77,7 @@ public sealed class StopPolicyTests
         ProfiC.Interpreter.Interpreter.Run(
             Lowering.Lower(unit, model), model, new StringWriter(), TextReader.Null, stepper);
 
-        return stepper.Stops;
+        return stepper;
     }
 
     /// <summary>
@@ -208,5 +215,71 @@ public sealed class StopPolicyTests
 
         Assert.That(stops, Does.Contain(7),
                     "a breakpoint inside the call should stop even though the step was 'over'");
+    }
+
+    // ---- Why it stopped ---------------------------------------------------------------
+
+    /// <summary>Arriving at a breakpoint is reported as one.</summary>
+    [Test]
+    public void ArrivingAtABreakpointSaysSo()
+    {
+        StopPolicy policy = new();
+        policy.BreakpointsAt(TheFile, [4]);
+        policy.Resume(StepMode.Run, 0);
+
+        Stepper stepper = SteppingThrough("""
+                    integer a = 1;
+                    integer b = 2;
+            """, policy, StepMode.Run);
+
+        Assert.That(stepper.Reasons, Is.EqualTo(new[] { StopReason.Breakpoint }));
+    }
+
+    /// <summary>And finishing a step is reported as a step.</summary>
+    [Test]
+    public void FinishingAStepSaysSo()
+    {
+        StopPolicy policy = new();
+        policy.Resume(StepMode.Into, 0);
+
+        Stepper stepper = SteppingThrough("""
+                    integer a = 1;
+                    integer b = 2;
+            """, policy, StepMode.Into);
+
+        Assert.That(stepper.Reasons, Is.All.EqualTo(StopReason.Step));
+    }
+
+    /// <summary>
+    /// <para>Stepping onto a line that has a breakpoint is arriving at the breakpoint.</para>
+    /// <para>The case the precedence exists for, and the one where getting it wrong is visible:
+    /// an editor shows the reason above the call stack, so a reader who stepped onto their own
+    /// breakpoint would be told "step" — an answer to a question they had already stopped
+    /// asking.</para>
+    /// </summary>
+    [Test]
+    public void SteppingOntoABreakpointReportsTheBreakpoint()
+    {
+        StopPolicy policy = new();
+        policy.BreakpointsAt(TheFile, [4]);
+        policy.Resume(StepMode.Into, 0);
+
+        Stepper stepper = SteppingThrough("""
+                    integer a = 1;
+                    integer b = 2;
+            """, policy, StepMode.Into);
+
+        int arrival = stepper.Stops.IndexOf(4);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(arrival, Is.GreaterThanOrEqualTo(0), "line 4 should be reached");
+
+            Assert.That(stepper.Reasons[arrival], Is.EqualTo(StopReason.Breakpoint),
+                        "the breakpoint wins where a step would have stopped there anyway");
+
+            Assert.That(stepper.Reasons, Does.Contain(StopReason.Step),
+                        "and the other stops are still steps, or the test proves nothing");
+        });
     }
 }

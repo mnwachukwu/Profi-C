@@ -38,14 +38,26 @@ public sealed class DebugAdapter : IDisposable
 
         // Told on the program's own thread, before it is released — which is what makes the
         // stack and the locals readable when the editor asks about them a moment later.
-        _session = new DebugSession(point => _wire.Event("stopped", new JsonObject
+        _session = new DebugSession((point, why) => _wire.Event("stopped", new JsonObject
         {
-            ["reason"] = "step",
+            ["reason"] = Named(why),
             ["threadId"] = OnlyThread,
             ["line"] = point.Line,
             ["allThreadsStopped"] = true,
         }));
     }
+
+    /// <summary>
+    /// <para>What the protocol calls a reason for stopping.</para>
+    /// <para>An editor shows this above the call stack, so the spelling is not decoration: the
+    /// protocol names a fixed set, and a word outside it is shown verbatim where a reader
+    /// expects a sentence.</para>
+    /// </summary>
+    private static string Named(StopReason why) => why switch
+    {
+        StopReason.Breakpoint => "breakpoint",
+        _ => "step",
+    };
 
     private IReadOnlyList<CompilationUnit>? _lowered;
     private SemanticModel? _model;

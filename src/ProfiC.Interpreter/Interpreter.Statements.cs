@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Runtime;
@@ -62,7 +63,7 @@ public sealed partial class Interpreter
     {
         if (_host is not null)
         {
-            _host.Reached(new ExecutionPoint(statement, _file, _depth, scope, StackHere(statement)));
+            Announce(statement, scope);
         }
 
         // The switch is written out here rather than called through a second method, and that
@@ -95,6 +96,24 @@ public sealed partial class Interpreter
             _ => ExecutionResult.Normal,
         };
     }
+
+    /// <summary>
+    /// <para>Tells a watching host where the program is.</para>
+    /// <para>Its own method for the same reason the switch above is written out: stack. A frame
+    /// is sized at entry for everything the method might need, a branch not taken included — so
+    /// building the point inside the gate made every statement of every call reserve room for a
+    /// debugger that is usually not there. Statements nest and calls nest, so that room was
+    /// paid per level of both, and 512 calls deep it overflowed the real stack before the
+    /// recursion guard could report. Measured: it crashed the test host about half the time.
+    /// </para>
+    /// <para>Separating the method is what fixes that. <c>NoInlining</c> is not — the same runs
+    /// pass without it, because this is already far past the size the inliner will take. It is
+    /// here to keep the property rather than to leave it to a heuristic, since what goes wrong
+    /// when it is lost is a crash in something else entirely, a long way from this line.</para>
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void Announce(Statement statement, Environment scope) =>
+        _host!.Reached(new ExecutionPoint(statement, _file, _depth, scope, StackHere(statement)));
 
     /// <summary>
     /// <para>The calls in progress, innermost first, with this statement's line put on the
