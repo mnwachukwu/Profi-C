@@ -10,6 +10,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+
+    <!-- The IL verifier the runtime itself ships, as a library rather than the 'ilverify'
+         command. A library runs wherever the tests run, so an invalid instruction sequence is
+         caught on the machine that produced it instead of only on a runner. -->
+    <PackageReference Include="Microsoft.ILVerification" Version="10.0.10" />
     <PackageReference Include="NUnit" Version="4.6.1" />
     <PackageReference Include="NUnit.Analyzers" Version="4.14.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

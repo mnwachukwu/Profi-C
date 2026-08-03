@@ -275,6 +275,12 @@ The interpreter is not a stopgap, and does not go away. It runs the same lowered
 does, so it stays on as the oracle: where the two disagree about what a program means, one of them
 has a bug, and the corpus is run through both on every build to find out.
 
+**Every emitted assembly is also handed to the runtime's own IL verifier.** Running a program
+only exercises the instructions it happens to reach, and only proves they did not crash on that
+machine — an unbalanced stack on a branch nothing takes prints the right answer until the jit
+changes its mind. The verifier reads every method whether or not it runs, and where the runtime
+would say only `InvalidProgramException`, it names the method and the instruction.
+
 [Writing and running a program](#writing-and-running-a-program) is everything needed to try it,
 and every file in [Samples](#samples) runs today.
 
