@@ -66,15 +66,25 @@ public static class Outline
             });
 
     /// <summary>
-    /// Walks a run of declarations. The name of whatever holds them is carried along, because a
-    /// node does not know its parent and a constructor is only recognizable beside the model it
-    /// belongs to.
+    /// <para>Walks a run of declarations. The name of whatever holds them is carried along,
+    /// because a node does not know its parent and a constructor is only recognizable beside the
+    /// model it belongs to.</para>
+    /// <para><b>A declaration with no name yet is left out.</b> The parser recovers rather than
+    /// stopping, so <c>model </c> with nothing after it is a declaration whose name is the empty
+    /// string — and a file being written has one in it for as long as somebody is typing one.
+    /// There is nothing for a reader to navigate to, nothing to write in a breadcrumb, and an
+    /// editor told about it has to decide what to do with a nameless entry that it asked for on
+    /// every keystroke.</para>
     /// </summary>
     private static List<Entry> Walk(
         IEnumerable<Declaration> declarations,
         SourceText source,
         string? within = null) =>
-        [.. declarations.Select(d => Describe(d, source, within)).OfType<Entry>()];
+    [
+        .. declarations.Select(d => Describe(d, source, within))
+            .OfType<Entry>()
+            .Where(entry => entry.Name.Length > 0),
+    ];
 
     private static Entry? Describe(
         Declaration declaration,

@@ -53,6 +53,68 @@ public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modif
     public Symbol? Container { get; internal set; }
 
     /// <summary>
+    /// <para>The dotted path a program would have to write to name this from nowhere in
+    /// particular: every namespace around it, then every type it is nested in, then its own
+    /// name.</para>
+    /// <para>What a bare name cannot say. Two models called <c>Circle</c> are told apart by where
+    /// they were declared and by nothing else, and a reader looking at one of them is looking at
+    /// the half of that which is not written down. A type the language provides answers
+    /// <c>Standard.Console</c>, since <c>Standard</c> is where it sits whether or not any file
+    /// said so.</para>
+    /// </summary>
+    /// <summary>
+    /// <para>The dotted path to whatever holds this: its namespace, or the types it is nested in
+    /// and their namespace. Empty for something declared at the top level of no namespace.</para>
+    /// <para>What is worth saying about where a name came from. The name itself is already on
+    /// screen — the reader is looking at it — so repeating it in front of its own path says the
+    /// same word twice and buries the part that was new.</para>
+    /// </summary>
+    public string Within
+    {
+        get
+        {
+            string whole = QualifiedName;
+            int last = whole.LastIndexOf('.');
+
+            return last < 0 ? string.Empty : whole[..last];
+        }
+    }
+
+    public string QualifiedName
+    {
+        get
+        {
+            List<string> parts = [Name];
+
+            for (Symbol? within = Container; within is not null;)
+            {
+                switch (within)
+                {
+                    case DeclaredTypeSymbol outer:
+                        parts.Insert(0, outer.Name);
+                        within = outer.Container;
+                        break;
+
+                    case NamespaceSymbol scope:
+                        if (scope.FullName.Length > 0)
+                        {
+                            parts.Insert(0, scope.FullName);
+                        }
+
+                        within = null;
+                        break;
+
+                    default:
+                        within = null;
+                        break;
+                }
+            }
+
+            return string.Join('.', parts);
+        }
+    }
+
+    /// <summary>
     /// The file this was declared in. A compilation spans several, so where a type came from
     /// is not answered by its declaration alone.
     /// </summary>

@@ -1,5 +1,8 @@
 using System.Text.Json.Nodes;
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Documentation;
+using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
@@ -83,8 +86,13 @@ public static class Answers
     /// the file.</para>
     /// </summary>
     public static JsonObject? Hover(
-        CompilationUnit unit, SemanticModel model, SourceText source, int offset)
+        IReadOnlyList<CompilationUnit> units,
+        CompilationUnit unit,
+        SemanticModel model,
+        SourceText source,
+        int offset)
     {
+        ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(model);
 
@@ -98,12 +106,29 @@ public static class Answers
             return null;
         }
 
+        string written = $"```profi-c\n{said}\n```";
+
+        // Where it came from, which a bare name cannot say. Two models called Circle are told
+        // apart by where they were declared and by nothing else, and the reader is looking at the
+        // half of that which is not written down.
+        if (Whence(model, node) is { Length: > 0 } from)
+        {
+            written += $"\n\n*{from}*";
+        }
+
+        // Under the signature rather than beside it, so the shape a reader came for is the first
+        // thing on screen and the prose is there for whoever reads on.
+        if (Documented(units, model, node) is { Length: > 0 } summary)
+        {
+            written += $"\n\n{summary}";
+        }
+
         return new JsonObject
         {
             ["contents"] = new JsonObject
             {
                 ["kind"] = "markdown",
-                ["value"] = $"```profi-c\n{said}\n```",
+                ["value"] = written,
             },
             // The name rather than the whole node, so hovering a local underlines the local and
             // not the declaration it sits in. A node with no name in it answers with itself,
@@ -120,6 +145,15 @@ public static class Answers
     /// </summary>
     private static string? Describe(SemanticModel model, SyntaxNode node)
     {
+        // A member the language provides is not a symbol, so without this it falls through to the
+        // type of the expression around it — and every call to something that yields nothing then
+        // describes itself as nothing, which is true of the call and says nothing about the
+        // member.
+        if (model.GetBuiltIn(node) is { } provided && BuiltIns.Find(provided) is { } member)
+        {
+            return Written(member);
+        }
+
         if (model.GetSymbol(node) is { } symbol)
         {
             return Said(symbol);
@@ -127,6 +161,173 @@ public static class Answers
 
         return model.GetType(node)?.ToString();
     }
+
+    /// <summary>
+    /// <para>The full name of what is under the cursor, or nothing for something that has no
+    /// such name.</para>
+    /// <para>A local, a parameter and a loop's variable are reached from one place and named from
+    /// nowhere else, so qualifying them would add a line that says only where the reader already
+    /// is. A type, a member, and anything the language provides all sit somewhere a program could
+    /// have to write out, and that is the thing worth saying.</para>
+    /// </summary>
+    private static string? Whence(SemanticModel model, SyntaxNode node)
+    {
+        if (model.GetBuiltIn(node) is { } provided && BuiltIns.Find(provided) is not null)
+        {
+            return Providing(provided);
+        }
+
+        if (node is TypeSyntax && model.GetType(node) is DeclaredTypeSymbol named)
+        {
+            return named.Within;
+        }
+
+        return model.GetSymbol(node) switch
+        {
+            DeclaredTypeSymbol type => type.Within,
+            FunctionSymbol { DeclaringType: { } owner } => owner.QualifiedName,
+            FieldSymbol { DeclaringType: { } owner } => owner.QualifiedName,
+            EnumMemberSymbol member => member.Owner.QualifiedName,
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Which model a member the language provides is reached through. Worked out from the catalog
+    /// rather than from a symbol, because a provided member has none — and the model's own
+    /// namespace is what makes <c>Standard</c> appear in front of it.
+    /// </summary>
+    private static string? Providing(BuiltInId id)
+    {
+        foreach (BuiltInModelInfo model in BuiltIns.Models)
+        {
+            foreach (BuiltInMember member in model.Members.Concat(model.Constructors))
+            {
+                if (member.Id == id)
+                {
+                    return $"{model.Namespace}.{model.Name}";
+                }
+            }
+        }
+
+        // Answered on a value rather than through a name — what every string, set or optional
+        // knows. There is no model to qualify it with, and the type it is answered on is already
+        // on the line above.
+        return null;
+    }
+
+    /// <summary>
+    /// <para>A member the language provides, written the way a program would declare one.</para>
+    /// <para>Nothing in front of the name where it yields nothing, which is how the language
+    /// writes it: a function with no result has no type before <c>function</c>, so a word there
+    /// is a word no program would put there.</para>
+    /// </summary>
+    private static string Written(BuiltInMember member)
+    {
+        string yields = member.ReturnType is { } returned ? $"{returned} " : string.Empty;
+
+        if (member.IsValue)
+        {
+            return $"{yields}{member.Name}";
+        }
+
+        string takes = string.Join(
+            ", ", member.ParameterTypes.Select(p => p?.ToString() ?? "anything"));
+
+        return $"{yields}function {member.Name}({takes})";
+    }
+
+    /// <summary>
+    /// <para>What is written about the thing under the cursor, from whichever of the two places
+    /// says it.</para>
+    /// <para><b>A member the language provides and one a program declared are documented in
+    /// different places, for a reason that is not going away.</b> A program writes a
+    /// <c>@summary:</c> above a declaration, and the compiler reads it out of the file. Nothing
+    /// writes one above <c>Console.WriteLine</c>, because nobody declares it — what it is for is
+    /// recorded in the compiler beside its shape.</para>
+    /// <para>The file is scanned again to find a documentation comment, since the tree does not
+    /// carry them: they belong to no node, they attach to whatever line follows, and every pass
+    /// after the scanner has no use for them. Scanning is the cheap half of the front end and
+    /// this is asked once, when somebody rests a pointer somewhere.</para>
+    /// </summary>
+    private static string? Documented(
+        IReadOnlyList<CompilationUnit> units, SemanticModel model, SyntaxNode node)
+    {
+        if (model.GetBuiltIn(node) is { } provided)
+        {
+            return BuiltInDocs.Summary(provided);
+        }
+
+        // A type the language provides, named rather than keyed by an id: nothing resolves to a
+        // type the way a call resolves to a member, so its name is what there is to go on.
+        //
+        // Asked of the syntax rather than of whatever the expression came to. A type written on
+        // the left of a declaration, or after 'as', is a type and nothing else — while the type
+        // of an ordinary expression is a fact about the value, and answering with the type's line
+        // would tell somebody hovering a local what Random is for.
+        if (node is TypeSyntax && model.GetType(node) is { Declaration: null } named)
+        {
+            return BuiltInDocs.SummaryOf(named.Name);
+        }
+
+        if (model.GetSymbol(node) is not { } symbol)
+        {
+            return null;
+        }
+
+        if (symbol is TypeSymbol && symbol.Declaration is null)
+        {
+            return BuiltInDocs.SummaryOf(symbol.Name);
+        }
+
+        if (symbol.Declaration is not { } declared || Holding(units, declared) is not { } where)
+        {
+            return null;
+        }
+
+        DiagnosticBag aside = new();
+        Lexer scanner = new(where.Source, aside);
+
+        _ = scanner.Scan();
+
+        // A parameter is documented on the function that takes it, not above itself — so what is
+        // looked for is the comment on the enclosing declaration, and the label naming this
+        // parameter within it. Read as a declaration of its own it finds the function's comment
+        // and answers with what the whole function is for, which is true of the function and
+        // says nothing about the parameter.
+        if (symbol is ParameterSymbol)
+        {
+            return scanner.Documentation
+                .SelectMany(d => d.Parameters)
+                .FirstOrDefault(label => string.Equals(
+                    label.Name, symbol.Name, StringComparison.Ordinal))
+                ?.Text;
+        }
+
+        if (scanner.Documentation.FirstOrDefault(d => d.Documents == declared.Span.Start.Line)
+            is not { } written)
+        {
+            return null;
+        }
+
+        // What it yields and what it raises are part of what a reader came to find out, and both
+        // are written where the summary is. Left out, hovering a function that documents a thrown
+        // exception says nothing about it and looks as though nothing was written.
+        string said = written.Summary;
+
+        foreach (DocLabel label in written.Labels)
+        {
+            if (label.Name is DocComment.Yields or DocComment.Throws)
+            {
+                said += $"\n\n**{Capitalized(label.Name)}:** {label.Text}";
+            }
+        }
+
+        return said;
+    }
+
+    private static string Capitalized(string word) =>
+        word.Length == 0 ? word : char.ToUpperInvariant(word[0]) + word[1..];
 
     /// <summary>What a symbol is, written the way a program would declare it.</summary>
     private static string Said(Symbol symbol) => symbol switch

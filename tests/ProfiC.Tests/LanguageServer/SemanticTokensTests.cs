@@ -211,6 +211,196 @@ public sealed class SemanticTokensTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// <para>A function declared inside a body is a function, not a variable.</para>
+    /// <para>It lives in the same scope a local does and is reached by the same bare name, so
+    /// nothing about where it is written says which it is. What it <em>is</em> says so, and that
+    /// is the compiler's to know.</para>
+    /// </summary>
+    [Test]
+    public void ALocalFunctionIsColoredAsAFunction()
+    {
+        SourceText source = new(
+            """
+            shared model Program
+                function Main()
+                    integer counted = 1;
+
+                    integer function Twice(integer value)
+                        yield value + value;
+                    end function
+
+                    Console.WriteLine(Twice(counted));
+                end function
+            end model
+            """,
+            "Only.pc");
+
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+
+        SemanticModel model = Resolver.Resolve([unit], diagnostics, requireEntryPoint: false);
+        TypeChecker.Check([unit], model, diagnostics);
+
+        IReadOnlyList<Colored> read = Decode(SemanticTokens.Of(unit, model, source), source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(The(read, "Twice", line: 5).Kind, Is.EqualTo("function"), "declared");
+            Assert.That(The(read, "Twice", line: 9).Kind, Is.EqualTo("function"), "called");
+            Assert.That(The(read, "counted", line: 9).Kind, Is.EqualTo("variable"), "beside it");
+        });
+    }
+
+    /// <summary>
+    /// <para>A name being invoked reads as a function; the same name elsewhere reads as what
+    /// holds it.</para>
+    /// <para>A local of a delegate type genuinely <em>is</em> a local, so what it was declared as
+    /// cannot decide this. What is being done with it can: the parentheses are the thing a reader
+    /// is looking at, and a call should look like one whether the function came from a
+    /// declaration or out of a variable.</para>
+    /// </summary>
+    [Test]
+    public void ANameBeingInvokedIsColoredAsAFunction()
+    {
+        SourceText source = new(
+            """
+            shared model Program
+                function Main()
+                    integer delegate(integer) scale = (n) yield n * 2;
+
+                    Console.WriteLine(scale(2));
+                    Program.Take(scale);
+                end function
+
+                function Take(integer delegate(integer) what)
+                    Console.WriteLine(what(1));
+                end function
+            end model
+            """,
+            "Only.pc");
+
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+
+        SemanticModel model = Resolver.Resolve([unit], diagnostics, requireEntryPoint: false);
+        TypeChecker.Check([unit], model, diagnostics);
+
+        IReadOnlyList<Colored> read = Decode(SemanticTokens.Of(unit, model, source), source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(The(read, "scale", line: 3).Kind, Is.EqualTo("variable"), "declared");
+            Assert.That(The(read, "scale", line: 5).Kind, Is.EqualTo("function"), "invoked");
+            Assert.That(
+                The(read, "scale", line: 6).Kind,
+                Is.EqualTo("variable"),
+                "handed on rather than called");
+
+            Assert.That(
+                The(read, "what", line: 10).Kind,
+                Is.EqualTo("function"),
+                "and a parameter holding one, where it is called");
+        });
+    }
+
+    /// <summary>
+    /// <para>A dotted type name is colored as the several names it is.</para>
+    /// <para><c>Shapes.Flat.Circle</c> is two namespaces and a type. Colored as one thing, the
+    /// part that says where the type came from reads as part of its name — which is the opposite
+    /// of what qualifying it was for.</para>
+    /// </summary>
+    [Test]
+    public void EachPartOfADottedTypeNameIsColoredAsWhatItIs()
+    {
+        SourceText source = new(
+            """
+            namespace Shapes.Flat
+
+                public model Circle
+                end model
+
+            end namespace
+
+            shared model Program
+                function Main()
+                    Shapes.Flat.Circle here;
+                    Console.WriteLine(here);
+                end function
+            end model
+            """,
+            "Only.pc");
+
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+
+        SemanticModel model = Resolver.Resolve([unit], diagnostics, requireEntryPoint: false);
+        TypeChecker.Check([unit], model, diagnostics);
+
+        IReadOnlyList<Colored> read = Decode(SemanticTokens.Of(unit, model, source), source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(The(read, "Shapes", line: 10).Kind, Is.EqualTo("namespace"));
+            Assert.That(The(read, "Flat", line: 10).Kind, Is.EqualTo("namespace"));
+            Assert.That(The(read, "Circle", line: 10).Kind, Is.EqualTo("class"), "the type");
+
+            Assert.That(
+                The(read, "WriteLine", line: 11).Kind,
+                Is.EqualTo("method"),
+                "and a member the language provides, which carries no symbol either");
+
+            Assert.That(
+                The(read, "WriteLine", line: 11).Traits,
+                Does.Contain("defaultLibrary"));
+        });
+    }
+
+    /// <summary>
+    /// <para>A primitive written as a reserved word stays a keyword.</para>
+    /// <para><c>integer</c> is a word the language reserves, not a name a program can rename or
+    /// go to — and the grammar has already colored it as one. A semantic token wins where both
+    /// apply, so claiming it here repaints a keyword as a type name and leaves <c>function</c>
+    /// beside it looking like a different kind of thing.</para>
+    /// <para>The capitalized <c>Integer</c> is a different thing entirely: a model the language
+    /// provides, holding what a whole number can hold, and that one is a name.</para>
+    /// </summary>
+    [Test]
+    public void APrimitiveWrittenAsAReservedWordIsNotColoredAsAType()
+    {
+        SourceText source = new(
+            """
+            shared model Program
+                function Main()
+                    integer counted = Integer.MaxValue;
+                    Console.WriteLine(counted);
+                end function
+            end model
+            """,
+            "Only.pc");
+
+        DiagnosticBag diagnostics = new();
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+
+        SemanticModel model = Resolver.Resolve([unit], diagnostics, requireEntryPoint: false);
+        TypeChecker.Check([unit], model, diagnostics);
+
+        IReadOnlyList<Colored> read = Decode(SemanticTokens.Of(unit, model, source), source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                read.Any(c => c.Text == "integer"),
+                Is.False,
+                "the reserved word is the grammar's to color");
+
+            Assert.That(
+                The(read, "Integer", line: 3).Kind,
+                Is.EqualTo("class"),
+                "and the model of the same name is not the same thing");
+        });
+    }
+
     /// <summary>Each kind of declared name arrives as the kind the protocol has a word for.</summary>
     [Test]
     public void EachKindOfNameIsSaidToBeWhatItIs()

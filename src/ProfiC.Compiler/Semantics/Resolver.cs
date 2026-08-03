@@ -291,6 +291,19 @@ public sealed partial class Resolver
     {
         TypeSymbol resolved = ResolveTypeCore(syntax);
         _model.BindType(syntax, resolved);
+
+        // A written type is a use of a name, and is bound like every other use of one. Recording
+        // only the type it came to would answer what the thing is and not which declaration it
+        // reached — so the type on the left of a declaration, and the one after 'as', could not
+        // be followed, renamed, marked, or read the documentation of.
+        //
+        // Only where a name was written. A set, an optional and a delegate are built out of types
+        // rather than being one that was named, and their parts are bound as they are resolved.
+        if (syntax is NamedTypeSyntax && resolved is DeclaredTypeSymbol declared)
+        {
+            _model.Bind(syntax, declared);
+        }
+
         return resolved;
     }
 

@@ -55,6 +55,9 @@ public sealed class AnswersTests
 
         public string At(string name) => Path.Combine(Folder, name);
 
+        /// <summary>Replaces a file, for a test that needs a different one than the fixture.</summary>
+        public void Write(string name, string body) => File.WriteAllText(At(name), body);
+
         public void Dispose() => Directory.Delete(Folder, recursive: true);
     }
 
@@ -109,6 +112,44 @@ public sealed class AnswersTests
     /// and the reader still wants to know where they are in it. The parser recovers, so this is
     /// built from the parse alone with nothing resolved.</para>
     /// </summary>
+    /// <summary>
+    /// <para>A declaration whose name has not been typed yet is not listed.</para>
+    /// <para><b>The protocol forbids an empty name, and an editor asks for this on every
+    /// keystroke</b> — so a nameless entry is not a blank row, it is a rejected reply, once per
+    /// character, for as long as somebody is partway through typing a declaration. Which is
+    /// constantly: the parser recovers rather than stopping, so <c>model</c> with nothing after
+    /// it is a declaration with an empty name.</para>
+    /// </summary>
+    [Test]
+    public void ADeclarationWithNoNameYetIsNotListed()
+    {
+        SourceText source = new(
+            """
+            shared model Program
+                function Main()
+                    Console.WriteLine(1);
+                end function
+            end model
+
+            model
+            """,
+            "Program.pc");
+
+        DiagnosticBag aside = new();
+        JsonArray listed = Answers.Symbols(Parser.Parse(source, aside), source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(listed, Has.Count.EqualTo(1), "the finished one, and not the other");
+            Assert.That((string?)listed[0]!["name"], Is.EqualTo("Program"));
+
+            foreach (JsonNode? entry in listed)
+            {
+                Assert.That((string?)entry!["name"], Is.Not.Empty);
+            }
+        });
+    }
+
     [Test]
     public void AFileThatWillNotCompileStillOutlines()
     {
@@ -141,11 +182,12 @@ public sealed class AnswersTests
     {
         using Workspace workspace = new();
 
-        (_, SemanticModel model, CompilationUnit unit) = Compile(workspace, "Program.pc");
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
 
         // Line 3, column 17: inside 'counted'.
         JsonObject? hover = Answers.Hover(
-            unit, model, unit.Source, OffsetOf(unit.Source, 3, 17));
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 17));
 
         Assert.That(
             (string?)hover?["contents"]?["value"],
@@ -161,11 +203,12 @@ public sealed class AnswersTests
     {
         using Workspace workspace = new();
 
-        (_, SemanticModel model, CompilationUnit unit) = Compile(workspace, "Program.pc");
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
 
         // Line 3, column 36: inside 'Length'.
         JsonObject? hover = Answers.Hover(
-            unit, model, unit.Source, OffsetOf(unit.Source, 3, 36));
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 36));
 
         string said = (string?)hover?["contents"]?["value"] ?? string.Empty;
 
@@ -187,10 +230,11 @@ public sealed class AnswersTests
     {
         using Workspace workspace = new();
 
-        (_, SemanticModel model, CompilationUnit unit) = Compile(workspace, "Program.pc");
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
 
         Assert.That(
-            Answers.Hover(unit, model, unit.Source, unit.Source.Text.Length + 50),
+            Answers.Hover(units, unit, model, unit.Source, unit.Source.Text.Length + 50),
             Is.Null);
     }
 
@@ -297,6 +341,331 @@ public sealed class AnswersTests
             Is.Empty);
     }
 
+    /// <summary>
+    /// <para>Hovering a member the language provides says what it is for.</para>
+    /// <para>Nobody declares <c>Count</c>, so there is no <c>@summary:</c> above it to read — what
+    /// it does is recorded in the compiler beside its shape, and this is where that reaches a
+    /// reader.</para>
+    /// </summary>
+    [Test]
+    public void HoveringAMemberTheLanguageProvidesSaysWhatItIsFor()
+    {
+        using Workspace workspace = new();
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Greeting.pc");
+
+        // Line 3, column 21: inside 'Count' on 'word.Count'.
+        JsonObject? hover = Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 21));
+
+        Assert.That(
+            (string?)hover?["contents"]?["value"],
+            Does.Contain("How many characters"));
+    }
+
+    /// <summary>
+    /// <para>A call to something the language provides says what it takes and yields.</para>
+    /// <para>A member the language provides is not a symbol, so without a rule of its own this
+    /// falls through to the type of the expression around it — and every call to something that
+    /// yields nothing then describes itself as nothing, which is true of the call and says
+    /// nothing whatever about the member.</para>
+    /// </summary>
+    [Test]
+    public void HoveringACallToSomethingProvidedSaysItsShape()
+    {
+        using Workspace workspace = new();
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 4, column 17: on 'WriteLine'.
+        string said = (string?)Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 4, 17))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                said,
+                Does.Contain("function WriteLine(anything)"),
+                "written the way a program would declare one");
+
+            Assert.That(
+                said,
+                Does.Not.Contain("nothing"),
+                "a function with no result has no type in front of it, and no word either");
+
+            Assert.That(said, Does.Contain("Writes a value and ends the line"));
+
+            Assert.That(
+                said,
+                Does.Contain("Standard.Console"),
+                "where it comes from, without repeating the name already on screen");
+
+            Assert.That(said, Does.Not.Contain("Console.WriteLine"));
+        });
+    }
+
+    /// <summary>
+    /// <para>A function type is named the way a program writes one.</para>
+    /// <para><c>delegate</c> is how a function type is written and <c>function</c> is how one is
+    /// declared. Naming a type with the other word gives back something that will not parse where
+    /// a type belongs, which is the one place this text is read — and it reaches every diagnostic
+    /// that names a type, not only what a reader hovers.</para>
+    /// </summary>
+    [Test]
+    public void AFunctionTypeIsNamedAsADelegate()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write(
+            "Program.pc",
+            """
+            shared model Program
+                function Main()
+                    integer delegate(integer) scale = (n) yield n * 2;
+                    Console.WriteLine(scale(2));
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 35: on 'scale' where it is declared.
+        string said = (string?)Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 35))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.Contain("delegate(integer)"));
+            Assert.That(said, Does.Not.Contain("function("));
+        });
+    }
+
+    /// <summary>
+    /// <para>A type the language provides says what it is for, wherever it is written.</para>
+    /// <para>On the left of a declaration and after <c>as</c> it is a type and nothing else — no
+    /// call resolves to it, so there is no recorded member to read a line from, and the name is
+    /// all there is to go on.</para>
+    /// </summary>
+    [Test]
+    public void HoveringATypeTheLanguageProvidesSaysWhatItIsFor()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write(
+            "Program.pc",
+            """
+            shared model Program
+                function Main()
+                    Random counter = new Random();
+                    Console.WriteLine(counter.Next());
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 10: on 'Random' written as the local's type.
+        string said = (string?)Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 10))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.That(said, Does.Contain("A source of chance"));
+    }
+
+    /// <summary>
+    /// <para>Hovering something a program declared says what that program wrote about it.</para>
+    /// <para>The other half, and the one that costs a reader nothing to get: a
+    /// <c>@summary:</c> is already parsed and already checked, and until now was read by nobody
+    /// but the compiler.</para>
+    /// </summary>
+    [Test]
+    public void HoveringSomethingDocumentedSaysWhatWasWritten()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write(
+            "Greeting.pc",
+            """
+            shared model Greeting
+                # @summary: How long a word is, counted in characters.
+                public shared integer function Length(string word)
+                    yield word.Count;
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 36: inside the call to 'Length'.
+        JsonObject? hover = Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 36));
+
+        string said = (string?)hover?["contents"]?["value"] ?? string.Empty;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.Contain("function Length"), "the shape first");
+            Assert.That(said, Does.Contain("How long a word is"), "then what it is for");
+        });
+    }
+
+    /// <summary>
+    /// <para>A parameter is documented by the label naming it, not by its function's summary.
+    /// </para>
+    /// <para>A parameter has no comment above it — what is written about it sits inside the
+    /// comment on the function that takes it. Read as a declaration of its own it finds that
+    /// comment and answers with what the whole function is for: true of the function, and
+    /// nothing to do with the parameter.</para>
+    /// </summary>
+    [Test]
+    public void HoveringAParameterSaysWhatWasWrittenAboutThatParameter()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write(
+            "Greeting.pc",
+            """
+            shared model Greeting
+                # @summary: How long a word is.
+                # @word: the text to measure.
+                # @yields: how many characters are in it.
+                public shared integer function Length(string word)
+                    yield word.Count;
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, _) =
+            Compile(workspace, "Program.pc");
+
+        CompilationUnit greeting = units.Single(
+            u => Path.GetFileName(u.Source.FileName) == "Greeting.pc");
+
+        // Line 5, column 50: on 'word' where the parameter is declared.
+        string said = (string?)Answers.Hover(
+                units, greeting, model, greeting.Source, OffsetOf(greeting.Source, 5, 50))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.Contain("the text to measure"));
+            Assert.That(said, Does.Not.Contain("How long a word is"), "that is the function's");
+        });
+    }
+
+    /// <summary>
+    /// <para>What a function yields and what it raises are shown too.</para>
+    /// <para>Both are written where the summary is and both are part of what somebody hovering a
+    /// call came to find out. Left out, a function that documents a thrown exception looks as
+    /// though nothing was written about it.</para>
+    /// </summary>
+    [Test]
+    public void HoveringAFunctionSaysWhatItYieldsAndRaises()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write(
+            "Greeting.pc",
+            """
+            shared model Greeting
+                # @summary: How long a word is.
+                # @yields: how many characters are in it.
+                # @throws: ArgumentException where the word is empty.
+                public shared integer function Length(string word)
+                    yield word.Count;
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 36: on the call to 'Length'.
+        string said = (string?)Answers.Hover(
+                units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 36))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.Contain("How long a word is"));
+            Assert.That(said, Does.Contain("how many characters"));
+            Assert.That(said, Does.Contain("ArgumentException"));
+        });
+    }
+
+    /// <summary>
+    /// <para>A type a program declared says what was written about it, and can be followed,
+    /// wherever it is named.</para>
+    /// <para><b>On the left of a declaration and after <c>as</c>, a name is a use of that type
+    /// like any other</b> — but only the type it came to was recorded, not which declaration it
+    /// reached. So the two places a type is most often written could not be followed, renamed,
+    /// marked, or read the documentation of, while the same name on the right of a <c>new</c>
+    /// could be all four.</para>
+    /// </summary>
+    [Test]
+    public void ATypeIsFollowedAndDocumentedWhereverItIsNamed()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write(
+            "Greeting.pc",
+            """
+            # @summary: Something that can say hello.
+            model Greeting
+                public function Greeting()
+                end function
+
+                public string function Words()
+                    yield "hello";
+                end function
+            end model
+            """);
+
+        workspace.Write(
+            "Program.pc",
+            """
+            shared model Program
+                function Main()
+                    Greeting first = new Greeting();
+                    Model second = first;
+                    Console.WriteLine(second as Greeting);
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        string Hovered(int line, int column) =>
+            (string?)Answers.Hover(
+                units, unit, model, unit.Source, OffsetOf(unit.Source, line, column))
+                ?["contents"]?["value"] ?? string.Empty;
+
+        JsonArray Followed(int line, int column) =>
+            Answers.Definition(units, model, unit, OffsetOf(unit.Source, line, column));
+
+        Assert.Multiple(() =>
+        {
+            // Line 3, column 10: 'Greeting' written as the local's type.
+            Assert.That(
+                Hovered(3, 10),
+                Does.Contain("Something that can say hello"),
+                "on the left");
+            Assert.That(Followed(3, 10), Is.Not.Empty, "and followed from there");
+
+            // Line 5, column 38: 'Greeting' written after 'as'.
+            Assert.That(Hovered(5, 38), Does.Contain("Something that can say hello"), "in a cast");
+            Assert.That(Followed(5, 38), Is.Not.Empty, "and followed from there too");
+        });
+    }
+
     // ---- What a call takes -------------------------------------------------------------------
 
     private const string Adding = """
@@ -322,7 +691,8 @@ public sealed class AnswersTests
 
         File.WriteAllText(workspace.At("Program.pc"), Adding);
 
-        (_, SemanticModel model, CompilationUnit unit) = Compile(workspace, "Program.pc");
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
 
         // Line 3, column 39: just inside the argument list.
         JsonObject? help = Answers.Signature(
@@ -352,7 +722,8 @@ public sealed class AnswersTests
 
         File.WriteAllText(workspace.At("Program.pc"), Adding);
 
-        (_, SemanticModel model, CompilationUnit unit) = Compile(workspace, "Program.pc");
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
 
         JsonObject? first = Answers.Signature(
             unit, model, unit.Source, OffsetOf(unit.Source, 3, 39));
@@ -374,7 +745,8 @@ public sealed class AnswersTests
     {
         using Workspace workspace = new();
 
-        (_, SemanticModel model, CompilationUnit unit) = Compile(workspace, "Program.pc");
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
 
         Assert.That(
             Answers.Signature(unit, model, unit.Source, unit.Source.Text.Length + 50),

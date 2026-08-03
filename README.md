@@ -573,6 +573,10 @@ this one only until the day it does not.
 own source, re-run step 1 or `pc` will keep running the old build. While working on the
 compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go stale.
 
+**With VS Code open, republishing fails**: the language server is a running copy of `pc`, and
+Windows will not let a running program be overwritten. Run `Profi-C: Stop the language server`
+from the command palette first, then publish, then `Profi-C: Restart the language server`.
+
 ## Syntax highlighting in VS Code
 
 **Editor support lives in its own repository**, [Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors).

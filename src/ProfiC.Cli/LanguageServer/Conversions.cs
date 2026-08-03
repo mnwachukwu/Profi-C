@@ -17,16 +17,52 @@ public static class Conversions
     /// <summary>
     /// <para>The path a <c>file:</c> URI names, or null where it names something else.</para>
     /// <para>An editor speaks URIs and the compiler speaks paths, and the gap between them is
-    /// wider than it looks: a space arrives as <c>%20</c>, a Windows drive as <c>/c%3A/</c>.
-    /// <see cref="Uri.LocalPath"/> answers all of that, and answers it per platform.</para>
+    /// wider than it looks: a space arrives as <c>%20</c>, a Windows drive as <c>/d%3A/</c>.
+    /// <see cref="Uri.LocalPath"/> answers most of it, and answers it per platform.</para>
+    /// <para><b>It does not answer the escaped drive.</b> <c>file:///D:/x</c> comes back as
+    /// <c>D:\x</c> and <c>file:///d%3A/x</c> as <c>/d:/x</c> — the same file written two ways,
+    /// answered two ways, and the second is the one VS Code sends. Left as it is, the leading
+    /// slash makes the drive read as a folder under the current drive, so a file in
+    /// <c>D:\Repos</c> is looked for in <c>D:\d:\Repos</c> and every question about it fails.
+    /// </para>
+    /// <para><b>Answered in the form the rest of the compiler writes paths in</b>, which means
+    /// normalized rather than merely correct. An editor's URI yields forward slashes even on
+    /// Windows, and everything that matches a document against a compilation compares it to a
+    /// full path — case-insensitively, but not separator-insensitively. Two spellings of one file
+    /// never match, so every question about a place answers null while diagnostics, which match
+    /// nothing, go on working.</para>
     /// <para>Null for anything not on disk — an editor's untitled buffer arrives as
     /// <c>untitled:Untitled-1</c>, which names no file and cannot be compiled. Saying so here
     /// keeps every caller from inventing a path for it.</para>
     /// </summary>
-    public static string? PathOf(string? uri) =>
-        Uri.TryCreate(uri, UriKind.Absolute, out Uri? parsed) && parsed.IsFile
-            ? parsed.LocalPath
-            : null;
+    public static string? PathOf(string? uri)
+    {
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? parsed) || !parsed.IsFile)
+        {
+            return null;
+        }
+
+        string local = parsed.LocalPath;
+
+        if (local.Length >= 3
+            && local[0] is '/' or '\\'
+            && char.IsAsciiLetter(local[1])
+            && local[2] == ':')
+        {
+            local = local[1..];
+        }
+
+        try
+        {
+            return Path.GetFullPath(local);
+        }
+        catch (ArgumentException)
+        {
+            // A URI naming something no file system could hold. It arrived from outside, so
+            // answering "not a file" is the same thing this says about an unsaved buffer.
+            return null;
+        }
+    }
 
     /// <summary>The URI naming a file, which is how the protocol asks about one.</summary>
     public static string UriOf(string path) => new Uri(Path.GetFullPath(path)).AbsoluteUri;

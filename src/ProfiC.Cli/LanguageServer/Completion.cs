@@ -63,21 +63,36 @@ public static class Completion
         // A receiver whose type is in error is one the compiler could not work out — a name
         // nothing declares, most often. Every type answers ToString and Equals, so offering what
         // is known about it would offer those two and imply the name is fine.
-        if (ReceiverType(path, source, offset, read, cancellation) is not { IsError: false } receiver)
+        if (ReceiverType(path, source, offset, read, cancellation) is not var (found, within)
+            || found is not { IsError: false } receiver)
         {
             return null;
         }
 
         JsonArray offered = [];
 
-        foreach ((string name, string detail, int kind) in MembersOf(receiver))
+        foreach ((string name, string detail, int kind, string said) in MembersOf(receiver, within))
         {
-            offered.Add(new JsonObject
+            JsonObject item = new()
             {
                 ["label"] = name,
                 ["detail"] = detail,
                 ["kind"] = kind,
-            });
+            };
+
+            // What it is for, shown in the panel beside the list rather than in the row. The row
+            // has the signature on it already, and a second line of prose per row would make a
+            // list nobody can scan.
+            if (said.Length > 0)
+            {
+                item["documentation"] = new JsonObject
+                {
+                    ["kind"] = "markdown",
+                    ["value"] = said,
+                };
+            }
+
+            offered.Add(item);
         }
 
         return offered;
@@ -227,7 +242,7 @@ public static class Completion
     /// <para>Compiled as the whole program rather than the file alone: the receiver may be a type
     /// declared next door, and a compilation of one file would type it as nothing.</para>
     /// </summary>
-    private static TypeSymbol? ReceiverType(
+    private static (TypeSymbol Receiver, DeclaredTypeSymbol? Within)? ReceiverType(
         string path,
         SourceText source,
         int offset,
@@ -235,7 +250,8 @@ public static class Completion
         CancellationToken cancellation)
     {
         SourceText completing = new(
-            source.Text[..offset] + Placeholder + source.Text[offset..], source.FileName);
+            source.Text[..offset] + Standing(source.Text, offset) + source.Text[offset..],
+            source.FileName);
 
         if (Compiled(path, completing, read, cancellation) is not var (model, unit))
         {
@@ -244,11 +260,141 @@ public static class Completion
 
         // The member access the placeholder made. Found by name rather than by position, since
         // inserting the text moved every offset after it.
+        //
+        // Held anywhere in the name rather than at its end: the cursor is not always past what is
+        // typed. Putting it after the dot in 'Greeting.Words()' — which is what somebody editing
+        // a line they already wrote does — makes the placeholder the start of the name and not
+        // the finish of it.
         MemberExpr? access = Everything(unit)
             .OfType<MemberExpr>()
-            .FirstOrDefault(m => m.MemberName.EndsWith(Placeholder, StringComparison.Ordinal));
+            .FirstOrDefault(m => m.MemberName.Contains(Placeholder, StringComparison.Ordinal));
 
-        return access is null ? null : model.GetType(access.Receiver);
+        // Which type the cursor sits inside, which is what decides whether a private member is
+        // reachable from here. Taken at the placeholder, since that is where the caret is.
+        DeclaredTypeSymbol? within = model.NamesAt(unit.Source, offset)?.EnclosingType;
+
+        if (access is null)
+        {
+            // Nothing carrying the placeholder means the file did not parse around it, which the
+            // placeholder cannot fix: it makes the cursor's own line a statement and says nothing
+            // about the one above. A name half typed on the line before is a parse error, and
+            // recovery does not always reach past it — and that line is where the caret just was,
+            // so this is the ordinary case rather than a rare one.
+            return NamedBefore(path, source, offset, read, cancellation) is { } fallback
+                ? (fallback, within)
+                : null;
+        }
+
+        // A receiver that names a type holds no value, so what it is worth asking about is the
+        // type it names rather than any type recorded for it. Asked the other way round, a model
+        // reached through its own name offers nothing the moment the member beside it does not
+        // resolve — which it never does, since the member is a name nobody declared.
+        TypeSymbol? receiver =
+            model.GetSymbol(access.Receiver) as TypeSymbol ?? model.GetType(access.Receiver);
+
+        return receiver is null ? null : (receiver, within);
+    }
+
+    /// <summary>
+    /// <para>The type of the plain name written before the dot, found without the tree.</para>
+    /// <para><b>What the placeholder trick falls back to when the file will not parse around the
+    /// cursor.</b> It asks a smaller question — not "what is the type of whatever expression
+    /// precedes this dot" but "there is a single name here; what is it?" — and answers it from
+    /// the names in force at that point, which are recorded against stretches of the file and so
+    /// survive a line that is not a statement.</para>
+    /// <para>A single name only. <c>counter.</c> and <c>Math.</c> are answered; <c>f(x).</c> is
+    /// not, and does not need to be — an expression that involved is one somebody finished
+    /// writing, and a finished line parses.</para>
+    /// </summary>
+    private static TypeSymbol? NamedBefore(
+        string path, SourceText source, int offset, SourceReader read, CancellationToken cancellation)
+    {
+        string text = source.Text;
+
+        int at = offset;
+
+        while (at > 0 && IsNamePart(text[at - 1]))
+        {
+            at--;
+        }
+
+        if (at == 0 || text[at - 1] != '.')
+        {
+            return null;
+        }
+
+        int end = at - 1;
+        int start = end;
+
+        while (start > 0 && IsNamePart(text[start - 1]))
+        {
+            start--;
+        }
+
+        if (start == end)
+        {
+            return null;
+        }
+
+        string name = text[start..end];
+
+        if (Compiled(path, source, read, cancellation) is not var (model, unit))
+        {
+            return null;
+        }
+
+        if (model.NamesAt(unit.Source, start) is not { } names)
+        {
+            return null;
+        }
+
+        return names.Visible()
+            .Where(symbol => string.Equals(symbol.Name, name, StringComparison.Ordinal))
+            .Select(Held)
+            .FirstOrDefault(type => type is { IsError: false });
+    }
+
+    /// <summary>The type a name stands for: what it holds, or the type it names outright.</summary>
+    private static TypeSymbol? Held(Symbol symbol) => symbol switch
+    {
+        LocalSymbol local => local.Type,
+        ParameterSymbol parameter => parameter.Type,
+        FieldSymbol field => field.Type,
+        TypeSymbol type => type,
+        _ => null,
+    };
+
+    private static bool IsNamePart(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+    /// <summary>
+    /// <para>The name to put where the member will go, and a semicolon after it where the line
+    /// needs one.</para>
+    /// <para><b>Inserting the name is not enough on its own, and the case it misses is the
+    /// ordinary one.</b> <c>counter.</c> on a line by itself becomes
+    /// <c>counter.__profi_c_completing__</c> — an expression with no semicolon, which is not a
+    /// statement, so the parser recovers by discarding it and there is no member access left to
+    /// read a receiver off. The trick works only when the line already parses, which is exactly
+    /// when nobody needs it: written inside a call that is already closed, as a test fixture
+    /// tends to be.</para>
+    /// <para>Only where the rest of the line is blank. A dot typed in the middle of something —
+    /// <c>Console.WriteLine(counter.)</c> — has its terminator already, and adding another would
+    /// make a worse program than the one it was given.</para>
+    /// </summary>
+    private static string Standing(string text, int offset)
+    {
+        int at = offset;
+
+        while (at < text.Length && text[at] is not ('\n' or '\r'))
+        {
+            if (!char.IsWhiteSpace(text[at]))
+            {
+                return Placeholder;
+            }
+
+            at++;
+        }
+
+        return Placeholder + ";";
     }
 
     /// <summary>
@@ -274,8 +420,14 @@ public static class Completion
             return null;
         }
 
+        // Found by path, the way every other question here finds it. By reference it depends on
+        // the text handed to the reader being the very object that comes back on the unit, which
+        // holds when the reader is asked for exactly the path it was given and not otherwise —
+        // and a file reached a second way is then a unit that looks unrelated to the one asked
+        // about.
         CompilationUnit? unit = compilation.Units.FirstOrDefault(
-            u => ReferenceEquals(u.Source, text));
+            u => SourceDiscovery.PathComparer.Equals(
+                Path.GetFullPath(u.Source.FileName), Path.GetFullPath(path)));
 
         if (unit is null)
         {
@@ -300,7 +452,8 @@ public static class Completion
     /// program declares, and the members a program declared — including the ones it inherited,
     /// since a reader calling <c>shape.Area()</c> does not care which model wrote it.</para>
     /// </summary>
-    private static IEnumerable<(string Name, string Detail, int Kind)> MembersOf(TypeSymbol receiver)
+    private static IEnumerable<(string Name, string Detail, int Kind, string Summary)> MembersOf(
+        TypeSymbol receiver, DeclaredTypeSymbol? within)
     {
         HashSet<string> already = new(StringComparer.Ordinal);
 
@@ -308,7 +461,11 @@ public static class Completion
         {
             if (already.Add(member.Name))
             {
-                yield return (member.Name, Describe(member), member.IsValue ? Property : Method);
+                yield return (
+                    member.Name,
+                    Describe(member),
+                    member.IsValue ? Property : Method,
+                    member.Id is { } id ? BuiltInDocs.Summary(id) : string.Empty);
             }
         }
 
@@ -327,33 +484,59 @@ public static class Completion
             {
                 // Reachable only from inside, so offering it would suggest a line the next
                 // keystroke refuses. A shorter list is the better one.
-                if (!Reachable(member))
+                if (!Reachable(member, within))
                 {
                     continue;
                 }
 
                 if (already.Add(member.Name))
                 {
-                    yield return (member.Name, Describe(member), KindOf(member));
+                    yield return (member.Name, Describe(member), KindOf(member), string.Empty);
                 }
             }
         }
     }
 
     /// <summary>
-    /// <para>Whether a member could be written from somewhere else at all.</para>
-    /// <para>Only the coarse half of the question: a private member is reachable from nowhere but
-    /// its own type, so it never belongs on this list, while a protected or internal one depends
-    /// on where the cursor is. Answering that properly means asking the checker, which is worth
-    /// doing when there is somewhere to ask from — and offering a little too much is the kinder
-    /// way to be wrong, since the reader is told plainly if they take it.</para>
+    /// <para>Whether a member can be written from where the cursor is.</para>
+    /// <para><b>A member written with no visibility at all is private</b>, which is most of them
+    /// in most files. Left out on the grounds that a private member is reachable from nowhere,
+    /// the list drops nearly everything in the model somebody is working inside — the one type
+    /// whose members they ask for most.</para>
+    /// <para>So where the cursor is decides it. Inside the type that declares a member, or inside
+    /// one nested in it, a private member is exactly as reachable as any other.</para>
+    /// <para>Protected and internal are still offered from anywhere, which is the coarse half
+    /// left: being a little too generous is the kinder way to be wrong, since the compiler says
+    /// so plainly if the suggestion is taken.</para>
     /// </summary>
-    private static bool Reachable(Symbol member) => member switch
+    private static bool Reachable(Symbol member, DeclaredTypeSymbol? within)
     {
-        FieldSymbol field => field.Modifiers.OfMember() != Visibility.Private,
-        FunctionSymbol function => function.Modifiers.OfMember() != Visibility.Private,
-        _ => true,
-    };
+        Visibility visibility = member switch
+        {
+            FieldSymbol field => field.Modifiers.OfMember(),
+            FunctionSymbol function => function.Modifiers.OfMember(),
+            _ => Visibility.Public,
+        };
+
+        return visibility != Visibility.Private
+            || (member.DeclaringType is { } owner && Inside(owner, within));
+    }
+
+    /// <summary>Whether the cursor sits in a type, or in one nested inside it.</summary>
+    private static bool Inside(DeclaredTypeSymbol owner, DeclaredTypeSymbol? within)
+    {
+        for (Symbol? here = within; here is not null;)
+        {
+            if (ReferenceEquals(here, owner))
+            {
+                return true;
+            }
+
+            here = here is DeclaredTypeSymbol nested ? nested.Container : null;
+        }
+
+        return false;
+    }
 
     /// <summary>What is shown beside a name: enough to choose between two of them.</summary>
     private static string Describe(BuiltInMember member) =>

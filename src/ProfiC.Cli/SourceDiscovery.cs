@@ -177,7 +177,7 @@ public static class SourceDiscovery
 
         Compilation? gathered = PathComparer.Equals(Path.GetExtension(path), ProjectExtension)
             ? GatherFromProject(path, diagnostics, read)
-            : GatherFromFolder(path, diagnostics, read);
+            : GatherAround(path, diagnostics, read);
 
         if (gathered is null)
         {
@@ -192,6 +192,28 @@ public static class SourceDiscovery
             Projects = projects,
         };
     }
+
+    /// <summary>
+    /// <para>The compilation a single file belongs to: the project that claims it, or the folder
+    /// it sits in where no project does.</para>
+    /// <para><b>A file in a project cannot be compiled as though it were alone.</b> Its folder is
+    /// not the program — a project gathers files from wherever it lists them, and a type declared
+    /// in a folder beside this one is part of the same program and invisible from here. Compiled
+    /// by folder, every name that crosses the boundary is reported missing, which is a wall of
+    /// errors about code that is correct.</para>
+    /// <para>Asked the same way <c>pc project</c> answers it, so what the editor is told owns a
+    /// file and what actually gets compiled with it cannot disagree.</para>
+    /// <para>Where it starts is the project's business and stays so. A project names its entry
+    /// point, and pointing at one of its files is a way of saying which program to compile rather
+    /// than an instruction to begin somewhere else — a file that declares no <c>Program</c> could
+    /// not begin anything anyway.</para>
+    /// </summary>
+    private static Compilation? GatherAround(
+        string path, DiagnosticBag diagnostics, SourceReader read) =>
+        ProjectSearch.For(path).Project is { } claiming
+            ? GatherFromProject(claiming, diagnostics, read)
+                ?? GatherFromFolder(path, diagnostics, read)
+            : GatherFromFolder(path, diagnostics, read);
 
     // ---- Files a file asks for --------------------------------------------------------------
 

@@ -322,6 +322,285 @@ public sealed class CompletionTests
                 """),
             Is.Null);
 
+    /// <summary>
+    /// <para>The cursor sits after the dot but before a name that is already there.</para>
+    /// <para>What somebody editing a line they wrote earlier does, as against typing a fresh one.
+    /// The placeholder then begins the member's name rather than finishing it, so looking for it
+    /// at the end finds nothing and the whole list is empty.</para>
+    /// </summary>
+    [Test]
+    public void TheCursorMayBeBeforeANameThatIsAlreadyThere()
+    {
+        string[] offered = Labels(OfferedAt(
+            """
+            shared model Program
+                function Main()
+                    string word = "hello";
+                    Console.WriteLine(word.$ToUpper());
+                end function
+            end model
+            """));
+
+        Assert.That(offered, Does.Contain("ToUpper"));
+    }
+
+    /// <summary>
+    /// A model the program declared offers what is reached through its name, the same as one the
+    /// language provides — which is the case a test using only <c>Math</c> cannot tell apart.
+    /// </summary>
+    [Test]
+    public void AModelTheProgramDeclaredOffersItsSharedMembers()
+    {
+        string[] offered = Labels(
+            OfferedAt(
+                """
+                shared model Program
+                    function Main()
+                        Console.WriteLine(Beside.$);
+                    end function
+                end model
+                """,
+                alongside: """
+                shared model Beside
+                    public shared integer function Twice(integer value)
+                        yield value + value;
+                    end function
+                end model
+                """));
+
+        Assert.That(offered, Does.Contain("Twice"));
+    }
+
+    /// <summary>
+    /// A model declared next door, with the cursor before a call that is already written — the
+    /// two awkward cases at once, which is how somebody edits an existing line.
+    /// </summary>
+    [Test]
+    public void ADeclaredModelOffersWithTheCursorBeforeAnExistingCall()
+    {
+        string[] offered = Labels(
+            OfferedAt(
+                """
+                shared model Program
+                    function Main()
+                        Console.WriteLine(Beside.$Twice(2));
+                    end function
+                end model
+                """,
+                alongside: """
+                shared model Beside
+                    public shared integer function Twice(integer value)
+                        yield value + value;
+                    end function
+                end model
+                """));
+
+        Assert.That(offered, Does.Contain("Twice"));
+    }
+
+    /// <summary>
+    /// <para>A local holding a model the language provides offers that model's members.</para>
+    /// <para>Not the same case as a receiver that names a type: <c>counter</c> is a value, and
+    /// what is wanted is what a <c>Random</c> answers.</para>
+    /// </summary>
+    [Test]
+    public void ALocalHoldingABuiltInModelOffersItsMembers()
+    {
+        string[] offered = Labels(OfferedAt(
+            """
+            shared model Program
+                function Main()
+                    Random counter = new Random();
+                    Console.WriteLine(counter.$);
+                end function
+            end model
+            """));
+
+        Assert.That(offered, Does.Contain("Next"));
+    }
+
+    /// <summary>
+    /// <para>The buffer is what is asked about, even where the file on disk says otherwise.</para>
+    /// <para>Which is the whole point of a server, and the one thing a fixture that writes its
+    /// text to disk first cannot check.</para>
+    /// </summary>
+    [Test]
+    public void WhatIsOfferedComesFromTheBufferRatherThanTheFile()
+    {
+        const string OnDisk = """
+            shared model Program
+                function Main()
+                    Console.WriteLine(1);
+                end function
+            end model
+            """;
+
+        // A half-typed name on the line above, which is where the caret has just been. Two
+        // broken lines in a row is the ordinary state of a file being written, and recovery has
+        // to reach the second one.
+        const string Typing = """
+            shared model Program
+                function Main()
+                    Random counter = new Random();
+
+                    coun
+                    counter.
+                end function
+            end model
+            """;
+
+        using Workspace workspace = new(
+            OnDisk,
+            alongside: """
+            shared model Beside
+                public shared integer function Twice(integer value)
+                    yield value + value;
+                end function
+            end model
+            """);
+
+        SourceText buffer = new(Typing, workspace.At);
+
+        SourceReader reader = asked =>
+            SourceDiscovery.PathComparer.Equals(
+                Path.GetFullPath(asked), Path.GetFullPath(workspace.At))
+                ? buffer
+                : SourceDiscovery.FromDisk(asked);
+
+        int offset = Typing.IndexOf("counter.", StringComparison.Ordinal)
+            + "counter.".Length;
+
+        string[] offered = Labels(
+            Completion.After(workspace.At, buffer, offset, reader));
+
+        Assert.That(offered, Does.Contain("Next"));
+    }
+
+    /// <summary>
+    /// <para>A dot on a line of its own, which is where somebody actually types one.</para>
+    /// <para>Not wrapped in a call that is already closed. A fixture written that way parses
+    /// before the placeholder is put in it, and so cannot tell whether the trick is doing
+    /// anything.</para>
+    /// </summary>
+    [Test]
+    public void ADotOnALineOfItsOwnStillOffersMembers()
+    {
+        string[] offered = Labels(OfferedAt(
+            """
+            shared model Program
+                function Main()
+                    Random counter = new Random();
+                    counter.$
+                end function
+            end model
+            """));
+
+        Assert.That(offered, Does.Contain("Next"));
+    }
+
+    /// <summary>
+    /// <para>A local declared several lines above is offered while the line being typed is
+    /// nonsense.</para>
+    /// <para><b>The ordinary way this is reached, and the one a fixture that parses cannot
+    /// test.</b> Typing <c>coun</c> on a line of its own is not a statement, and what has to keep
+    /// working is the scope around it.</para>
+    /// </summary>
+    [Test]
+    public void ALocalIsOfferedFromAHalfTypedLineFurtherDown()
+    {
+        string[] offered = Labels(BareAt(
+            """
+            shared model Program
+                function Main()
+                    integer counter = 0;
+
+                    Console.WriteLine("one");
+                    Console.WriteLine("two");
+                    Console.WriteLine("three");
+
+                    coun$
+                end function
+            end model
+            """));
+
+        Assert.That(offered, Does.Contain("counter"));
+    }
+
+    /// <summary>
+    /// <para>A model offers its own members to itself, whatever their visibility.</para>
+    /// <para><b>Nothing here is written <c>public</c>, and that is the point.</b> A member with no
+    /// visibility on it is private, which is most members in most files — so a list that leaves
+    /// private members out leaves out nearly everything in the model somebody is working inside,
+    /// which is the one type they ask about most.</para>
+    /// <para>Every fixture written before this one said <c>public shared</c>, so every one of them
+    /// passed while the case a reader actually meets did not.</para>
+    /// </summary>
+    [Test]
+    public void AModelOffersItsOwnMembersToItself()
+    {
+        string[] offered = Labels(OfferedAt(
+            """
+            shared model Program
+                integer started;
+
+                function Main()
+                    Console.WriteLine(Program.$);
+                end function
+
+                integer function Twice(integer value)
+                    yield value + value;
+                end function
+
+                function Helper()
+                    Console.WriteLine("helping");
+                end function
+            end model
+            """));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(offered, Does.Contain("Twice"));
+            Assert.That(offered, Does.Contain("Helper"));
+            Assert.That(offered, Does.Contain("started"), "a field as well as a function");
+        });
+    }
+
+    /// <summary>
+    /// <para>Another model's private members stay out of the list.</para>
+    /// <para>The half the visibility rule is for. Offering one suggests a line the compiler
+    /// refuses, and a shorter list is the better one.</para>
+    /// </summary>
+    [Test]
+    public void AnotherModelsPrivateMembersAreNotOffered()
+    {
+        string[] offered = Labels(
+            OfferedAt(
+                """
+                shared model Program
+                    function Main()
+                        Console.WriteLine(Beside.$);
+                    end function
+                end model
+                """,
+                alongside: """
+                shared model Beside
+                    public shared integer function Shown(integer value)
+                        yield value;
+                    end function
+
+                    shared integer function Hidden(integer value)
+                        yield value;
+                    end function
+                end model
+                """));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(offered, Does.Contain("Shown"));
+            Assert.That(offered, Does.Not.Contain("Hidden"));
+        });
+    }
+
     // ---- A name with nothing in front of it --------------------------------------------------
 
     /// <summary>
@@ -524,6 +803,32 @@ public sealed class CompletionTests
             """));
 
         Assert.That(offered, Does.Contain("counted"));
+    }
+
+    /// <summary>
+    /// <para>Part of a name is enough, and what is offered still includes it.</para>
+    /// <para>How this is actually reached: nobody asks for a list and then reads it — they type
+    /// two letters and expect what they meant to be in what comes back. The editor narrows the
+    /// list itself, so the server's job is to have the name in it at all.</para>
+    /// </summary>
+    [Test]
+    public void PartOfANameIsEnough()
+    {
+        string[] offered = Labels(BareAt(
+            """
+            shared model Program
+                function Main()
+                    string dog = "rex";
+                    Console.WriteLine(do$);
+                end function
+            end model
+            """));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(offered, Does.Contain("dog"));
+            Assert.That(offered, Does.Contain("Integer"), "and a type the language provides");
+        });
     }
 
     /// <summary>Where a member is being written, this half says nothing — the other half answers.</summary>

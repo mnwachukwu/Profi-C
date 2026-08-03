@@ -1009,6 +1009,52 @@ public static class BuiltIns
     public static BuiltInModelInfo? FindModel(string name) =>
         Models.FirstOrDefault(m => string.Equals(m.Name, name, StringComparison.Ordinal));
 
+    /// <summary>
+    /// <para>The member an id names, or null where nothing carries it.</para>
+    /// <para>The way back from what the checker recorded to what it recorded it about. Anything
+    /// wanting to write a member out — its name, what it takes, what it yields — has an id and
+    /// needs the entry, and the id is exactly what tells two members of the same name apart.
+    /// </para>
+    /// <para>The set of every member is built once. It is walked whole, and the alternative is a
+    /// second list to keep true beside the catalog.</para>
+    /// </summary>
+    public static BuiltInMember? Find(BuiltInId id) =>
+        ById.TryGetValue(id, out BuiltInMember? member) ? member : null;
+
+    private static readonly Lazy<Dictionary<BuiltInId, BuiltInMember>> Catalog = new(() =>
+    {
+        Dictionary<BuiltInId, BuiltInMember> byId = [];
+
+        IEnumerable<BuiltInMember> every =
+        [
+            .. Models.SelectMany(m => m.Members),
+            .. Models.SelectMany(m => m.Constructors),
+            .. OnEveryType(),
+            .. OnString(),
+            .. OnInteger(),
+            .. OnReal(),
+            .. OnFloat(),
+            .. OnFraction(),
+            .. OnEnumeration(),
+            .. OnException(),
+            .. OnSet(new SetType(PrimitiveType.Integer)),
+            .. OnSet(new SetType(new OptionalType(PrimitiveType.Integer))),
+            .. OnOptional(new OptionalType(PrimitiveType.Integer)),
+        ];
+
+        foreach (BuiltInMember member in every)
+        {
+            if (member.Id is { } id)
+            {
+                byId.TryAdd(id, member);
+            }
+        }
+
+        return byId;
+    });
+
+    private static Dictionary<BuiltInId, BuiltInMember> ById => Catalog.Value;
+
     /// <summary>A member reached through a model's name, or null if there is none.</summary>
     public static BuiltInMember? Find(string modelName, string memberName) =>
         FindModel(modelName)?.Members

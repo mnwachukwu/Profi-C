@@ -197,9 +197,12 @@ public sealed class FunctionType(
     {
         get
         {
+            // 'delegate' is how a function type is written, and 'function' is how one is
+            // declared. Naming a type with the other word gives back something that will not
+            // parse where a type belongs — which is the one place this text is read.
             string parameters = string.Join(", ", ParameterTypes.Select(p => p.Display));
             string prefix = ReturnType is null ? string.Empty : ReturnType.Display + " ";
-            return $"{prefix}function({parameters})";
+            return $"{prefix}delegate({parameters})";
         }
     }
 }

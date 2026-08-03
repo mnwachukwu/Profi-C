@@ -20,6 +20,16 @@ public sealed class NamedTypeSyntax : TypeSyntax
         : base(span) => Parts = parts;
 
     /// <summary>
+    /// <para>Where each part was written, in the same order as <see cref="Parts"/>, or empty
+    /// where the parser did not record them.</para>
+    /// <para>Held because a dotted name is several names and only the last of them is the type:
+    /// in <c>Shapes.Flat.Circle</c> the first two say where to look, and something coloring the
+    /// file has to color them as what they are rather than leaving them the plain color of
+    /// whatever is around them.</para>
+    /// </summary>
+    public IReadOnlyList<SourceSpan> PartSpans { get; init; } = [];
+
+    /// <summary>
     /// The name as written, in pieces: <c>Shapes.Flat.Circle</c> is three. Everything before
     /// the last names where to look, and the last names the type.
     /// </summary>

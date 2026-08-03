@@ -66,6 +66,19 @@ public static class SemanticTokens
 
     private const int DefaultLibrary = 1 << 4;
 
+    /// <summary>Where each kind sits in <see cref="Kinds"/>, for the few that are named twice.</summary>
+    private const int Namespace = 0;
+
+    private const int Function = 6;
+
+    private const int Method = 7;
+
+    private const int Property = 8;
+
+    private const int Parameter = 9;
+
+    private const int Variable = 10;
+
     /// <summary>
     /// <para>Every name in the file, encoded the way the protocol asks for it.</para>
     /// <para>Five numbers each, and each row is measured from the row before it rather than from
@@ -82,16 +95,57 @@ public static class SemanticTokens
 
         List<(int Line, int Column, int Length, int Kind, int Traits)> found = [];
 
+        // What is being called. Gathered first because the question is asked of a node about its
+        // parent, and a node does not carry one.
+        HashSet<SyntaxNode> called = [];
+
         foreach (SyntaxNode node in Everything(unit))
         {
+            if (node is CallExpr call)
+            {
+                called.Add(call.Callee);
+            }
+        }
+
+        foreach (SyntaxNode node in Everything(unit))
+        {
+            // A dotted type name is several names: everything before the last says which
+            // namespace to look in, and only the last is the type. Colored as one, the part that
+            // says where it came from reads as part of the name.
+            if (node is NamedTypeSyntax { IsQualified: true } qualified
+                && qualified.PartSpans.Count == qualified.Parts.Count)
+            {
+                foreach (SourceSpan part in qualified.PartSpans.Take(qualified.Parts.Count - 1))
+                {
+                    found.Add((
+                        part.Start.Line - 1, part.Start.Column - 1, part.Length, Namespace, 0));
+                }
+            }
+
             if (!node.HasName || node.NameSpan.Length == 0)
             {
                 continue;
             }
 
-            if (model.GetSymbol(node) is not { } symbol || KindOf(symbol) is not { } kind)
+            Symbol? symbol = model.GetSymbol(node);
+
+            // Two things carry no symbol and are named all the same. A member the language
+            // provides is a catalog entry, and a type written as a type records what it names
+            // rather than a name that resolved — so 'WriteLine' and the 'Circle' in
+            // 'Shapes.Flat.Circle' were the two most-written names in a file with no color on
+            // them at all.
+            if (KindOf(symbol, model, node) is not { } kind)
             {
                 continue;
+            }
+
+            // A name being invoked reads as a function, whatever is holding it. A local of a
+            // delegate type is a local everywhere else and a call here, and which of the two it
+            // looks like should follow what is being done with it rather than what it was
+            // declared as — the parentheses are the thing a reader is looking at.
+            if (kind is Variable or Parameter or Property && called.Contains(node))
+            {
+                kind = symbol is FieldSymbol ? Method : Function;
             }
 
             SourceSpan where = node.NameSpan;
@@ -101,7 +155,9 @@ public static class SemanticTokens
                 where.Start.Column - 1,
                 where.Length,
                 kind,
-                TraitsOf(symbol, node)));
+                symbol is null
+                    ? (model.GetBuiltIn(node) is not null ? DefaultLibrary : 0)
+                    : TraitsOf(symbol, node)));
         }
 
         // Sorted because the encoding is a walk: each row says how far it is from the one before,
@@ -138,6 +194,32 @@ public static class SemanticTokens
     /// <c>function</c>, which is the distinction the protocol draws and the one a theme colors
     /// differently.</para>
     /// </summary>
+    /// <summary>
+    /// Which kind of name this is, from whichever of the three things the compiler recorded about
+    /// it: the symbol it resolved to, the catalog entry it named, or the type it wrote.
+    /// </summary>
+    private static int? KindOf(Symbol? symbol, SemanticModel model, SyntaxNode node)
+    {
+        if (symbol is not null)
+        {
+            return KindOf(symbol);
+        }
+
+        if (model.GetBuiltIn(node) is { } provided)
+        {
+            return BuiltIns.Find(provided) is { IsValue: true } ? Property : Method;
+        }
+
+        // Only a type that was declared somewhere, by a program or by the catalog. A primitive is
+        // written as a reserved word — 'integer', not 'Integer' — so it is a keyword on the line
+        // and the grammar has already colored it as one. A semantic token wins where both apply,
+        // so naming it here would repaint a keyword as a type name and leave 'function' beside it
+        // looking like something else entirely.
+        return node is TypeSyntax && model.GetType(node) is DeclaredTypeSymbol named
+            ? KindOf(named)
+            : null;
+    }
+
     private static int? KindOf(Symbol symbol) => symbol switch
     {
         NamespaceSymbol => 0,
@@ -146,10 +228,10 @@ public static class SemanticTokens
         EnumerationSymbol => 3,
         EnumMemberSymbol => 4,
         TypeSymbol => 5,
-        FunctionSymbol function => function.DeclaringType is null ? 6 : 7,
-        FieldSymbol => 8,
-        ParameterSymbol => 9,
-        LocalSymbol => 10,
+        FunctionSymbol function => function.DeclaringType is null ? Function : Method,
+        FieldSymbol => Property,
+        ParameterSymbol => Parameter,
+        LocalSymbol => Variable,
         _ => null,
     };
 

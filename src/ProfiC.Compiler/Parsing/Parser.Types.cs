@@ -118,17 +118,22 @@ public sealed partial class Parser
         // A dotted name says where to look before saying what to look for. Only a name may be
         // qualified, since everything else a type can be is built out of one.
         List<string> parts = [name];
-        SourceSpan named = token.Span;
+        List<SourceSpan> where = [token.Span];
 
         while (Check(TokenType.Dot))
         {
             Advance();
-            parts.Add(ExpectIdentifier(out named));
+            parts.Add(ExpectIdentifier(out SourceSpan next));
+            where.Add(next);
         }
 
         // The last part, since that is the one that names the type. Everything before it names
         // where to look, and renaming the type must not write over that.
-        return new NamedTypeSyntax(SpanFrom(token), parts) { NameSpan = named };
+        return new NamedTypeSyntax(SpanFrom(token), parts)
+        {
+            NameSpan = where[^1],
+            PartSpans = where,
+        };
     }
 
     /// <summary>

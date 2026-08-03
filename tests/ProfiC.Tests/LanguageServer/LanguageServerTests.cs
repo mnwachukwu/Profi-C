@@ -384,6 +384,162 @@ public sealed class LanguageServerTests
         });
     }
 
+    /// <summary>
+    /// <para>The questions about a place answer, asked the way an editor asks them.</para>
+    /// <para><b>Every other test here builds its URI with <c>Conversions.UriOf</c>, which is this
+    /// codebase talking to itself.</b> VS Code escapes the colon after a drive letter; nothing
+    /// here ever did; and the whole suite stayed green while the server could not open a file on
+    /// Windows at all. So this one writes the URI the way the editor writes it, and asks the four
+    /// questions that go through the compile-per-question path rather than the publish path — the
+    /// half that a test using our own URIs cannot tell is broken.</para>
+    /// </summary>
+    [Test]
+    public void TheQuestionsAboutAPlaceAnswerForAnEditorsUri()
+    {
+        using Workspace workspace = new();
+
+        // As VS Code sends it: lowercase drive, colon escaped.
+        string uri = workspace.UriOf("Program.pc")
+            .Replace("///C:", "///c%3A", StringComparison.OrdinalIgnoreCase)
+            .Replace("///D:", "///d%3A", StringComparison.OrdinalIgnoreCase);
+
+        JsonObject Asking(int id, string method, int line, int character) => new()
+        {
+            ["jsonrpc"] = "2.0",
+            ["id"] = id,
+            ["method"] = method,
+            ["params"] = new JsonObject
+            {
+                ["textDocument"] = new JsonObject { ["uri"] = uri },
+                ["position"] = new JsonObject
+                {
+                    ["line"] = line,
+                    ["character"] = character,
+                },
+            },
+        };
+
+        string answered = Answering(
+            Framed(
+                Open(uri, File.ReadAllText(workspace.At("Program.pc"))),
+
+                // Line 3, on 'Greeting' in 'Console.WriteLine(Greeting.Words());'.
+                Asking(20, "textDocument/hover", 2, 27),
+                Asking(21, "textDocument/definition", 2, 27),
+                Asking(22, "textDocument/documentHighlight", 2, 27),
+                new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = 23,
+                    ["method"] = "textDocument/semanticTokens/full",
+                    ["params"] = new JsonObject
+                    {
+                        ["textDocument"] = new JsonObject { ["uri"] = uri },
+                    },
+                },
+
+                // Just past the dot in 'Greeting.Words()', and again where a bare name goes.
+                Asking(24, "textDocument/completion", 2, 35),
+                Asking(25, "textDocument/completion", 2, 26)),
+            text => text.Contains("\"id\":25", StringComparison.Ordinal));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                Answered(answered, 20)?["result"],
+                Is.Not.Null.And.Not.EqualTo(JsonValue.Create((object?)null)),
+                "hover said nothing");
+
+            Assert.That(
+                (JsonArray?)Answered(answered, 21)?["result"],
+                Is.Not.Null.And.Not.Empty,
+                "definition led nowhere");
+
+            Assert.That(
+                (JsonArray?)Answered(answered, 22)?["result"],
+                Is.Not.Null.And.Not.Empty,
+                "nothing was marked");
+
+            Assert.That(
+                (JsonArray?)Answered(answered, 23)?["result"]?["data"],
+                Is.Not.Null.And.Not.Empty,
+                "nothing was colored");
+
+            Assert.That(
+                (JsonArray?)Answered(answered, 24)?["result"],
+                Is.Not.Null.And.Not.Empty,
+                "nothing was offered after the dot");
+
+            Assert.That(
+                (JsonArray?)Answered(answered, 25)?["result"],
+                Is.Not.Null.And.Not.Empty,
+                "nothing was offered for a bare name");
+        });
+    }
+
+    /// <summary>
+    /// <para>Completion through the server, on the buffer rather than on what is saved.</para>
+    /// <para><b>Everything else about completion is tested by calling it directly, and that is the
+    /// half that cannot fail the way it fails in an editor.</b> Called directly it reads a file
+    /// from disk that parses. Through the server it reads a buffer that does not — a name half
+    /// typed, on a line that is not a statement — and the file on disk still holds whatever was
+    /// there before. Those are different programs, and only one of them is what somebody is
+    /// looking at.</para>
+    /// </summary>
+    [Test]
+    public void CompletionAnswersAboutTheBufferAndNotTheSavedFile()
+    {
+        using Workspace workspace = new();
+
+        // On disk this file has none of these names in it. That is the point: what is offered has
+        // to come from the buffer below, which is what the editor holds.
+        string typing = """
+            shared model Program
+                function Main()
+                    Random counter = new Random();
+
+                    Console.WriteLine("one");
+
+                    coun
+                    counter.
+                end function
+            end model
+            """;
+
+        JsonObject Asking(int id, int line, int character) => new()
+        {
+            ["jsonrpc"] = "2.0",
+            ["id"] = id,
+            ["method"] = "textDocument/completion",
+            ["params"] = new JsonObject
+            {
+                ["textDocument"] = new JsonObject { ["uri"] = workspace.UriOf("Program.pc") },
+                ["position"] = new JsonObject { ["line"] = line, ["character"] = character },
+            },
+        };
+
+        string answered = Answering(
+            Framed(
+                Open(workspace.UriOf("Program.pc"), typing),
+
+                // Just past 'coun' on line 7, and just past the dot on line 8.
+                Asking(30, 6, 12),
+                Asking(31, 7, 16)),
+            text => text.Contains("\"id\":31", StringComparison.Ordinal));
+
+        string[] Labels(int id) =>
+        [
+            .. ((JsonArray?)Answered(answered, id)?["result"] ?? [])
+                .Select(item => (string?)item!["label"] ?? string.Empty),
+        ];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Labels(30), Does.Contain("counter"), "a bare name being typed");
+            Assert.That(Labels(31), Does.Contain("Next"), "and what the local it names answers");
+        });
+    }
+
     /// <summary>The reply carrying an id, parsed back out of what was written.</summary>
     private static JsonObject? Answered(string answered, int id)
     {

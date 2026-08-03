@@ -367,8 +367,7 @@ public sealed class LanguageServer : IDisposable
             return null;
         }
 
-        _ = units;
-        return Answers.Hover(unit, model, unit.Source, offset);
+        return Answers.Hover(units, unit, model, unit.Source, offset);
     }
 
     /// <summary>
