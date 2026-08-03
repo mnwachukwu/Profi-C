@@ -18,6 +18,17 @@ Every one of the four is a model with instances, and each has members reached tw
 the name (`DateTime.Now`) and through a value you are holding (`landing.Year`). The tables say
 which.
 
+| Section | Members |
+|---|---|
+| [Making one](#making-one) | `new DateTime` `new Date` `new Time` `new TimeSpan` |
+| [Reading the clock](#reading-the-clock) | `Now` `Today` `Zero` |
+| [Making a TimeSpan from an amount](#making-a-timespan-from-an-amount) | `FromDays` `FromHours` `FromMinutes` `FromSeconds` |
+| [Moving between the four](#moving-between-the-four) | `FromDateTime` `Date` `Time` `ToDateTime` `ToTimeSpan` |
+| [Reading the parts](#reading-the-parts) | `Year` `Month` `Day` `Hour` `Minute` `Second` `DayOfWeek` `DayOfYear` `Days` `Hours` `Minutes` `Seconds` `TotalDays` `TotalHours` `TotalMinutes` `TotalSeconds` |
+| [Moving forward and back](#moving-forward-and-back) | `AddYears` `AddMonths` `AddDays` `AddHours` `AddMinutes` `AddSeconds` `Add` `Subtract` `Negate` `Duration` |
+| [Comparing](#comparing) | `CompareTo` |
+| [Writing one out, and reading one back](#writing-one-out-and-reading-one-back) | `Format` `Parse` |
+
 ## Making one
 
 | Member | Yields |
@@ -27,6 +38,8 @@ which.
 | `new DateTime(Date day)` | `DateTime` |
 | `new DateTime(Date day, Time time)` | `DateTime` |
 | `new Date(integer year, integer month, integer day)` | `Date` |
+| `new Time(integer hour, integer minute)` | `Time` |
+| `new Time(integer hour, integer minute, integer second)` | `Time` |
 | `new TimeSpan(integer hours, integer minutes, integer seconds)` | `TimeSpan` |
 | `new TimeSpan(integer days, integer hours, integer minutes, integer seconds)` | `TimeSpan` |
 

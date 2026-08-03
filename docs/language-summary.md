@@ -1,6 +1,6 @@
 # Profi-C Language Summary
 
-A condensed reference and a full comparison to C#. For the normative definition see
+A condensed reference, and the quickest way in for a C# developer. For the normative definition see
 [language-spec.md](language-spec.md); for the surface syntax as productions,
 [grammar.ebnf](grammar.ebnf). Every diagnostic named here — `PC0243`, `PC0406`, and the rest —
 is listed in the specification's [diagnostics appendix](language-spec.md#appendix-a-diagnostics),

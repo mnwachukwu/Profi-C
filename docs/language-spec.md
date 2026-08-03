@@ -183,7 +183,8 @@ The differences that matter most to a C# reader:
 - **`this.` is mandatory**, not conventional.
 - **Assignment is a statement**, so `if x = 5` is a syntax error rather than a warning.
 
-[language-summary.md](language-summary.md) carries the full comparison table.
+[language-summary.md](language-summary.md) sets these out in prose, and
+[side-by-side.md](side-by-side.md) carries the full comparison, every construct written both ways.
 
 ### 0.5 Conformance and terminology
 
@@ -2199,17 +2200,19 @@ Every other name here is reached through the name itself; writing `new Math()` i
 
 ### 11.1 The reference
 
-**The members themselves are in [docs/standard-library/](standard-library/README.md)**, one page
-per area, each listing what every member takes and yields with worked examples beside it. This
-section says what the library *is*; that says what is *in* it.
+**The members themselves are in [docs/standard-library/](standard-library/README.md)**, whose
+index lists every type and then every member by name, each linking to the page that explains it.
+This section says what the library *is*; that says what is *in* it.
 
 | Page | What is on it |
 |---|---|
 | [Every value](standard-library/every-value.md) | `ToString`, `Equals`, `Reference.Equals`, an enumeration's `ToInteger` |
-| [Text](standard-library/text.md) | Every member of a `string` |
+| [Text](standard-library/text.md) | Every member of a `string`, and `String.Empty` |
 | [Sets](standard-library/sets.md) | Every member of a `T[]` |
 | [Optionals](standard-library/optionals.md) | The three members of a `T?` |
-| [Numbers](standard-library/numbers.md) | `Math`, `Fraction`, `Random`, and the members of a number |
+| [Numbers](standard-library/numbers.md) | The members of a number, `Fraction`, what each type knows about itself, and every conversion between them |
+| [Math](standard-library/math.md) | Roots, logarithms, angles, rounding and sizing |
+| [Random](standard-library/random.md) | Chance, held or drawn through the name |
 | [Dates and times](standard-library/dates-and-times.md) | `DateTime`, `Date`, `Time`, `TimeSpan` |
 | [Input and output](standard-library/input-output.md) | `Console`, `File`, `Directory` |
 | [Exceptions](standard-library/exceptions.md) | `Message`, and every exception the language raises |
@@ -2219,9 +2222,10 @@ differently. A specification is read once, in order, to learn what the language 
 is opened at one member, answered, and closed. Written into one file they crowd each other out,
 which is what the member tables here had begun to do.
 
-**A test holds the two together.** Every member the compiler provides must appear in the
-reference, and every page must be reachable from its index — so a member added to the language
-and left undocumented fails the build rather than going quietly unlearned.
+**A test holds the two together.** Every member the compiler provides must have a row in that
+index, nothing may be listed there that the compiler does not provide, every page must be
+reachable, and every link must land on a heading that is there — so a member added to the
+language and left undocumented fails the build rather than going quietly unlearned.
 
 ### 11.2 Two rules the reference relies on
 

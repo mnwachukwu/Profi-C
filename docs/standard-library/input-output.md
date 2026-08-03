@@ -6,6 +6,15 @@ Three models, all reached through their names: there is no such thing as *a* `Co
 or *a* `Directory`. A file is not a thing a program holds — it is somewhere a program puts text
 and takes it back.
 
+| Section | Members |
+|---|---|
+| [Console](#console) | `Write` `WriteLine` `Read` |
+| [File · reading](#reading) | `Read` `ReadLines` |
+| [File · writing](#writing) | `Write` `WriteLines` `Append` |
+| [File · managing](#managing) | `Exists` `Delete` `Copy` `Move` `Size` `Changed` |
+| [Directory](#directory) | `Current` `Exists` `Create` `Delete` `Files` `Folders` |
+| [What can go wrong](#what-can-go-wrong) | — |
+
 <a id="console"></a>
 
 ## `Console`

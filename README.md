@@ -63,12 +63,13 @@ functions with closures, and compile-time definite assignment.
 | Document | What it is |
 |---|---|
 | [docs/language-spec.md](docs/language-spec.md) | The normative specification, plus an appendix listing every diagnostic |
-| [docs/language-summary.md](docs/language-summary.md) | A condensed reference and a full **comparison to C#** |
-| [docs/side-by-side.md](docs/side-by-side.md) | Every construct written both ways, plus what C# does better and what it can express that Profi-C cannot |
+| [docs/standard-library/](docs/standard-library/README.md) | **Every type and every member**, indexed by name, each linking to the page that explains it |
+| [docs/language-summary.md](docs/language-summary.md) | A condensed reference, and the quickest way in for a **C# developer** |
+| [docs/side-by-side.md](docs/side-by-side.md) | The **full comparison to C#**: every construct written both ways, what C# does better, and what it can express that Profi-C cannot |
 | [docs/grammar.ebnf](docs/grammar.ebnf) | The surface syntax as productions, and the precedence table |
 
 The specification is written as each part of the language is implemented and covered by tests,
-so it never describes more than the compiler actually does. Where it and the other two
+so it never describes more than the compiler actually does. Where it and anything else here
 disagree, it is right.
 
 The rest of this file is the tour: what the language looks like in [a taste](#a-taste) and
@@ -763,6 +764,7 @@ src/
 tests/
   ProfiC.Tests/
 docs/
+  standard-library/    every type and every member, indexed by name
 samples/               .pc programs, one per file
   bookshelf/           one program across three files in a folder
   storefront/          one program across three folders, listed by a .pcp

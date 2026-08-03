@@ -10,8 +10,11 @@ namespace ProfiC.Tests;
 /// exists, and nothing anywhere fails. The same argument as
 /// <see cref="DiagnosticsAppendixTests"/> and <see cref="ReadmeSampleTests"/>, applied to the
 /// library.</para>
-/// <para>Both directions are checked. A member the catalog has and the pages do not is a gap; a
-/// member the pages have and the catalog does not is worse, since a reader would write it and be
+/// <para>The index on <c>README.md</c> is what is held, rather than the folder read as one body
+/// of text. A name that appears only in a sentence somewhere is a name nobody looking it up will
+/// find, so the claim worth making is that every member has a row.</para>
+/// <para>Both directions are checked. A member the catalog has and the index does not is a gap; a
+/// member the index has and the catalog does not is worse, since a reader would write it and be
 /// told it does not exist.</para>
 /// </summary>
 [TestFixture]
@@ -19,18 +22,14 @@ public sealed class StandardLibraryReferenceTests : LexerTestBase
 {
     private static string Folder => Path.Combine(RepositoryRoot, "docs", "standard-library");
 
-    /// <summary>Every page, read as one body of text. Which page a member is on is not the claim.</summary>
-    private static string Reference() =>
-        string.Join(
-            "\n",
-            Directory.EnumerateFiles(Folder, "*.md")
-                     .OrderBy(path => path, StringComparer.Ordinal)
-                     .Select(File.ReadAllText));
+    private static string Index() => File.ReadAllText(Path.Combine(Folder, "README.md"));
 
     /// <summary>
-    /// Every member the catalog has, by name. Types are left out on purpose: the pages write a
-    /// parameter's name beside its type for reading, so matching whole signatures would be
-    /// matching the prose rather than the fact.
+    /// <para>Every member the catalog has, by name. Constructors included: <c>new Random(42)</c>
+    /// is as much a thing a reader looks up as <c>Random.Next()</c> is.</para>
+    /// <para>Types are left out on purpose: the pages write a parameter's name beside its type
+    /// for reading, so matching whole signatures would be matching the prose rather than the
+    /// fact.</para>
     /// </summary>
     private static IEnumerable<string> Cataloged()
     {
@@ -47,28 +46,94 @@ public sealed class StandardLibraryReferenceTests : LexerTestBase
             .. BuiltIns.OnInteger(),
             .. BuiltIns.OnFraction(),
             .. BuiltIns.OnReal(),
+            .. BuiltIns.OnFloat(),
             .. BuiltIns.OnEnumeration(),
             .. BuiltIns.OnException(),
             .. BuiltIns.Models.SelectMany(model => model.Members),
+            .. BuiltIns.Models.SelectMany(model => model.Constructors),
         ];
 
         return members.Select(member => member.Name).Distinct(StringComparer.Ordinal);
     }
 
     /// <summary>
-    /// <para>Every member the language provides is written down.</para>
-    /// <para>Searched for as a whole word, so that <c>Add</c> is not counted as found because
-    /// <c>AddDays</c> is on the page — which is the failure this would otherwise have.</para>
+    /// <para>Every name the A to Z index claims, read out of the first column.</para>
+    /// <para>Only that column: the others name the types a member sits on, which are not members
+    /// and would let a row claim anything. A cell holds one or more backticked forms —
+    /// <c>`Log(x)` · `Log(x, base)`</c> — and each contributes the name it starts with, past a
+    /// <c>new</c> where the form is a constructor.</para>
     /// </summary>
-    [Test]
-    public void EveryMemberTheCatalogHasIsInTheReference()
+    private static IReadOnlyCollection<string> Indexed()
     {
-        string reference = Reference();
+        string index = Index();
+        int start = index.IndexOf("## Every member", StringComparison.Ordinal);
+
+        Assert.That(start, Is.GreaterThanOrEqualTo(0), "README.md has no A to Z index");
+
+        int end = index.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        string table = end < 0 ? index[start..] : index[start..end];
+
+        HashSet<string> named = new(StringComparer.Ordinal);
+
+        foreach (string line in table.Split('\n').Where(line => line.StartsWith("| ", StringComparison.Ordinal)))
+        {
+            string first = line.Split('|')[1];
+
+            foreach (Match form in Regex.Matches(first, @"`(?:new\s+)?([A-Za-z][A-Za-z0-9]*)"))
+            {
+                named.Add(form.Groups[1].Value);
+            }
+        }
+
+        return named;
+    }
+
+    /// <summary>Every member the language provides has a row a reader can find it by.</summary>
+    [Test]
+    public void EveryMemberTheCatalogHasIsInTheIndex()
+    {
+        IReadOnlyCollection<string> indexed = Indexed();
 
         Assert.That(
-            Cataloged().Where(name => !Regex.IsMatch(reference, $@"\b{Regex.Escape(name)}\b")),
+            Cataloged().Where(name => !indexed.Contains(name)),
             Is.Empty,
-            "members the compiler provides that docs/standard-library/ never names");
+            "members the compiler provides that the index on README.md never lists");
+    }
+
+    /// <summary>
+    /// Nothing is listed that the language does not have. The worse direction of the two: a
+    /// reader would write it and be told it does not exist.
+    /// </summary>
+    [Test]
+    public void EveryRowInTheIndexNamesAMemberTheLanguageHas()
+    {
+        HashSet<string> cataloged = new(Cataloged(), StringComparer.Ordinal);
+
+        Assert.That(
+            Indexed().Where(name => !cataloged.Contains(name)),
+            Is.Empty,
+            "names the index lists that the compiler does not provide");
+    }
+
+    /// <summary>
+    /// <para>Every name the language owns is on the map.</para>
+    /// <para>The members have an index of their own; this is the other half, and the half a
+    /// reader usually arrives with — they met a name in a diagnostic or in somebody else's
+    /// program and want to know what it is. A name the compiler protects and the map never shows
+    /// is a name nothing explains.</para>
+    /// <para>Matched as a code span rather than as a bare word, so that a name is counted found
+    /// only where it is written as the language writes it.</para>
+    /// </summary>
+    [Test]
+    public void EveryTypeTheLanguageOwnsIsOnTheMap()
+    {
+        string index = Index();
+
+        Assert.That(
+            BuiltIns.AllTypeNames.Where(
+                name => !Regex.IsMatch(index, $"`{Regex.Escape(name)}[`.]")),
+            Is.Empty,
+            "type names the language owns that README.md never shows");
     }
 
     /// <summary>
@@ -79,7 +144,7 @@ public sealed class StandardLibraryReferenceTests : LexerTestBase
     [Test]
     public void EveryPageIsLinkedFromTheIndex()
     {
-        string index = File.ReadAllText(Path.Combine(Folder, "README.md"));
+        string index = Index();
 
         IEnumerable<string> pages = Directory.EnumerateFiles(Folder, "*.md")
                                              .Select(Path.GetFileName)
@@ -95,9 +160,14 @@ public sealed class StandardLibraryReferenceTests : LexerTestBase
     }
 
     /// <summary>
-    /// <para>Every link between the pages points at a file that is there.</para>
-    /// <para>Only links to other pages in this folder are checked. A link out of it is somebody
-    /// else's file to move, and the specification's own link tests cover those.</para>
+    /// <para>Every link between the pages lands — on a file that is there, and where it names
+    /// one, on a heading that is there too.</para>
+    /// <para>The second half is what an index of a hundred and thirty members is worth. A row
+    /// pointing at a section that has been renamed drops the reader at the top of a page to hunt,
+    /// which is the state this whole reference exists to end, and nothing about it looks broken
+    /// from the row.</para>
+    /// <para>Only links inside this folder are checked. A link out of it is somebody else's file
+    /// to move, and the specification's own link tests cover those.</para>
     /// </summary>
     [Test]
     public void EveryLinkBetweenThePagesLands()
@@ -106,16 +176,64 @@ public sealed class StandardLibraryReferenceTests : LexerTestBase
         {
             foreach (string path in Directory.EnumerateFiles(Folder, "*.md"))
             {
-                foreach (Match link in Regex.Matches(File.ReadAllText(path), @"\]\((?!\.\./)([a-z-]+\.md)"))
+                string from = Path.GetFileName(path);
+
+                foreach (Match link in Regex.Matches(File.ReadAllText(path), @"\]\(([^)]+)\)"))
                 {
-                    Assert.That(
-                        File.Exists(Path.Combine(Folder, link.Groups[1].Value)),
-                        Is.True,
-                        $"{Path.GetFileName(path)} links to {link.Groups[1].Value}, which is not there");
+                    string target = link.Groups[1].Value;
+
+                    if (target.StartsWith("../", StringComparison.Ordinal)
+                        || target.StartsWith("http", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    string[] halves = target.Split('#');
+                    string page = halves[0].Length == 0 ? from : halves[0];
+
+                    if (!File.Exists(Path.Combine(Folder, page)))
+                    {
+                        Assert.Fail($"{from} links to {page}, which is not there");
+                        continue;
+                    }
+
+                    if (halves.Length > 1)
+                    {
+                        Assert.That(
+                            AnchorsIn(page),
+                            Does.Contain(halves[1]),
+                            $"{from} links to {target}, and {page} has no such heading");
+                    }
                 }
             }
         });
     }
+
+    /// <summary>
+    /// <para>Everywhere a link can land in a page: a heading, or an anchor written by hand where
+    /// a heading's own name would have read badly.</para>
+    /// <para>Headings are slugged the way GitHub slugs them — lowered, punctuation dropped,
+    /// spaces hyphenated — so that what passes here is what resolves in a browser.</para>
+    /// </summary>
+    private static IReadOnlyCollection<string> AnchorsIn(string page)
+    {
+        string text = File.ReadAllText(Path.Combine(Folder, page));
+
+        IEnumerable<string> headings = Regex.Matches(text, @"^#{1,6} (.+)$", RegexOptions.Multiline)
+                                            .Select(heading => Slug(heading.Groups[1].Value));
+
+        IEnumerable<string> written = Regex.Matches(text, @"<a id=""([^""]+)""")
+                                           .Select(anchor => anchor.Groups[1].Value);
+
+        return [.. headings, .. written];
+    }
+
+    private static string Slug(string heading) =>
+        string.Concat(
+            heading.Trim()
+                   .ToLowerInvariant()
+                   .Where(c => char.IsLetterOrDigit(c) || c is ' ' or '-' or '_'))
+              .Replace(' ', '-');
 
     /// <summary>
     /// <para>The specification points at the reference rather than repeating it.</para>

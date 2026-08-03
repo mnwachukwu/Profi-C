@@ -9,6 +9,14 @@ The important part is not the members but the rule around them: **the compiler w
 read an optional it cannot prove is present.** Reaching for a value that might be absent stops
 being a crash and becomes a line that does not compile.
 
+| Section | Members |
+|---|---|
+| [Members](#members) | `HasValue` `Value` `Or` |
+| [HasValue narrows](#hasvalue-narrows) | `HasValue` |
+| [Or supplies a fallback](#or-supplies-a-fallback) | `Or` |
+| [Where optionals come from](#where-optionals-come-from) | — |
+| [A set of optionals](#a-set-of-optionals) | — |
+
 ## Members
 
 | Member | Yields | What it does |

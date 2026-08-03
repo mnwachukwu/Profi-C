@@ -6,6 +6,13 @@ Two members exist on every type in the language: a primitive, a set, an optional
 member, a structure, a model a program declared, and a model the language provides. They come
 from `Model`, which every type descends from.
 
+| Section | Members |
+|---|---|
+| [Members](#members) | `ToString` `Equals` |
+| [What Equals compares](#what-equals-compares) | `Equals` |
+| [Reference.Equals](#referenceequals) | `Reference.Equals` |
+| [Enumerations](#enumerations) | `ToInteger` |
+
 ## Members
 
 | Member | Yields | What it does |

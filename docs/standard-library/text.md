@@ -6,6 +6,18 @@ Everything a `string` answers. Every member here yields a **new** string and lea
 exactly as it was — a Profi-C `string` cannot be changed once it exists, which is why `Insert`
 gives you something back rather than doing something.
 
+| Section | Members |
+|---|---|
+| [Asking about it](#asking-about-it) | `Count` `Contains` `IndexOf` |
+| [Taking a piece](#taking-a-piece) | `Substring` `Subset` |
+| [Building a new one](#building-a-new-one) | `Insert` `InsertAt` `Remove` `RemoveAt` `Replace` |
+| [Trimming](#trimming) | `Trim` `TrimStart` `TrimEnd` |
+| [Case](#case) | `ToUpper` `ToLower` `Capitalize` |
+| [Splitting and joining](#splitting-and-joining) | `Split` `ToCharacters` |
+| [Reading a value back out](#reading-a-value-back-out) | `ToInteger` `ToReal` `ToBoolean` `ToFraction` |
+| [Writing a number into text](#writing-a-number-into-text) | `Format` |
+| [String](#string) | `String.Empty` |
+
 A string's members deliberately mirror [a set's](sets.md), so that the two read alike: a string is
 a run of characters, and asking how long it is, whether it contains something, or for a piece of
 it are the same questions in both places.
@@ -178,3 +190,24 @@ end if
 See [`Format`](numbers.md#writing-a-number-out) on `integer`, `real` and `fraction`, and the
 [interpolated string](../language-spec.md#10-strings) form `"{{ value }}"`, which is usually what
 you want instead of joining with `+`.
+
+## `String`
+
+Note the two spellings, as with `fraction` and `Fraction`: **`string` is the type** and a reserved
+word; **`String` is the model** beside it, and it holds one thing.
+
+| Member | Yields | What it is |
+|---|---|---|
+| `String.Empty` | `string` | The string with nothing in it |
+
+Not a bound, unlike the [capitalized names beside the numbers](numbers.md#what-each-type-knows-about-itself)
+— a name for the emptiness, which reads better than `""` wherever the emptiness is the point.
+
+```
+string typed = String.Empty;
+Console.WriteLine(typed.Count);   # 0
+```
+
+## Also on every string
+
+[`ToString()` and `Equals()`](every-value.md).

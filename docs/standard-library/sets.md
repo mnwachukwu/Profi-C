@@ -8,6 +8,16 @@ mathematics calls a set, and [`Distinct`](#distinct) is how you ask for the math
 
 A set's members deliberately mirror [a string's](text.md), so that the two read alike.
 
+| Section | Members |
+|---|---|
+| [Asking about it](#asking-about-it) | `Count` `Contains` `IndexOf` |
+| [Changing it](#changing-it) | `Insert` `InsertAt` `Remove` `RemoveAt` `Clear` |
+| [Taking a run](#taking-a-run) | `Subset` |
+| [Two sets read together](#two-sets-read-together) | `Union` `Intersect` `Except` `Distinct` |
+| [Joining](#joining) | `Join` |
+| [Dropping the empties](#dropping-the-empties) | `Trim` `TrimStart` `TrimEnd` `TrimAll` |
+| [Sets of sets](#sets-of-sets) | — |
+
 Unlike a string, **a set can be changed**. `Insert` and `Remove` alter the set you called them on;
 `Subset`, `Union` and the rest give back a new one and leave the original alone. The table says
 which is which.

@@ -1190,7 +1190,6 @@ public static class BuiltIns
         Member(BuiltInId.OptionalValue, "Value", optional.UnderlyingType),
     ];
 
-    /// <summary>The two conversions the language deliberately refuses to make on its own.</summary>
     /// <summary>
     /// <para>Writing a value out by a pattern, which every type that can be measured or dated
     /// answers.</para>
@@ -1209,6 +1208,13 @@ public static class BuiltIns
         .. OnEveryType(),
     ];
 
+    /// <summary>
+    /// <para>What a fraction answers.</para>
+    /// <para><c>ToReal</c> is asked for rather than happening on its own, and not because of
+    /// what it costs: a third has no decimal that ends, so what comes back no longer multiplies
+    /// back to one. The answer is surprising enough to be worth writing down. A float's
+    /// <c>ToFraction</c> is the other conversion held back for that reason.</para>
+    /// </summary>
     public static IReadOnlyList<BuiltInMember> OnFraction() =>
     [
         Member(BuiltInId.FractionToReal, "ToReal", PrimitiveType.Real),

@@ -5,6 +5,13 @@
 `Exception` is the root of everything that can be thrown, and one of only two built-in models a
 program may extend — the other being `Model`.
 
+| Section | Members |
+|---|---|
+| [The member every exception carries](#the-member-every-exception-carries) | `Message` |
+| [Declaring your own](#declaring-your-own) | — |
+| [What the language raises](#what-the-language-raises) | the eleven names |
+| [When to throw and when to yield an optional](#when-to-throw-and-when-to-yield-an-optional) | — |
+
 ## The member every exception carries
 
 | Member | Yields | What it does |
@@ -56,8 +63,8 @@ end model
 
 ## What the language raises
 
-Eleven names. Each is a name a program may write after `catch`, and the same name that travels at
-run time — so anything the language can raise is something the language can catch.
+Eleven names. Each is the same name at run time as the one a program writes, so what the language
+raises is what a program names — and all but the last are ones a `catch` can take.
 
 | Exception | Raised when |
 |---|---|
@@ -70,8 +77,13 @@ run time — so anything the language can raise is something the language can ca
 | `FormatException` | A pattern `Format` does not recognize |
 | `ArgumentException` | A value a member cannot work with |
 | `OverflowException` | A number grown too large to hold, including a fraction's parts |
-| `RecursionTooDeepException` | Recursion with no base case |
+| `RecursionTooDeepException` | Recursion with no base case; **nothing catches this one** |
 | `IOException` | Anything that goes wrong with a file except its absence |
+
+**`RecursionTooDeepException` is nameable but not catchable.** It has a name so that a reader can
+be told what stopped their program, and it stops the program because there is nothing useful to
+do about it: the stack that would run the handler is the stack that just ran out. A `catch`
+naming it is reported (`PC0344`) rather than left sitting there looking like a handler.
 
 **Absence is never an exception.** A file that is not there, text that does not read as a number,
 input that has run out — each of those yields an [optional](optionals.md) instead, because each is

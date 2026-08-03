@@ -2,7 +2,7 @@
 
 [← Back to the index](README.md)
 
-**Four number types**, and the models beside them.
+**Four number types**, and the capitalized names beside them.
 
 | Type | What it is | Written |
 |---|---|---|
@@ -10,6 +10,19 @@
 | `real` | A number with a decimal point, counted **in tens** and exact about them | `3.14` |
 | `float` | Binary floating point: `float` or `double` in C, C#, Java and Go | `3.14f` |
 | `fraction` | An **exact** ratio of two whole numbers | `22|7` |
+
+| Section | Members |
+|---|---|
+| [Members on a number](#members-on-a-number) | `Format` `ToFloat` `ToReal` `ToFraction` `Reciprocal` |
+| [Writing a number out](#writing-a-number-out) | `Format` |
+| [Fraction](#fraction) | `Fraction.Create` |
+| [What each type knows about itself](#what-each-type-knows-about-itself) | `Integer.MaxValue` `Integer.MinValue` `Real.MaxValue` `Real.MinValue` `Float.MaxValue` `Float.MinValue` |
+| [What only a float has](#what-only-a-float-has) | `Float.Infinity` `Float.NegativeInfinity` `Float.NotANumber` |
+| [The whole conversion chart](#the-whole-conversion-chart) | — |
+| [Crossing between a real and a float](#crossing-between-a-real-and-a-float) | `ToFloat` `ToReal` `ToFraction` |
+
+Arithmetic reached through a name lives on its own page: [`Math`](math.md) for roots, logarithms,
+angles and rounding, and [`Random`](random.md) for chance.
 
 **`real` is not floating point.** A tenth cannot be written exactly in binary, so writing `0.1`
 elsewhere usually gets you the nearest binary number to a tenth rather than a tenth. Here the
@@ -126,7 +139,9 @@ language — so there is no `Character` to ask.
 | `Real.MinValue` | `real` | Its negative |
 | `Float.MaxValue` | `float` | The largest finite float, about 1.8 times ten to the 308th |
 | `Float.MinValue` | `float` | Its negative |
-| `String.Empty` | `string` | The string with nothing in it, which reads better than `""` wherever the emptiness is the point |
+
+A `string` has a capitalized name too, holding [`String.Empty`](text.md#string) — not a bound, but
+the same idea: a fact about the type, kept where a reserved word cannot reach.
 
 ### What only a `float` has
 
@@ -155,9 +170,10 @@ Read a row as *from*, a column as *to*. **Bold** happens on its own; anything el
 | **`float`** | `Math.Round(x)` | `.ToReal()` | — | `.ToFraction()` |
 | **`fraction`** | `Math.Round(x)` | `.ToReal()` | `.ToFloat()` | — |
 
-`Math.Floor` and `Math.Ceiling` reach an `integer` the same way `Math.Round` does; each takes a
-real, a float or a fraction and answers with a whole number, which is what makes them the honest
-spelling of that conversion rather than a cast that silently picks a direction.
+[`Math.Floor` and `Math.Ceiling`](math.md#rounding) reach an `integer` the same way `Math.Round`
+does; each takes a real, a float or a fraction and answers with a whole number, which is what
+makes them the honest spelling of that conversion rather than a cast that silently picks a
+direction.
 
 ### One rule, and its two exceptions
 
@@ -221,147 +237,6 @@ is the strongest reason this conversion is written rather than done quietly.
 
 The three failures are ordinary by comparison: a float larger than a real can hold, an infinity,
 and a value that is not a number. A real has no form for any of them, so each stops.
-
-## `Math`
-
-Reached through the name; there is no such thing as *a* `Math`. **Every member below exists in
-two forms**, one taking a `real` and one taking a `float`, and the argument settles which runs.
-Neither type can answer for the other — a real has no infinity and a float has no twenty-eight
-digits — so a single version would force a conversion at every call.
-
-The `real` forms compute in binary and convert back, which rounds to fifteen significant digits:
-fewer than a float shows, and every one of them true.
-
-### Constants
-
-| Member | Yields |
-|---|---|
-| `Math.Pi` | `real` |
-| `Math.E` | `real` |
-
-**Values, not functions.** Writing `Math.Pi()` is reported (`PC0338`), as is naming a function
-without calling it (`PC0330`) — the two are a pair, so whichever a reader guesses, the compiler
-says which it is.
-
-### Roots and powers
-
-| Member | Yields | What it does |
-|---|---|---|
-| `Math.Sqrt(real x)` | `real` | The square root |
-| `Math.Cbrt(real x)` | `real` | The cube root |
-| `Math.Root(real x, real degree)` | `real` | The root of any degree |
-| `Math.Pow(real x, real by)` | `real` | `x` raised by `by` |
-| `Math.Factorial(integer n)` | `integer` | `n!` |
-
-`Math.Pow` and the `^` operator do the same job; `^` is usually the one to write.
-
-### Logarithms
-
-| Member | Yields | What it does |
-|---|---|---|
-| `Math.Log(real x)` | `real` | The **natural** logarithm |
-| `Math.Log(real x, real base)` | `real` | In any base |
-| `Math.Log10(real x)` | `real` | Base ten |
-| `Math.Log2(real x)` | `real` | Base two |
-
-`Log` with one argument is natural, as it is in C#, C and Java — not base ten.
-
-### Angles
-
-Every one of these works in **radians**.
-
-| Member | Yields | | Member | Yields |
-|---|---|---|---|---|
-| `Math.Sin(real)` | `real` | | `Math.Asin(real)` | `real` |
-| `Math.Cos(real)` | `real` | | `Math.Acos(real)` | `real` |
-| `Math.Tan(real)` | `real` | | `Math.Atan(real)` | `real` |
-| `Math.Sinh(real)` | `real` | | `Math.Asinh(real)` | `real` |
-| `Math.Cosh(real)` | `real` | | `Math.Acosh(real)` | `real` |
-| `Math.Tanh(real)` | `real` | | `Math.Atanh(real)` | `real` |
-| `Math.Atan2(real y, real x)` | `real` | | | |
-
-`Atan2` takes `y` first, as everywhere else, and gives the angle of the point from the origin
-across the whole circle rather than only half of it.
-
-### Comparing and sizing
-
-Each of these has a form for every one of the four number types, and gives back what it was given.
-
-| Member | Yields |
-|---|---|
-| `Math.Abs(integer)` · `Math.Abs(real)` · `Math.Abs(float)` · `Math.Abs(fraction)` | the same type |
-| `Math.Min(integer, integer)` · `Math.Min(real, real)` · `Math.Min(float, float)` · `Math.Min(fraction, fraction)` | the same type |
-| `Math.Max(integer, integer)` · `Math.Max(real, real)` · `Math.Max(float, float)` · `Math.Max(fraction, fraction)` | the same type |
-
-### Rounding
-
-| Member | Yields | What it does |
-|---|---|---|
-| `Math.Floor(real)` · `Math.Floor(float)` · `Math.Floor(fraction)` | `integer` | Down |
-| `Math.Ceiling(real)` · `Math.Ceiling(float)` · `Math.Ceiling(fraction)` | `integer` | Up |
-| `Math.Round(real)` · `Math.Round(float)` · `Math.Round(fraction)` | `integer` | To the nearest |
-| `Math.Round(real x, integer places)` · `Math.Round(float x, integer places)` | the type given | To that many decimal places |
-
-**Rounding lands on a whole number**, so each yields an `integer` and can be used as a count, an
-index or a bound. Between them these are the three honest ways from a `real`, a `float` or a
-`fraction` to an `integer`, which is why no single `ToInteger` exists — it would have to pick one
-of the three silently, and which one is the question being asked.
-
-**A half goes away from zero.** `Math.Round(2.5)` is `3` — the rule taught in school, rather than
-.NET's default of rounding to the even neighbor.
-
-### How far an answer can be trusted
-
-`Sqrt` is required by IEEE 754 to be correctly rounded, so it gives the same answer on every
-machine. **The rest of the transcendental members are not**, and may differ in the last bit
-between one machine and another. That is true of C, C#, Java and Python alike: each defers to the
-arithmetic library the platform ships, and those are permitted to disagree by a fraction of an
-ulp.
-
-The `real` forms work in binary and convert back, which rounds to fifteen significant digits.
-That is fewer digits than the `float` forms show, and it is the better half of the trade: every
-digit that survives is one the calculation actually had, where a float's tail is often noise. A
-program wanting the raw binary answer asks for it with an `f`.
-
-Two guarantees are made against that:
-
-- **A root of an exact power is exact.** `Math.Cbrt(27.0)` is `3` and `Math.Root(32.0, 5.0)` is
-  `2`, on every machine. Where raising the nearest whole number by the degree gives the value back
-  exactly, that whole number *is* a root of it, so it is used — a better answer as well as the
-  same one everywhere.
-- **Nothing else is corrected.** `Math.Cbrt(28.0)` is left as the library worked it out. A program
-  that needs a real answer to be identical across machines should round it to as many places as it
-  means to claim, which is what saying "to four places" amounts to.
-
-## `Random`
-
-**A model with instances**, unlike `Math`. Two ways to make one:
-
-| Member | Yields | What it does |
-|---|---|---|
-| `new Random()` | `Random` | Seeded from the clock; a different run each time |
-| `new Random(integer seed)` | `Random` | Seeded by hand; the same run every time |
-
-| Member | Yields | What it does |
-|---|---|---|
-| `Next()` | `integer` | Any non-negative whole number |
-| `Next(integer below)` | `integer` | From `0` up to but not including `below` |
-| `Next(integer from, integer below)` | `integer` | From `from` up to but not including `below` |
-| `NextDouble()` | `real` | From `0.0` up to but not including `1.0` |
-
-Both bounded forms exclude their upper end, the same reading `until` has in a loop — so
-`Next(1, 7)` is a die.
-
-**Seed it by hand to make a program repeatable**, which is what a test wants and what makes a
-shuffle worth debugging.
-
-```
-Random dice = new Random(42);
-
-loop for roll = 1 to 3
-    Console.WriteLine(dice.Next(1, 7));
-end loop
-```
 
 ## Also on every number
 
