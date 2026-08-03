@@ -37,23 +37,38 @@ public sealed partial class TypeChecker
     /// </summary>
     private List<TypeSymbol>? _lambdaYields;
 
-    private TypeChecker(SemanticModel model, DiagnosticBag diagnostics)
+    /// <summary>
+    /// <para>What stops this partway through, and never signalled when a build asked.</para>
+    /// <para>Checked once per declaration and once per statement rather than at every node. That
+    /// is fine enough to stop within a fraction of a millisecond on anything a reader is typing,
+    /// and coarse enough that the check does not appear on every line of the walk.</para>
+    /// </summary>
+    private readonly CancellationToken _cancellation;
+
+    private TypeChecker(SemanticModel model, DiagnosticBag diagnostics, CancellationToken cancellation)
     {
         _model = model;
         _diagnostics = diagnostics;
+        _cancellation = cancellation;
     }
 
-    /// <summary>Checks every file of a resolved compilation.</summary>
+    /// <summary>
+    /// <para>Checks every file of a resolved compilation.</para>
+    /// <para><paramref name="cancellation"/> stops the walk where the answer is no longer
+    /// wanted, which is what a language server needs when the reader has typed again before this
+    /// finished. A build never signals it.</para>
+    /// </summary>
     public static void Check(
         IReadOnlyList<CompilationUnit> units,
         SemanticModel model,
-        DiagnosticBag diagnostics)
+        DiagnosticBag diagnostics,
+        CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        TypeChecker checker = new(model, diagnostics);
+        TypeChecker checker = new(model, diagnostics, cancellation);
 
         foreach (CompilationUnit unit in units)
         {
@@ -61,10 +76,11 @@ public sealed partial class TypeChecker
 
             // Before anything is typed. A number that names no value has no type to check, and
             // everything below here would either say nothing about it or blame the wrong thing.
-            LiteralChecker.Check(unit, diagnostics);
+            LiteralChecker.Check(unit, diagnostics, cancellation);
 
             foreach (Declaration declaration in unit.Declarations)
             {
+                cancellation.ThrowIfCancellationRequested();
                 checker.CheckDeclaration(declaration);
             }
         }
@@ -74,11 +90,12 @@ public sealed partial class TypeChecker
     public static void Check(
         CompilationUnit unit,
         SemanticModel model,
-        DiagnosticBag diagnostics)
+        DiagnosticBag diagnostics,
+        CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(unit);
 
-        Check([unit], model, diagnostics);
+        Check([unit], model, diagnostics, cancellation);
     }
 
     private void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[] args) =>

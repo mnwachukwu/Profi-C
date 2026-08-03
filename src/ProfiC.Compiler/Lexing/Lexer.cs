@@ -38,31 +38,43 @@ public sealed class Lexer
     /// than a token, so <c>=</c> stands in to keep the shape and the message carries the
     /// rewrite. A null means nothing sensible stands in and the sequence is dropped.</para>
     /// </summary>
-    private static readonly (string Operator, TokenType? StandsIn, string Advice)[] NonOperators =
+    /// <summary>
+    /// <para><c>FixedBy</c> is what an editor would write over the operator to settle it, or null
+    /// where nothing so simple would.</para>
+    /// <para>Only four of these have one. <c>&amp;&amp;</c> is <c>and</c> and nothing else needs
+    /// to change; <c>x += 1</c> becomes <c>x = x + 1</c>, which needs to know what <c>x</c> is and
+    /// is a rewrite rather than a swap. Offering a fix that is wrong half the time is worse than
+    /// offering none, so those carry null and the message explains instead.</para>
+    /// </summary>
+    private static readonly (string Operator, TokenType? StandsIn, string? FixedBy, string Advice)[]
+        NonOperators =
     [
-        ("&&", TokenType.And, "Use 'and'."),
-        ("||", TokenType.Or, "Use 'or'."),
-        ("+=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x + y'."),
-        ("-=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x - y'."),
-        ("*=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x * y'."),
-        ("/=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x / y'."),
-        ("%=", TokenType.Equal, "Profi-C has no compound assignment. Write 'x = x % y'."),
+        ("&&", TokenType.And, "and", "Use 'and'."),
+        ("||", TokenType.Or, "or", "Use 'or'."),
+        ("+=", TokenType.Equal, null, "Profi-C has no compound assignment. Write 'x = x + y'."),
+        ("-=", TokenType.Equal, null, "Profi-C has no compound assignment. Write 'x = x - y'."),
+        ("*=", TokenType.Equal, null, "Profi-C has no compound assignment. Write 'x = x * y'."),
+        ("/=", TokenType.Equal, null, "Profi-C has no compound assignment. Write 'x = x / y'."),
+        ("%=", TokenType.Equal, null, "Profi-C has no compound assignment. Write 'x = x % y'."),
 
         // "x++" leaves "x", which is already a well-formed expression statement, so dropping
         // it cascades no further than standing something in would.
-        ("++", null, "Profi-C has no increment operator. Write 'x = x + 1'."),
+        ("++", null, null, "Profi-C has no increment operator. Write 'x = x + 1'."),
 
         // Raising to a power is written "^". A reader arriving from Python reaches for this
         // spelling, so it is named rather than scanned as two multiplications.
-        ("**", TokenType.Caret, "Profi-C raises to a power with '^'. Write 'base ^ exponent', "
+        ("**", TokenType.Caret, "^", "Profi-C raises to a power with '^'. Write 'base ^ exponent', "
                + "or 'Math.Pow(base, exponent)' for a real result."),
 
         // A lambda's body follows "yield", the same word every other function uses to say what
         // it produces. Standing "yield" in means the rest of the lambda parses, so a reader
         // arriving from C# or Java gets one sentence rather than a cascade.
-        ("=>", TokenType.Yield, "A function's body follows 'yield'. "
+        //
+        // No fix offered: "=>" sits where a body begins, and swapping the token in leaves the
+        // parameter list before it written the way C# writes one.
+        ("=>", TokenType.Yield, null, "A function's body follows 'yield'. "
                + "Write '(integer n) yield n + 1'."),
-        ("->", TokenType.Yield, "A function's body follows 'yield'. "
+        ("->", TokenType.Yield, null, "A function's body follows 'yield'. "
                + "Write '(integer n) yield n + 1'."),
     ];
 
@@ -97,6 +109,17 @@ public sealed class Lexer
 
     /// <summary>What the file documents, in the order written. Empty until <see cref="Scan"/>.</summary>
     public IReadOnlyList<DocComment> Documentation { get; private set; } = [];
+
+    /// <summary>
+    /// <para>Where every comment sits, in the order written. Empty until <see cref="Scan"/>.
+    /// </para>
+    /// <para>Comments produce no tokens, which is right for every pass that reads the program:
+    /// none of them means anything to the language. It leaves one question nothing else can
+    /// answer, though — <b>which lines are inside a comment</b> — and formatting has to know,
+    /// since re-indenting the middle of a block comment reflows prose somebody laid out by
+    /// hand.</para>
+    /// </summary>
+    public IReadOnlyList<SourceSpan> Comments { get; private set; } = [];
 
     private sealed class Hole
     {
@@ -205,6 +228,8 @@ public sealed class Lexer
         RecordDirectives(tokens);
 
         Documentation = [.. ReadDocumentation(tokens)];
+        Comments = [.. _comments.Select(c => SpanOf(c.Start, c.End - c.Start))];
+
         return tokens;
     }
 
@@ -1261,14 +1286,15 @@ public sealed class Lexer
     {
         int start = _index;
 
-        foreach ((string op, TokenType? standsIn, string advice) in NonOperators)
+        foreach ((string op, TokenType? standsIn, string? fixedBy, string advice) in NonOperators)
         {
             if (MatchesAt(start, op))
             {
                 _index += op.Length;
-                _diagnostics.Report(
+                _diagnostics.ReportFixable(
                     DiagnosticDescriptors.NotAnOperator,
                     SpanOf(start, op.Length),
+                    fixedBy,
                     op,
                     advice);
 
@@ -1324,9 +1350,10 @@ public sealed class Lexer
             // opposite of what was written.
             if (c == '!')
             {
-                _diagnostics.Report(
+                _diagnostics.ReportFixable(
                     DiagnosticDescriptors.NotAnOperator,
                     SpanOf(start, 1),
+                    "not",
                     "!",
                     "Use 'not'.");
 

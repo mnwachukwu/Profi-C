@@ -17,6 +17,38 @@ public abstract class SyntaxNode(SourceSpan span)
     /// <summary>The source this node was parsed from.</summary>
     public SourceSpan Span { get; } = span;
 
+    private readonly SourceSpan? _nameSpan;
+
+    /// <summary>
+    /// <para>Where the name this node introduces or refers to is written, or the whole node
+    /// where there is no name in it.</para>
+    /// <para><b>Held apart from <see cref="Span"/> because the two are different questions, and
+    /// only one of them can be answered by arithmetic.</b> A function's span runs from its first
+    /// modifier to its <c>end function</c>; its name is one identifier somewhere inside. Anything
+    /// that writes over a name — renaming one, highlighting it — needs exactly that identifier,
+    /// and working out where it sits by counting from either end of the declaration is how an
+    /// editor corrupts somebody's file.</para>
+    /// <para>The whole node by default, which is right for most of them — a literal introduces no
+    /// name — and is what everything answered before this was recorded, so a node built without
+    /// it behaves as it always did. The parser sets it from the identifier token it already
+    /// consumed; the token carries the span and nothing has to be computed.</para>
+    /// </summary>
+    public SourceSpan NameSpan
+    {
+        get => _nameSpan ?? Span;
+        init => _nameSpan = value;
+    }
+
+    /// <summary>
+    /// <para>Whether there is a name written here at all.</para>
+    /// <para>The difference between a node whose <see cref="NameSpan"/> is a name and one whose
+    /// <see cref="NameSpan"/> is only the default. Both answer with a span, and the span alone
+    /// cannot tell them apart — which matters where the answer is an edit: a call is bound to the
+    /// same symbol as the name inside it, and writing a new name over a call's span replaces the
+    /// arguments with it.</para>
+    /// </summary>
+    public bool HasName => _nameSpan is not null;
+
     /// <summary>The one-based line this node begins on.</summary>
     public int Line => Span.Start.Line;
 

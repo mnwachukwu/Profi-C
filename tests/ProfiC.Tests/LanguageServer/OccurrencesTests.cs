@@ -1,0 +1,224 @@
+using System.Text.Json.Nodes;
+using ProfiC.Cli.LanguageServer;
+using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Diagnostics;
+using ProfiC.Compiler.Parsing;
+using ProfiC.Compiler.Semantics;
+using ProfiC.Compiler.Text;
+
+namespace ProfiC.Tests.LanguageServer;
+
+/// <summary>
+/// <para>Marking every place this file writes the name under the cursor.</para>
+/// <para>Rename's question without the edit, and the differences are the interesting part: it
+/// answers for names rename refuses, since marking a name the language owns writes nothing
+/// anywhere, and it stops at the file rather than reaching across the compilation, since what it
+/// marks has to be on screen to be seen.</para>
+/// </summary>
+[TestFixture]
+public sealed class OccurrencesTests
+{
+    private static (CompilationUnit Unit, SemanticModel Model, SourceText Source) Compile(
+        string text)
+    {
+        SourceText source = new(text, "Program.pc");
+        DiagnosticBag diagnostics = new();
+
+        CompilationUnit unit = Parser.Parse(source, diagnostics);
+        SemanticModel model = Resolver.Resolve([unit], diagnostics, requireEntryPoint: false);
+
+        TypeChecker.Check([unit], model, diagnostics);
+
+        return (unit, model, source);
+    }
+
+    /// <summary>The marks, as a line and column a reader counts from one, with what each says.</summary>
+    private static IReadOnlyList<(int Line, int Column, string Kind)> Marks(JsonArray? found) =>
+    [
+        .. (found ?? []).Select(mark => (
+            (int)mark!["range"]!["start"]!["line"]! + 1,
+            (int)mark["range"]!["start"]!["character"]! + 1,
+            (int)mark["kind"]! == 3 ? "written" : "read")),
+    ];
+
+    private static int OffsetOf(SourceText source, int line, int column) =>
+        source.OffsetOfLine(line) + column - 1;
+
+    private const string Counting = """
+        shared model Program
+            function Main()
+                integer total = 0;
+                total = total + 1;
+                Console.WriteLine(total);
+            end function
+        end model
+        """;
+
+    /// <summary>
+    /// <para>Every place the name is written, and what each one does with it.</para>
+    /// <para>The distinction is the whole of what this adds over a text search: <c>total</c> on
+    /// line 4 is written on the left of the <c>=</c> and read on the right, and an editor paints
+    /// the two differently. So does its declaration, which is where it first gets a value.</para>
+    /// </summary>
+    [Test]
+    public void EveryUseIsMarkedAndWhatItDoesIsSaid()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile(Counting);
+
+        // Line 4, column 9: on 'total' where it is assigned.
+        IReadOnlyList<(int Line, int Column, string Kind)> marks =
+            Marks(Occurrences.In(unit, model, OffsetOf(source, 4, 9)));
+
+        Assert.That(
+            marks,
+            Is.EqualTo(new[]
+            {
+                (3, 17, "written"),
+                (4, 9, "written"),
+                (4, 17, "read"),
+                (5, 27, "read"),
+            }));
+    }
+
+    /// <summary>
+    /// <para>Asked from a use rather than from the declaration, and the answer is the same.
+    /// </para>
+    /// <para>It has to be: what is marked is decided by which symbol the resolver bound the name
+    /// to, and every one of these is bound to the same one. Where the cursor happens to sit is
+    /// not part of the question.</para>
+    /// </summary>
+    [Test]
+    public void TheAnswerDoesNotDependOnWhichUseIsAskedFrom()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile(Counting);
+
+        Assert.That(
+            Marks(Occurrences.In(unit, model, OffsetOf(source, 5, 27))),
+            Is.EqualTo(Marks(Occurrences.In(unit, model, OffsetOf(source, 3, 17)))));
+    }
+
+    /// <summary>
+    /// <para>Two locals of the same name in different scopes are two names.</para>
+    /// <para><b>What a text search cannot do.</b> Both are spelled <c>value</c> and neither has
+    /// anything to do with the other; marking all four would be worse than marking none, because
+    /// it would say they were related.</para>
+    /// </summary>
+    [Test]
+    public void TwoNamesSpelledTheSameAreNotOneName()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile("""
+            shared model Program
+                function First()
+                    integer value = 1;
+                    Console.WriteLine(value);
+                end function
+
+                function Second()
+                    integer value = 2;
+                    Console.WriteLine(value);
+                end function
+            end model
+            """);
+
+        IReadOnlyList<(int Line, int Column, string Kind)> marks =
+            Marks(Occurrences.In(unit, model, OffsetOf(source, 3, 17)));
+
+        Assert.That(marks, Is.EqualTo(new[] { (3, 17, "written"), (4, 27, "read") }));
+    }
+
+    /// <summary>
+    /// <para>A name the language owns is marked, where renaming it is refused.</para>
+    /// <para>The two questions come apart here, and correctly. Renaming <c>Count</c> would edit
+    /// the uses and leave the compiler's declaration where it is; marking them writes
+    /// nothing.</para>
+    /// </summary>
+    [Test]
+    public void AMemberTheLanguageOwnsIsStillMarked()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile("""
+            shared model Program
+                function Main()
+                    string word = "hello";
+                    Console.WriteLine(word.Count + word.Count);
+                end function
+            end model
+            """);
+
+        // Line 4, column 32: inside the first 'Count'.
+        JsonArray? found = Occurrences.In(unit, model, OffsetOf(source, 4, 32));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Marks(found), Has.Count.EqualTo(2), "both, and nothing else");
+            Assert.That(
+                Rename.Edits([unit], model, unit, OffsetOf(source, 4, 32), "Size"),
+                Is.Null,
+                "and renaming it is still refused");
+        });
+    }
+
+    /// <summary>
+    /// A function is marked where it is declared and where it is called, which is the case that
+    /// catches an implementation marking only the nodes that happen to be plain names.
+    /// </summary>
+    [Test]
+    public void AFunctionIsMarkedAtItsDeclarationAndItsCalls()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile("""
+            shared model Program
+                function Main()
+                    Console.WriteLine(Program.Twice(2));
+                    Console.WriteLine(Program.Twice(3));
+                end function
+
+                integer function Twice(integer value)
+                    yield value + value;
+                end function
+            end model
+            """);
+
+        IReadOnlyList<(int Line, int Column, string Kind)> marks =
+            Marks(Occurrences.In(unit, model, OffsetOf(source, 7, 22)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(marks, Has.Count.EqualTo(3));
+            Assert.That(marks[0].Kind, Is.EqualTo("read"), "the call on line 3");
+            Assert.That(marks[2], Is.EqualTo((7, 22, "written")), "and the declaration");
+        });
+    }
+
+    /// <summary>
+    /// <para>A cursor that is in no name marks nothing, and says nothing rather than nothing at
+    /// all.</para>
+    /// <para>Null instead of an empty list, so that moving the caret onto a keyword leaves what
+    /// was marked alone rather than clearing it — an editor asks this on every movement, and
+    /// clearing is what an empty list means.</para>
+    /// </summary>
+    [Test]
+    public void ACursorInNoNameMarksNothing()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile(Counting);
+
+        // Line 3, column 9: on the word 'integer'.
+        Assert.That(Occurrences.In(unit, model, OffsetOf(source, 3, 9)), Is.Null);
+    }
+
+    /// <summary>
+    /// <para>The marks run down the file, which is not required and is what a reader expects.
+    /// </para>
+    /// <para>The protocol does not ask for an order, so nothing would break — but an editor
+    /// stepping through them with a keystroke follows the order it was given, and one that
+    /// jumped about would be its own bug report.</para>
+    /// </summary>
+    [Test]
+    public void TheMarksRunDownTheFile()
+    {
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile(Counting);
+
+        IReadOnlyList<(int Line, int Column, string Kind)> marks =
+            Marks(Occurrences.In(unit, model, OffsetOf(source, 4, 9)));
+
+        Assert.That(marks.Select(m => (m.Line, m.Column)), Is.Ordered);
+    }
+}

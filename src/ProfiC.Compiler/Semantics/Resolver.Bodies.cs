@@ -11,10 +11,15 @@ public sealed partial class Resolver
     /// </summary>
     private void BindBodies(CompilationUnit unit)
     {
+        _currentFile = unit.Source;
+
         foreach (Declaration declaration in unit.Declarations)
         {
+            _cancellation.ThrowIfCancellationRequested();
             BindDeclaration(declaration);
         }
+
+        _currentFile = null;
     }
 
     private void BindDeclaration(Declaration declaration)
@@ -127,7 +132,7 @@ public sealed partial class Resolver
 
             try
             {
-                InScope(() => BindExpression(field.Initializer));
+                InScope(field.Span, () => BindExpression(field.Initializer));
             }
             finally
             {
@@ -168,7 +173,7 @@ public sealed partial class Resolver
 
         try
         {
-            InScope(() =>
+            InScope(function.Span, () =>
             {
                 for (int index = 0; index < function.Parameters.Count; index++)
                 {
@@ -337,6 +342,7 @@ public sealed partial class Resolver
 
         foreach (Statement statement in statements)
         {
+            _cancellation.ThrowIfCancellationRequested();
             BindStatement(statement);
         }
     }
@@ -346,7 +352,7 @@ public sealed partial class Resolver
         switch (statement)
         {
             case BlockStmt block:
-                InScope(() => BindStatements(block.Statements));
+                InScope(SpanOver(block.Statements), () => BindStatements(block.Statements));
                 break;
 
             case VarDeclStmt declaration:
@@ -359,36 +365,37 @@ public sealed partial class Resolver
 
             case IfStmt statement2:
                 BindExpression(statement2.Condition);
-                InScope(() => BindStatements(statement2.ThenBody));
+                InScope(SpanOver(statement2.ThenBody), () => BindStatements(statement2.ThenBody));
 
                 foreach (ElseIfClause clause in statement2.ElseIfClauses)
                 {
                     BindExpression(clause.Condition);
-                    InScope(() => BindStatements(clause.Body));
+                    InScope(SpanOver(clause.Body), () => BindStatements(clause.Body));
                 }
 
                 if (statement2.ElseBody is not null)
                 {
-                    InScope(() => BindStatements(statement2.ElseBody));
+                    InScope(
+                        SpanOver(statement2.ElseBody), () => BindStatements(statement2.ElseBody));
                 }
 
                 break;
 
             case WhileStmt loop:
                 BindExpression(loop.Condition);
-                InScope(() => BindStatements(loop.Body));
+                InScope(SpanOver(loop.Body), () => BindStatements(loop.Body));
                 break;
 
             // The condition is bound after the body's scope closes, so a local declared inside
             // the loop is not visible to it — the body runs again from the top, where that
             // local does not yet exist.
             case LoopUntilStmt loop:
-                InScope(() => BindStatements(loop.Body));
+                InScope(SpanOver(loop.Body), () => BindStatements(loop.Body));
                 BindExpression(loop.Condition);
                 break;
 
             case LoopForeverStmt loop:
-                InScope(() => BindStatements(loop.Body));
+                InScope(SpanOver(loop.Body), () => BindStatements(loop.Body));
                 break;
 
             case ForStmt loop:
@@ -409,18 +416,20 @@ public sealed partial class Resolver
                         BindExpression(label);
                     }
 
-                    InScope(() => BindStatements(group.Body));
+                    InScope(SpanOver(group.Body), () => BindStatements(group.Body));
                 }
 
                 if (switchStmt.DefaultBody is not null)
                 {
-                    InScope(() => BindStatements(switchStmt.DefaultBody));
+                    InScope(
+                        SpanOver(switchStmt.DefaultBody),
+                        () => BindStatements(switchStmt.DefaultBody));
                 }
 
                 break;
 
             case TryStmt tryStmt:
-                InScope(() => BindStatements(tryStmt.Body));
+                InScope(SpanOver(tryStmt.Body), () => BindStatements(tryStmt.Body));
 
                 foreach (CatchClause clause in tryStmt.Catches)
                 {
@@ -429,7 +438,9 @@ public sealed partial class Resolver
 
                 if (tryStmt.FinallyBody is not null)
                 {
-                    InScope(() => BindStatements(tryStmt.FinallyBody));
+                    InScope(
+                        SpanOver(tryStmt.FinallyBody),
+                        () => BindStatements(tryStmt.FinallyBody));
                 }
 
                 break;
@@ -512,7 +523,7 @@ public sealed partial class Resolver
             BindExpression(loop.Step);
         }
 
-        InScope(() =>
+        InScope(loop.Span, () =>
         {
             // Fixed by the construct rather than written or inferred: a range loop counts.
             LocalSymbol variable = new(loop.VariableName, PrimitiveType.Integer, isConstant: false)
@@ -532,7 +543,7 @@ public sealed partial class Resolver
     {
         BindExpression(loop.Sequence);
 
-        InScope(() =>
+        InScope(loop.Span, () =>
         {
             // The element type is worked out while type checking; the resolver only needs the
             // name to exist.
@@ -551,7 +562,7 @@ public sealed partial class Resolver
 
     private void BindCatch(CatchClause clause)
     {
-        InScope(() =>
+        InScope(clause.Span, () =>
         {
             TypeSymbol type = ResolveType(clause.ExceptionType);
 

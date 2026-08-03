@@ -83,6 +83,25 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
     }
 
     /// <summary>
+    /// <para>Reports a diagnostic that one substitution would settle, carrying the text to
+    /// substitute.</para>
+    /// <para>Named apart from <see cref="Report"/> rather than given a default, because a
+    /// <c>params</c> list has to come last and an optional before it could not be passed by
+    /// name. The separation reads well enough: most diagnostics have no such text, and the ones
+    /// that do are saying something more.</para>
+    /// </summary>
+    public void ReportFixable(
+        DiagnosticDescriptor descriptor,
+        SourceSpan span,
+        string? fixedBy,
+        params object?[] args)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+
+        Add(Diagnostic.CreateFixable(descriptor, span, _source, fixedBy, args));
+    }
+
+    /// <summary>
     /// <para>Adds an already-constructed diagnostic. Ignored once the cap is reached.</para>
     /// <para>Reaching the cap is itself reported, in the place reporting stopped, so that a
     /// truncated list says it is truncated and says it with an identifier like everything

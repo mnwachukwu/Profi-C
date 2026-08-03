@@ -11,8 +11,22 @@ namespace ProfiC.Cli;
 /// <para>This is the driver's business rather than the compiler's. The compiler is handed a
 /// set of files and has no opinion about where they came from.</para>
 /// </summary>
+/// <summary>
+/// <para>Where the text of a file comes from.</para>
+/// <para>The disk, for every command a reader types. Not the disk for a language server, which
+/// holds what is being edited and must compile that rather than what was last saved — a file
+/// mid-edit has no version on disk at all, and answering about the saved one would be answering
+/// about a program nobody is looking at.</para>
+/// <para>A delegate rather than a setting somewhere, so that two compilations running at once
+/// cannot disagree about where text comes from.</para>
+/// </summary>
+public delegate SourceText SourceReader(string path);
+
 public static class SourceDiscovery
 {
+    /// <summary>Reading a file from the disk, which is what every command does.</summary>
+    public static SourceReader FromDisk { get; } = SourceText.FromFile;
+
     /// <summary>The extension of a Profi-C source file.</summary>
     public const string SourceExtension = ".pc";
 
@@ -88,7 +102,7 @@ public static class SourceDiscovery
 
             if (!File.Exists(written))
             {
-                problem = $"file not found: {written}";
+                problem = $"file not found: {written}.{PerhapsUnsaved}";
                 return null;
             }
 
@@ -123,9 +137,22 @@ public static class SourceDiscovery
             return new FileTarget(asProject, true);
         }
 
-        problem = $"file not found: {asSource}, and no {asProject} either";
+        problem = $"file not found: {asSource}, and no {asProject} either.{PerhapsUnsaved}";
         return null;
     }
+
+    /// <summary>
+    /// <para>Added to every "not found", because the commonest way to reach one is not a typo.
+    /// </para>
+    /// <para>A file made in an editor and not yet saved exists to the person who wrote it and to
+    /// nobody else: the editor holds it, the disk has never heard of it, and a compiler is only
+    /// ever handed the disk's answer. Told only that the file is missing, somebody looking
+    /// straight at their own code concludes the compiler is broken — which, from where they are
+    /// standing, is the reasonable conclusion.</para>
+    /// <para>Asked rather than asserted. It may well be a typo, and a message that says so
+    /// flatly is wrong half the time.</para>
+    /// </summary>
+    private const string PerhapsUnsaved = " Has it been saved yet?";
 
     /// <summary>
     /// <para>Gathers the files to compile, parsing each one.</para>
@@ -135,15 +162,22 @@ public static class SourceDiscovery
     /// many programs as it likes without them colliding.</para>
     /// <para>Naming a project file compiles exactly what the project lists, across as many
     /// folders as it names.</para>
+    /// <para><paramref name="read"/> says where each file's text comes from, and is the disk
+    /// unless something says otherwise. Which files there <em>are</em> is still the disk's
+    /// answer: a folder is enumerated and a project's list is checked against what exists, so an
+    /// editor holding a file that was never saved is holding a file this cannot find.</para>
     /// </summary>
-    public static Compilation? Gather(string path, DiagnosticBag diagnostics)
+    public static Compilation? Gather(
+        string path, DiagnosticBag diagnostics, SourceReader? read = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
+        read ??= FromDisk;
+
         Compilation? gathered = PathComparer.Equals(Path.GetExtension(path), ProjectExtension)
-            ? GatherFromProject(path, diagnostics)
-            : GatherFromFolder(path, diagnostics);
+            ? GatherFromProject(path, diagnostics, read)
+            : GatherFromFolder(path, diagnostics, read);
 
         if (gathered is null)
         {
@@ -154,7 +188,7 @@ public static class SourceDiscovery
 
         return gathered with
         {
-            Units = FollowImports(gathered.Units, projects, diagnostics),
+            Units = FollowImports(gathered.Units, projects, diagnostics, read),
             Projects = projects,
         };
     }
@@ -184,7 +218,8 @@ public static class SourceDiscovery
     private static IReadOnlyList<CompilationUnit> FollowImports(
         IReadOnlyList<CompilationUnit> seed,
         Dictionary<SourceText, string> projects,
-        DiagnosticBag diagnostics)
+        DiagnosticBag diagnostics,
+        SourceReader read)
     {
         List<CompilationUnit> all = [.. seed];
         List<Reach> reaches = [];
@@ -215,7 +250,7 @@ public static class SourceDiscovery
 
                 if (seen.Add(to))
                 {
-                    CompilationUnit brought = Parser.Parse(SourceText.FromFile(resolved), diagnostics);
+                    CompilationUnit brought = Parser.Parse(read(resolved), diagnostics);
                     all.Add(brought);
 
                     // An imported file belongs to the project of whoever imported it. No project
@@ -391,19 +426,21 @@ public static class SourceDiscovery
     }
 
     /// <summary>Parses one file on its own, for the commands that work a file at a time.</summary>
-    public static CompilationUnit ParseOne(string path, DiagnosticBag diagnostics)
+    public static CompilationUnit ParseOne(
+        string path, DiagnosticBag diagnostics, SourceReader? read = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        return Parser.Parse(SourceText.FromFile(path), diagnostics);
+        return Parser.Parse((read ?? FromDisk)(path), diagnostics);
     }
 
     // ---- A source file, and the shared code beside it -------------------------------------
 
-    private static Compilation GatherFromFolder(string path, DiagnosticBag diagnostics)
+    private static Compilation GatherFromFolder(
+        string path, DiagnosticBag diagnostics, SourceReader read)
     {
-        CompilationUnit named = Parser.Parse(SourceText.FromFile(path), diagnostics);
+        CompilationUnit named = Parser.Parse(read(path), diagnostics);
         List<CompilationUnit> units = [named];
 
         // Enumerated through the folder as it was written rather than its full path, so that
@@ -425,7 +462,7 @@ public static class SourceDiscovery
             // Parsed apart so that a neighboring program's mistakes are its own. Only what is
             // shared code joins the compilation, and only then do its diagnostics.
             DiagnosticBag aside = new();
-            CompilationUnit unit = Parser.Parse(SourceText.FromFile(neighbor), aside);
+            CompilationUnit unit = Parser.Parse(read(neighbor), aside);
 
             if (DeclaresEntryPointModel(unit.Declarations))
             {
@@ -467,7 +504,8 @@ public static class SourceDiscovery
     /// what a project is built on is already there by the time the project itself arrives.
     /// </para>
     /// </summary>
-    private static Compilation? GatherFromProject(string path, DiagnosticBag diagnostics)
+    private static Compilation? GatherFromProject(
+        string path, DiagnosticBag diagnostics, SourceReader read)
     {
         if (ProjectFile.Read(path, diagnostics) is not { } root)
         {
@@ -515,7 +553,7 @@ public static class SourceDiscovery
 
                 owner[full] = project.Name;
 
-                CompilationUnit unit = Parser.Parse(SourceText.FromFile(source.Path), diagnostics);
+                CompilationUnit unit = Parser.Parse(read(source.Path), diagnostics);
                 units.Add(unit);
                 projects[unit.Source] = project.Name;
             }

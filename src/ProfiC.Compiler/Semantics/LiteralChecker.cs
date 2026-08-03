@@ -33,15 +33,27 @@ public static class LiteralChecker
     private static readonly string PastTheLargest =
         ((ulong)long.MaxValue + 1).ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>Checks one file. The bag is already scoped to it.</summary>
-    public static void Check(CompilationUnit unit, DiagnosticBag diagnostics)
+    /// <summary>
+    /// <para>Checks one file. The bag is already scoped to it.</para>
+    /// <para>Walked a declaration at a time rather than handing the whole file over, so that
+    /// <paramref name="cancellation"/> is answered between them. This runs before anything is
+    /// typed, so a pass that could not be stopped here would leave the whole of type checking
+    /// uninterruptible however carefully the rest of it is threaded.</para>
+    /// </summary>
+    public static void Check(
+        CompilationUnit unit, DiagnosticBag diagnostics, CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        foreach (Faulty faulty in FaultsIn(unit))
+        foreach (SyntaxNode declaration in unit.Children)
         {
-            Report(faulty, diagnostics);
+            cancellation.ThrowIfCancellationRequested();
+
+            foreach (Faulty faulty in FaultsIn(declaration))
+            {
+                Report(faulty, diagnostics);
+            }
         }
     }
 

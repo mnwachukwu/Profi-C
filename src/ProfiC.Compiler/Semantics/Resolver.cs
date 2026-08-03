@@ -72,7 +72,26 @@ public sealed partial class Resolver
     /// <summary>The innermost run of locals and parameters.</summary>
     private Scope _scope = new(parent: null);
 
-    private Resolver(DiagnosticBag diagnostics) => _diagnostics = diagnostics;
+    /// <summary>
+    /// The file whose bodies are being bound, which is what a recorded scope is filed under. Not
+    /// the same question as <c>_lookupFile</c>, which follows the type a name is read from and so
+    /// may be a different file than the one being walked.
+    /// </summary>
+    private SourceText? _currentFile;
+
+    /// <summary>
+    /// <para>What stops this partway through, and never signalled when a build asked.</para>
+    /// <para>Checked once per declaration and once per statement rather than at every node. That
+    /// is fine enough to stop within a fraction of a millisecond on anything a reader is typing,
+    /// and coarse enough that the check does not appear on every line of the walk.</para>
+    /// </summary>
+    private readonly CancellationToken _cancellation;
+
+    private Resolver(DiagnosticBag diagnostics, CancellationToken cancellation)
+    {
+        _diagnostics = diagnostics;
+        _cancellation = cancellation;
+    }
 
     /// <summary>
     /// <para>Resolves a compilation unit, reporting into the given bag.</para>
@@ -85,18 +104,23 @@ public sealed partial class Resolver
     /// sources declare exactly one — with several, the compiler must be told rather than
     /// choose, since choosing would make the result depend on the order files were listed.
     /// </para>
+    /// <para><paramref name="cancellation"/> stops the walk where the answer is no longer
+    /// wanted, which is what a language server needs when the reader has typed again before this
+    /// finished. A build never signals it, and leaves an <see cref="OperationCanceledException"/>
+    /// that cannot be thrown.</para>
     /// </summary>
     public static SemanticModel Resolve(
         IReadOnlyList<CompilationUnit> units,
         DiagnosticBag diagnostics,
         bool requireEntryPoint = false,
         IReadOnlyDictionary<SourceText, string>? projects = null,
-        string? entryPoint = null)
+        string? entryPoint = null,
+        CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        Resolver resolver = new(diagnostics);
+        Resolver resolver = new(diagnostics, cancellation);
 
         if (projects is not null)
         {
@@ -151,11 +175,12 @@ public sealed partial class Resolver
     public static SemanticModel Resolve(
         CompilationUnit unit,
         DiagnosticBag diagnostics,
-        bool requireEntryPoint = false)
+        bool requireEntryPoint = false,
+        CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(unit);
 
-        return Resolve([unit], diagnostics, requireEntryPoint);
+        return Resolve([unit], diagnostics, requireEntryPoint, cancellation: cancellation);
     }
 
     // ---- Reporting ------------------------------------------------------------------------
@@ -168,11 +193,33 @@ public sealed partial class Resolver
 
     // ---- Scopes ---------------------------------------------------------------------------
 
-    /// <summary>Runs an action inside a nested scope, restoring the previous one after.</summary>
-    private void InScope(Action body)
+    /// <summary>
+    /// <para>Runs an action inside a nested scope, restoring the previous one after.</para>
+    /// <para>The span is the stretch of source the new scope governs, written down so that
+    /// something asking later — an editor, about a cursor — can find which names were in force
+    /// where. Null where the stretch cannot be named, which is only an empty body: one declares
+    /// nothing, so the scope around it holds exactly the same names.</para>
+    /// </summary>
+    private void InScope(SourceSpan? covering, Action body)
     {
         Scope saved = _scope;
         _scope = _scope.Push();
+
+        if (covering is { } stretch && _currentFile is { } file)
+        {
+            _model.Opened(
+                file,
+                stretch,
+                new NameScope(
+                    _scope,
+                    Here,
+                    _lookupFile is not null && _fileUsings.TryGetValue(_lookupFile, out List<NamespaceSymbol>? used)
+                        ? used
+                        : [],
+                    _nestedTypes,
+                    _currentType,
+                    _inSharedMember));
+        }
 
         try
         {
@@ -182,6 +229,23 @@ public sealed partial class Resolver
         {
             _scope = saved;
         }
+    }
+
+    /// <summary>
+    /// The stretch a run of statements covers, or null where there are none. Taken from the
+    /// statements themselves rather than from what encloses them, because one <c>if</c> holds
+    /// two runs and a span covering the whole statement could not tell them apart.
+    /// </summary>
+    private static SourceSpan? SpanOver(IReadOnlyList<Statement>? statements)
+    {
+        if (statements is null or { Count: 0 })
+        {
+            return null;
+        }
+
+        SourcePosition start = statements[0].Span.Start;
+
+        return new SourceSpan(start, statements[^1].Span.EndOffset - start.Offset);
     }
 
     /// <summary>

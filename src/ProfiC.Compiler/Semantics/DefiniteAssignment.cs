@@ -95,23 +95,39 @@ public sealed class DefiniteAssignment
     /// </summary>
     private readonly Dictionary<FunctionSymbol, CaptureSet> _captures = [];
 
-    private DefiniteAssignment(SemanticModel model, DiagnosticBag diagnostics)
+    /// <summary>
+    /// <para>What stops this partway through, and never signalled when a build asked.</para>
+    /// <para>Checked once per declaration and once per statement rather than at every node. That
+    /// is fine enough to stop within a fraction of a millisecond on anything a reader is typing,
+    /// and coarse enough that the check does not appear on every line of the walk.</para>
+    /// </summary>
+    private readonly CancellationToken _cancellation;
+
+    private DefiniteAssignment(
+        SemanticModel model, DiagnosticBag diagnostics, CancellationToken cancellation)
     {
         _model = model;
         _diagnostics = diagnostics;
+        _cancellation = cancellation;
     }
 
-    /// <summary>Analyzes every function in every file of a compilation.</summary>
+    /// <summary>
+    /// <para>Analyzes every function in every file of a compilation.</para>
+    /// <para><paramref name="cancellation"/> stops the walk where the answer is no longer
+    /// wanted, which is what a language server needs when the reader has typed again before this
+    /// finished. A build never signals it.</para>
+    /// </summary>
     public static void Analyze(
         IReadOnlyList<CompilationUnit> units,
         SemanticModel model,
-        DiagnosticBag diagnostics)
+        DiagnosticBag diagnostics,
+        CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        DefiniteAssignment analysis = new(model, diagnostics);
+        DefiniteAssignment analysis = new(model, diagnostics, cancellation);
 
         foreach (CompilationUnit unit in units)
         {
@@ -119,6 +135,7 @@ public sealed class DefiniteAssignment
 
             foreach (Declaration declaration in unit.Declarations)
             {
+                cancellation.ThrowIfCancellationRequested();
                 analysis.AnalyzeDeclaration(declaration);
             }
         }
@@ -128,11 +145,12 @@ public sealed class DefiniteAssignment
     public static void Analyze(
         CompilationUnit unit,
         SemanticModel model,
-        DiagnosticBag diagnostics)
+        DiagnosticBag diagnostics,
+        CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(unit);
 
-        Analyze([unit], model, diagnostics);
+        Analyze([unit], model, diagnostics, cancellation);
     }
 
     private void AnalyzeDeclaration(Declaration declaration)
@@ -284,6 +302,8 @@ public sealed class DefiniteAssignment
 
         foreach (Statement statement in statements)
         {
+            _cancellation.ThrowIfCancellationRequested();
+
             // The first statement past where control can arrive is the one worth naming. The
             // rest are unreachable for the same reason, and saying so once per statement would
             // bury the yield or throw that caused it.

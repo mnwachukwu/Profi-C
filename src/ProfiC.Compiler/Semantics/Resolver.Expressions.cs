@@ -319,7 +319,7 @@ public sealed partial class Resolver
     /// </summary>
     private void BindLambda(LambdaExpr lambda)
     {
-        InScope(() =>
+        InScope(lambda.Span, () =>
         {
             foreach (ParameterDecl parameter in lambda.Parameters)
             {

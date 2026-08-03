@@ -5,7 +5,7 @@
     variable, held in a set, passed to another function, and handed back from one. Everything
     below is that one idea in different shapes.
 
-    A function's type is written similarly to the way its declaration is: the result, then 'delegate', 
+    A function's type is written similarly to the way its declaration is: the result, then 'delegate',
     then what it takes. So 'integer delegate(integer)' takes an integer and yields one,
     'delegate(string)' takes a string and yields nothing, and `delegate() takes nothing and yields nothing`.
 
@@ -248,7 +248,7 @@ shared model Program
         first.Next();
 
         Console.WriteLine("after raising the first: "
-                            + readFirst() + " " + readSecond());
+                              + readFirst() + " " + readSecond());
     end function
 
     # ---- Naming one that already exists --------------------------------------------

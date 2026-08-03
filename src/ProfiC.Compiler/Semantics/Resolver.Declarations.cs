@@ -13,6 +13,7 @@ public sealed partial class Resolver
     {
         foreach (Declaration declaration in unit.Declarations)
         {
+            _cancellation.ThrowIfCancellationRequested();
             CollectDeclaration(declaration, _model.GlobalNamespace);
         }
     }

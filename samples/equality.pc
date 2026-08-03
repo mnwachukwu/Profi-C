@@ -150,9 +150,9 @@ shared model Program
 
         Console.WriteLine("  first == second               -> " + (first == second));
         Console.WriteLine("  Reference.Equals(first, second) -> "
-                          + Reference.Equals(first, second));
+                              + Reference.Equals(first, second));
         Console.WriteLine("  Reference.Equals(first, alsoFirst) -> "
-                          + Reference.Equals(first, alsoFirst));
+                              + Reference.Equals(first, alsoFirst));
 
         # Which matters, because alsoFirst and first are one set under two names.
         alsoFirst.Insert(4);

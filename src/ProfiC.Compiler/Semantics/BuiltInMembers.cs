@@ -65,6 +65,19 @@ public static class BuiltInMembers
     }
 
     /// <summary>
+    /// <para>Everything the language provides on a receiver of this type.</para>
+    /// <para>Given whole rather than only by name, because something offering a reader what they
+    /// could write next needs the list rather than an answer about one entry. Read from the same
+    /// catalog <see cref="FindAll"/> reads, so what is offered is what will resolve.</para>
+    /// </summary>
+    public static IReadOnlyList<BuiltInMember> On(TypeSymbol receiver)
+    {
+        ArgumentNullException.ThrowIfNull(receiver);
+
+        return MembersOf(receiver);
+    }
+
+    /// <summary>
     /// Everything the language provides on a receiver of this type, read from the catalog.
     /// See <see cref="BuiltIns"/>.
     /// </summary>

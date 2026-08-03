@@ -128,11 +128,25 @@ public sealed partial class Parser
     }
 
     /// <summary>Consumes an identifier, reporting if one is not there.</summary>
-    private string ExpectIdentifier()
+    private string ExpectIdentifier() => ExpectIdentifier(out _);
+
+    /// <summary>
+    /// <para>The same, saying where the name was written.</para>
+    /// <para>Which is what <see cref="SyntaxNode.NameSpan"/> wants and what a declaration's own
+    /// span cannot answer: the token is right here and carries it, and anywhere else it would
+    /// have to be worked out by counting.</para>
+    /// <para>Where there is no name, the answer is where one should have been. A reserved word
+    /// used as one is at least written down, so its own span is the place to point; nothing at
+    /// all leaves a span of no width where the reader's cursor is.</para>
+    /// </summary>
+    private string ExpectIdentifier(out SourceSpan where)
     {
         if (Check(TokenType.Identifier))
         {
-            return Advance().Name;
+            Token name = Advance();
+
+            where = name.Span;
+            return name.Name;
         }
 
         // A reserved word here is worth its own message. Several of them — 'end', 'base', 'to'
@@ -141,6 +155,8 @@ public sealed partial class Parser
         if (Current.Type.IsKeyword() && Current.Type.Text() is { } word)
         {
             _diagnostics.Report(DiagnosticDescriptors.ReservedWordAsName, Current.Span, word);
+
+            where = Current.Span;
             Advance();
             return string.Empty;
         }
@@ -150,6 +166,7 @@ public sealed partial class Parser
             Current.Span,
             Describe(Current));
 
+        where = EmptySpanHere();
         return string.Empty;
     }
 

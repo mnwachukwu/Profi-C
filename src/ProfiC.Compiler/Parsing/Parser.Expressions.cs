@@ -1,6 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Parsing;
 
@@ -172,8 +173,12 @@ public sealed partial class Parser
 
         if (Match(TokenType.Dot))
         {
-            string member = ExpectIdentifier();
-            return new MemberExpr(SpanTo(startOffset), receiver, member);
+            string member = ExpectIdentifier(out SourceSpan named);
+
+            return new MemberExpr(SpanTo(startOffset), receiver, member)
+            {
+                NameSpan = named,
+            };
         }
 
         return null;
@@ -288,7 +293,9 @@ public sealed partial class Parser
         {
             case TokenType.Identifier:
                 Advance();
-                return new IdentifierExpr(token.Span, token.Name);
+                // The span and the name are the same characters here, but recording it says so
+                // rather than leaving it to be inferred, which is what an edit needs.
+                return new IdentifierExpr(token.Span, token.Name) { NameSpan = token.Span };
 
             case TokenType.This:
                 Advance();
@@ -526,13 +533,23 @@ public sealed partial class Parser
             // "integer n" and "n" differ solely in what comes after the first identifier.
             if (allowInferredTypes && Check(TokenType.Identifier) && NextEndsAParameter())
             {
-                parameters.Add(new ParameterDecl(SpanFrom(start), null, Advance().Name));
+                Token bare = Advance();
+
+                parameters.Add(new ParameterDecl(SpanFrom(start), null, bare.Name)
+                {
+                    NameSpan = bare.Span,
+                });
+
                 continue;
             }
 
             TypeSyntax type = ParseType();
-            string name = ExpectIdentifier();
-            parameters.Add(new ParameterDecl(SpanFrom(start), type, name));
+            string name = ExpectIdentifier(out SourceSpan named);
+
+            parameters.Add(new ParameterDecl(SpanFrom(start), type, name)
+            {
+                NameSpan = named,
+            });
         }
         while (Match(TokenType.Comma));
 

@@ -1,112 +1,45 @@
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
+using ProfiC.Cli.Protocol;
 
 namespace ProfiC.Cli.Debugging;
 
 /// <summary>
-/// <para>The Debug Adapter Protocol's wire format: JSON messages framed by a byte count.</para>
-/// <para>Each message is a header, a blank line, and exactly that many bytes of JSON:</para>
-/// <code>
-/// Content-Length: 91\r\n
-/// \r\n
-/// {"seq":1,"type":"request","command":"initialize","arguments":{}}
-/// </code>
-/// <para>The count is what makes the stream readable at all. A debugger's traffic is a stream of
-/// messages with nothing between them, so without a length there is no way to know where one
-/// ends — and JSON cannot be scanned for a closing brace, because braces occur inside strings.
-/// </para>
-/// <para>This is only the framing. What the messages mean is the session's business, kept apart
-/// so that the part with a specification to follow can be tested against that specification
-/// rather than against a debugger.</para>
+/// <para>The Debug Adapter Protocol's messages: what a request, a response and an event are
+/// shaped like, and how each is numbered.</para>
+/// <para>The framing underneath — <c>Content-Length</c> and the bytes after it — is
+/// <see cref="FramedConnection"/>'s, and is shared with the language server because both
+/// protocols frame the same way. What is here is only what makes a message a DAP message: an
+/// envelope of <c>type</c>, <c>seq</c> and <c>request_seq</c>, which is the adapter's own and
+/// nothing like JSON-RPC.</para>
+/// <para>Kept apart from the session for the same reason the framing is kept apart from this:
+/// the part with a specification to follow can be tested against that specification rather than
+/// against a debugger.</para>
 /// </summary>
-public sealed class DapConnection(Stream input, Stream output)
+public sealed class DapConnection(Stream input, Stream output) : FramedConnection(input, output)
 {
-    private const string Header = "Content-Length: ";
-
-    private readonly Stream _input = input;
-    private readonly Stream _output = output;
-    private readonly Lock _writing = new();
-
     private int _seq;
 
     /// <summary>
-    /// <para>Reads one message, or null where the stream has ended.</para>
-    /// <para>Ending mid-message is an ended stream rather than an error: a debugger is closed by
-    /// the editor going away, and that is what going away looks like from here.</para>
-    /// <para>A message that will not parse is passed over and the next one read. The count has
-    /// already said where it ends, so the stream is still aligned and there is nothing to
-    /// recover — where throwing would take the whole session down over one bad message, and a
-    /// debugger that vanishes tells the reader nothing about why.</para>
-    /// <para>Passed over, but said out loud. Skipping in silence means a request that never gets
-    /// an answer and no sign of why, which is the hardest kind of fault to chase in something
-    /// whose whole job is to be talked to.</para>
+    /// Every message the protocol carries is numbered in turn, including the ones nobody asked
+    /// for. It is what lets an editor tell one from another where several are in flight.
     /// </summary>
-    public JsonObject? Read()
+    protected override void Stamp(JsonObject message)
     {
-        while (true)
-        {
-            if (ReadContentLength() is not { } length)
-            {
-                return null;
-            }
+        ArgumentNullException.ThrowIfNull(message);
 
-            byte[] payload = new byte[length];
-            int filled = 0;
-
-            while (filled < length)
-            {
-                // A stream hands over what it has, not what was asked for. Reading once and
-                // trusting the count is the classic way to lose the tail of a large message —
-                // which here means a stack trace of any size failing on a slow pipe and not a
-                // fast one.
-                int read = _input.Read(payload, filled, length - filled);
-
-                if (read == 0)
-                {
-                    return null;
-                }
-
-                filled += read;
-            }
-
-            if (Parse(payload, out string? why) is { } message)
-            {
-                return message;
-            }
-
-            Event("output", new JsonObject
-            {
-                ["category"] = "stderr",
-                ["output"] = $"A message could not be read and was passed over: {why}\n",
-            });
-        }
+        message["seq"] = ++_seq;
     }
 
     /// <summary>
-    /// One message's bytes as an object, or null with the reason where they are not one. A
-    /// well-formed payload that is not an object counts as neither, since every message the
-    /// protocol defines is one.
+    /// An output event on the error stream, which is where an adapter puts anything a reader
+    /// might need and nobody asked for.
     /// </summary>
-    private static JsonObject? Parse(byte[] payload, out string? why)
-    {
-        try
+    protected override void ReportUnreadable(string why) =>
+        Event("output", new JsonObject
         {
-            if (JsonNode.Parse(Encoding.UTF8.GetString(payload)) is JsonObject message)
-            {
-                why = null;
-                return message;
-            }
-
-            why = "it is not a JSON object";
-            return null;
-        }
-        catch (JsonException failure)
-        {
-            why = failure.Message;
-            return null;
-        }
-    }
+            ["category"] = "stderr",
+            ["output"] = $"A message could not be read and was passed over: {why}\n",
+        });
 
     /// <summary>Answers a request, carrying its sequence number so a reply cannot be mistaken.</summary>
     public void Respond(JsonObject request, JsonObject? body = null)
@@ -166,82 +99,5 @@ public sealed class DapConnection(Stream input, Stream output)
         }
 
         Send(message);
-    }
-
-    /// <summary>
-    /// <para>Frames and writes one message.</para>
-    /// <para>Locked because events come from the program's thread and responses from the one
-    /// reading requests. Two writers interleaving would not corrupt the JSON — each is built
-    /// whole — but would interleave the bytes of two framed messages, which no reader can
-    /// recover from.</para>
-    /// </summary>
-    private void Send(JsonObject message)
-    {
-        lock (_writing)
-        {
-            message["seq"] = ++_seq;
-
-            byte[] payload = Encoding.UTF8.GetBytes(message.ToJsonString());
-            byte[] header = Encoding.UTF8.GetBytes($"{Header}{payload.Length}\r\n\r\n");
-
-            _output.Write(header);
-            _output.Write(payload);
-            _output.Flush();
-        }
-    }
-
-    /// <summary>
-    /// <para>Reads headers to the blank line and answers with the content length.</para>
-    /// <para>Read a byte at a time, which is not a performance question: the payload must not be
-    /// touched, and a buffered read would swallow the front of it. Headers are short and there
-    /// are two of them at most.</para>
-    /// </summary>
-    private int? ReadContentLength()
-    {
-        int? length = null;
-
-        while (true)
-        {
-            if (ReadLine() is not { } line)
-            {
-                return null;
-            }
-
-            if (line.Length == 0)
-            {
-                return length;
-            }
-
-            if (line.StartsWith(Header, StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(
-                    line[Header.Length..].Trim(),
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int found))
-            {
-                length = found;
-            }
-        }
-    }
-
-    private string? ReadLine()
-    {
-        StringBuilder line = new();
-
-        while (true)
-        {
-            int next = _input.ReadByte();
-
-            if (next < 0)
-            {
-                return line.Length > 0 ? line.ToString() : null;
-            }
-
-            if (next == '\n')
-            {
-                return line.ToString().TrimEnd('\r');
-            }
-
-            line.Append((char)next);
-        }
     }
 }

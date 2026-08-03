@@ -9,6 +9,7 @@ public sealed partial class TypeChecker
     {
         foreach (Statement statement in statements)
         {
+            _cancellation.ThrowIfCancellationRequested();
             CheckStatement(statement);
         }
     }

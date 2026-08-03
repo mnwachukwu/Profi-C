@@ -264,7 +264,7 @@ shared model Program
         Console.WriteLine("  Random.Next() is whole and not negative: " + (Random.Next() >= 0));
         Console.WriteLine("  Random.Next(5) is below five:            " + (Random.Next(5) < 5));
         Console.WriteLine("  Random.NextDouble() is below one:        "
-                            + (Random.NextDouble() < 1.0));
+                              + (Random.NextDouble() < 1.0));
         Console.WriteLine();
     end function
 
@@ -336,7 +336,7 @@ shared model Program
 
         # A span may run backwards, and says so.
         Console.WriteLine("  half minus a whole = "
-                            + TimeSpan.FromMinutes(30.0).Subtract(TimeSpan.FromHours(1.0)));
+                              + TimeSpan.FromMinutes(30.0).Subtract(TimeSpan.FromHours(1.0)));
 
         Date birthday = new Date(1969, 7, 20);
         Time opening = new Time(9, 0);

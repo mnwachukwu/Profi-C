@@ -32,7 +32,7 @@ shared model Program
 
         # Neither is a function, so neither is called. Writing Math.Pi() is reported.
         Console.WriteLine("  a circle of radius 2 has area "
-                            + Program.ToFourPlaces(Math.Pi * 2.0 * 2.0));
+                              + Program.ToFourPlaces(Math.Pi * 2.0 * 2.0));
         Console.WriteLine();
     end function
 

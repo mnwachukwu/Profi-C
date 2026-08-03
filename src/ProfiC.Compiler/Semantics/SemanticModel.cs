@@ -1,4 +1,5 @@
 using ProfiC.Compiler.Ast;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Semantics;
 
@@ -20,6 +21,15 @@ public sealed class SemanticModel
 
     private readonly Dictionary<SyntaxNode, bool> _settledTests = [];
 
+    /// <summary>
+    /// <para>Which names were in force over which stretch of which file.</para>
+    /// <para>Kept by span rather than by node because scopes and nodes do not line up: one
+    /// <c>if</c> opens two of them, and neither is the statement. Held per file because a span
+    /// carries an offset and no notion of where it came from.</para>
+    /// </summary>
+    private readonly Dictionary<SourceText, List<(SourceSpan Covering, NameScope Names)>> _scopes =
+        [];
+
     /// <summary>The global namespace, holding everything declared at the top level.</summary>
     public NamespaceSymbol GlobalNamespace { get; } = new(string.Empty, parent: null);
 
@@ -28,6 +38,51 @@ public sealed class SemanticModel
 
     /// <summary>Records what a node refers to.</summary>
     internal void Bind(SyntaxNode node, Symbol symbol) => _symbols[node] = symbol;
+
+    /// <summary>Records the names in force over a stretch of a file.</summary>
+    internal void Opened(SourceText file, SourceSpan covering, NameScope names)
+    {
+        if (!_scopes.TryGetValue(file, out List<(SourceSpan, NameScope)>? opened))
+        {
+            _scopes[file] = opened = [];
+        }
+
+        opened.Add((covering, names));
+    }
+
+    /// <summary>
+    /// <para>The names in force at a place in a file, or null where nothing was recorded — a
+    /// point outside every function body, which is nowhere a bare name can be written.</para>
+    /// <para>The narrowest stretch covering the offset, since scopes nest and the innermost is
+    /// the one whose names shadow the rest. Scanned rather than indexed: this is asked once per
+    /// question about one cursor, and a file has as many of these as it has blocks.</para>
+    /// </summary>
+    public NameScope? NamesAt(SourceText file, int offset)
+    {
+        if (file is null || !_scopes.TryGetValue(file, out List<(SourceSpan Covering, NameScope Names)>? opened))
+        {
+            return null;
+        }
+
+        NameScope? narrowest = null;
+        int width = int.MaxValue;
+
+        foreach ((SourceSpan covering, NameScope names) in opened)
+        {
+            if (offset < covering.Start.Offset || offset > covering.EndOffset)
+            {
+                continue;
+            }
+
+            if (covering.Length < width)
+            {
+                width = covering.Length;
+                narrowest = names;
+            }
+        }
+
+        return narrowest;
+    }
 
     /// <summary>Records the type a node denotes.</summary>
     internal void BindType(SyntaxNode node, TypeSymbol type) => _types[node] = type;

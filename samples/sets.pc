@@ -95,7 +95,7 @@ shared model Program
         Console.WriteLine("  from 2 on     {{all.Subset(2)}}");
         Console.WriteLine("  from 1 to 3   {{all.Subset(1, 3)}}");
         Console.WriteLine("  the two halves put back together: "
-                            + "{{all.Subset(0, 2).Union(all.Subset(2, 5))}}");
+                              + "{{all.Subset(0, 2).Union(all.Subset(2, 5))}}");
         Console.WriteLine("  and the original is untouched     {{all}}");
     end function
 
@@ -124,7 +124,7 @@ shared model Program
         Console.WriteLine("  only yours     {{yours.Except(mine)}}");
 
         Console.WriteLine("  every element back, reordered: "
-                            + "{{mine.Intersect(yours).Union(mine.Except(yours))}}");
+                              + "{{mine.Intersect(yours).Union(mine.Except(yours))}}");
         Console.WriteLine("  and mine is untouched {{mine}}");
 
         # Union followed by Distinct is the union of mathematics, said in two steps because

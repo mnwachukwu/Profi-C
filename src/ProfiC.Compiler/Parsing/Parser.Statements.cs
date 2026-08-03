@@ -1,6 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Parsing;
 
@@ -146,13 +147,16 @@ public sealed partial class Parser
     private Statement ParseLetDeclaration()
     {
         Token start = Advance();
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
 
         Expect(TokenType.Equal);
         Expression initializer = ParseExpression();
         Expect(TokenType.Semicolon);
 
-        return new VarDeclStmt(SpanFrom(start), null, name, initializer, isConstant: false);
+        return new VarDeclStmt(SpanFrom(start), null, name, initializer, isConstant: false)
+        {
+            NameSpan = named,
+        };
     }
 
     private Statement ParseTypedLocalDeclaration()
@@ -169,7 +173,9 @@ public sealed partial class Parser
             Advance();
 
             FunctionDecl bare = ParseFunctionRest(start, DeclarationModifiers.None, null);
-            return new LocalDeclStmt(bare.Span, bare);
+
+            // The wrapper stands where the function does, so it names what the function names.
+            return new LocalDeclStmt(bare.Span, bare) { NameSpan = bare.NameSpan };
         }
 
         TypeSyntax type = ParseType();
@@ -179,14 +185,18 @@ public sealed partial class Parser
         {
             Advance();
             FunctionDecl local = ParseFunctionRest(start, DeclarationModifiers.None, type);
-            return new LocalDeclStmt(local.Span, local);
+
+            return new LocalDeclStmt(local.Span, local) { NameSpan = local.NameSpan };
         }
 
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
         Expression? initializer = Match(TokenType.Equal) ? ParseExpression() : null;
         Expect(TokenType.Semicolon);
 
-        return new VarDeclStmt(SpanFrom(start), type, name, initializer, isConstant);
+        return new VarDeclStmt(SpanFrom(start), type, name, initializer, isConstant)
+        {
+            NameSpan = named,
+        };
     }
 
     /// <summary>
@@ -318,7 +328,7 @@ public sealed partial class Parser
     {
         Advance();
 
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
         Expect(TokenType.In);
 
         Expression sequence = ParseExpression();
@@ -326,7 +336,7 @@ public sealed partial class Parser
 
         ExpectEnd(TokenType.Loop, "loop", start);
 
-        return new ForEachStmt(SpanFrom(start), name, sequence, body);
+        return new ForEachStmt(SpanFrom(start), name, sequence, body) { NameSpan = named };
     }
 
     /// <summary>
@@ -374,7 +384,7 @@ public sealed partial class Parser
             Advance();
         }
 
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
 
         Expect(TokenType.Equal);
         Expression from = ParseExpression();
@@ -400,7 +410,10 @@ public sealed partial class Parser
         List<Statement> body = ParseBody(TokenType.Loop);
         ExpectEnd(TokenType.Loop, "loop", start);
 
-        return new ForStmt(SpanFrom(start), name, from, bound, inclusive, step, body);
+        return new ForStmt(SpanFrom(start), name, from, bound, inclusive, step, body)
+        {
+            NameSpan = named,
+        };
     }
 
     /// <summary>
@@ -454,12 +467,15 @@ public sealed partial class Parser
         {
             Token catchStart = Advance();
             TypeSyntax exceptionType = ParseType();
-            string name = ExpectIdentifier();
+            string name = ExpectIdentifier(out SourceSpan named);
 
             List<Statement> catchBody =
                 ParseBody(TokenType.Try, TokenType.Catch, TokenType.Finally);
 
-            catches.Add(new CatchClause(SpanFrom(catchStart), exceptionType, name, catchBody));
+            catches.Add(new CatchClause(SpanFrom(catchStart), exceptionType, name, catchBody)
+            {
+                NameSpan = named,
+            });
         }
 
         List<Statement>? finallyBody = null;

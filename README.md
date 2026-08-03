@@ -542,8 +542,12 @@ pc lower samples/sorting.pc
 with `loop each` already rewritten into an index loop and every implicit conversion made
 explicit.
 
-Three more exist for editors rather than for reading:
+Five more exist for editors rather than for reading:
 
+- **`pc format`** lines a file up and prints it, or writes it back with `--write`. `--check`
+  prints nothing and fails if the file is not already formatted, which is what a build step
+  wants. It never moves your code: indentation and spacing only, so a comment cannot be lost and
+  a file that does not parse is formatted anyway.
 - **`pc outline`** prints what a file declares as JSON, which is where VS Code's breadcrumbs and
   Outline view come from. It answers for a file that does not compile — the state a file is in
   most of the time it is being written.
@@ -551,11 +555,17 @@ Three more exist for editors rather than for reading:
   editor knows what "run the project this file belongs to" means.
 - **`pc debug`** speaks the Debug Adapter Protocol over its own standard input and output, so
   every decision about where to stop and what to show lives here rather than in an editor plugin.
+- **`pc lsp`** speaks the Language Server Protocol, and is the only one of the five that stays
+  open. The others read a file, answer, and exit — which is the only thing a separate process
+  can do, and it means none of them can say anything about the buffer somebody is typing into.
+  This holds what the editor holds, so diagnostics arrive as the code is written rather than when
+  a button is pressed, and hover, go-to-definition, renaming, coloring and the outline answer
+  about what is on screen rather than what was last saved.
 
-None of the three is a convenience. Each answers a question about Profi-C that an editor would
+None of the five is a convenience. Each answers a question about Profi-C that an editor would
 otherwise have to answer for itself — by parsing the language, or reading a project file, or
-deciding what one step means — and a second answer to any of those agrees with this one only
-until the day it does not.
+laying it out, or deciding what one step means — and a second answer to any of those agrees with
+this one only until the day it does not.
 
 ### One thing to remember
 
@@ -567,9 +577,11 @@ compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go s
 
 **Editor support lives in its own repository**, [Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors).
 The VS Code extension there gives a `.pc` file syntax highlighting, **breakpoints and stepping**,
-breadcrumbs and an Outline, and buttons to run or build what you are looking at — with
-diagnostics landing in the Problems panel. Project management, a language server and a formatter
-are what remain. Installing it, and the rest of what it does, is covered there.
+breadcrumbs and an Outline, **diagnostics as you type**, hover types, go to definition, completion
+both after a dot and for a bare name, signature help, quick fixes, **renaming a name everywhere it
+is written**, **coloring every name for what the compiler worked out it is**, marking every use of
+the name under the caret, **formatting**, and buttons to run or build what you are looking at.
+Project management is what remains. Installing it, and the rest of what it does, is covered there.
 
 **Almost none of the debugger is over there**, which is the point. `pc debug` is the whole of it;
 the extension only says which command to start. Two implementations of one set of rules about

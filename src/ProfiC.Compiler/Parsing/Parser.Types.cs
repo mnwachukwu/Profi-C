@@ -1,6 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Parsing;
 
@@ -117,14 +118,17 @@ public sealed partial class Parser
         // A dotted name says where to look before saying what to look for. Only a name may be
         // qualified, since everything else a type can be is built out of one.
         List<string> parts = [name];
+        SourceSpan named = token.Span;
 
         while (Check(TokenType.Dot))
         {
             Advance();
-            parts.Add(ExpectIdentifier());
+            parts.Add(ExpectIdentifier(out named));
         }
 
-        return new NamedTypeSyntax(SpanFrom(token), parts);
+        // The last part, since that is the one that names the type. Everything before it names
+        // where to look, and renaming the type must not write over that.
+        return new NamedTypeSyntax(SpanFrom(token), parts) { NameSpan = named };
     }
 
     /// <summary>

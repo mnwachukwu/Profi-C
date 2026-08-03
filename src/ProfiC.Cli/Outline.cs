@@ -18,8 +18,14 @@ namespace ProfiC.Cli;
 /// </summary>
 public static class Outline
 {
-    /// <summary>One declaration, and whatever it declares inside itself.</summary>
-    private sealed record Entry(
+    /// <summary>
+    /// <para>One declaration, and whatever it declares inside itself.</para>
+    /// <para><see cref="NameLine"/> and <see cref="NameColumn"/> are where the name is written,
+    /// which is not where the declaration begins: a function starts at its first modifier and is
+    /// named several words later. An editor revealing an entry wants the name, so that clicking
+    /// one in the Outline puts the cursor on it rather than on the word <c>public</c>.</para>
+    /// </summary>
+    public sealed record Entry(
         string Name,
         string Kind,
         string Detail,
@@ -27,27 +33,37 @@ public static class Outline
         int Column,
         int EndLine,
         int EndColumn,
+        int NameLine,
+        int NameColumn,
         IReadOnlyList<Entry> Children);
 
     /// <summary>
-    /// <para>The declarations of one unit as JSON.</para>
-    /// <para>Positions are one-based, as everything a reader sees in Profi-C is. An editor
-    /// counting from zero converts at its own boundary rather than being handed a convention
-    /// that matches no diagnostic.</para>
+    /// <para>The declarations of one unit, as a tree.</para>
+    /// <para>Positions are one-based, as everything a reader sees in Profi-C is. Whatever counts
+    /// from zero converts at its own boundary rather than being handed a convention that matches
+    /// no diagnostic.</para>
+    /// <para>Given apart from <see cref="AsJson"/> because two things want it and only one of
+    /// them wants text: the <c>outline</c> command prints it, and the language server answers
+    /// <c>textDocument/documentSymbol</c> from it. Serializing and reading back would be a
+    /// second shape to keep true.</para>
     /// </summary>
-    public static string AsJson(CompilationUnit unit, SourceText source)
+    public static IReadOnlyList<Entry> Of(CompilationUnit unit, SourceText source)
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(source);
 
-        return JsonSerializer.Serialize(
-            Walk(unit.Declarations, source),
+        return Walk(unit.Declarations, source);
+    }
+
+    /// <summary>The same tree as text, for the command that prints it.</summary>
+    public static string AsJson(CompilationUnit unit, SourceText source) =>
+        JsonSerializer.Serialize(
+            Of(unit, source),
             new JsonSerializerOptions
             {
                 WriteIndented = true,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             });
-    }
 
     /// <summary>
     /// Walks a run of declarations. The name of whatever holds them is carried along, because a
@@ -129,6 +145,18 @@ public static class Outline
         SourcePosition end = source.PositionAt(
             Math.Min(start.Offset + node.Span.Length, source.Text.Length));
 
-        return new Entry(name, kind, detail, start.Line, start.Column, end.Line, end.Column, children);
+        SourcePosition named = node.NameSpan.Start;
+
+        return new Entry(
+            name,
+            kind,
+            detail,
+            start.Line,
+            start.Column,
+            end.Line,
+            end.Column,
+            named.Line,
+            named.Column,
+            children);
     }
 }

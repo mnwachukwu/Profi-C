@@ -1,6 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
+using ProfiC.Compiler.Text;
 
 namespace ProfiC.Compiler.Parsing;
 
@@ -232,11 +233,14 @@ public sealed partial class Parser
             return ParseFunctionRest(start, modifiers, type);
         }
 
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
         Expression? initializer = Match(TokenType.Equal) ? ParseExpression() : null;
         Expect(TokenType.Semicolon);
 
-        return new FieldDecl(SpanFrom(start), modifiers, type, name, initializer);
+        return new FieldDecl(SpanFrom(start), modifiers, type, name, initializer)
+        {
+            NameSpan = named,
+        };
     }
 
     /// <summary>
@@ -252,7 +256,7 @@ public sealed partial class Parser
         Token let = Current;
         Advance();
 
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
         Expression? initializer = Match(TokenType.Equal) ? ParseExpression() : null;
         Expect(TokenType.Semicolon);
 
@@ -266,7 +270,10 @@ public sealed partial class Parser
             modifiers,
             new NamedTypeSyntax(let.Span, "integer"),
             name,
-            initializer);
+            initializer)
+        {
+            NameSpan = named,
+        };
     }
 
     /// <summary>Reads a function from its name onward, the <c>function</c> word consumed.</summary>
@@ -275,7 +282,7 @@ public sealed partial class Parser
         DeclarationModifiers modifiers,
         TypeSyntax? returnType)
     {
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
 
         Expect(TokenType.LeftParen);
         List<ParameterDecl> parameters = ParseParameterList();
@@ -287,37 +294,49 @@ public sealed partial class Parser
         if (Match(TokenType.Semicolon))
         {
             return new FunctionDecl(
-                SpanFrom(start), modifiers, returnType, name, parameters, body: null);
+                SpanFrom(start), modifiers, returnType, name, parameters, body: null)
+            {
+                NameSpan = named,
+            };
         }
 
         List<Statement> body = ParseBody(TokenType.Function);
         ExpectEnd(TokenType.Function, "function", start);
 
-        return new FunctionDecl(SpanFrom(start), modifiers, returnType, name, parameters, body);
+        return new FunctionDecl(SpanFrom(start), modifiers, returnType, name, parameters, body)
+        {
+            NameSpan = named,
+        };
     }
 
     private Declaration ParseModel(DeclarationModifiers modifiers, Token start)
     {
         Advance();
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
 
         string? baseTypeName = Match(TokenType.Extends) ? ExpectIdentifier() : null;
 
         List<Declaration> members = ParseMembers();
         ExpectEnd(TokenType.Model, "model", start);
 
-        return new ModelDecl(SpanFrom(start), modifiers, name, baseTypeName, members);
+        return new ModelDecl(SpanFrom(start), modifiers, name, baseTypeName, members)
+        {
+            NameSpan = named,
+        };
     }
 
     private Declaration ParseStructure(DeclarationModifiers modifiers, Token start)
     {
         Advance();
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
 
         List<Declaration> members = ParseMembers();
         ExpectEnd(TokenType.Structure, "structure", start);
 
-        return new StructureDecl(SpanFrom(start), modifiers, name, members);
+        return new StructureDecl(SpanFrom(start), modifiers, name, members)
+        {
+            NameSpan = named,
+        };
     }
 
     private List<Declaration> ParseMembers()
@@ -345,7 +364,7 @@ public sealed partial class Parser
     private Declaration ParseEnumeration(DeclarationModifiers modifiers, Token start)
     {
         Advance();
-        string name = ExpectIdentifier();
+        string name = ExpectIdentifier(out SourceSpan named);
 
         List<EnumMemberDecl> members = [];
 
@@ -353,10 +372,14 @@ public sealed partial class Parser
         {
             int before = _position;
             Token memberStart = Current;
-            string memberName = ExpectIdentifier();
+            string memberName = ExpectIdentifier(out SourceSpan memberNamed);
 
             Expression? value = Match(TokenType.Equal) ? ParseExpression() : null;
-            members.Add(new EnumMemberDecl(SpanFrom(memberStart), memberName, value));
+
+            members.Add(new EnumMemberDecl(SpanFrom(memberStart), memberName, value)
+            {
+                NameSpan = memberNamed,
+            });
 
             if (!Match(TokenType.Comma))
             {
@@ -368,6 +391,9 @@ public sealed partial class Parser
 
         ExpectEnd(TokenType.Enumeration, "enumeration", start);
 
-        return new EnumerationDecl(SpanFrom(start), modifiers, name, members);
+        return new EnumerationDecl(SpanFrom(start), modifiers, name, members)
+        {
+            NameSpan = named,
+        };
     }
 }

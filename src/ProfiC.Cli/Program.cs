@@ -4,6 +4,7 @@ using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Emit;
+using ProfiC.Compiler.Formatting;
 using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
@@ -69,8 +70,10 @@ public static class Program
                 "vocabulary" => RunVocabulary(),
                 "platforms" => RunPlatforms(),
                 "outline" => RunOutline(args),
+                "format" => RunFormat(args),
                 "project" => RunProject(args),
                 "debug" => RunDebug(),
+                "lsp" => RunLanguageServer(),
                 _ => UnknownCommand(args[0]),
             };
         }
@@ -124,6 +127,7 @@ public static class Program
         Console.WriteLine($"  {ToolName} vocabulary       Print every word the language reserves, as JSON");
         Console.WriteLine($"  {ToolName} platforms        Print the platforms --runtime accepts, as JSON");
         Console.WriteLine($"  {ToolName} debug            Debug a program, spoken to by an editor");
+        Console.WriteLine($"  {ToolName} lsp              Answer an editor's questions while it is open");
         Console.WriteLine($"  {ToolName} --version        Print the compiler version");
         Console.WriteLine($"  {ToolName} --help           Print this message");
         Console.WriteLine();
@@ -238,6 +242,34 @@ public static class Program
         return 0;
     }
 
+    /// <summary>
+    /// <para>Answers an editor's questions about Profi-C for as long as it stays open, speaking
+    /// the Language Server Protocol over standard input and output.</para>
+    /// <para><b>Every other command reads a file and exits, which is the thing this exists to
+    /// stop.</b> A file being typed into is not on disk in the form the reader is looking at, and
+    /// half of it is not valid Profi-C at any given moment — so questions about it can only be
+    /// answered by something that holds it. This holds it.</para>
+    /// <para>Takes no file. Which files matter arrives in the protocol, because the editor is
+    /// what knows: it opens and closes them as the reader does.</para>
+    /// <para><b>Nothing else may write to standard output while this runs.</b> The stream is the
+    /// protocol, and a stray line of ordinary text is a framing error the editor cannot recover
+    /// from. Anything worth saying goes out as a <c>window/logMessage</c>.</para>
+    /// <para>Meant to be launched by an editor rather than typed. Run by hand it will sit waiting
+    /// for a request that never comes, which is correct and looks like a hang.</para>
+    /// </summary>
+    private static int RunLanguageServer()
+    {
+        using Stream input = Console.OpenStandardInput();
+        using Stream output = Console.OpenStandardOutput();
+        using LanguageServer.LanguageServer server = new(input, output);
+
+        server.Run();
+
+        // A stream that ended without the editor asking is the editor having gone away
+        // unexpectedly, which the protocol says to report as a failure rather than a clean stop.
+        return server.AskedToStop ? 0 : 1;
+    }
+
     private static int RunVocabulary()
     {
         Console.WriteLine(Vocabulary.AsJson());
@@ -291,6 +323,49 @@ public static class Program
 
         Console.WriteLine(Outline.AsJson(Parser.Parse(source, aside), source));
 
+        return 0;
+    }
+
+    /// <summary>
+    /// <para>Lines a file up, to the screen or over the file itself.</para>
+    /// <para>Written back only when asked, so that the ordinary form of this command can be run
+    /// against anything without wondering what it did. <c>--check</c> answers with an exit code
+    /// instead, which is what a build step wants.</para>
+    /// </summary>
+    private static int RunFormat(string[] args)
+    {
+        if (SourceArgument(args, "format") is not { } path)
+        {
+            return 1;
+        }
+
+        SourceText source = SourceText.FromFile(path);
+        string formatted = Formatter.Format(source);
+
+        if (args.Contains("--check"))
+        {
+            if (string.Equals(formatted, source.Text, StringComparison.Ordinal))
+            {
+                return 0;
+            }
+
+            Console.Error.WriteLine($"{path}: not formatted.");
+            return 1;
+        }
+
+        if (args.Contains("--write"))
+        {
+            // Only where it would change something. Rewriting an unchanged file gives it a new
+            // timestamp, which is enough to make a watcher rebuild and a backup tool copy it.
+            if (!string.Equals(formatted, source.Text, StringComparison.Ordinal))
+            {
+                File.WriteAllText(path, formatted);
+            }
+
+            return 0;
+        }
+
+        Console.Out.Write(formatted);
         return 0;
     }
 
