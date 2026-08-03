@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
@@ -54,22 +55,57 @@ public static class Program
             return 0;
         }
 
-        return args[0] switch
+        try
         {
-            "--version" or "-v" => WriteVersion(),
-            "tokens" => RunTokens(args),
-            "ast" => RunAst(args),
-            "check" => RunCheck(args),
-            "lower" => RunLower(args),
-            "run" => RunProgram(args),
-            "build" => RunBuild(args),
-            "vocabulary" => RunVocabulary(),
-            "platforms" => RunPlatforms(),
-            "outline" => RunOutline(args),
-            "project" => RunProject(args),
-            "debug" => RunDebug(),
-            _ => UnknownCommand(args[0]),
-        };
+            return args[0] switch
+            {
+                "--version" or "-v" => WriteVersion(),
+                "tokens" => RunTokens(args),
+                "ast" => RunAst(args),
+                "check" => RunCheck(args),
+                "lower" => RunLower(args),
+                "run" => RunProgram(args),
+                "build" => RunBuild(args),
+                "vocabulary" => RunVocabulary(),
+                "platforms" => RunPlatforms(),
+                "outline" => RunOutline(args),
+                "project" => RunProject(args),
+                "debug" => RunDebug(),
+                _ => UnknownCommand(args[0]),
+            };
+        }
+        catch (InvalidOperationException assertion)
+        {
+            // The type the compiler's own assertions throw, and only that type. A missing file
+            // or a folder that cannot be written is the environment's fault and is answered
+            // where it happens; calling either a fault in the compiler would be wrong.
+            return ReportInternalError(assertion);
+        }
+    }
+
+    /// <summary>
+    /// <para>Reports a fault the compiler asserts cannot happen, and exits the way a failed
+    /// build exits.</para>
+    /// <para>Written with no position because there is no reliable one: an assertion fires deep
+    /// in a pass, and what it knows is what it was doing rather than where in the program it
+    /// was.</para>
+    /// <para>The stack trace follows the message rather than replacing it. It is the only thing
+    /// that says where the compiler actually went wrong, so it is printed in full — and the
+    /// message above it says whose problem this is, so nobody reads the trace as something they
+    /// were meant to act on.</para>
+    /// </summary>
+    private static int ReportInternalError(Exception assertion)
+    {
+        DiagnosticDescriptor descriptor = DiagnosticDescriptors.InternalError;
+
+        Console.Error.WriteLine(
+            $"{ToolName}: error {descriptor.Id}: "
+            + string.Format(
+                CultureInfo.InvariantCulture, descriptor.MessageFormat, assertion.Message));
+
+        Console.Error.WriteLine();
+        Console.Error.WriteLine(assertion);
+        return 1;
     }
 
     private static void WriteUsage()

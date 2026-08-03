@@ -705,6 +705,7 @@ Programs the compiler rejects:
 | [optionals.pc](samples/negatives/compile/optionals.pc) | Using an optional without proving it holds something |
 | [definite-assignment.pc](samples/negatives/compile/definite-assignment.pc) | Reading a variable before it has a value; a constant with none |
 | [types.pc](samples/negatives/compile/types.pc) | Types that do not mix, and a division by a literal zero |
+| [numbers.pc](samples/negatives/compile/numbers.pc) | Numbers written past the edge of what holds them — including `-9223372036854775808`, which is the most negative integer and still one past the largest, because the minus is a separate operator |
 | [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
 | [shadowing.pc](samples/negatives/compile/shadowing.pc) | Names taken again while an enclosing scope is still using them — a block's local, a lambda's parameter, a loop binding, a caught exception |
 | [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |

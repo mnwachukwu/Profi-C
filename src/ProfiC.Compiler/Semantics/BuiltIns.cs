@@ -563,7 +563,8 @@ public static class BuiltIns
         // A float knows three things a real has no answer for, and that is the difference
         // between the two types written down. Each is a value its own arithmetic produces, so
         // '1.0f / 0.0f == Float.Infinity' is true — the constant names what already happens
-        // rather than standing apart from it.
+        // rather than standing apart from it. That expression is also why a float is the one
+        // type PC0324 leaves alone: there is an answer here, so there is nothing to refuse.
         new("Float", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             Value(BuiltInId.FloatMaxValue, "MaxValue", PrimitiveType.Float),

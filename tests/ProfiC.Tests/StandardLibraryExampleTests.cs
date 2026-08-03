@@ -39,9 +39,13 @@ public sealed class StandardLibraryExampleTests : LexerTestBase
     /// statements — which is how the pages are written, since a reader looking up
     /// <c>TrimStart</c> wants the line and not a program around it — so it is given the program
     /// it was written to sit inside.</para>
-    /// <para>Only untagged blocks. A fence marked <c>text</c> is notation rather than Profi-C:
-    /// the signature form at the top of the index is the one that matters, and asking a compiler
-    /// to read it would be asking the wrong question.</para>
+    /// <para>Only untagged blocks. A fence marked <c>text</c> is notation rather than Profi-C —
+    /// the signature form on the index, a refusal quoted with its identifier — and asking a
+    /// compiler to read one would be asking the wrong question.</para>
+    /// <para>Every fence is matched, tagged ones included, and the tagged ones are dropped
+    /// after. Matching only untagged openings would leave a tagged block's closing fence looking
+    /// like an opening one, so it would pair with the next real block and take the prose between
+    /// them along with it.</para>
     /// </summary>
     public static IEnumerable<Example> Examples()
     {
@@ -52,11 +56,16 @@ public sealed class StandardLibraryExampleTests : LexerTestBase
             int number = 0;
 
             foreach (Match block in Regex.Matches(
-                         File.ReadAllText(path), @"^```\r?\n(.*?)^```", RegexOptions.Singleline | RegexOptions.Multiline))
+                         File.ReadAllText(path),
+                         @"^```(\w*)\r?\n(.*?)^```",
+                         RegexOptions.Singleline | RegexOptions.Multiline))
             {
-                string code = block.Groups[1].Value;
+                if (block.Groups[1].Value.Length > 0)
+                {
+                    continue;
+                }
 
-                yield return new Example(page, number++, AsAProgram(code));
+                yield return new Example(page, number++, AsAProgram(block.Groups[2].Value));
             }
         }
     }

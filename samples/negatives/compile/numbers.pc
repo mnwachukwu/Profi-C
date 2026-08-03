@@ -1,0 +1,66 @@
+##
+    Numbers written down that no number type can hold.
+
+    This program does not compile. Every one of these is a well-formed number as far as reading
+    it goes — the digits are digits — and it is only turning them into a value that finds there
+    is no value to turn them into. So the scanner is quiet and the refusal comes later, which is
+    the opposite way round from most of the mistakes in this folder.
+
+    The second one is the one worth the visit. '-9223372036854775808' is the most negative
+    integer written out, and it does not work: the minus is a separate operator, so what the
+    compiler reads is the number after it, which is one past the largest. That is exactly why
+    Integer.MinValue is a name and not something a reader can spell in digits.
+
+    A float is deliberately absent from this file. It is the one number type with a value for a
+    number too large — Float.Infinity — and its own arithmetic already produces that value, so a
+    float literal saturates rather than being refused.
+##
+
+shared model Program
+
+    function Main()
+        Program.PastTheLargest();
+        Program.TheMostNegative();
+        Program.TooManyDigits();
+        Program.PastAReal();
+        Program.HalvesTooLarge();
+        Program.OverZero();
+    end function
+
+    # One past Integer.MaxValue. A decimal point would read the same digits as a real.
+    function PastTheLargest()
+        integer counted = 9223372036854775808;
+        Console.WriteLine(counted);
+    end function
+
+    # The most negative integer, and the reason it has a name.
+    function TheMostNegative()
+        integer floor = -9223372036854775808;
+        Console.WriteLine(floor);
+    end function
+
+    # Seventeen digits in base sixteen, where an integer has room for sixteen.
+    function TooManyDigits()
+        integer mask = 0xFFFFFFFFFFFFFFFFF;
+        Console.WriteLine(mask);
+    end function
+
+    # Past Real.MaxValue, which a float would reach with fewer digits kept.
+    function PastAReal()
+        real measured = 999999999999999999999999999999.0;
+        Console.WriteLine(measured);
+    end function
+
+    # Both halves of a fraction are whole numbers, and this one has a half that is not.
+    function HalvesTooLarge()
+        fraction ratio = 99999999999999999999|7;
+        Console.WriteLine(ratio);
+    end function
+
+    # The bar in a fraction is division, so nothing goes under it but a number that is not zero.
+    function OverZero()
+        fraction undefined = 1|0;
+        Console.WriteLine(undefined);
+    end function
+
+end model

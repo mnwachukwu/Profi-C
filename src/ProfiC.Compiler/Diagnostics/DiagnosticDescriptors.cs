@@ -17,7 +17,7 @@ namespace ProfiC.Compiler.Diagnostics;
 ///   <item><term>PC0400-0499</term><description>Definite assignment and flow</description></item>
 ///   <item><term>PC0500-0599</term><description>Lowering and emit</description></item>
 ///   <item><term>PC0600-0699</term><description>Project files and imports</description></item>
-///   <item><term>PC0900+</term><description>Internal compiler errors</description></item>
+///   <item><term>PC9000+</term><description>Internal compiler errors</description></item>
 /// </list>
 /// </remarks>
 public static class DiagnosticDescriptors
@@ -180,6 +180,34 @@ public static class DiagnosticDescriptors
         "A name cannot begin with a digit",
         "'{0}' is written against the number before it. A name begins with a letter or an "
         + "underscore, and nothing in the language puts two values side by side.");
+
+    /// <summary>
+    /// <para>Digits that name a number the type they are written as cannot hold.</para>
+    /// <para>The scanner reads a number's shape and cannot see its size: the digits are digits
+    /// whatever they come to. So this is found where the digits are turned into a value, and it
+    /// is an error rather than a warning because there is no value to carry on with — the
+    /// program cannot mean what it says.</para>
+    /// <para>A float is deliberately absent, for the same reason it is absent from
+    /// <see cref="DivisionByZero"/>. It is the one number type with a value for a number too
+    /// large, and its own arithmetic already produces that value, so a literal saturating to
+    /// <c>Float.Infinity</c> agrees with <c>1.0f / 0.0f</c> rather than contradicting it.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NumberTooLarge = Error(
+        "PC0026",
+        "Number too large to hold",
+        "{0} is too large for {1}. {2}");
+
+    /// <summary>
+    /// <para>A fraction literal whose right half is zero.</para>
+    /// <para>The same fault as <c>PC0324</c> and reported the same way: the bar in a fraction is
+    /// division, so a zero under it divides by zero while the program is being read rather than
+    /// while it runs.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor FractionOverZero = Error(
+        "PC0027",
+        "A fraction over zero",
+        "{0} is a fraction over zero. The bar is division, so what sits under it can be "
+        + "anything but zero.");
 
     /// <summary>
     /// <para><c>let</c> where a field is being declared.</para>
@@ -1278,6 +1306,15 @@ public static class DiagnosticDescriptors
         "Nothing to infer from",
         "'let' works out the type from the value, so it needs one.");
 
+    /// <summary>
+    /// <para>A divisor the compiler can already see is zero.</para>
+    /// <para>Reported for an integer, a real and a fraction, and for a zero denominator handed
+    /// to <c>Fraction.Create</c>. Not for a float: dividing one by zero is defined, and yields
+    /// <c>Float.Infinity</c>, its negative, or <c>Float.NotANumber</c>. Refusing it would leave
+    /// the one type with a value for the answer as the one type unable to write the question.
+    /// C# draws the line in the same place, refusing it for <c>int</c> and <c>decimal</c> and
+    /// answering for <c>double</c>.</para>
+    /// </summary>
     public static readonly DiagnosticDescriptor DivisionByZero = Error(
         "PC0324",
         "Division by zero",
@@ -1748,4 +1785,27 @@ public static class DiagnosticDescriptors
         "'{0}' is listed by {1} and by {2}. A file belongs to one project. Let the project "
         + "that owns it keep it, and have the other reference that project.");
 
+    // ---- Internal compiler errors, PC9000 and up -------------------------------------------
+    //
+    // Held well clear of the phase blocks rather than following the last of them. Every other
+    // range is a part of the compiler a reader's program met; these are the compiler failing,
+    // and a number nowhere near the others says so before the message does.
+
+    /// <summary>
+    /// <para>Something the compiler asserts cannot happen, happening.</para>
+    /// <para>Every program that checks is one that builds, so nothing a reader writes should
+    /// reach this. When it does, the fault is here rather than in their program.</para>
+    /// <para>The .NET stack trace is printed underneath rather than swallowed. It is no use to
+    /// the person who hit it, and it is the only thing that is any use to whoever fixes it, so
+    /// the message says which of the two the reader is and what the trace below is for. A raw
+    /// trace on its own fails the first half of that; hiding it fails the second.</para>
+    /// <para>Reported rather than thrown so that a build that hits it exits the way a build
+    /// that fails exits.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor InternalError = Error(
+        "PC9000",
+        "The compiler hit a problem it has no message for",
+        "{0}. This is a fault in the compiler rather than a mistake in this program, and there "
+        + "is nothing to write differently that would avoid it. The .NET stack trace below is "
+        + "what will fix it: please report it, along with the program that caused it.");
 }

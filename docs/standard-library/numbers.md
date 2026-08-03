@@ -18,6 +18,7 @@
 | [Fraction](#fraction) | `Fraction.Create` |
 | [What each type knows about itself](#what-each-type-knows-about-itself) | `Integer.MaxValue` `Integer.MinValue` `Real.MaxValue` `Real.MinValue` `Float.MaxValue` `Float.MinValue` |
 | [What only a float has](#what-only-a-float-has) | `Float.Infinity` `Float.NegativeInfinity` `Float.NotANumber` |
+| [Writing one too large](#writing-one-too-large) | — |
 | [The whole conversion chart](#the-whole-conversion-chart) | — |
 | [Crossing between a real and a float](#crossing-between-a-real-and-a-float) | `ToFloat` `ToReal` `ToFraction` |
 
@@ -105,8 +106,9 @@ A fraction literal is two numerals fixed when the program is written, so `Create
 to make one from values that exist only while it runs. What comes back is an ordinary fraction —
 reduced, with its sign carried on the numerator.
 
-**A denominator of zero is rejected while compiling where it can be seen**, exactly as `1 / 0` is,
-and raises `DivideByZeroException` where it cannot.
+**A denominator of zero is rejected while compiling where it can be seen**, exactly as `1 / 0` is.
+Written as a literal it always can be, so `1|0` is `PC0027`; built from values it cannot, so
+`Fraction.Create(top, 0)` raises `DivideByZeroException`.
 
 The one-argument form earns its place only where nothing else says a fraction is wanted:
 `let f = 3;` holds an integer, and `let f = Fraction.Create(3);` holds `3|1`.
@@ -152,12 +154,41 @@ the same idea: a fact about the type, kept where a reserved word cannot reach.
 | `Float.NotANumber` | `float` | What `0.0f / 0.0f` produces — and the one value **not equal to itself**, so comparing against this name is always false |
 
 Each is the value a float's own arithmetic gives back, so `1.0f / 0.0f == Float.Infinity` is
-true. A `real` has none of them: it counts in tens and there is nothing in it to hold them, so
-where a float carries on into an infinity a real stops — the same choice an `integer` makes.
+true. **A float is the one type allowed to divide by a zero written down**: for every other,
+`PC0324` refuses it while compiling, because for every other there is no answer. Here there is
+one, so the expression is left alone and the constant merely names what it produces.
+
+A `real` has none of them: it counts in tens and there is nothing in it to hold them, so where a
+float carries on into an infinity a real stops — the same choice an `integer` makes.
 
 `NotANumber` is written out rather than abbreviated, the way this language writes `shiftleft`
 and `bitwise and`. It prints as that word too, so what a reader sees and what they would write
 are the same.
+
+### Writing one too large
+
+A number written past its type's edge is reported (`PC0026`) rather than wrapping, saturating or
+quietly becoming something else. The digits are a fine number to read — it is only holding them
+that fails — so the scanner is content and the refusal comes later.
+
+```text
+integer counted = 9223372036854775808;   # PC0026 — one past Integer.MaxValue
+real measured = 1e400;                   # PC0026 — past Real.MaxValue
+```
+
+**The most negative integer has no literal at all.** The minus sign is a separate operator, so
+`-9223372036854775808` is a minus applied to a number one past the largest, and both halves of
+that are reported together. `Integer.MinValue` is the way to write it, and is the reason the name
+exists.
+
+**A float is the exception, and deliberately.** It is the one type with a value for a number too
+large, so a float literal past its edge becomes that value rather than being refused — which
+agrees with what its own arithmetic already does:
+
+```
+Console.WriteLine(1e400f);          # Infinity
+Console.WriteLine(1.0f / 0.0f);     # Infinity — the same answer, reached the other way
+```
 
 ## The whole conversion chart
 

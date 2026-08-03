@@ -109,6 +109,7 @@ This document is the normative one: where they disagree, this is right.
   - [PC0400 to PC0499](#pc0400-to-pc0499)
   - [PC0500 to PC0599](#pc0500-to-pc0599)
   - [PC0600 to PC0699](#pc0600-to-pc0699)
+  - [PC9000 and up](#pc9000-and-up)
 
 ## 0. Overview
 
@@ -1204,6 +1205,12 @@ operator.
 `+` `-` `*` `/` `%` are arithmetic. `/` on two integers truncates toward zero, so `7 / 2` is
 `3` and `-7 / 2` is `-3`. Dividing by a literal zero is rejected while compiling (`PC0324`);
 dividing by a variable that turns out to be zero throws `DivideByZeroException`.
+
+**A `float` is exempt from both.** Dividing one by zero is defined rather than mistaken: it
+yields `Float.Infinity`, its negative, or `Float.NotANumber`, which are values the type has and
+its own arithmetic produces. Refusing the expression would leave the one type with an answer as
+the one type unable to ask. C# draws the line in the same place — `int` and `decimal` refuse it,
+`double` answers.
 
 `+` also joins strings, and converts the other side when one side is a string.
 
@@ -2589,6 +2596,8 @@ of a reader.
 | `PC0023` | warning | That diagnostic cannot be ignored |
 | `PC0024` | opinion | This 'ignore' silences nothing |
 | `PC0025` | warning | This 'ignore' names neither a severity nor a diagnostic |
+| `PC0026` | error | Number too large to hold |
+| `PC0027` | error | A fraction over zero |
 
 ### PC0100 to PC0199
 
@@ -2772,4 +2781,19 @@ compiles.
 | `PC0625` | error | Two projects claim one file |
 | `PC0626` | error | Nothing named to start at |
 | `PC0627` | error | More than one 'entry' |
+
+### PC9000 and up
+
+Numbered well clear of the ranges above, because these are not about the program being compiled.
+Every other identifier names something a reader wrote; these name the compiler failing, and no
+program should ever produce one.
+
+**The .NET stack trace is printed underneath, in full.** It is of no use to whoever hit it —
+there is nothing to write differently that would avoid the fault — and it is the only thing of
+use to whoever fixes it, so the message says which of the two the reader is and what the trace
+below it is for.
+
+| Identifier | | Reported when |
+|---|---|---|
+| `PC9000` | error | The compiler hit a problem it has no message for |
 

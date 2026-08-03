@@ -111,16 +111,16 @@ shared model Program
     function WhereFloatDiffers()
         Console.WriteLine("== where a float differs ==");
 
-        float zero = 0.0f;
-
-        # Dividing by zero produces an infinity rather than stopping. The same line written
-        # with reals raises instead, which is what the negative sample shows.
-        Console.WriteLine("  1.0f / 0.0f         " + (1.0f / zero));
-        Console.WriteLine("  is it Infinity?     " + ((1.0f / zero) == Float.Infinity));
-        Console.WriteLine("  -1.0f / 0.0f        " + (-1.0f / zero));
+        # Dividing by zero produces an infinity rather than stopping, and the zero may be
+        # written down: a float is the one type PC0324 leaves alone, because it is the one
+        # type with a value for the answer. The same lines written with reals are refused,
+        # which is what the negative sample shows.
+        Console.WriteLine("  1.0f / 0.0f         " + (1.0f / 0.0f));
+        Console.WriteLine("  is it Infinity?     " + ((1.0f / 0.0f) == Float.Infinity));
+        Console.WriteLine("  -1.0f / 0.0f        " + (-1.0f / 0.0f));
 
         # And a value that is not equal to itself, which is worth meeting once on purpose.
-        float nothing = zero / zero;
+        float nothing = 0.0f / 0.0f;
         Console.WriteLine("  0.0f / 0.0f         " + nothing);
         Console.WriteLine("  is it itself?       " + (nothing == nothing));
 

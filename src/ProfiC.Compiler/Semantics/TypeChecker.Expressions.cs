@@ -337,7 +337,14 @@ public sealed partial class TypeChecker
         }
 
         // Catching a division by an obvious zero here means the program never has to reach it.
+        //
+        // A float is exempt, because for a float this is not a mistake. Dividing by zero yields
+        // Float.Infinity, its negative, or Float.NotANumber, and those are values the type has
+        // and its own arithmetic produces — refusing to write the question would leave the one
+        // type with an answer as the one type unable to ask. C# draws the line in the same
+        // place: 'int' and 'decimal' refuse it, 'double' answers.
         if (binary.Operator is BinaryOperator.Divide or BinaryOperator.Remainder
+            && !ReferenceEquals(result, PrimitiveType.Float)
             && ConstantFolder.IsZero(ConstantFolder.TryFold(binary.Right, _model)))
         {
             Report(DiagnosticDescriptors.DivisionByZero, binary.Right);

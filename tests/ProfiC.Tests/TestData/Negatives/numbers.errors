@@ -1,0 +1,6 @@
+numbers.pc(32,27): error PC0026: 9223372036854775808 is too large for an integer. An integer stops at Integer.MaxValue, which is 9223372036854775807. Write a decimal point against the number to read it as a real instead.
+numbers.pc(38,25): error PC0026: 9223372036854775808 is too large for an integer. The minus is a separate operator here, so what follows it is one past the largest an integer holds. Integer.MinValue names the most negative one.
+numbers.pc(44,24): error PC0026: 0xFFFFFFFFFFFFFFFFF is too large for an integer. An integer holds 64 bits, which is 16 digits in base sixteen and 64 in base two.
+numbers.pc(50,25): error PC0026: 999999999999999999999999999999.0 is too large for a real. A real stops at Real.MaxValue. A float reaches further and keeps fewer digits: write an f against the number to read it as one.
+numbers.pc(56,26): error PC0026: 99999999999999999999|7 is too large for a fraction. Both halves of a fraction are whole numbers, and this one has a half that outgrows Integer.MaxValue.
+numbers.pc(62,30): error PC0027: 1|0 is a fraction over zero. The bar is division, so what sits under it can be anything but zero.

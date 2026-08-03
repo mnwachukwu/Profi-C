@@ -59,6 +59,10 @@ public sealed partial class TypeChecker
         {
             using DiagnosticBag.FileScope reporting = diagnostics.InFile(unit.Source);
 
+            // Before anything is typed. A number that names no value has no type to check, and
+            // everything below here would either say nothing about it or blame the wrong thing.
+            LiteralChecker.Check(unit, diagnostics);
+
             foreach (Declaration declaration in unit.Declarations)
             {
                 checker.CheckDeclaration(declaration);
@@ -179,7 +183,11 @@ public sealed partial class TypeChecker
             return;
         }
 
-        if (ConstantFolder.TryFold(initializer, _model) is null)
+        // A number too large to hold does not fold, and it is already reported. Saying that this
+        // initializer "can only be built from literals" of one that is a literal would send a
+        // reader looking for a second mistake that is not there.
+        if (ConstantFolder.TryFold(initializer, _model) is null
+            && !LiteralChecker.HasAFaultyNumber(initializer))
         {
             Report(DiagnosticDescriptors.ConstantNotFoldable, initializer, name);
         }

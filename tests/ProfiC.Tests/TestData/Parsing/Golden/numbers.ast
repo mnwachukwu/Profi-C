@@ -233,9 +233,6 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           LiteralExpr "== where a float differs ==" [String]
-      VarDeclStmt 'zero'
-        NamedTypeSyntax 'float'
-        LiteralExpr 0.0f [Float]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -245,7 +242,7 @@ CompilationUnit
             ParenthesizedExpr
               BinaryExpr '/'
                 LiteralExpr 1.0f [Float]
-                IdentifierExpr 'zero'
+                LiteralExpr 0.0f [Float]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -257,7 +254,7 @@ CompilationUnit
                 ParenthesizedExpr
                   BinaryExpr '/'
                     LiteralExpr 1.0f [Float]
-                    IdentifierExpr 'zero'
+                    LiteralExpr 0.0f [Float]
                 MemberExpr 'Infinity'
                   IdentifierExpr 'Float'
       ExpressionStmt
@@ -270,12 +267,12 @@ CompilationUnit
               BinaryExpr '/'
                 UnaryExpr '-'
                   LiteralExpr 1.0f [Float]
-                IdentifierExpr 'zero'
+                LiteralExpr 0.0f [Float]
       VarDeclStmt 'nothing'
         NamedTypeSyntax 'float'
         BinaryExpr '/'
-          IdentifierExpr 'zero'
-          IdentifierExpr 'zero'
+          LiteralExpr 0.0f [Float]
+          LiteralExpr 0.0f [Float]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

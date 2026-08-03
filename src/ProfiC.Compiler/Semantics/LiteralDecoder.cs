@@ -15,8 +15,8 @@ namespace ProfiC.Compiler.Semantics;
 public static class LiteralDecoder
 {
     /// <summary>
-    /// Decodes a literal, or returns null if its text is malformed. A malformed literal has
-    /// already been reported by the scanner, so callers stay quiet about a null.
+    /// Decodes a literal, or returns null if it names no value. Callers stay quiet about a
+    /// null: either the scanner reported the text, or <see cref="FaultIn"/> did.
     /// </summary>
     public static object? Decode(LiteralExpr literal)
     {
@@ -34,6 +34,64 @@ public static class LiteralDecoder
             LiteralKind.Boolean => string.Equals(literal.Text, "true", StringComparison.Ordinal),
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// <para>What is wrong with a number that will not read, where the scanner had no way to
+    /// see it.</para>
+    /// <para>A malformed string, character or escape is the scanner's to report, since the fault
+    /// is in the shape and the shape is what it reads. A number's shape is fine in every case
+    /// here — the digits are digits — and only turning them into a value discovers that there
+    /// is no value. So this is asked once by <see cref="LiteralChecker"/>, and everything else
+    /// that decodes a literal stays quiet.</para>
+    /// <para>A float is deliberately never at fault. It has a value for a number too large,
+    /// which is what <c>Float.Infinity</c> names, and its own arithmetic already produces that
+    /// value.</para>
+    /// </summary>
+    public static LiteralFault FaultIn(LiteralExpr literal)
+    {
+        ArgumentNullException.ThrowIfNull(literal);
+
+        return literal.Kind switch
+        {
+            LiteralKind.Integer => DecodeInteger(literal.Text) is null
+                ? LiteralFault.TooLarge
+                : LiteralFault.None,
+
+            LiteralKind.Real => DecodeReal(literal.Text) is null
+                ? LiteralFault.TooLarge
+                : LiteralFault.None,
+
+            LiteralKind.Fraction => FaultInFraction(literal.Text),
+
+            _ => LiteralFault.None,
+        };
+    }
+
+    /// <summary>
+    /// <para>Which of a fraction's two ways of naming no number this one is.</para>
+    /// <para>Held apart from <see cref="DecodeFraction"/> rather than folded into it, because
+    /// the two faults want different things said: a part that outgrows a whole number is a size
+    /// problem, and a zero underneath is division by zero.</para>
+    /// </summary>
+    private static LiteralFault FaultInFraction(string written)
+    {
+        string text = written.Replace("_", string.Empty, StringComparison.Ordinal);
+        int bar = text.IndexOf('|', StringComparison.Ordinal);
+
+        if (bar < 0)
+        {
+            return LiteralFault.None;
+        }
+
+        if (!long.TryParse(text[..bar], NumberStyles.None, CultureInfo.InvariantCulture, out _)
+            || !long.TryParse(
+                text[(bar + 1)..], NumberStyles.None, CultureInfo.InvariantCulture, out long denominator))
+        {
+            return LiteralFault.TooLarge;
+        }
+
+        return denominator == 0 ? LiteralFault.OverZero : LiteralFault.None;
     }
 
     /// <summary>
