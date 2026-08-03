@@ -70,6 +70,7 @@ public static class ConstantFolder
         return (unary.Operator, operand) switch
         {
             (UnaryOperator.Negate, long value) => Negate(value),
+            (UnaryOperator.Negate, decimal value) => -value,
             (UnaryOperator.Negate, double value) => -value,
             (UnaryOperator.Negate, Fraction value) => -value,
             (UnaryOperator.Not, bool value) => !value,
@@ -104,7 +105,8 @@ public static class ConstantFolder
             return (left, right) switch
             {
                 (long a, long b) => FoldIntegers(binary.Operator, a, b),
-                (double a, double b) => FoldReals(binary.Operator, a, b),
+                (decimal a, decimal b) => FoldReals(binary.Operator, a, b),
+                (double a, double b) => FoldFloats(binary.Operator, a, b),
                 (Fraction a, Fraction b) => FoldFractions(binary.Operator, a, b),
                 (bool a, bool b) => FoldBooleans(binary.Operator, a, b),
                 (string a, string b) => FoldStrings(binary.Operator, a, b),
@@ -167,15 +169,45 @@ public static class ConstantFolder
         _ => null,
     };
 
-    private static object? FoldReals(BinaryOperator op, double a, double b) => op switch
+    /// <summary>
+    /// <para>Folding on a real, which counts in tens — so what is worked out here is what the
+    /// program would have worked out, digit for digit.</para>
+    /// <para>Division by zero is not folded away: <c>IsZero</c> catches a written divisor first
+    /// and reports it, and anything reaching here with a zero would raise rather than answer.
+    /// </para>
+    /// </summary>
+    private static object? FoldReals(BinaryOperator op, decimal a, decimal b) => op switch
+    {
+        BinaryOperator.Add => a + b,
+        BinaryOperator.Subtract => a - b,
+        BinaryOperator.Multiply => a * b,
+        BinaryOperator.Divide when b != 0 => a / b,
+        BinaryOperator.Remainder when b != 0 => a % b,
+        BinaryOperator.Equal => a == b,
+        BinaryOperator.NotEqual => a != b,
+        BinaryOperator.LessThan => a < b,
+        BinaryOperator.GreaterThan => a > b,
+        BinaryOperator.LessThanOrEqual => a <= b,
+        BinaryOperator.GreaterThanOrEqual => a >= b,
+        _ => null,
+    };
+
+    /// <summary>
+    /// <para>Folding on a float, which is binary floating point and folds to exactly what it
+    /// would produce when run — infinities included.</para>
+    /// <para>Nothing is guarded, for the same reason nothing is guarded when it runs.</para>
+    /// </summary>
+    private static object? FoldFloats(BinaryOperator op, double a, double b) => op switch
     {
         BinaryOperator.Add => a + b,
         BinaryOperator.Subtract => a - b,
         BinaryOperator.Multiply => a * b,
         BinaryOperator.Divide => a / b,
         BinaryOperator.Remainder => a % b,
-        BinaryOperator.Equal => a.Equals(b),
-        BinaryOperator.NotEqual => !a.Equals(b),
+
+        // '==' and not Equals, which answers true for two values that are not numbers.
+        BinaryOperator.Equal => a == b,
+        BinaryOperator.NotEqual => a != b,
         BinaryOperator.LessThan => a < b,
         BinaryOperator.GreaterThan => a > b,
         BinaryOperator.LessThanOrEqual => a <= b,
@@ -222,7 +254,8 @@ public static class ConstantFolder
     public static bool IsZero(object? value) => value switch
     {
         long number => number == 0,
-        double real => real == 0,
+        decimal real => real == 0,
+        double binary => binary == 0,
         Fraction fraction => fraction.Numerator == 0,
         _ => false,
     };

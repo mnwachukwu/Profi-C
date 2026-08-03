@@ -1,0 +1,133 @@
+##
+    The four kinds of number, and which conversions the language makes for you.
+
+    One rule decides all of it: a conversion that loses nothing happens on its own, and one
+    that discards information is a decision you write down. Nothing here is about which type
+    is better — it is about which question you are asking.
+
+    The short version. An 'integer' counts. A 'real' measures in tens, the way a price or a
+    mark does, and it is exact about them. A 'fraction' is a ratio held as two whole numbers,
+    so thirds stay thirds. A 'float' is binary floating point — what other languages spell
+    'float' or 'double' — and it is here to be learned rather than hidden.
+##
+
+shared model Program
+
+    function Main()
+        Program.WhatEachHolds();
+        Program.WhatConvertsOnItsOwn();
+        Program.WhatYouHaveToAskFor();
+        Program.WhereFloatDiffers();
+    end function
+
+    ##
+        @summary: The same number written four ways.
+
+        @remarks: A tenth is the value to watch. Three of these hold it exactly and one of them
+        cannot, which is the whole reason the fourth exists as its own type.
+    ##
+    function WhatEachHolds()
+        Console.WriteLine("== what each holds ==");
+
+        integer counted = 3;
+        real measured = 0.1;
+        fraction ratio = 1|10;
+        float binary = 0.1f;
+
+        Console.WriteLine("  integer  " + counted);
+        Console.WriteLine("  real     " + measured);
+        Console.WriteLine("  fraction " + ratio);
+        Console.WriteLine("  float    " + binary);
+
+        # The arithmetic a reader expects, from the type that measures in tens.
+        Console.WriteLine("  0.1 + 0.2 == 0.3   -> " + ((0.1 + 0.2) == 0.3));
+
+        # And the same sum in binary, which is the surprise this language moves out of the way.
+        Console.WriteLine("  0.1f + 0.2f == 0.3f -> " + ((0.1f + 0.2f) == 0.3f));
+    end function
+
+    ##
+        @summary: The conversions that need nothing written.
+
+        @remarks: Each of these is exact, so there is nothing to decide and nothing to say.
+        A whole number is a real and is a fraction over one; a real counts in tens, so it
+        already is a fraction over a power of ten.
+    ##
+    function WhatConvertsOnItsOwn()
+        Console.WriteLine("== what converts on its own ==");
+
+        # An integer, used where a real is wanted.
+        real fromWhole = 7;
+        Console.WriteLine("  integer -> real     " + fromWhole);
+
+        # An integer, used where a fraction is wanted.
+        fraction wholeRatio = 7;
+        Console.WriteLine("  integer -> fraction " + wholeRatio);
+
+        # A real, used where a fraction is wanted. Exactly, and this is the interesting one:
+        # a tenth becomes the ratio a reader would have written by hand.
+        fraction tenth = 0.1;
+        fraction quarter = 0.25;
+        Console.WriteLine("  real -> fraction    " + tenth + " and " + quarter);
+
+        # Which means the two mix without ceremony, and stay exact through the sum.
+        Console.WriteLine("  0.5 + 1|3           " + (0.5 + 1|3));
+        Console.WriteLine("  1|3 + 0.25          " + (1|3 + 0.25));
+
+        # Three thirds are one. Doing the same sum in reals would not come back to it.
+        Console.WriteLine("  1|3 + 1|3 + 1|3     " + (1|3 + 1|3 + 1|3));
+    end function
+
+    ##
+        @summary: The conversions you have to ask for, and why.
+
+        @remarks: Neither of these loses information either — every fraction has a decimal
+        expansion, and every float is exactly some ratio. They are written out because the
+        answer is surprising, and a surprise is worth asking for on purpose.
+    ##
+    function WhatYouHaveToAskFor()
+        Console.WriteLine("== what you have to ask for ==");
+
+        # A third has no exact decimal form, so this is where exactness stops.
+        fraction third = 1|3;
+        Console.WriteLine("  (1|3).ToReal()      " + third.ToReal());
+        Console.WriteLine("  and back to one?    " + ((third.ToReal() * 3) == 1.0));
+
+        # Where the fraction does divide out, nothing is lost and it still has to be asked for:
+        # the rule is about the conversion, not about the value that happens to be in it.
+        Console.WriteLine("  (1|4).ToReal()      " + (1|4).ToReal());
+
+        # The other one, and the clearest look at what a float really holds.
+        Console.WriteLine("  (0.1f).ToFraction() " + (0.1f).ToFraction());
+        Console.WriteLine("  (0.5f).ToFraction() " + (0.5f).ToFraction());
+    end function
+
+    ##
+        @summary: What a float does that a real will not.
+
+        @remarks: A real stops where it runs out, the way an integer does. A float carries on
+        into values that are not numbers, and those are what the constants name.
+    ##
+    function WhereFloatDiffers()
+        Console.WriteLine("== where a float differs ==");
+
+        float zero = 0.0f;
+
+        # Dividing by zero produces an infinity rather than stopping. The same line written
+        # with reals raises instead, which is what the negative sample shows.
+        Console.WriteLine("  1.0f / 0.0f         " + (1.0f / zero));
+        Console.WriteLine("  is it Infinity?     " + ((1.0f / zero) == Float.Infinity));
+        Console.WriteLine("  -1.0f / 0.0f        " + (-1.0f / zero));
+
+        # And a value that is not equal to itself, which is worth meeting once on purpose.
+        float nothing = zero / zero;
+        Console.WriteLine("  0.0f / 0.0f         " + nothing);
+        Console.WriteLine("  is it itself?       " + (nothing == nothing));
+
+        # What each type runs out at.
+        Console.WriteLine("  largest integer     " + Integer.MaxValue);
+        Console.WriteLine("  largest real        " + Real.MaxValue);
+        Console.WriteLine("  largest float       " + Float.MaxValue);
+    end function
+
+end model

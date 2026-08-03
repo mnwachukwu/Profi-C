@@ -186,6 +186,16 @@ CompilationUnit
       VarDeclStmt 'tenth'
         NamedTypeSyntax 'real'
         LiteralExpr 0.1 [Real]
+      VarDeclStmt 'asRatio'
+        NamedTypeSyntax 'fraction'
+        IdentifierExpr 'tenth'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "a tenth as a fraction is " [String]
+            IdentifierExpr 'asRatio'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -195,15 +205,6 @@ CompilationUnit
             CallExpr
               MemberExpr 'ToReal'
                 IdentifierExpr 'third'
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'WriteLine'
-            IdentifierExpr 'Console'
-          BinaryExpr '+'
-            LiteralExpr "a tenth as a fraction is " [String]
-            CallExpr
-              MemberExpr 'ToFraction'
-                IdentifierExpr 'tenth'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

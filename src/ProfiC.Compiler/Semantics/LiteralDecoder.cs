@@ -26,6 +26,7 @@ public static class LiteralDecoder
         {
             LiteralKind.Integer => DecodeInteger(literal.Text),
             LiteralKind.Real => DecodeReal(literal.Text),
+            LiteralKind.Float => DecodeFloat(literal.Text),
             LiteralKind.Fraction => DecodeFraction(literal.Text),
             LiteralKind.Character => DecodeCharacter(literal.Text),
             LiteralKind.String => DecodeString(literal.Text),
@@ -118,9 +119,28 @@ public static class LiteralDecoder
             : null;
     }
 
+    /// <summary>
+    /// <para>Reads a number with a decimal point, as the decimal it is written as.</para>
+    /// <para>The digits are kept as digits rather than converted to the nearest binary fraction,
+    /// which is the whole of what makes <c>0.1 + 0.2</c> come to <c>0.3</c> here.</para>
+    /// </summary>
     private static object? DecodeReal(string written) =>
-        double.TryParse(
+        decimal.TryParse(
             written.Replace("_", string.Empty, StringComparison.Ordinal),
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out decimal value)
+            ? value
+            : null;
+
+    /// <summary>
+    /// The same digits read as binary floating point, which is what the <c>f</c> against them
+    /// asked for. The suffix is dropped rather than parsed, since what it says is which type to
+    /// read into rather than any part of the number.
+    /// </summary>
+    private static object? DecodeFloat(string written) =>
+        double.TryParse(
+            written.Replace("_", string.Empty, StringComparison.Ordinal).TrimEnd('f', 'F'),
             NumberStyles.Float,
             CultureInfo.InvariantCulture,
             out double value)

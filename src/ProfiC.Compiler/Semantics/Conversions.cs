@@ -133,11 +133,24 @@ public static class Conversions
         Classify(from, to) is ConversionKind.Identity or ConversionKind.Implicit;
 
     /// <summary>
-    /// <para>Conversions among the built-in numbers.</para>
-    /// <para>Widening an integer is automatic in both directions it can go. Between a
-    /// fraction and a real neither is: one third as a real is 0.33333333333333331, and one
-    /// tenth as a fraction is 3602879701896397 over 36028797018963968. Both are surprising
-    /// enough that the program should say which it wants.</para>
+    /// <para>Conversions among the built-in numbers, and which of them a program has to ask
+    /// for.</para>
+    /// <para><b>Exactness decides.</b> A conversion that loses nothing happens on its own; one
+    /// that discards information is a decision, and the program says which it wants.</para>
+    /// <list type="bullet">
+    /// <item><description>An <b>integer</b> widens automatically to either — every whole number
+    /// is a real and is a fraction over one.</description></item>
+    /// <item><description>A <b>real</b> widens automatically to a fraction. A real counts in tens,
+    /// so it already <em>is</em> a fraction over a power of ten: a tenth is <c>1|10</c>. What can
+    /// go wrong is size rather than accuracy — a fraction's parts are integers — and that is
+    /// caught where the value is rather than by refusing the whole conversion.</description></item>
+    /// <item><description>A <b>fraction</b> converts to a real only when asked. Thirds have no
+    /// exact decimal form any more than they have a binary one, so one third is 0.3333… and does
+    /// not multiply back to one.</description></item>
+    /// <item><description>A <b>float</b> converts to neither, and neither converts to it. Binary
+    /// floating point is a different question from decimal arithmetic, and the whole reason both
+    /// types exist is that a reader should notice which one they are in.</description></item>
+    /// </list>
     /// </summary>
     private static ConversionKind ClassifyNumeric(PrimitiveType from, PrimitiveType to)
     {
@@ -154,12 +167,12 @@ public static class Conversions
             }
         }
 
-        if (ReferenceEquals(from, PrimitiveType.Fraction) && ReferenceEquals(to, PrimitiveType.Real))
+        if (ReferenceEquals(from, PrimitiveType.Real) && ReferenceEquals(to, PrimitiveType.Fraction))
         {
-            return ConversionKind.Explicit;
+            return ConversionKind.Implicit;
         }
 
-        if (ReferenceEquals(from, PrimitiveType.Real) && ReferenceEquals(to, PrimitiveType.Fraction))
+        if (ReferenceEquals(from, PrimitiveType.Fraction) && ReferenceEquals(to, PrimitiveType.Real))
         {
             return ConversionKind.Explicit;
         }

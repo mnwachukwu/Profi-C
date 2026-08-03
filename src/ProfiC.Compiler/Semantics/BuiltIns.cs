@@ -18,6 +18,25 @@ public enum BuiltInId
     MathPi,
     MathE,
 
+    /// <summary>
+    /// <para>What each primitive knows about itself: where it runs out, and — for a float — the
+    /// values it has that no other number type does.</para>
+    /// <para>Read through a capitalized name beside the keyword, since a reserved word cannot
+    /// stand in front of a dot.</para>
+    /// </summary>
+    IntegerMaxValue,
+    IntegerMinValue,
+    RealMaxValue,
+    RealMinValue,
+    FloatMaxValue,
+    FloatMinValue,
+    FloatInfinity,
+    FloatNegativeInfinity,
+    FloatNotANumber,
+    CharacterMaxValue,
+    CharacterMinValue,
+    StringEmpty,
+
     MathSqrt,
     MathCbrt,
     MathRoot,
@@ -70,6 +89,50 @@ public enum BuiltInId
     MathMaxInteger,
     MathMaxReal,
     MathMaxFraction,
+
+    /// <summary>
+    /// <para>The same members again, asked of a float.</para>
+    /// <para><b>Every one of them exists twice because neither type can answer for the other.</b>
+    /// A real cannot hold an infinity and a float cannot hold twenty-eight digits, so a single
+    /// version would force a conversion on somebody at every call — and the conversion back from
+    /// a float is the one that can fail three ways.</para>
+    /// <para>The real forms keep the plain names, since a real is what a decimal point means in
+    /// this language and the float is the one asked for by name. Where a member already carried a
+    /// type — <c>MathAbsReal</c> beside <c>MathAbsInteger</c> — the float joins the family the
+    /// same way.</para>
+    /// </summary>
+    MathSqrtFloat,
+    MathCbrtFloat,
+    MathRootFloat,
+    MathPowFloat,
+
+    MathLogFloat,
+    MathLogInBaseFloat,
+    MathLog10Float,
+    MathLog2Float,
+
+    MathSinFloat,
+    MathCosFloat,
+    MathTanFloat,
+    MathAsinFloat,
+    MathAcosFloat,
+    MathAtanFloat,
+    MathAtan2Float,
+
+    MathSinhFloat,
+    MathCoshFloat,
+    MathTanhFloat,
+    MathAsinhFloat,
+    MathAcoshFloat,
+    MathAtanhFloat,
+
+    MathAbsFloat,
+    MathFloorFloat,
+    MathCeilingFloat,
+    MathRoundFloat,
+    MathRoundFloatPlaces,
+    MathMinFloat,
+    MathMaxFloat,
 
     FractionCreate,
     FractionCreateWhole,
@@ -276,6 +339,7 @@ public enum BuiltInId
     /// <summary>Writing a value out by a pattern. One id per type, since each formats itself.</summary>
     IntegerFormat,
     RealFormat,
+    FloatFormat,
     FractionFormat,
     DateTimeFormat,
     TimeSpanFormat,
@@ -291,7 +355,42 @@ public enum BuiltInId
 
     FractionToReal,
     FractionReciprocal,
-    RealToFraction,
+
+    /// <summary>
+    /// <para>A float as the fraction it exactly is.</para>
+    /// <para>Explicit, unlike the same conversion from a real, and not because it loses anything
+    /// — every finite float is a rational. It is explicit because the answer is startling:
+    /// <c>(0.1f).ToFraction()</c> is 3602879701896397|36028797018963968, which is the number a
+    /// float actually holds for a tenth. Asking for it is how a reader finds out.</para>
+    /// </summary>
+    FloatToFraction,
+
+    /// <summary>
+    /// <para>The crossing between the two kinds of decimal-point number, in both directions and
+    /// explicit in both.</para>
+    /// <para><b>Going out loses digits and nothing else.</b> A real holds twenty-eight of them
+    /// and a float about sixteen, and every real fits inside a float's range — so the answer is
+    /// always a number, just a shorter one.</para>
+    /// <para><b>Coming back can fail three ways and quietly succeed in a fourth.</b> A float
+    /// reaches far past what a real holds, so a large one has no real to become; an infinity and
+    /// a value that is not a number have none either. And what does convert is <em>tidied</em>:
+    /// the float holding a tenth becomes exactly <c>0.1</c>, which is not the number it was
+    /// holding. That last one is the reason this is written out rather than done quietly — the
+    /// mess disappearing is worth a reader's attention.</para>
+    /// </summary>
+    RealToFloat,
+    FloatToReal,
+
+    /// <summary>
+    /// <para>Reaching a float from the two types that do not widen into one.</para>
+    /// <para>Neither is implicit, and the reason is <c>Math</c>: every member of it takes a real
+    /// and a float, so a whole number silently becoming either would leave <c>Math.Sqrt(2)</c>
+    /// with two readings and no way to choose. Widening to a real is the one that happens, and
+    /// this is how a program says it wanted the other.</para>
+    /// </summary>
+    IntegerToFloat,
+    FractionToFloat,
+
     EnumerationToInteger,
     ExceptionMessage,
 
@@ -437,6 +536,55 @@ public static class BuiltIns
                    new OptionalType(new SetType(PrimitiveType.String)), PrimitiveType.String),
         ]),
 
+        // ---- What each primitive knows about itself ----------------------------------------
+        //
+        // A name in capitals beside the keyword, which is how 'Fraction' already reads next to
+        // 'fraction'. The keyword names the type and the capital names the place its facts are
+        // kept, because a reserved word cannot stand in front of a dot: 'integer.MaxValue' is
+        // not something the grammar can read, and 'Integer.MaxValue' is.
+        //
+        // None of these can be constructed or extended. They hold values and nothing else.
+        new("Integer", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Value(BuiltInId.IntegerMaxValue, "MaxValue", PrimitiveType.Integer),
+            Value(BuiltInId.IntegerMinValue, "MinValue", PrimitiveType.Integer),
+        ]),
+
+        new("Real", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Value(BuiltInId.RealMaxValue, "MaxValue", PrimitiveType.Real),
+            Value(BuiltInId.RealMinValue, "MinValue", PrimitiveType.Real),
+        ]),
+
+        // A float knows three things a real has no answer for, and that is the difference
+        // between the two types written down. Each is a value its own arithmetic produces, so
+        // '1.0f / 0.0f == Float.Infinity' is true — the constant names what already happens
+        // rather than standing apart from it.
+        new("Float", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Value(BuiltInId.FloatMaxValue, "MaxValue", PrimitiveType.Float),
+            Value(BuiltInId.FloatMinValue, "MinValue", PrimitiveType.Float),
+            Value(BuiltInId.FloatInfinity, "Infinity", PrimitiveType.Float),
+            Value(BuiltInId.FloatNegativeInfinity, "NegativeInfinity", PrimitiveType.Float),
+
+            // Spelled out rather than abbreviated, as this language spells out 'shiftleft' and
+            // 'bitwise and'. A reader meeting it for the first time should be able to read it.
+            Value(BuiltInId.FloatNotANumber, "NotANumber", PrimitiveType.Float),
+        ]),
+
+        new("Character", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Value(BuiltInId.CharacterMaxValue, "MaxValue", PrimitiveType.Character),
+            Value(BuiltInId.CharacterMinValue, "MinValue", PrimitiveType.Character),
+        ]),
+
+        // Not a bound but a name for the string with nothing in it, which reads better than an
+        // empty pair of quotes wherever the emptiness is the point.
+        new("String", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Value(BuiltInId.StringEmpty, "Empty", PrimitiveType.String),
+        ]),
+
         // Every version taking a number is written for each number the language has. A
         // fraction is a number like any other, and an answer that arrives as a real cannot be
         // counted with, so one version per type is what keeps either from being a dead end.
@@ -528,6 +676,57 @@ public static class BuiltIns
                    PrimitiveType.Real, PrimitiveType.Real),
             Member(BuiltInId.MathMaxFraction, "Max", PrimitiveType.Fraction,
                    PrimitiveType.Fraction, PrimitiveType.Fraction),
+
+            // ---- The same, asked of a float -----------------------------------------------
+            //
+            // A float answers every one of these itself rather than being converted first, since
+            // the conversion back from one can fail three ways and the conversion out loses
+            // digits. Which version runs is settled by the argument, exactly as it is between an
+            // integer and a real.
+            Member(BuiltInId.MathSqrtFloat, "Sqrt", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathCbrtFloat, "Cbrt", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathRootFloat, "Root", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathPowFloat, "Pow", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Float),
+
+            Member(BuiltInId.MathLogFloat, "Log", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathLogInBaseFloat, "Log", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathLog10Float, "Log10", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathLog2Float, "Log2", PrimitiveType.Float, PrimitiveType.Float),
+
+            Member(BuiltInId.MathSinFloat, "Sin", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathCosFloat, "Cos", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathTanFloat, "Tan", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAsinFloat, "Asin", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAcosFloat, "Acos", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAtanFloat, "Atan", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAtan2Float, "Atan2", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Float),
+
+            Member(BuiltInId.MathSinhFloat, "Sinh", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathCoshFloat, "Cosh", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathTanhFloat, "Tanh", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAsinhFloat, "Asinh", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAcoshFloat, "Acosh", PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathAtanhFloat, "Atanh", PrimitiveType.Float, PrimitiveType.Float),
+
+            Member(BuiltInId.MathAbsFloat, "Abs", PrimitiveType.Float, PrimitiveType.Float),
+
+            // These land on a whole number whichever type they were given, so each yields an
+            // integer — the same choice the real forms make.
+            Member(BuiltInId.MathFloorFloat, "Floor", PrimitiveType.Integer, PrimitiveType.Float),
+            Member(BuiltInId.MathCeilingFloat, "Ceiling", PrimitiveType.Integer,
+                   PrimitiveType.Float),
+            Member(BuiltInId.MathRoundFloat, "Round", PrimitiveType.Integer, PrimitiveType.Float),
+            Member(BuiltInId.MathRoundFloatPlaces, "Round", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Integer),
+
+            Member(BuiltInId.MathMinFloat, "Min", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Float),
+            Member(BuiltInId.MathMaxFloat, "Max", PrimitiveType.Float,
+                   PrimitiveType.Float, PrimitiveType.Float),
         ]),
 
         // "fraction" is the type and a reserved word; "Fraction" is the model beside it,
@@ -1005,6 +1204,9 @@ public static class BuiltIns
     /// </summary>
     public static IReadOnlyList<BuiltInMember> OnInteger() =>
     [
+        // No ToReal or ToFraction: an integer widens to either on its own. A float is the one
+        // it does not reach, since letting it would leave every member of Math ambiguous.
+        Member(BuiltInId.IntegerToFloat, "ToFloat", PrimitiveType.Float),
         Member(BuiltInId.IntegerFormat, "Format", PrimitiveType.String, PrimitiveType.String),
         .. OnEveryType(),
     ];
@@ -1012,6 +1214,7 @@ public static class BuiltIns
     public static IReadOnlyList<BuiltInMember> OnFraction() =>
     [
         Member(BuiltInId.FractionToReal, "ToReal", PrimitiveType.Real),
+        Member(BuiltInId.FractionToFloat, "ToFloat", PrimitiveType.Float),
 
         // Exact, where a real's reciprocal is only nearly one: a third turned over is three,
         // and 1.0 / (1.0 / 3.0) is not quite one.
@@ -1022,8 +1225,24 @@ public static class BuiltIns
 
     public static IReadOnlyList<BuiltInMember> OnReal() =>
     [
-        Member(BuiltInId.RealToFraction, "ToFraction", PrimitiveType.Fraction),
+        // Nothing converts a real to a fraction here, because nothing has to: a real counts in
+        // tens and so already is a fraction over a power of ten, which the language widens to
+        // on its own.
+        Member(BuiltInId.RealToFloat, "ToFloat", PrimitiveType.Float),
         Member(BuiltInId.RealFormat, "Format", PrimitiveType.String, PrimitiveType.String),
+        .. OnEveryType(),
+    ];
+
+    /// <summary>
+    /// <para>What a float answers, which is nearly what a real does and one member more.</para>
+    /// <para>That member is the point of the type. A float converts to a fraction only when
+    /// asked, and what comes back is the number it was really holding all along.</para>
+    /// </summary>
+    public static IReadOnlyList<BuiltInMember> OnFloat() =>
+    [
+        Member(BuiltInId.FloatToFraction, "ToFraction", PrimitiveType.Fraction),
+        Member(BuiltInId.FloatToReal, "ToReal", PrimitiveType.Real),
+        Member(BuiltInId.FloatFormat, "Format", PrimitiveType.String, PrimitiveType.String),
         .. OnEveryType(),
     ];
 

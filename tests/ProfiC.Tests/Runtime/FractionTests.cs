@@ -160,31 +160,56 @@ public sealed class FractionTests
     }
 
     /// <summary>
-    /// Every finite double is a rational, so this direction loses nothing — even when the
-    /// answer is startling.
+    /// <para>A real is already a fraction — digits, and how far along the point sits — so this
+    /// direction gives the answer a reader would write by hand.</para>
+    /// <para>The tenth is the one worth looking at, and worth reading beside the float below.
+    /// </para>
     /// </summary>
     [Test]
-    public void ConvertingFromRealIsExactRatherThanApproximate()
+    public void ConvertingFromARealGivesTheFractionAReaderWouldWrite()
     {
         Assert.Multiple(() =>
         {
-            Assert.That(Fraction.FromReal(0.5).ToString(), Is.EqualTo("1|2"));
-            Assert.That(Fraction.FromReal(0.25).ToString(), Is.EqualTo("1|4"));
-            Assert.That(Fraction.FromReal(2.0).ToString(), Is.EqualTo("2|1"));
-            Assert.That(Fraction.FromReal(0.0), Is.EqualTo(Fraction.Zero));
+            Assert.That(Fraction.FromReal(0.5m).ToString(), Is.EqualTo("1|2"));
+            Assert.That(Fraction.FromReal(0.25m).ToString(), Is.EqualTo("1|4"));
+            Assert.That(Fraction.FromReal(2.0m).ToString(), Is.EqualTo("2|1"));
+            Assert.That(Fraction.FromReal(0.0m), Is.EqualTo(Fraction.Zero));
+            Assert.That(Fraction.FromReal(-0.75m).ToString(), Is.EqualTo("-3|4"));
 
-            // One tenth is not one tenth. This is the documented example.
-            Assert.That(Fraction.FromReal(0.1).ToString(),
+            // One tenth is one tenth.
+            Assert.That(Fraction.FromReal(0.1m).ToString(), Is.EqualTo("1|10"));
+        });
+    }
+
+    /// <summary>
+    /// <para>Every finite double is a rational too, so this direction loses nothing either —
+    /// but the answer is startling, and that is the point of having both.</para>
+    /// <para>Written beside the real above, these two lines are the shortest honest answer to
+    /// why <c>0.1f + 0.2f</c> is not <c>0.3f</c>: the number a float holds for a tenth is not a
+    /// tenth, and here it is.</para>
+    /// </summary>
+    [Test]
+    public void ConvertingFromAFloatShowsWhatBinaryActuallyHolds()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(Fraction.FromFloat(0.5).ToString(), Is.EqualTo("1|2"));
+            Assert.That(Fraction.FromFloat(0.25).ToString(), Is.EqualTo("1|4"));
+            Assert.That(Fraction.FromFloat(2.0).ToString(), Is.EqualTo("2|1"));
+            Assert.That(Fraction.FromFloat(0.0), Is.EqualTo(Fraction.Zero));
+
+            // One tenth is not one tenth.
+            Assert.That(Fraction.FromFloat(0.1).ToString(),
                         Is.EqualTo("3602879701896397|36028797018963968"));
         });
     }
 
     [Test]
-    public void ConvertingFromRealRoundTripsBack()
+    public void ConvertingFromAFloatRoundTripsBack()
     {
         foreach (double value in new[] { 0.5, 0.25, 0.1, 2.0, -0.75, 1.0 / 3.0 })
         {
-            Assert.That(Fraction.FromReal(value).ToReal(), Is.EqualTo(value),
+            Assert.That(Fraction.FromFloat(value).ToFloat(), Is.EqualTo(value),
                         $"round trip failed for {value}");
         }
     }
@@ -192,9 +217,9 @@ public sealed class FractionTests
     [TestCase(double.NaN)]
     [TestCase(double.PositiveInfinity)]
     [TestCase(double.NegativeInfinity)]
-    public void ConvertingANonFiniteRealIsRejected(double value)
+    public void ConvertingANonFiniteFloatIsRejected(double value)
     {
-        Assert.Throws<OverflowException>(() => _ = Fraction.FromReal(value));
+        Assert.Throws<OverflowException>(() => _ = Fraction.FromFloat(value));
     }
 
     // ---- Measuring and rounding -----------------------------------------------------------

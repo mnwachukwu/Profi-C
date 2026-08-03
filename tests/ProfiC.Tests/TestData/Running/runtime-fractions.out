@@ -13,7 +13,7 @@
 
 == summing a series that literals could not express ==
   1 + 1|2 + ... + 1|10 = 7381|2520
-  as a real:             2.9289682539682538
+  as a real:             2.928968253968253968253968254
 
 == a denominator of zero ==
   refused: A fraction cannot have a denominator of zero.

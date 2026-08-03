@@ -1,0 +1,319 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatEachHolds'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatConvertsOnItsOwn'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatYouHaveToAskFor'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhereFloatDiffers'
+            IdentifierExpr 'Program'
+    FunctionDecl 'WhatEachHolds'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== what each holds ==" [String]
+      VarDeclStmt 'counted'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 3 [Integer]
+      VarDeclStmt 'measured'
+        NamedTypeSyntax 'real'
+        LiteralExpr 0.1 [Real]
+      VarDeclStmt 'ratio'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 1|10 [Fraction]
+      VarDeclStmt 'binary'
+        NamedTypeSyntax 'float'
+        LiteralExpr 0.1f [Float]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  integer  " [String]
+            IdentifierExpr 'counted'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  real     " [String]
+            IdentifierExpr 'measured'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  fraction " [String]
+            IdentifierExpr 'ratio'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  float    " [String]
+            IdentifierExpr 'binary'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  0.1 + 0.2 == 0.3   -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr '+'
+                    LiteralExpr 0.1 [Real]
+                    LiteralExpr 0.2 [Real]
+                LiteralExpr 0.3 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  0.1f + 0.2f == 0.3f -> " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr '+'
+                    LiteralExpr 0.1f [Float]
+                    LiteralExpr 0.2f [Float]
+                LiteralExpr 0.3f [Float]
+    FunctionDecl 'WhatConvertsOnItsOwn'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== what converts on its own ==" [String]
+      VarDeclStmt 'fromWhole'
+        NamedTypeSyntax 'real'
+        LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  integer -> real     " [String]
+            IdentifierExpr 'fromWhole'
+      VarDeclStmt 'wholeRatio'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  integer -> fraction " [String]
+            IdentifierExpr 'wholeRatio'
+      VarDeclStmt 'tenth'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 0.1 [Real]
+      VarDeclStmt 'quarter'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 0.25 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "  real -> fraction    " [String]
+                IdentifierExpr 'tenth'
+              LiteralExpr " and " [String]
+            IdentifierExpr 'quarter'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  0.5 + 1|3           " [String]
+            ParenthesizedExpr
+              BinaryExpr '+'
+                LiteralExpr 0.5 [Real]
+                LiteralExpr 1|3 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1|3 + 0.25          " [String]
+            ParenthesizedExpr
+              BinaryExpr '+'
+                LiteralExpr 1|3 [Fraction]
+                LiteralExpr 0.25 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1|3 + 1|3 + 1|3     " [String]
+            ParenthesizedExpr
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  LiteralExpr 1|3 [Fraction]
+                  LiteralExpr 1|3 [Fraction]
+                LiteralExpr 1|3 [Fraction]
+    FunctionDecl 'WhatYouHaveToAskFor'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== what you have to ask for ==" [String]
+      VarDeclStmt 'third'
+        NamedTypeSyntax 'fraction'
+        LiteralExpr 1|3 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  (1|3).ToReal()      " [String]
+            CallExpr
+              MemberExpr 'ToReal'
+                IdentifierExpr 'third'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and back to one?    " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr '*'
+                    CallExpr
+                      MemberExpr 'ToReal'
+                        IdentifierExpr 'third'
+                    LiteralExpr 3 [Integer]
+                LiteralExpr 1.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  (1|4).ToReal()      " [String]
+            CallExpr
+              MemberExpr 'ToReal'
+                ParenthesizedExpr
+                  LiteralExpr 1|4 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  (0.1f).ToFraction() " [String]
+            CallExpr
+              MemberExpr 'ToFraction'
+                ParenthesizedExpr
+                  LiteralExpr 0.1f [Float]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  (0.5f).ToFraction() " [String]
+            CallExpr
+              MemberExpr 'ToFraction'
+                ParenthesizedExpr
+                  LiteralExpr 0.5f [Float]
+    FunctionDecl 'WhereFloatDiffers'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== where a float differs ==" [String]
+      VarDeclStmt 'zero'
+        NamedTypeSyntax 'float'
+        LiteralExpr 0.0f [Float]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  1.0f / 0.0f         " [String]
+            ParenthesizedExpr
+              BinaryExpr '/'
+                LiteralExpr 1.0f [Float]
+                IdentifierExpr 'zero'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  is it Infinity?     " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                ParenthesizedExpr
+                  BinaryExpr '/'
+                    LiteralExpr 1.0f [Float]
+                    IdentifierExpr 'zero'
+                MemberExpr 'Infinity'
+                  IdentifierExpr 'Float'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  -1.0f / 0.0f        " [String]
+            ParenthesizedExpr
+              BinaryExpr '/'
+                UnaryExpr '-'
+                  LiteralExpr 1.0f [Float]
+                IdentifierExpr 'zero'
+      VarDeclStmt 'nothing'
+        NamedTypeSyntax 'float'
+        BinaryExpr '/'
+          IdentifierExpr 'zero'
+          IdentifierExpr 'zero'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  0.0f / 0.0f         " [String]
+            IdentifierExpr 'nothing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  is it itself?       " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'nothing'
+                IdentifierExpr 'nothing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  largest integer     " [String]
+            MemberExpr 'MaxValue'
+              IdentifierExpr 'Integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  largest real        " [String]
+            MemberExpr 'MaxValue'
+              IdentifierExpr 'Real'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  largest float       " [String]
+            MemberExpr 'MaxValue'
+              IdentifierExpr 'Float'

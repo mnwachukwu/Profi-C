@@ -186,6 +186,7 @@ public sealed partial class TypeChecker
     {
         LiteralKind.Integer => PrimitiveType.Integer,
         LiteralKind.Real => PrimitiveType.Real,
+        LiteralKind.Float => PrimitiveType.Float,
         LiteralKind.Character => PrimitiveType.Character,
         LiteralKind.String or LiteralKind.BlockString => PrimitiveType.String,
         LiteralKind.Fraction => PrimitiveType.Fraction,
@@ -942,6 +943,7 @@ public sealed partial class TypeChecker
     private static bool IsNumeric(TypeSymbol type) =>
         ReferenceEquals(type, PrimitiveType.Integer)
         || ReferenceEquals(type, PrimitiveType.Real)
+        || ReferenceEquals(type, PrimitiveType.Float)
         || ReferenceEquals(type, PrimitiveType.Fraction);
 
     /// <summary>

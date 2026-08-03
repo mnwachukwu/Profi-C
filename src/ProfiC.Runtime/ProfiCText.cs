@@ -78,8 +78,18 @@ public static class ProfiCText
         return subject[(int)start..(int)end];
     }
 
-    /// <summary>Its characters, as a set of them.</summary>
-    public static ProfiCSet<object?> ToCharacters(string subject) =>
+    /// <summary>
+    /// <para>Its characters, as a set of them.</para>
+    /// <para><b>Two forms, one for each engine</b>, which is the shape every member here that
+    /// answers with a set takes. An emitted program holds a set that names what it holds, so it
+    /// wants the <c>char</c> one; the interpreter holds every set as one of objects, having no
+    /// element type to name. Same characters in the same order — the element type is the whole of
+    /// the difference.</para>
+    /// </summary>
+    public static ProfiCSet<char> ToCharacters(string subject) => new(subject);
+
+    /// <inheritdoc cref="ToCharacters"/>
+    public static ProfiCSet<object?> ToCharactersUntyped(string subject) =>
         new(subject.Select(c => (object?)c));
 
     /// <summary>
@@ -87,10 +97,12 @@ public static class ProfiCText
     /// <para>Separating on nothing leaves one piece, which is the whole string — the same answer
     /// as every other member gives for an empty argument.</para>
     /// </summary>
-    public static ProfiCSet<object?> Split(string subject, string separator) =>
-        new(separator.Length == 0
-            ? [subject]
-            : subject.Split(separator, StringSplitOptions.None).Select(piece => (object?)piece));
+    public static ProfiCSet<string> Split(string subject, string separator) =>
+        new(Pieces(subject, separator));
+
+    /// <inheritdoc cref="Split"/>
+    public static ProfiCSet<object?> SplitUntyped(string subject, string separator) =>
+        new(Pieces(subject, separator).Select(piece => (object?)piece));
 
     public static string Trim(string subject) => subject.Trim();
 
@@ -107,14 +119,19 @@ public static class ProfiCText
     public static string TrimEnd(string subject, string these) =>
         subject.TrimEnd(these.ToCharArray());
 
-    /// <summary>Any of these characters, where they were given as a set rather than a string.</summary>
-    public static string Trim(string subject, ProfiCSet<object?> these) =>
+    /// <summary>
+    /// <para>Any of these characters, where they were given as a set rather than a string.</para>
+    /// <para>Taken as the set every set is, rather than as one of characters, so that the two
+    /// engines reach one method: an emitted program hands over a set of <c>char</c> and the
+    /// interpreter one of objects, and neither shape is named here.</para>
+    /// </summary>
+    public static string Trim(string subject, IProfiCSet these) =>
         subject.Trim(Characters(these));
 
-    public static string TrimStart(string subject, ProfiCSet<object?> these) =>
+    public static string TrimStart(string subject, IProfiCSet these) =>
         subject.TrimStart(Characters(these));
 
-    public static string TrimEnd(string subject, ProfiCSet<object?> these) =>
+    public static string TrimEnd(string subject, IProfiCSet these) =>
         subject.TrimEnd(Characters(these));
 
     public static string ToUpper(string subject) => subject.ToUpperInvariant();
@@ -135,7 +152,13 @@ public static class ProfiCText
             : Optional<long>.Empty;
 
     /// <summary>A measured number, or nothing.</summary>
-    public static Optional<double> ToReal(string subject) =>
+    public static Optional<decimal> ToReal(string subject) =>
+        decimal.TryParse(subject, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal measured)
+            ? Optional<decimal>.Of(measured)
+            : Optional<decimal>.Empty;
+
+    /// <summary>The same digits read as binary floating point, or nothing.</summary>
+    public static Optional<double> ToFloat(string subject) =>
         double.TryParse(subject, NumberStyles.Float, CultureInfo.InvariantCulture, out double measured)
             ? Optional<double>.Of(measured)
             : Optional<double>.Empty;
@@ -148,8 +171,33 @@ public static class ProfiCText
     public static Optional<bool> ToBoolean(string subject) =>
         bool.TryParse(subject.Trim(), out bool truth) ? Optional<bool>.Of(truth) : Optional<bool>.Empty;
 
-    private static char[] Characters(ProfiCSet<object?> these) =>
-        [.. Enumerable.Range(0, these.Count).Select(at => these[at]).OfType<char>()];
+    /// <summary>
+    /// <para>A number written by a pattern, which is the way out that <see cref="ToInteger"/> and
+    /// <see cref="ToReal"/> are the way in.</para>
+    /// <para>Written without regard to where the program is running. A decimal point is a point
+    /// wherever the machine is set to, because a program that printed <c>3.14</c> in one country
+    /// and <c>3,14</c> in another would be one whose output nobody could check — and checking it
+    /// against the other engine is exactly what this language does.</para>
+    /// </summary>
+    public static string Format(long value, string pattern) =>
+        value.ToString(pattern, CultureInfo.InvariantCulture);
+
+    /// <inheritdoc cref="Format(long, string)"/>
+    public static string Format(decimal value, string pattern) =>
+        value.ToString(pattern, CultureInfo.InvariantCulture);
+
+    /// <inheritdoc cref="Format(long, string)"/>
+    public static string Format(double value, string pattern) =>
+        value.ToString(pattern, CultureInfo.InvariantCulture);
+
+    private static char[] Characters(IProfiCSet these) =>
+        [.. Enumerable.Range(0, these.Count).Select(these.GetElement).OfType<char>()];
+
+    /// <summary>
+    /// What a string separates into, before either engine decides what kind of set holds it.
+    /// </summary>
+    private static IEnumerable<string> Pieces(string subject, string separator) =>
+        separator.Length == 0 ? [subject] : subject.Split(separator, StringSplitOptions.None);
 
     /// <summary>
     /// A position inside the string, or a refusal naming what was asked for. Taking the end as

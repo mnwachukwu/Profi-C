@@ -39,6 +39,51 @@ public sealed class BuiltInCatalogTests
         (BuiltInId.MathPi, "Console.WriteLine(Math.Round(Math.Pi * 100.0))", "314\n"),
         (BuiltInId.MathE, "Console.WriteLine(Math.Round(Math.E * 100.0))", "272\n"),
 
+        // What each primitive knows about itself. The bounds are printed rather than compared
+        // against a number written here, since a literal of the largest integer cannot be
+        // written down — which is the whole reason these exist.
+        (BuiltInId.IntegerMaxValue, "Console.WriteLine(Integer.MaxValue)",
+         "9223372036854775807\n"),
+        (BuiltInId.IntegerMinValue, "Console.WriteLine(Integer.MinValue)",
+         "-9223372036854775808\n"),
+        (BuiltInId.RealMaxValue, "Console.WriteLine(Real.MaxValue)",
+         "79228162514264337593543950335\n"),
+        (BuiltInId.RealMinValue, "Console.WriteLine(Real.MinValue)",
+         "-79228162514264337593543950335\n"),
+        (BuiltInId.FloatMaxValue, "Console.WriteLine(Float.MaxValue > 0.0f)", "true\n"),
+        (BuiltInId.FloatMinValue, "Console.WriteLine(Float.MinValue < 0.0f)", "true\n"),
+
+        // Each of these is the value a float's own arithmetic produces, so it is compared
+        // against that rather than against its name.
+        (BuiltInId.FloatInfinity,
+         "float zero = 0.0f;\n        Console.WriteLine(1.0f / zero == Float.Infinity)", "true\n"),
+        (BuiltInId.FloatNegativeInfinity,
+         "float zero = 0.0f;\n        Console.WriteLine(-1.0f / zero == Float.NegativeInfinity)",
+         "true\n"),
+
+        // The one value equal to nothing at all, itself included — so it is asked about by
+        // printing rather than by comparing.
+        (BuiltInId.FloatNotANumber, "Console.WriteLine(Float.NotANumber)", "NotANumber\n"),
+
+        (BuiltInId.CharacterMinValue, "Console.WriteLine(Character.MinValue == '\\0')", "true\n"),
+        (BuiltInId.CharacterMaxValue,
+         "Console.WriteLine(Character.MaxValue > Character.MinValue)", "true\n"),
+
+        (BuiltInId.StringEmpty, "Console.WriteLine(String.Empty == \"\")", "true\n"),
+
+        (BuiltInId.FloatToFraction, "Console.WriteLine((0.5f).ToFraction())", "1|2\n"),
+        (BuiltInId.FloatFormat, "Console.WriteLine((3.14159f).Format(\"F2\"))", "3.14\n"),
+
+        // Crossing between the two kinds of decimal-point number. Out always answers and loses
+        // digits; back can fail three ways, and quietly tidies what it does convert.
+        (BuiltInId.RealToFloat, "Console.WriteLine((1.5).ToFloat())", "1.5\n"),
+        (BuiltInId.FloatToReal, "Console.WriteLine((1.5f).ToReal())", "1.5\n"),
+
+        // Nothing reaches a float on its own, an integer included — letting it would leave
+        // every member of Math with two readings.
+        (BuiltInId.IntegerToFloat, "Console.WriteLine((3).ToFloat())", "3\n"),
+        (BuiltInId.FractionToFloat, "Console.WriteLine((1|2).ToFloat())", "0.5\n"),
+
         (BuiltInId.MathSqrt, "Console.WriteLine(Math.Sqrt(16.0))", "4\n"),
         (BuiltInId.MathCbrt, "Console.WriteLine(Math.Cbrt(-8.0))", "-2\n"),
         (BuiltInId.MathRoot, "Console.WriteLine(Math.Root(32.0, 5.0))", "2\n"),
@@ -66,6 +111,46 @@ public sealed class BuiltInCatalogTests
         (BuiltInId.MathAsinh, "Console.WriteLine(Math.Asinh(0.0))", "0\n"),
         (BuiltInId.MathAcosh, "Console.WriteLine(Math.Acosh(1.0))", "0\n"),
         (BuiltInId.MathAtanh, "Console.WriteLine(Math.Atanh(0.0))", "0\n"),
+
+        // ---- The same members, asked of a float -------------------------------------------
+        //
+        // Which version runs is settled by the argument, so the suffix on the identifier is
+        // what says the checker chose the binary one. Written at values whose answers are
+        // whole, since the last digit of a float is not what this test is about.
+        (BuiltInId.MathSqrtFloat, "Console.WriteLine(Math.Sqrt(16.0f))", "4\n"),
+        (BuiltInId.MathCbrtFloat, "Console.WriteLine(Math.Cbrt(-8.0f))", "-2\n"),
+        (BuiltInId.MathRootFloat, "Console.WriteLine(Math.Root(32.0f, 5.0f))", "2\n"),
+        (BuiltInId.MathPowFloat, "Console.WriteLine(Math.Pow(2.0f, 10.0f))", "1024\n"),
+
+        (BuiltInId.MathLogFloat, "Console.WriteLine(Math.Log(1.0f))", "0\n"),
+        (BuiltInId.MathLogInBaseFloat, "Console.WriteLine(Math.Log(8.0f, 2.0f))", "3\n"),
+        (BuiltInId.MathLog10Float, "Console.WriteLine(Math.Log10(1000.0f))", "3\n"),
+        (BuiltInId.MathLog2Float, "Console.WriteLine(Math.Log2(8.0f))", "3\n"),
+
+        (BuiltInId.MathSinFloat, "Console.WriteLine(Math.Sin(0.0f))", "0\n"),
+        (BuiltInId.MathCosFloat, "Console.WriteLine(Math.Cos(0.0f))", "1\n"),
+        (BuiltInId.MathTanFloat, "Console.WriteLine(Math.Tan(0.0f))", "0\n"),
+        (BuiltInId.MathAsinFloat, "Console.WriteLine(Math.Asin(0.0f))", "0\n"),
+        (BuiltInId.MathAcosFloat, "Console.WriteLine(Math.Acos(1.0f))", "0\n"),
+        (BuiltInId.MathAtanFloat, "Console.WriteLine(Math.Atan(0.0f))", "0\n"),
+        (BuiltInId.MathAtan2Float, "Console.WriteLine(Math.Atan2(0.0f, 1.0f))", "0\n"),
+
+        (BuiltInId.MathSinhFloat, "Console.WriteLine(Math.Sinh(0.0f))", "0\n"),
+        (BuiltInId.MathCoshFloat, "Console.WriteLine(Math.Cosh(0.0f))", "1\n"),
+        (BuiltInId.MathTanhFloat, "Console.WriteLine(Math.Tanh(0.0f))", "0\n"),
+        (BuiltInId.MathAsinhFloat, "Console.WriteLine(Math.Asinh(0.0f))", "0\n"),
+        (BuiltInId.MathAcoshFloat, "Console.WriteLine(Math.Acosh(1.0f))", "0\n"),
+        (BuiltInId.MathAtanhFloat, "Console.WriteLine(Math.Atanh(0.0f))", "0\n"),
+
+        (BuiltInId.MathAbsFloat, "Console.WriteLine(Math.Abs(-7.5f))", "7.5\n"),
+        (BuiltInId.MathFloorFloat, "Console.WriteLine(Math.Floor(2.7f))", "2\n"),
+        (BuiltInId.MathCeilingFloat, "Console.WriteLine(Math.Ceiling(2.1f))", "3\n"),
+
+        // A half away from zero here too, so this is 3 rather than the 2 .NET would give.
+        (BuiltInId.MathRoundFloat, "Console.WriteLine(Math.Round(2.5f))", "3\n"),
+        (BuiltInId.MathRoundFloatPlaces, "Console.WriteLine(Math.Round(3.14159f, 2))", "3.14\n"),
+        (BuiltInId.MathMinFloat, "Console.WriteLine(Math.Min(3.5f, 9.5f))", "3.5\n"),
+        (BuiltInId.MathMaxFloat, "Console.WriteLine(Math.Max(3.5f, 9.5f))", "9.5\n"),
 
         // Chance is asked for something that has to hold whatever it drew, since the draw
         // itself is different every run.
@@ -365,6 +450,7 @@ public sealed class BuiltInCatalogTests
             .. BuiltIns.OnOptional(optional),
             .. BuiltIns.OnFraction(),
             .. BuiltIns.OnReal(),
+            .. BuiltIns.OnFloat(),
             .. BuiltIns.OnInteger(),
             .. BuiltIns.OnEnumeration(),
             .. BuiltIns.OnException(),
@@ -476,7 +562,8 @@ public sealed class BuiltInCatalogTests
     [TestCase("Console.WriteLine((5).Equals(5))", "true\n")]
     [TestCase("Console.WriteLine((5).Equals(6))", "false\n")]
     [TestCase("Console.WriteLine((1|2).ToReal())", "0.5\n")]
-    [TestCase("Console.WriteLine((0.5).ToFraction())", "1|2\n")]
+    // No ToFraction on a real: adding one to a fraction widens it, exactly and unasked.
+    [TestCase("Console.WriteLine(0.5 + 0|1)", "1|2\n")]
     [TestCase("Console.WriteLine((2|3).Reciprocal())", "3|2\n")]
     [TestCase("Console.WriteLine((5|1).Reciprocal())", "1|5\n")]
 
@@ -756,7 +843,7 @@ public sealed class BuiltInCatalogTests
         BuiltInId.DateTimeFormat, BuiltInId.TimeSpanFormat, BuiltInId.DateFormat,
         BuiltInId.TimeFormat,
         BuiltInId.OptionalHasValue, BuiltInId.OptionalOr, BuiltInId.OptionalValue,
-        BuiltInId.FractionToReal, BuiltInId.FractionReciprocal, BuiltInId.RealToFraction,
+        BuiltInId.FractionToReal, BuiltInId.FractionReciprocal,
         BuiltInId.EnumerationToInteger,
         BuiltInId.ExceptionMessage, BuiltInId.ModelToString, BuiltInId.ModelEquals,
     ];

@@ -95,6 +95,11 @@ public static class BuiltInMembers
             return BuiltIns.OnReal();
         }
 
+        if (ReferenceEquals(type, PrimitiveType.Float))
+        {
+            return BuiltIns.OnFloat();
+        }
+
         if (ReferenceEquals(type, PrimitiveType.Integer))
         {
             return BuiltIns.OnInteger();
@@ -201,17 +206,21 @@ public static class BuiltInMembers
             return FindOnString(name);
         }
 
-        // The two conversions the language deliberately refuses to make on its own.
+        // The two conversions the language deliberately refuses to make on its own — not because
+        // either loses anything, but because each answer is surprising enough to be worth asking
+        // for. A third has no exact decimal form; a float's tenth is not a tenth.
         if (ReferenceEquals(type, PrimitiveType.Fraction) && name == "ToReal")
         {
             return new BuiltInMember(name, PrimitiveType.Real, []);
         }
 
-        if (ReferenceEquals(type, PrimitiveType.Real) && name == "ToFraction")
+        if (ReferenceEquals(type, PrimitiveType.Float) && name == "ToFraction")
         {
             return new BuiltInMember(name, PrimitiveType.Fraction, []);
         }
 
+        // No ToFraction on a real: it converts on its own, and exactly. A real counts in tens,
+        // so it already is a fraction over a power of ten.
         return FindOnEveryType(name);
     }
 

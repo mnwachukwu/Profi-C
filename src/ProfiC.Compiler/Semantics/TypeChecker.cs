@@ -312,6 +312,9 @@ public sealed partial class TypeChecker
             _ when ReferenceEquals(from, PrimitiveType.Integer)
                    && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.IntegerToFraction,
 
+            _ when ReferenceEquals(from, PrimitiveType.Real)
+                   && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.RealToFraction,
+
             _ when ReferenceEquals(from, PrimitiveType.Fraction)
                    && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.FractionToReal,
 
@@ -328,7 +331,29 @@ public sealed partial class TypeChecker
 
         if (operation is { } needed)
         {
+            if (needed == ConversionOperation.RealToFraction)
+            {
+                RequireItFitsAFraction(node);
+            }
+
             _model.RecordConversion(node, needed, to);
+        }
+    }
+
+    /// <summary>
+    /// <para>Reports a real written down that has no fraction to become.</para>
+    /// <para>Only one whose value is known here, which is the case worth catching: it is on the
+    /// page, so the compiler can see it will not fit and can point at it. One that arrives in a
+    /// variable is not knowable and stops when it runs, which is the same division
+    /// <c>PC0324</c> already draws around dividing by zero.</para>
+    /// </summary>
+    private void RequireItFitsAFraction(SyntaxNode node)
+    {
+        if (node is Expression written
+            && ConstantFolder.TryFold(written, _model) is decimal value
+            && !Runtime.Fraction.Fits(value, out _, out _))
+        {
+            Report(DiagnosticDescriptors.RealIsTooWideForAFraction, node, value);
         }
     }
 
@@ -348,11 +373,6 @@ public sealed partial class TypeChecker
         if (ReferenceEquals(from, PrimitiveType.Fraction) && ReferenceEquals(to, PrimitiveType.Real))
         {
             return "ToReal()";
-        }
-
-        if (ReferenceEquals(from, PrimitiveType.Real) && ReferenceEquals(to, PrimitiveType.Fraction))
-        {
-            return "ToFraction()";
         }
 
         return $"To{to.Display}()";

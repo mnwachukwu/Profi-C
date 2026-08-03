@@ -20,6 +20,15 @@ public static class DeepEquality
     private const int TrackingThreshold = 8;
 
     /// <summary>
+    /// <para>Whether a value is the one thing equal to nothing at all, itself included.</para>
+    /// <para>Only a <c>float</c> has one. A <c>real</c> counts in tens and has no such value, and
+    /// no other type does either — so this is asked once, where identity would otherwise settle
+    /// the question before the type was consulted.</para>
+    /// </summary>
+    private static bool IsNotANumber(object? value) =>
+        value is double number && double.IsNaN(number);
+
+    /// <summary>
     /// <para>Compares two values structurally.</para>
     /// <para>The traversal is iterative, so that a chain of a hundred thousand nodes —
     /// perfectly ordinary data — does not exhaust the stack.</para>
@@ -28,7 +37,11 @@ public static class DeepEquality
     {
         if (ReferenceEquals(left, right))
         {
-            return true;
+            // One value, and still not equal to itself where it is a float that is not a number.
+            // The interpreter holds a local's number in one box and hands out the same box twice,
+            // so 'x == x' arrives here as one reference — which makes this fast path a decision
+            // about meaning rather than only a saving.
+            return !IsNotANumber(left);
         }
 
         if (left is null || right is null)
@@ -49,6 +62,11 @@ public static class DeepEquality
 
             if (ReferenceEquals(a, b))
             {
+                if (IsNotANumber(a))
+                {
+                    return false;
+                }
+
                 continue;
             }
 
@@ -159,6 +177,15 @@ public static class DeepEquality
 
                 return true;
             }
+
+            // A float follows the rule binary floating point has everywhere, which is not the
+            // rule .NET's Equals follows: a value that is not a number is equal to nothing at
+            // all, itself included. Equals answers true for two of them, being built to make
+            // sorting and hashing work — and it is exactly what this language must not do here,
+            // since meeting that rule once is most of the reason 'float' is a type a reader can
+            // name. A real never reaches this: it has no such value.
+            case double left when b is double right:
+                return left == right;
 
             default:
                 // Numbers, characters, booleans, fractions, enumerations: values whose

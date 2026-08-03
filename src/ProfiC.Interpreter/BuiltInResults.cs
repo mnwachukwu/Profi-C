@@ -99,6 +99,8 @@ internal static class BuiltInResults
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Integer) =>
             produced is long,
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Real) =>
+            produced is decimal,
+        PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Float) =>
             produced is double,
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Boolean) =>
             produced is bool,
@@ -130,7 +132,8 @@ internal static class BuiltInResults
     private static string Describe(object produced) => produced switch
     {
         long => "an integer",
-        double => "a real",
+        decimal => "a real",
+        double => "a float",
         bool => "a boolean",
         char => "a character",
         string => "text",

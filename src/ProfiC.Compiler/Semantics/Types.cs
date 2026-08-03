@@ -67,7 +67,32 @@ public sealed class PrimitiveType : TypeSymbol
     public override string Display => Name;
 
     public static readonly PrimitiveType Integer = new("integer", isValueType: true);
+
+    /// <summary>
+    /// <para>A number with a decimal point, and it counts in tens.</para>
+    /// <para><b>Not binary floating point</b>, which is the surprise this type exists to avoid:
+    /// a tenth cannot be written exactly in binary, so in most languages <c>0.1 + 0.2</c> is not
+    /// <c>0.3</c> and a reader's first arithmetic lies to them. Here it is, because the digits are
+    /// held as digits — and a program about money, marks or measurements is what a reader writes
+    /// first.</para>
+    /// <para>What is given up is range and speed, neither of which a program being taught with
+    /// notices, and the transcendental functions, which cannot be exact in any base. What is
+    /// gained beyond exactness is that dividing by zero raises rather than producing an infinity,
+    /// which is what <c>integer</c> already does.</para>
+    /// </summary>
     public static readonly PrimitiveType Real = new("real", isValueType: true);
+
+    /// <summary>
+    /// <para>Binary floating point, offered as the idea it is rather than as the way to write a
+    /// number.</para>
+    /// <para>What C, C#, Java and Go spell <c>float</c> or <c>double</c>, and what a reader gets
+    /// for a number with a point in it nearly everywhere else. It is here to be learned rather
+    /// than hidden — including the parts that surprise: a tenth that does not round-trip, a
+    /// division by zero that produces an infinity instead of stopping, and a value that is not
+    /// equal to itself.</para>
+    /// </summary>
+    public static readonly PrimitiveType Float = new("float", isValueType: true);
+
     public static readonly PrimitiveType Character = new("character", isValueType: true);
     public static readonly PrimitiveType Boolean = new("boolean", isValueType: true);
     public static readonly PrimitiveType Fraction = new("fraction", isValueType: true);
@@ -96,6 +121,7 @@ public sealed class PrimitiveType : TypeSymbol
         {
             ["integer"] = Integer,
             ["real"] = Real,
+            ["float"] = Float,
             ["character"] = Character,
             ["boolean"] = Boolean,
             ["fraction"] = Fraction,

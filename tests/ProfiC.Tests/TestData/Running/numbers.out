@@ -1,0 +1,29 @@
+== what each holds ==
+  integer  3
+  real     0.1
+  fraction 1|10
+  float    0.1
+  0.1 + 0.2 == 0.3   -> true
+  0.1f + 0.2f == 0.3f -> false
+== what converts on its own ==
+  integer -> real     7
+  integer -> fraction 7|1
+  real -> fraction    1|10 and 1|4
+  0.5 + 1|3           5|6
+  1|3 + 0.25          7|12
+  1|3 + 1|3 + 1|3     1|1
+== what you have to ask for ==
+  (1|3).ToReal()      0.3333333333333333333333333333
+  and back to one?    false
+  (1|4).ToReal()      0.25
+  (0.1f).ToFraction() 3602879701896397|36028797018963968
+  (0.5f).ToFraction() 1|2
+== where a float differs ==
+  1.0f / 0.0f         Infinity
+  is it Infinity?     true
+  -1.0f / 0.0f        -Infinity
+  0.0f / 0.0f         NotANumber
+  is it itself?       false
+  largest integer     9223372036854775807
+  largest real        79228162514264337593543950335
+  largest float       1.7976931348623157E+308

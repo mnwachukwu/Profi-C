@@ -1,10 +1,10 @@
 == thirds ==
 1|3 + 1|3 + 1|3 = 1|1
-as real:          1
+as real:          0.9999999999999999999999999999
 
 == tenths ==
 1|10 + 2|10 = 3|10
-as real:      0.30000000000000004
+as real:      0.3
 
 == lowest terms, always ==
 6|8   is 3|4
@@ -13,7 +13,7 @@ as real:      0.30000000000000004
 
 == a harmonic sum, exactly ==
 1 + 1|2 + ... + 1|8 = 761|280
-and as a real:        2.717857142857143
+and as a real:        2.7178571428571428571428571429
 
 == turning one over ==
 2|3 turned over is 3|2
@@ -25,7 +25,7 @@ a real does not:     false
 (1|2) ^ 3  is 1|8
 (2|3) ^ 2  is 4|9
 (3|1) ^ -1 is 1|3
-as a real:    0.3333333333333333
+as a real:    0.333333333333333
 
 == an integer widens to a fraction on its own ==
 3 as a fraction is 3|1

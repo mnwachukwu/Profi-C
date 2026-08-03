@@ -5,6 +5,6 @@ the two are equal: true
 both are a Shape, so both fit in one set of them:
   a flat circle of area 3
   a sphere of area 13
-Math.Pi is          3.141592653589793
-Standard.Math.Pi is 3.141592653589793
+Math.Pi is          3.1415926535897932384626433833
+Standard.Math.Pi is 3.1415926535897932384626433833
 the same value:     true

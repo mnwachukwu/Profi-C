@@ -562,7 +562,7 @@ public sealed class Lexer
             ScanDigits(char.IsDigit);
 
             ScanExponent();
-            return FinishNumber(TokenType.RealLiteral, start);
+            return FinishNumber(Suffixed(TokenType.RealLiteral), start);
         }
 
         if (Current() == '|' && char.IsDigit(Peek()))
@@ -576,8 +576,27 @@ public sealed class Lexer
         // An exponent makes a whole number a real, since what it names is a scale rather than a
         // count: 1e3 is 1000.0. Writing 1000 is how the integer is asked for.
         return ScanExponent()
-            ? FinishNumber(TokenType.RealLiteral, start)
-            : FinishNumber(TokenType.IntegerLiteral, start);
+            ? FinishNumber(Suffixed(TokenType.RealLiteral), start)
+            : FinishNumber(Suffixed(TokenType.IntegerLiteral), start);
+    }
+
+    /// <summary>
+    /// <para>Reads an <c>f</c> against a number, which asks for binary floating point.</para>
+    /// <para>Consumed here rather than left to <see cref="FinishNumber"/>, which would otherwise
+    /// see a letter touching digits and report the name it is written to catch — <c>1each</c> and
+    /// <c>40var</c> are the mistakes that check exists for, and a suffix is not one of them.</para>
+    /// <para>Only a lone <c>f</c> counts. <c>3.14foo</c> is still a name against a number, since
+    /// what follows the letter decides whether a suffix was written or a word was.</para>
+    /// </summary>
+    private TokenType Suffixed(TokenType plain)
+    {
+        if (Current() is not ('f' or 'F') || IsIdentifierPart(Peek()))
+        {
+            return plain;
+        }
+
+        _index++;
+        return TokenType.FloatLiteral;
     }
 
     /// <summary>

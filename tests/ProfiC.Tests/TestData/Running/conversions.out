@@ -8,8 +8,8 @@
   2.5e-3:       0.0025
   1e3 is real:  true
 7 as a real is 7, as a fraction 7|1
-a third as a real is 0.3333333333333333
-a tenth as a fraction is 3602879701896397|36028797018963968
+a tenth as a fraction is 1|10
+a third as a real is 0.3333333333333333333333333333
 and as text: 1|3 0.1
 letters: {'c', 'a', 's', 't', 's'}
 word:    cast, now 5 letters

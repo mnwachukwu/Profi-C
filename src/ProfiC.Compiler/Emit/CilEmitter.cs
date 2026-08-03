@@ -149,6 +149,8 @@ public sealed partial class CilEmitter
             EmitSharedFieldInitializers(model);
         }
 
+        DefineStart(units);
+
         foreach (TypeBuilder type in _types.Values)
         {
             type.CreateType();
@@ -283,13 +285,24 @@ public sealed partial class CilEmitter
     }
 
     /// <summary>
-    /// The CLR type a model derives from: the builder for the model it extends, or
-    /// <c>System.Object</c> where it extends nothing a program declared.
+    /// <para>The CLR type a model derives from: the builder for the model it extends, the runtime
+    /// type of one the language provides, or <c>System.Object</c> where it extends nothing.</para>
+    /// <para>The middle case is how a program names its own failures. <c>model Overdrawn extends
+    /// Exception</c> becomes a class deriving from <c>System.Exception</c>, which is what makes
+    /// <c>throw</c> and <c>catch</c> ordinary CIL rather than something the emitter has to build a
+    /// mechanism for.</para>
     /// </summary>
-    private Type BaseOf(DeclaredTypeSymbol owner) =>
-        owner is ModelSymbol { BaseType: { } parent } && _types.TryGetValue(parent, out TypeBuilder? built)
+    private Type BaseOf(DeclaredTypeSymbol owner)
+    {
+        if (owner is not ModelSymbol { BaseType: { } parent })
+        {
+            return typeof(object);
+        }
+
+        return _types.TryGetValue(parent, out TypeBuilder? built)
             ? built
-            : typeof(object);
+            : CilTypes.OfBuiltInModel(parent) ?? typeof(object);
+    }
 
     /// <summary>
     /// Defines a model's fields, and remembers which of them were written with a value so that
@@ -439,6 +452,13 @@ public sealed partial class CilEmitter
             return built;
         }
 
+        // A model the language provides, which is a type in the runtime rather than one being
+        // written here — an exception, so far.
+        if (CilTypes.OfBuiltInModel(type) is { } provided)
+        {
+            return provided;
+        }
+
         // A set is built from what it holds, which may itself be a set or a model this build is
         // still writing — so the element is resolved the same way rather than looked up.
         if (type is SetType set)
@@ -481,9 +501,11 @@ public sealed partial class CilEmitter
 
         MethodDefinitionHandle entryPoint = default;
 
-        if (_model.EntryPoint is { } main && _functions.TryGetValue(main, out MethodBuilder? method))
+        // The wrapper rather than Main itself, so that a failure reaching the top is described
+        // the way the interpreter describes it instead of by the CLR's own handler.
+        if (_start is not null)
         {
-            entryPoint = MetadataTokens.MethodDefinitionHandle(method.MetadataToken);
+            entryPoint = MetadataTokens.MethodDefinitionHandle(_start.MetadataToken);
         }
 
         ManagedPEBuilder image = new(

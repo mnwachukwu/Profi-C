@@ -46,6 +46,7 @@ This document is the normative one: where they disagree, this is right.
   - [2.4 Recovery](#24-recovery)
 - [3. Types](#3-types) — base types, suffixes, function types, values and references
   - [3.1 The base types](#31-the-base-types)
+  - [3.1a Converting between numbers](#31a-converting-between-numbers)
   - [3.2 The two suffixes](#32-the-two-suffixes)
   - [3.2a Sets of sets](#32a-sets-of-sets)
   - [3.3 Function types](#33-function-types)
@@ -577,21 +578,19 @@ The set matches C#, so an escape a student learns here works unchanged there.
 
 ### 2.1 Reserved words
 
-Profi-C has **62** reserved words. A name may take one back by writing `@` in front of it —
+Profi-C has **63** reserved words. A name may take one back by writing `@` in front of it —
 `@end`, `@each` — which is the only place a name may begin with something other than a letter.
 
 ```
-abstract     and          as           base         begin        bitwise
-boolean      break        case         catch        character    constant
-continue     default      delegate     each         else         end
-enumeration  extends      false        finally      for          fraction
-function     if           import       in           integer      internal
-is           let          loop         model        namespace    new
-not          or           override     protected    public       real
-sealed       shared       shiftleft    shiftright   stepby       string
-structure    switch       then         this         throw        to
-true         try          until        using        virtual      while
-xor          yield
+abstract     and          as           base         begin        bitwise      boolean
+break        case         catch        character    constant     continue     default
+delegate     each         else         end          enumeration  extends      false
+finally      float        for          fraction     function     if           import
+in           integer      internal     is           let          loop         model
+namespace    new          not          or           override     protected    public
+real         sealed       shared       shiftleft    shiftright   stepby       string
+structure    switch       then         this         throw        to           true
+try          until        using        virtual      while        xor          yield
 ```
 
 These are every reserved word, and nothing is reserved outside the list. A comment is marked
@@ -670,21 +669,63 @@ rewrite.
 
 ### 3.1 The base types
 
-Six types are built in and spelled as reserved words.
+Seven types are built in and spelled as reserved words.
 
 | Type | Holds | Literals |
 |---|---|---|
 | `integer` | A whole number, 64 bits, signed | `0`, `42`, `-7` |
-| `real` | A floating-point number, 64 bits | `3.14`, `0.5` |
+| `real` | A number counted in tens, 28 significant digits | `3.14`, `0.5` |
+| `float` | Binary floating point, 64 bits | `3.14f`, `1e3f` |
 | `fraction` | An exact rational | `1\|3`, `22\|7` |
 | `character` | One Unicode character | `'A'`, `'\n'` |
 | `string` | Text, immutable | `"hello"` |
 | `boolean` | `true` or `false` | `true`, `false` |
 
+**`real` counts in tens, not in binary.** A tenth has no exact binary form, so in a language
+where a decimal point means binary floating point `0.1 + 0.2` is not `0.3`. Here it is: the
+digits are held as digits. A real stops at its bounds rather than passing into an infinity,
+which is the same choice `integer` makes, and it has no value meaning "not a number".
+
+**`float` is binary floating point**, and is in the language to be met rather than avoided. It
+is what C, C#, Java and Go spell `float` or `double`, and it keeps every behavior that comes
+with that: a tenth that does not round-trip, a division by zero that produces an infinity, and
+`Float.NotANumber`, which is not equal to itself.
+
 `fraction` is the one with no counterpart in C#. It is a numerator and a denominator held
-separately and kept reduced, so `1|3 + 1|3 + 1|3` is exactly `1|1` where the same sum in
-`real` is not 1. Arithmetic on fractions is exact; arithmetic on reals is not, and the
-language does not pretend otherwise by converting between them quietly.
+separately and kept reduced, so `1|3 + 1|3 + 1|3` is exactly `1|1`, which the same sum in
+either `real` or `float` is not.
+
+Which conversions among the four happen on their own and which are written out is
+[§3.1a](#31a-converting-between-numbers).
+
+<a id="31a-converting-between-numbers"></a>
+
+### 3.1a Converting between numbers
+
+**A conversion that loses nothing happens on its own.** Everything else is written out.
+
+| from ↓ to → | `integer` | `real` | `float` | `fraction` |
+|---|---|---|---|---|
+| **`integer`** | — | automatic | `.ToFloat()` | automatic |
+| **`real`** | `Math.Round(x)` | — | `.ToFloat()` | automatic |
+| **`float`** | `Math.Round(x)` | `.ToReal()` | — | `.ToFraction()` |
+| **`fraction`** | `Math.Round(x)` | `.ToReal()` | `.ToFloat()` | — |
+
+`Math.Floor` and `Math.Ceiling` reach an `integer` the same way `Math.Round` does. No single
+`ToInteger` exists, because it would have to choose among the three silently and which one is
+the question being asked.
+
+Two conversions lose nothing and are still written out, because the answer is surprising rather
+than lossy: `fraction.ToReal()`, since a third has no decimal that ends, and
+`float.ToFraction()`, since `0.1f` is really `3602879701896397|36028797018963968`.
+
+**Nothing reaches a `float` on its own**, an integer included. Every member of `Math` exists in
+a `real` form and a `float` form, so a whole number widening to both would leave `Math.Sqrt(2)`
+with two readings and no way to choose.
+
+A `real` becoming a `fraction` is exact but can outgrow one, since a fraction's parts are whole
+numbers. Written down, that is `PC0346`; arriving in a variable, it stops when it runs — the
+same division `PC0324` draws around dividing by zero.
 
 ### 3.2 The two suffixes
 
@@ -2658,6 +2699,7 @@ of a reader.
 | `PC0343` | error | This shift is outside the width of an integer |
 | `PC0344` | warning | This exception cannot be caught |
 | `PC0345` | error | Optional is changed by something that captured it |
+| `PC0346` | error | This real has no fraction to become |
 
 ### PC0400 to PC0499
 

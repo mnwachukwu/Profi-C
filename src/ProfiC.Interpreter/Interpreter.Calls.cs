@@ -226,7 +226,8 @@ public sealed partial class Interpreter
     private StrongBox<object?> PerformCore(BuiltInId id, object? target, List<object?> arguments)
     {
         object? Argument(int index) => arguments.ElementAtOrDefault(index);
-        double Real(int index) => Argument(index) is double d ? d : 0;
+        decimal Real(int index) => Argument(index) is decimal d ? d : 0;
+        double Float(int index) => Argument(index) is double f ? f : 0;
         long Integer(int index) => AsInteger(Argument(index));
         string Text(int index) => AsText(Argument(index));
 
@@ -287,68 +288,113 @@ public sealed partial class Interpreter
             BuiltInId.ReferenceEquals =>
                 new StrongBox<object?>(ReferenceEquals(Argument(0), Argument(1))),
 
-            BuiltInId.MathPi => new StrongBox<object?>(Math.PI),
-            BuiltInId.MathE => new StrongBox<object?>(Math.E),
+            BuiltInId.MathPi => new StrongBox<object?>(ProfiCMath.Pi),
+            BuiltInId.MathE => new StrongBox<object?>(ProfiCMath.E),
 
-            BuiltInId.MathSqrt => new StrongBox<object?>(Math.Sqrt(Real(0))),
-            BuiltInId.MathCbrt => new StrongBox<object?>(Exactly(Math.Cbrt(Real(0)), Real(0), 3)),
-            BuiltInId.MathRoot => new StrongBox<object?>(Root(Real(0), Real(1))),
-            BuiltInId.MathPow => new StrongBox<object?>(Math.Pow(Real(0), Real(1))),
-            BuiltInId.MathFactorial => new StrongBox<object?>(Factorial(Integer(0))),
+            // Where each number type runs out. The framework's own bounds, since these describe
+            // what the value actually holds rather than anything the language decides.
+            BuiltInId.IntegerMaxValue => new StrongBox<object?>(long.MaxValue),
+            BuiltInId.IntegerMinValue => new StrongBox<object?>(long.MinValue),
+            BuiltInId.RealMaxValue => new StrongBox<object?>(decimal.MaxValue),
+            BuiltInId.RealMinValue => new StrongBox<object?>(decimal.MinValue),
+            BuiltInId.FloatMaxValue => new StrongBox<object?>(double.MaxValue),
+            BuiltInId.FloatMinValue => new StrongBox<object?>(double.MinValue),
 
-            BuiltInId.MathLog => new StrongBox<object?>(Math.Log(Real(0))),
-            BuiltInId.MathLogInBase => new StrongBox<object?>(Math.Log(Real(0), Real(1))),
-            BuiltInId.MathLog10 => new StrongBox<object?>(Math.Log10(Real(0))),
-            BuiltInId.MathLog2 => new StrongBox<object?>(Math.Log2(Real(0))),
+            // The three a real has no answer for, and the same values a float's own arithmetic
+            // produces — so comparing one against '1.0f / 0.0f' is true.
+            BuiltInId.FloatInfinity => new StrongBox<object?>(double.PositiveInfinity),
+            BuiltInId.FloatNegativeInfinity => new StrongBox<object?>(double.NegativeInfinity),
+            BuiltInId.FloatNotANumber => new StrongBox<object?>(double.NaN),
 
-            BuiltInId.MathSin => new StrongBox<object?>(Math.Sin(Real(0))),
-            BuiltInId.MathCos => new StrongBox<object?>(Math.Cos(Real(0))),
-            BuiltInId.MathTan => new StrongBox<object?>(Math.Tan(Real(0))),
-            BuiltInId.MathAsin => new StrongBox<object?>(Math.Asin(Real(0))),
-            BuiltInId.MathAcos => new StrongBox<object?>(Math.Acos(Real(0))),
-            BuiltInId.MathAtan => new StrongBox<object?>(Math.Atan(Real(0))),
-            BuiltInId.MathAtan2 => new StrongBox<object?>(Math.Atan2(Real(0), Real(1))),
+            BuiltInId.CharacterMaxValue => new StrongBox<object?>(char.MaxValue),
+            BuiltInId.CharacterMinValue => new StrongBox<object?>(char.MinValue),
 
-            BuiltInId.MathSinh => new StrongBox<object?>(Math.Sinh(Real(0))),
-            BuiltInId.MathCosh => new StrongBox<object?>(Math.Cosh(Real(0))),
-            BuiltInId.MathTanh => new StrongBox<object?>(Math.Tanh(Real(0))),
-            BuiltInId.MathAsinh => new StrongBox<object?>(Math.Asinh(Real(0))),
-            BuiltInId.MathAcosh => new StrongBox<object?>(Math.Acosh(Real(0))),
-            BuiltInId.MathAtanh => new StrongBox<object?>(Math.Atanh(Real(0))),
+            BuiltInId.StringEmpty => new StrongBox<object?>(string.Empty),
 
-            BuiltInId.MathAbsInteger => new StrongBox<object?>(Math.Abs(Integer(0))),
-            BuiltInId.MathAbsReal => new StrongBox<object?>(Math.Abs(Real(0))),
-            BuiltInId.MathAbsFraction => new StrongBox<object?>(Fraction.Abs(Ratio(0))),
+            BuiltInId.MathSqrt => new StrongBox<object?>(ProfiCMath.Sqrt(Real(0))),
+            BuiltInId.MathCbrt => new StrongBox<object?>(ProfiCMath.Cbrt(Real(0))),
+            BuiltInId.MathRoot => new StrongBox<object?>(ProfiCMath.Root(Real(0), Real(1))),
+            BuiltInId.MathPow => new StrongBox<object?>(ProfiCMath.Pow(Real(0), Real(1))),
+            BuiltInId.MathFactorial => new StrongBox<object?>(ProfiCMath.Factorial(Integer(0))),
 
-            // Each rounding lands on a whole number, so each yields an integer rather than a
-            // real that happens to have nothing after the point.
-            BuiltInId.MathFloorReal =>
-                new StrongBox<object?>((long)Math.Floor(Real(0))),
-            BuiltInId.MathFloorFraction =>
-                new StrongBox<object?>(Fraction.Floor(Ratio(0))),
-            BuiltInId.MathCeilingReal =>
-                new StrongBox<object?>((long)Math.Ceiling(Real(0))),
-            BuiltInId.MathCeilingFraction =>
-                new StrongBox<object?>(Fraction.Ceiling(Ratio(0))),
+            BuiltInId.MathLog => new StrongBox<object?>(ProfiCMath.Log(Real(0))),
+            BuiltInId.MathLogInBase => new StrongBox<object?>(ProfiCMath.Log(Real(0), Real(1))),
+            BuiltInId.MathLog10 => new StrongBox<object?>(ProfiCMath.Log10(Real(0))),
+            BuiltInId.MathLog2 => new StrongBox<object?>(ProfiCMath.Log2(Real(0))),
 
-            // A half goes away from zero, the rule taught in school. .NET rounds a half to the
-            // even neighbor by default, so this says which it wants rather than taking it.
-            BuiltInId.MathRoundReal =>
-                new StrongBox<object?>((long)Math.Round(Real(0), MidpointRounding.AwayFromZero)),
-            BuiltInId.MathRoundFraction =>
-                new StrongBox<object?>(Fraction.Round(Ratio(0))),
+            BuiltInId.MathSin => new StrongBox<object?>(ProfiCMath.Sin(Real(0))),
+            BuiltInId.MathCos => new StrongBox<object?>(ProfiCMath.Cos(Real(0))),
+            BuiltInId.MathTan => new StrongBox<object?>(ProfiCMath.Tan(Real(0))),
+            BuiltInId.MathAsin => new StrongBox<object?>(ProfiCMath.Asin(Real(0))),
+            BuiltInId.MathAcos => new StrongBox<object?>(ProfiCMath.Acos(Real(0))),
+            BuiltInId.MathAtan => new StrongBox<object?>(ProfiCMath.Atan(Real(0))),
+            BuiltInId.MathAtan2 => new StrongBox<object?>(ProfiCMath.Atan2(Real(0), Real(1))),
+
+            BuiltInId.MathSinh => new StrongBox<object?>(ProfiCMath.Sinh(Real(0))),
+            BuiltInId.MathCosh => new StrongBox<object?>(ProfiCMath.Cosh(Real(0))),
+            BuiltInId.MathTanh => new StrongBox<object?>(ProfiCMath.Tanh(Real(0))),
+            BuiltInId.MathAsinh => new StrongBox<object?>(ProfiCMath.Asinh(Real(0))),
+            BuiltInId.MathAcosh => new StrongBox<object?>(ProfiCMath.Acosh(Real(0))),
+            BuiltInId.MathAtanh => new StrongBox<object?>(ProfiCMath.Atanh(Real(0))),
+
+            BuiltInId.MathAbsInteger => new StrongBox<object?>(ProfiCMath.Abs(Integer(0))),
+            BuiltInId.MathAbsReal => new StrongBox<object?>(ProfiCMath.Abs(Real(0))),
+            BuiltInId.MathAbsFraction => new StrongBox<object?>(ProfiCMath.Abs(Ratio(0))),
+
+            BuiltInId.MathFloorReal => new StrongBox<object?>(ProfiCMath.Floor(Real(0))),
+            BuiltInId.MathFloorFraction => new StrongBox<object?>(ProfiCMath.Floor(Ratio(0))),
+            BuiltInId.MathCeilingReal => new StrongBox<object?>(ProfiCMath.Ceiling(Real(0))),
+            BuiltInId.MathCeilingFraction => new StrongBox<object?>(ProfiCMath.Ceiling(Ratio(0))),
+
+            BuiltInId.MathRoundReal => new StrongBox<object?>(ProfiCMath.Round(Real(0))),
+            BuiltInId.MathRoundFraction => new StrongBox<object?>(ProfiCMath.Round(Ratio(0))),
             BuiltInId.MathRoundRealPlaces =>
-                new StrongBox<object?>(
-                    Math.Round(Real(0), (int)Integer(1), MidpointRounding.AwayFromZero)),
+                new StrongBox<object?>(ProfiCMath.Round(Real(0), Integer(1))),
 
-            BuiltInId.MathMinInteger => new StrongBox<object?>(Math.Min(Integer(0), Integer(1))),
-            BuiltInId.MathMinReal => new StrongBox<object?>(Math.Min(Real(0), Real(1))),
-            BuiltInId.MathMinFraction =>
-                new StrongBox<object?>(Ratio(0) <= Ratio(1) ? Ratio(0) : Ratio(1)),
-            BuiltInId.MathMaxInteger => new StrongBox<object?>(Math.Max(Integer(0), Integer(1))),
-            BuiltInId.MathMaxReal => new StrongBox<object?>(Math.Max(Real(0), Real(1))),
-            BuiltInId.MathMaxFraction =>
-                new StrongBox<object?>(Ratio(0) >= Ratio(1) ? Ratio(0) : Ratio(1)),
+            BuiltInId.MathMinInteger => new StrongBox<object?>(ProfiCMath.Min(Integer(0), Integer(1))),
+            BuiltInId.MathMinReal => new StrongBox<object?>(ProfiCMath.Min(Real(0), Real(1))),
+            BuiltInId.MathMinFraction => new StrongBox<object?>(ProfiCMath.Min(Ratio(0), Ratio(1))),
+            BuiltInId.MathMaxInteger => new StrongBox<object?>(ProfiCMath.Max(Integer(0), Integer(1))),
+            BuiltInId.MathMaxReal => new StrongBox<object?>(ProfiCMath.Max(Real(0), Real(1))),
+            BuiltInId.MathMaxFraction => new StrongBox<object?>(ProfiCMath.Max(Ratio(0), Ratio(1))),
+
+            // The same again on a float, reaching the binary half of each pair. Nothing is
+            // converted on the way in or out: that is the point of having both.
+            BuiltInId.MathSqrtFloat => new StrongBox<object?>(ProfiCMath.Sqrt(Float(0))),
+            BuiltInId.MathCbrtFloat => new StrongBox<object?>(ProfiCMath.Cbrt(Float(0))),
+            BuiltInId.MathRootFloat => new StrongBox<object?>(ProfiCMath.Root(Float(0), Float(1))),
+            BuiltInId.MathPowFloat => new StrongBox<object?>(ProfiCMath.Pow(Float(0), Float(1))),
+
+            BuiltInId.MathLogFloat => new StrongBox<object?>(ProfiCMath.Log(Float(0))),
+            BuiltInId.MathLogInBaseFloat =>
+                new StrongBox<object?>(ProfiCMath.Log(Float(0), Float(1))),
+            BuiltInId.MathLog10Float => new StrongBox<object?>(ProfiCMath.Log10(Float(0))),
+            BuiltInId.MathLog2Float => new StrongBox<object?>(ProfiCMath.Log2(Float(0))),
+
+            BuiltInId.MathSinFloat => new StrongBox<object?>(ProfiCMath.Sin(Float(0))),
+            BuiltInId.MathCosFloat => new StrongBox<object?>(ProfiCMath.Cos(Float(0))),
+            BuiltInId.MathTanFloat => new StrongBox<object?>(ProfiCMath.Tan(Float(0))),
+            BuiltInId.MathAsinFloat => new StrongBox<object?>(ProfiCMath.Asin(Float(0))),
+            BuiltInId.MathAcosFloat => new StrongBox<object?>(ProfiCMath.Acos(Float(0))),
+            BuiltInId.MathAtanFloat => new StrongBox<object?>(ProfiCMath.Atan(Float(0))),
+            BuiltInId.MathAtan2Float =>
+                new StrongBox<object?>(ProfiCMath.Atan2(Float(0), Float(1))),
+
+            BuiltInId.MathSinhFloat => new StrongBox<object?>(ProfiCMath.Sinh(Float(0))),
+            BuiltInId.MathCoshFloat => new StrongBox<object?>(ProfiCMath.Cosh(Float(0))),
+            BuiltInId.MathTanhFloat => new StrongBox<object?>(ProfiCMath.Tanh(Float(0))),
+            BuiltInId.MathAsinhFloat => new StrongBox<object?>(ProfiCMath.Asinh(Float(0))),
+            BuiltInId.MathAcoshFloat => new StrongBox<object?>(ProfiCMath.Acosh(Float(0))),
+            BuiltInId.MathAtanhFloat => new StrongBox<object?>(ProfiCMath.Atanh(Float(0))),
+
+            BuiltInId.MathAbsFloat => new StrongBox<object?>(ProfiCMath.Abs(Float(0))),
+            BuiltInId.MathFloorFloat => new StrongBox<object?>(ProfiCMath.Floor(Float(0))),
+            BuiltInId.MathCeilingFloat => new StrongBox<object?>(ProfiCMath.Ceiling(Float(0))),
+            BuiltInId.MathRoundFloat => new StrongBox<object?>(ProfiCMath.Round(Float(0))),
+            BuiltInId.MathRoundFloatPlaces =>
+                new StrongBox<object?>(ProfiCMath.Round(Float(0), Integer(1))),
+            BuiltInId.MathMinFloat => new StrongBox<object?>(ProfiCMath.Min(Float(0), Float(1))),
+            BuiltInId.MathMaxFloat => new StrongBox<object?>(ProfiCMath.Max(Float(0), Float(1))),
 
             BuiltInId.FractionCreate =>
                 new StrongBox<object?>(new Fraction(Integer(0), Integer(1))),
@@ -365,7 +411,7 @@ public sealed partial class Interpreter
             BuiltInId.RandomNextBelow => new StrongBox<object?>(Chance().Next(Integer(0))),
             BuiltInId.RandomNextBetween =>
                 new StrongBox<object?>(Chance().Next(Integer(0), Integer(1))),
-            BuiltInId.RandomNextDouble => new StrongBox<object?>(Chance().NextDouble()),
+            BuiltInId.RandomNextDouble => new StrongBox<object?>((decimal)Chance().NextDouble()),
 
             BuiltInId.DateTimeNewDate => new StrongBox<object?>(
                 MakeMoment(Integer(0), Integer(1), Integer(2), 0, 0, 0)),
@@ -385,10 +431,10 @@ public sealed partial class Interpreter
             BuiltInId.DateTimeDayOfYear => new StrongBox<object?>((long)Moment().DayOfYear),
 
             // A moment never changes, so each of these yields another one.
-            BuiltInId.DateTimeAddDays => new StrongBox<object?>(Moment().AddDays(Real(0))),
-            BuiltInId.DateTimeAddHours => new StrongBox<object?>(Moment().AddHours(Real(0))),
-            BuiltInId.DateTimeAddMinutes => new StrongBox<object?>(Moment().AddMinutes(Real(0))),
-            BuiltInId.DateTimeAddSeconds => new StrongBox<object?>(Moment().AddSeconds(Real(0))),
+            BuiltInId.DateTimeAddDays => new StrongBox<object?>(Moment().AddDays((double)Real(0))),
+            BuiltInId.DateTimeAddHours => new StrongBox<object?>(Moment().AddHours((double)Real(0))),
+            BuiltInId.DateTimeAddMinutes => new StrongBox<object?>(Moment().AddMinutes((double)Real(0))),
+            BuiltInId.DateTimeAddSeconds => new StrongBox<object?>(Moment().AddSeconds((double)Real(0))),
             BuiltInId.DateTimeAddYears => new StrongBox<object?>(Moment().AddYears((int)Integer(0))),
             BuiltInId.DateTimeAddMonths => new StrongBox<object?>(Moment().AddMonths((int)Integer(0))),
 
@@ -405,20 +451,20 @@ public sealed partial class Interpreter
                 MakeSpan(Integer(0), Integer(1), Integer(2), Integer(3))),
 
             BuiltInId.TimeSpanZero => new StrongBox<object?>(TimeSpan.Zero),
-            BuiltInId.TimeSpanFromDays => new StrongBox<object?>(TimeSpan.FromDays(Real(0))),
-            BuiltInId.TimeSpanFromHours => new StrongBox<object?>(TimeSpan.FromHours(Real(0))),
-            BuiltInId.TimeSpanFromMinutes => new StrongBox<object?>(TimeSpan.FromMinutes(Real(0))),
-            BuiltInId.TimeSpanFromSeconds => new StrongBox<object?>(TimeSpan.FromSeconds(Real(0))),
+            BuiltInId.TimeSpanFromDays => new StrongBox<object?>(TimeSpan.FromDays((double)Real(0))),
+            BuiltInId.TimeSpanFromHours => new StrongBox<object?>(TimeSpan.FromHours((double)Real(0))),
+            BuiltInId.TimeSpanFromMinutes => new StrongBox<object?>(TimeSpan.FromMinutes((double)Real(0))),
+            BuiltInId.TimeSpanFromSeconds => new StrongBox<object?>(TimeSpan.FromSeconds((double)Real(0))),
 
             BuiltInId.TimeSpanDays => new StrongBox<object?>((long)Length().Days),
             BuiltInId.TimeSpanHours => new StrongBox<object?>((long)Length().Hours),
             BuiltInId.TimeSpanMinutes => new StrongBox<object?>((long)Length().Minutes),
             BuiltInId.TimeSpanSeconds => new StrongBox<object?>((long)Length().Seconds),
 
-            BuiltInId.TimeSpanTotalDays => new StrongBox<object?>(Length().TotalDays),
-            BuiltInId.TimeSpanTotalHours => new StrongBox<object?>(Length().TotalHours),
-            BuiltInId.TimeSpanTotalMinutes => new StrongBox<object?>(Length().TotalMinutes),
-            BuiltInId.TimeSpanTotalSeconds => new StrongBox<object?>(Length().TotalSeconds),
+            BuiltInId.TimeSpanTotalDays => new StrongBox<object?>((decimal)Length().TotalDays),
+            BuiltInId.TimeSpanTotalHours => new StrongBox<object?>((decimal)Length().TotalHours),
+            BuiltInId.TimeSpanTotalMinutes => new StrongBox<object?>((decimal)Length().TotalMinutes),
+            BuiltInId.TimeSpanTotalSeconds => new StrongBox<object?>((decimal)Length().TotalSeconds),
 
             BuiltInId.TimeSpanAdd => new StrongBox<object?>(Length() + Span(0)),
             BuiltInId.TimeSpanSubtract => new StrongBox<object?>(Length() - Span(0)),
@@ -458,8 +504,8 @@ public sealed partial class Interpreter
             BuiltInId.TimeMinute => new StrongBox<object?>((long)OnTheClock().Minute),
             BuiltInId.TimeSecond => new StrongBox<object?>((long)OnTheClock().Second),
 
-            BuiltInId.TimeAddHours => new StrongBox<object?>(OnTheClock().AddHours(Real(0))),
-            BuiltInId.TimeAddMinutes => new StrongBox<object?>(OnTheClock().AddMinutes(Real(0))),
+            BuiltInId.TimeAddHours => new StrongBox<object?>(OnTheClock().AddHours((double)Real(0))),
+            BuiltInId.TimeAddMinutes => new StrongBox<object?>(OnTheClock().AddMinutes((double)Real(0))),
 
             BuiltInId.TimeToTimeSpan => new StrongBox<object?>(OnTheClock().ToTimeSpan()),
             BuiltInId.TimeCompareTo =>
@@ -505,7 +551,8 @@ public sealed partial class Interpreter
                 new StrongBox<object?>(ProfiCText.Contains(Subject(), Text(0))),
             BuiltInId.StringIndexOf =>
                 new StrongBox<object?>(ProfiCText.IndexOf(Subject(), Text(0))),
-            BuiltInId.StringSubstring => new StrongBox<object?>(Substring(Subject(), arguments)),
+            BuiltInId.StringSubstring =>
+                new StrongBox<object?>(ProfiCText.Substring(Subject(), Integer(0), Integer(1))),
 
             BuiltInId.StringSubsetFrom =>
                 new StrongBox<object?>(ProfiCText.Subset(Subject(), Integer(0))),
@@ -520,7 +567,7 @@ public sealed partial class Interpreter
             BuiltInId.StringRemoveAt =>
                 new StrongBox<object?>(ProfiCText.RemoveAt(Subject(), Integer(0))),
             BuiltInId.StringToCharacters =>
-                new StrongBox<object?>(ProfiCText.ToCharacters(Subject())),
+                new StrongBox<object?>(ProfiCText.ToCharactersUntyped(Subject())),
 
             BuiltInId.StringTrim => new StrongBox<object?>(ProfiCText.Trim(Subject())),
             BuiltInId.StringTrimText =>
@@ -541,7 +588,7 @@ public sealed partial class Interpreter
                 new StrongBox<object?>(ProfiCText.TrimEnd(Subject(), CharacterSet(0))),
 
             BuiltInId.StringSplit =>
-                new StrongBox<object?>(ProfiCText.Split(Subject(), Text(0))),
+                new StrongBox<object?>(ProfiCText.SplitUntyped(Subject(), Text(0))),
 
             BuiltInId.StringReplace =>
                 new StrongBox<object?>(ProfiCText.Replace(Subject(), Text(0), Text(1))),
@@ -690,12 +737,14 @@ public sealed partial class Interpreter
             // A pattern the runtime cannot read raises a FormatException, which is already the
             // one a Profi-C program catches — the two are the same type — so nothing has to
             // translate it.
-            BuiltInId.IntegerFormat => new StrongBox<object?>(
-                AsInteger(target).ToString(Text(0), CultureInfo.InvariantCulture)),
-            BuiltInId.RealFormat => new StrongBox<object?>(
-                (target is double r ? r : 0).ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.IntegerFormat =>
+                new StrongBox<object?>(ProfiCText.Format(AsInteger(target), Text(0))),
+            BuiltInId.RealFormat =>
+                new StrongBox<object?>(ProfiCText.Format(target is decimal r ? r : 0, Text(0))),
+            BuiltInId.FloatFormat =>
+                new StrongBox<object?>(ProfiCText.Format(target is double f ? f : 0, Text(0))),
             BuiltInId.FractionFormat => new StrongBox<object?>(
-                ((Fraction)target!).ToReal().ToString(Text(0), CultureInfo.InvariantCulture)),
+                ProfiCText.Format(((Fraction)target!).ToReal(), Text(0))),
             BuiltInId.DateTimeFormat => new StrongBox<object?>(
                 Moment().ToString(Text(0), CultureInfo.InvariantCulture)),
             BuiltInId.TimeSpanFormat => new StrongBox<object?>(
@@ -708,8 +757,14 @@ public sealed partial class Interpreter
             BuiltInId.FractionToReal => new StrongBox<object?>(((Fraction)target!).ToReal()),
             BuiltInId.FractionReciprocal =>
                 new StrongBox<object?>(((Fraction)target!).Reciprocal()),
-            BuiltInId.RealToFraction => new StrongBox<object?>(
-                Fraction.FromReal(target is double d ? d : 0)),
+            BuiltInId.FloatToFraction => new StrongBox<object?>(
+                Fraction.FromFloat(target is double f ? f : 0)),
+            BuiltInId.RealToFloat => new StrongBox<object?>(
+                ProfiCArithmetic.ToFloat(target is decimal toward ? toward : 0)),
+            BuiltInId.FloatToReal => new StrongBox<object?>(
+                ProfiCArithmetic.ToReal(target is double back ? back : 0)),
+            BuiltInId.IntegerToFloat => new StrongBox<object?>((double)AsInteger(target)),
+            BuiltInId.FractionToFloat => new StrongBox<object?>(((Fraction)target!).ToFloat()),
             BuiltInId.EnumerationToInteger => new StrongBox<object?>(
                 target is EnumValue enumeration ? enumeration.Ordinal : AsInteger(target)),
 
@@ -803,23 +858,6 @@ public sealed partial class Interpreter
         return new StrongBox<object?>(null);
     }
 
-    private static string Substring(string text, List<object?> arguments)
-    {
-        int start = (int)AsInteger(arguments.ElementAtOrDefault(0));
-        int length = arguments.Count > 1
-            ? (int)AsInteger(arguments[1])
-            : Math.Max(0, text.Length - start);
-
-        if (start < 0 || start > text.Length || start + length > text.Length)
-        {
-            throw new IndexOutOfRangeException(
-                $"Cannot take {length} characters from position {start} of a string of "
-                + $"{text.Length}.");
-        }
-
-        return text.Substring(start, length);
-    }
-
     private static string AsText(object? value) => ModelOperations.ToDisplayString(value);
 
     /// <summary>
@@ -891,102 +929,6 @@ public sealed partial class Interpreter
         }
     }
 
-    /// <summary>A run of a string, with the end exclusive, as Subset has it on a set.</summary>
-    private static string Subrun(string text, int start, int end)
-    {
-        if (start < 0 || start > text.Length || end < start || end > text.Length)
-        {
-            throw new IndexOutOfRangeException(
-                $"Cannot take the run from {start} to {end} of a string of {text.Length}.");
-        }
-
-        return text[start..end];
-    }
-
-    /// <summary>
-    /// <para>The nth root, which .NET spells only for n of 2 and 3.</para>
-    /// <para>A negative number has a real root when n is odd — the cube root of -8 is -2 —
-    /// and none at all when n is even, so the odd case is worked out from the magnitude and
-    /// the sign put back. Left to Pow it would be NaN, since a fractional power of a negative
-    /// is not a real number.</para>
-    /// </summary>
-    private static double Root(double value, double degree)
-    {
-        if (degree == 0)
-        {
-            throw new ProfiCRuntimeException("A root of degree zero is not a number.");
-        }
-
-        if (value >= 0)
-        {
-            return Exactly(Math.Pow(value, 1.0 / degree), value, degree);
-        }
-
-        bool odd = degree == Math.Floor(degree) && Math.Abs(degree % 2) == 1;
-
-        return odd
-            ? Exactly(-Math.Pow(-value, 1.0 / degree), value, degree)
-            : double.NaN;
-    }
-
-    /// <summary>
-    /// <para>Corrects a root to the whole number it should be, where there is one.</para>
-    /// <para>Roots are not required to be correctly rounded and the platforms disagree: the
-    /// cube root of 27 comes back as 3 from one C runtime and as 3.0000000000000004 from
-    /// another. Where raising the nearest whole number by the degree gives the value back
-    /// exactly, that whole number <em>is</em> a root of it, and the drift is simply a worse
-    /// answer than the type can hold.</para>
-    /// <para>So this is more accurate rather than a fudge, and it is what lets a program
-    /// print the same thing wherever it is run. Only a whole degree within reach is
-    /// considered, and the check is a multiplication rather than another call to Pow, so
-    /// nothing here rests on the library that produced the drift.</para>
-    /// </summary>
-    private static double Exactly(double approximate, double value, double degree)
-    {
-        if (degree < 1 || degree > 64 || degree != Math.Floor(degree))
-        {
-            return approximate;
-        }
-
-        double whole = Math.Round(approximate);
-        double raised = 1;
-
-        for (int i = 0; i < degree; i++)
-        {
-            raised *= whole;
-        }
-
-        return raised == value ? whole : approximate;
-    }
-
-    /// <summary>
-    /// <para>Counts arrangements, so it counts in whole numbers.</para>
-    /// <para>Twenty is the largest whose answer an integer holds; the twenty-first overflows,
-    /// which is reported as an overflow rather than wrapping into a smaller wrong answer.</para>
-    /// </summary>
-    private static long Factorial(long n)
-    {
-        if (n < 0)
-        {
-            throw new ArgumentException("A factorial counts arrangements, so it needs a whole number that is not negative.");
-        }
-
-        long result = 1;
-
-        try
-        {
-            for (long i = 2; i <= n; i++)
-            {
-                result = checked(result * i);
-            }
-        }
-        catch (OverflowException)
-        {
-            throw Runtime.ArithmeticFailures.TooLargeForAnInteger();
-        }
-
-        return result;
-    }
 }
 
 /// <summary>

@@ -69,7 +69,7 @@ public sealed class RefusalMessageTests : LexerTestBase
          "An integer raised to the power -1 is not a whole number. Raise a fraction instead, "
          + "or use Math.Pow for a real result."),
 
-        ("Console.WriteLine(Math.Root(8.0, 0));", typeof(ProfiC.Interpreter.ProfiCRuntimeException),
+        ("Console.WriteLine(Math.Root(8.0, 0));", typeof(ArgumentException),
          "A root of degree zero is not a number."),
 
         // The amount arrived in a variable, so nothing could judge it while compiling. Written
@@ -151,9 +151,52 @@ public sealed class RefusalMessageTests : LexerTestBase
          + "        loop each x in xs\n            alias.Insert(9);\n        end loop",
          typeof(ProfiC.Runtime.SequenceChangedException), null!),
 
+        // ---- Where a real runs out, and where a float does not -------------------------------
+        //
+        // A real stops at its bounds the way an integer does. A float would answer both of these
+        // with a value of its own — an infinity, or something that is not a number — and having
+        // no such value is most of what tells the two types apart.
+        ("Console.WriteLine(Math.Pow(10.0, 300.0));", typeof(OverflowException),
+         "This result is too large to hold. A real counts in tens up to about 79 followed by 27 "
+         + "zeros, and it stops at the end rather than carrying on into an infinity — which is "
+         + "what a float does, and what makes the two worth telling apart."),
+
+        ("Console.WriteLine(Math.Sqrt(-1.0));", typeof(ArgumentException),
+         "That has no answer among the reals. A float would give back 'NaN' here and carry on; "
+         + "a real has no such value, so the calculation stops instead."),
+
+        // Every float is exactly some ratio, and a large one needs parts too big to hold.
+        ("Console.WriteLine(Float.MaxValue.ToFraction());", typeof(OverflowException),
+         "This float is too large to write as a fraction. Every float is exactly some ratio, but "
+         + "the parts of a fraction are whole numbers, and this one needs a numerator larger than "
+         + "an integer holds."),
+
+        // Coming back from a float is the direction that can fail, and the two values only a
+        // float has are the reason. A real has no form for either.
+        ("Console.WriteLine(Float.NotANumber.ToReal());", typeof(ArgumentException),
+         "A value that is not a number has no real to become. Only a float has one at all, so "
+         + "there is nothing here for a real to hold."),
+
+        ("Console.WriteLine(Float.Infinity.ToReal());", typeof(ArgumentException),
+         "An infinity has no real to become. A float carries on past its bounds and a real stops "
+         + "at them, so there is no number here for it to hold."),
+
+        // And the third: a float larger than a real can carry.
+        ("Console.WriteLine(Float.MaxValue.ToReal());", typeof(OverflowException),
+         "This result is too large to hold. A real counts in tens up to about 79 followed by 27 "
+         + "zeros, and it stops at the end rather than carrying on into an infinity — which is "
+         + "what a float does, and what makes the two worth telling apart."),
+
         // ---- Reals that will not fit a fraction ---------------------------------------------
-        ("real huge = Math.Pow(10.0, 300.0);\n        Console.WriteLine(huge.ToFraction());",
-         typeof(OverflowException), "Real is too large to write as a fraction."),
+        //
+        // Written down, this is PC0346 and never runs. Here it arrives in a variable, which is
+        // the same division PC0324 draws around dividing by zero.
+        ("real tiny = 0.0000000000000000001;\n        fraction held = tiny;"
+         + "\n        Console.WriteLine(held);",
+         typeof(OverflowException),
+         "0.0000000000000000001 has no fraction to become. Every real is exactly a fraction, "
+         + "but the parts of one are whole numbers — and this needs a numerator or a denominator "
+         + "larger than an integer holds. Up to eighteen places after the point will convert."),
     ];
 
     public static IEnumerable<TestCaseData> Cases =>

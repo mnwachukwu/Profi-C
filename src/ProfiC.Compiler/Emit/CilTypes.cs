@@ -21,7 +21,10 @@ internal static class CilTypes
     public static Type? Of(TypeSymbol type) => type switch
     {
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Integer) => typeof(long),
-        PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Real) => typeof(double),
+        PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Real) => typeof(decimal),
+        PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Float) => typeof(double),
+        PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Fraction) =>
+            typeof(Runtime.Fraction),
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Boolean) => typeof(bool),
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.Character) => typeof(char),
         PrimitiveType primitive when ReferenceEquals(primitive, PrimitiveType.String) => typeof(string),
@@ -38,8 +41,25 @@ internal static class CilTypes
     public static bool IsSupported(TypeSymbol type) =>
         Of(type) is not null
         || IsDeclaredModel(type)
+        || OfBuiltInModel(type) is not null
         || (type is SetType set && IsSupported(set.ElementType))
         || (type is OptionalType optional && IsSupported(optional.UnderlyingType));
+
+    /// <summary>
+    /// <para>The CLR type a model the <em>language</em> provides denotes, or null where the
+    /// emitter has none for it.</para>
+    /// <para>Only the exceptions so far, and they are the family that matters: a program writes
+    /// <c>model MyFailure extends Exception</c> to name its own failures, and every name it can
+    /// catch is a .NET exception type already. So the mapping is a lookup rather than work —
+    /// <c>Exception</c> is <c>System.Exception</c>, <c>IOException</c> is
+    /// <c>System.IO.IOException</c>, and a Profi-C <c>catch</c> becomes a CIL one.</para>
+    /// <para>The others — <c>Random</c>, <c>DateTime</c> — are not here because constructing and
+    /// calling them is work the emitter does not do yet, not because they have no type.</para>
+    /// </summary>
+    public static Type? OfBuiltInModel(TypeSymbol type) =>
+        type is ModelSymbol model && ReferenceEquals(model.Container, BuiltInTypes.Standard)
+            ? Runtime.BuiltInExceptions.Resolve(model.Name)
+            : null;
 
     /// <summary>
     /// <para>The runtime type a set becomes, for an element type already resolved.</para>
@@ -85,9 +105,12 @@ internal static class CilTypes
 internal static class CilConversions
 {
     /// <summary>
-    /// Only the numeric widening so far. The rest need a runtime type the emitter does not yet
-    /// produce: an optional to wrap into, a set to fill, a fraction to construct.
+    /// The numeric widenings and the wrap into an optional. What is left needs a conversion
+    /// between a string and a set of characters, which the emitter does not yet perform.
     /// </summary>
     public static bool IsSupported(ConversionOperation operation) =>
-        operation is ConversionOperation.IntegerToReal or ConversionOperation.WrapOptional;
+        operation is ConversionOperation.IntegerToReal
+                  or ConversionOperation.IntegerToFraction
+                  or ConversionOperation.RealToFraction
+                  or ConversionOperation.WrapOptional;
 }

@@ -11,6 +11,14 @@ public enum TokenType
 
     IntegerLiteral,
     RealLiteral,
+
+    /// <summary>
+    /// A number written with an <c>f</c> against it, which asks for binary floating point rather
+    /// than the decimal a plain <c>3.14</c> denotes. The suffix is the whole difference, so it is
+    /// worth one token rather than a flag on the one above.
+    /// </summary>
+    FloatLiteral,
+
     CharLiteral,
     StringLiteral,
     FractionLiteral,
@@ -90,6 +98,7 @@ public enum TokenType
     Extends,
     False,
     Finally,
+    Float,
     For,
     Fraction,
     Function,

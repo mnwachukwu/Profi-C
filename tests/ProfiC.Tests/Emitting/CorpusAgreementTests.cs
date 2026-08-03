@@ -32,7 +32,7 @@ public sealed class CorpusAgreementTests : LexerTestBase
     /// this; a gate quietly reopening does. Raise it when a gate lands, which is the moment the
     /// number is worth writing down.</para>
     /// </summary>
-    private const int EmitsAtLeast = 9;
+    private const int EmitsAtLeast = 23;
 
     private static IEnumerable<string> Programs =>
         ProfiC.Tests.Interpreting.SampleProgramTests.RunnableSampleNames;

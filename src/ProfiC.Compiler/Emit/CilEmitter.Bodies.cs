@@ -18,8 +18,19 @@ public sealed partial class CilEmitter
     /// <para>A stack rather than a pair of fields, because loops nest and each one leaves to
     /// its own labels. The innermost is the one those words mean, which is what the top of a
     /// stack is.</para>
+    /// <para>Each remembers how deeply protected the loop itself was, which is what decides how
+    /// a <c>break</c> written under a <c>try</c> gets out. See <see cref="LeaveLoop"/>.</para>
     /// </summary>
-    private readonly Stack<(Label Break, Label Continue)> _loops = new();
+    private readonly Stack<(Label Break, Label Continue, int Protection)> _loops = new();
+
+    /// <summary>
+    /// <para>How many <c>try</c> blocks enclose the instruction being written.</para>
+    /// <para>The CLR will not let an ordinary branch cross out of a protected region — the whole
+    /// point of one is that leaving it runs the <c>finally</c> — so a jump that crosses one has to
+    /// be a <c>leave</c>. That includes a <c>break</c> for a loop written outside the <c>try</c>,
+    /// which reads like an ordinary jump and is not one.</para>
+    /// </summary>
+    private int _protection;
 
     /// <summary>The slot each local occupies, for the function being emitted.</summary>
     private readonly Dictionary<LocalSymbol, LocalBuilder> _locals = [];
@@ -156,9 +167,19 @@ public sealed partial class CilEmitter
             return built;
         }
 
-        if (owner is not ModelSymbol { BaseType: { } parent } || !_types.ContainsKey(parent))
+        if (owner is not ModelSymbol { BaseType: { } parent })
         {
             return ObjectConstructor;
+        }
+
+        // A parent the language provides — an exception — is a type in the runtime, so its
+        // constructor is looked up rather than built. Which one is decided by how many arguments
+        // were written, since every exception takes a message or nothing.
+        if (!_types.ContainsKey(parent))
+        {
+            return CilTypes.OfBuiltInModel(parent) is { } provided
+                ? BuiltInConstructor(provided, written?.Arguments.Count ?? 0)
+                : ObjectConstructor;
         }
 
         FunctionSymbol? takingNothing = parent.Lookup(parent.Name)
@@ -323,6 +344,16 @@ public sealed partial class CilEmitter
     private static readonly System.Reflection.ConstructorInfo ObjectConstructor =
         typeof(object).GetConstructor(Type.EmptyTypes)!;
 
+    /// <summary>
+    /// <para>The constructor of a type the language provides, chosen by how many arguments were
+    /// written.</para>
+    /// <para>An exception takes a message or nothing, which is the whole of the choice — every
+    /// name in the catalog offers both, and the one-argument form is the one worth writing.</para>
+    /// </summary>
+    private static System.Reflection.ConstructorInfo BuiltInConstructor(Type provided, int taking) =>
+        provided.GetConstructor(taking == 0 ? Type.EmptyTypes : [typeof(string)])
+        ?? throw Unhandled($"a constructor on '{provided.Name}' taking {taking}");
+
     private void EmitStatements(IReadOnlyList<Statement> statements)
     {
         foreach (Statement statement in statements)
@@ -376,11 +407,19 @@ public sealed partial class CilEmitter
                 break;
 
             case BreakStmt:
-                _il.Emit(OpCodes.Br, _loops.Peek().Break);
+                LeaveLoop(_loops.Peek().Break);
                 break;
 
             case ContinueStmt:
-                _il.Emit(OpCodes.Br, _loops.Peek().Continue);
+                LeaveLoop(_loops.Peek().Continue);
+                break;
+
+            case ThrowStmt raised:
+                EmitThrow(raised);
+                break;
+
+            case TryStmt guarded:
+                EmitTry(guarded);
                 break;
 
             case YieldStmt yield:
@@ -577,7 +616,7 @@ public sealed partial class CilEmitter
         EmitExpression(loop.Condition);
         _il.Emit(OpCodes.Brfalse, after);
 
-        _loops.Push((after, test));
+        _loops.Push((after, test, _protection));
         EmitStatements(loop.Body);
         _loops.Pop();
 
@@ -599,7 +638,7 @@ public sealed partial class CilEmitter
 
         _il.MarkLabel(top);
 
-        _loops.Push((after, test));
+        _loops.Push((after, test, _protection));
         EmitStatements(loop.Body);
         _loops.Pop();
 
@@ -621,7 +660,7 @@ public sealed partial class CilEmitter
 
         _il.MarkLabel(top);
 
-        _loops.Push((after, top));
+        _loops.Push((after, top, _protection));
         EmitStatements(loop.Body);
         _loops.Pop();
 
@@ -700,7 +739,7 @@ public sealed partial class CilEmitter
 
         _il.MarkLabel(body);
 
-        _loops.Push((after, next));
+        _loops.Push((after, next, _protection));
         EmitStatements(loop.Body);
         _loops.Pop();
 
@@ -715,6 +754,17 @@ public sealed partial class CilEmitter
 
         _il.MarkLabel(after);
     }
+
+    /// <summary>
+    /// <para>Goes where a <c>break</c> or a <c>continue</c> means to go, by whichever branch the
+    /// place it is written allows.</para>
+    /// <para>An ordinary <c>br</c> where the loop and the word are equally protected, which is
+    /// nearly always. A <c>leave</c> where the word sits under a <c>try</c> the loop does not: the
+    /// CLR refuses a plain branch out of a protected region, since leaving one has to run its
+    /// <c>finally</c>, and <c>leave</c> is the instruction that says so.</para>
+    /// </summary>
+    private void LeaveLoop(Label target) =>
+        _il.Emit(_protection > _loops.Peek().Protection ? OpCodes.Leave : OpCodes.Br, target);
 
     /// <summary>
     /// Leaves rather than returns, so that a yield written inside a <c>loop each</c> is legal:

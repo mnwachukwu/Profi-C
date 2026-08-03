@@ -64,20 +64,20 @@ internal sealed class EmitSurvey : SyntaxVisitor
 
     /// <summary>
     /// <para>A model may be emitted when what it extends is another model this program declares,
-    /// or nothing.</para>
-    /// <para>What is left is a model built on one the language provides — an exception. That
-    /// parent is a type in the runtime rather than one being written here, so deriving from it
-    /// means knowing how to reach its constructor and its members, which is the same work
-    /// <c>throw</c> and <c>try</c> are waiting on.</para>
+    /// a model the language provides that has a CLR type, or nothing.</para>
+    /// <para>The middle case is the exceptions, which is how a program names its own failures.
+    /// What is left is <c>Random</c> and the rest, whose parents are types in the runtime the
+    /// emitter has no way to construct or call.</para>
     /// </summary>
     public override void VisitModelDecl(ModelDecl node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
         // 'Model' is the root every model has anyway, and is System.Object here, so naming it
-        // changes nothing. Any other built-in parent is an exception.
+        // changes nothing.
         if (_model.GetSymbol(node) is ModelSymbol { BaseType: { } parent }
             && !CilTypes.IsDeclaredModel(parent)
+            && CilTypes.OfBuiltInModel(parent) is null
             && !ReferenceEquals(parent, BuiltInTypes.Of("Model")))
         {
             Refuse(node, $"The model '{node.Name}', which extends '{parent.Name}'");
@@ -167,18 +167,17 @@ internal sealed class EmitSurvey : SyntaxVisitor
         Refuse(node, "A switch");
     }
 
-    public override void VisitTryStmt(TryStmt node)
+    /// <summary>
+    /// A <c>catch</c> is refused by the type it names, since taking a thrown value means having a
+    /// CLR type for the handler. The body and the <c>try</c> itself need nothing of their own.
+    /// </summary>
+    public override void VisitCatchClause(CatchClause node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        Refuse(node, "A try");
-    }
+        CheckType(node, _model.GetType(node.ExceptionType), $"A catch of '{node.ExceptionType}',");
 
-    public override void VisitThrowStmt(ThrowStmt node)
-    {
-        ArgumentNullException.ThrowIfNull(node);
-
-        Refuse(node, "A throw");
+        base.VisitCatchClause(node);
     }
 
     /// <summary>
@@ -230,15 +229,16 @@ internal sealed class EmitSurvey : SyntaxVisitor
     }
 
     /// <summary>
-    /// A <c>new</c> may be emitted where it makes a model the program declared. One that makes
-    /// something the language provides — an exception, a <c>Random</c> — is a call into the
-    /// runtime the emitter does not know how to make yet.
+    /// A <c>new</c> may be emitted where it makes a model the program declared, or an exception,
+    /// which is a type the runtime already has. What is left — a <c>Random</c>, a
+    /// <c>DateTime</c> — is a call into the runtime the emitter does not know how to make yet.
     /// </summary>
     public override void VisitNewExpr(NewExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        if (_model.GetType(node) is not { } type || !CilTypes.IsDeclaredModel(type))
+        if (_model.GetType(node) is not { } type
+            || (!CilTypes.IsDeclaredModel(type) && CilTypes.OfBuiltInModel(type) is null))
         {
             Refuse(node, $"Constructing '{node.TypeName}'");
             return;
@@ -286,25 +286,31 @@ internal sealed class EmitSurvey : SyntaxVisitor
         Refuse(node, "An interpolated string");
     }
 
-    public override void VisitIfExpr(IfExpr node)
-    {
-        ArgumentNullException.ThrowIfNull(node);
-
-        Refuse(node, "An 'if' written as an expression");
-    }
-
+    /// <summary>
+    /// <para>A test is refused by the type it names, since asking whether a value is one means
+    /// having a CLR type to ask about.</para>
+    /// <para>Nothing is asked of the operand: whatever it is, either the checker settled the
+    /// answer or the value is a reference the emitter can test — and a value it could not produce
+    /// at all was refused where it was written.</para>
+    /// </summary>
     public override void VisitTypeTestExpr(TypeTestExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        Refuse(node, "An 'is'");
+        CheckType(node, _model.GetType(node.TargetType), "An 'is' against");
+
+        base.VisitTypeTestExpr(node);
     }
 
+    /// <summary>A cast is refused by the type it names, and by the optional it yields.</summary>
     public override void VisitTypeCastExpr(TypeCastExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
 
-        Refuse(node, "An 'as'");
+        CheckType(node, _model.GetType(node.TargetType), "An 'as' to");
+        CheckType(node, _model.GetType(node), "The result of an 'as',");
+
+        base.VisitTypeCastExpr(node);
     }
 
     /// <summary>
@@ -373,12 +379,6 @@ internal sealed class EmitSurvey : SyntaxVisitor
     public override void VisitBinaryExpr(BinaryExpr node)
     {
         ArgumentNullException.ThrowIfNull(node);
-
-        if (node.Operator == BinaryOperator.Power)
-        {
-            Refuse(node, "A '^'");
-            return;
-        }
 
         base.VisitBinaryExpr(node);
     }

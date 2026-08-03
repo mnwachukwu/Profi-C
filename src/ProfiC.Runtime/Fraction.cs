@@ -291,19 +291,82 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
 
     /// <summary>
     /// <para>Converts to a real, which is explicit in the language because it loses
-    /// information: one third has no exact binary representation.</para>
+    /// information: one third has no exact decimal form any more than it has a binary one.</para>
+    /// <para>Divided as decimals rather than worked out in binary and converted, so that the
+    /// digits that survive are the true ones — a fifth is exactly 0.2 here, where going through
+    /// a double and back would leave the same value but by luck rather than by construction.</para>
     /// </summary>
-    public double ToReal() => (double)Numerator / Denominator;
+    public decimal ToReal() => (decimal)Numerator / Denominator;
+
+    /// <summary>The same ratio as binary floating point, which is what <c>float</c> holds.</summary>
+    public double ToFloat() => (double)Numerator / Denominator;
 
     /// <summary>
-    /// <para>Converts a real to a fraction exactly, by reading the binary representation
+    /// <para>Converts a real to a fraction exactly, which a real makes easy.</para>
+    /// <para>A decimal already <em>is</em> a fraction: it holds its digits and how far along the
+    /// point sits, so the denominator is the power of ten the point implies and the numerator is
+    /// the digits themselves. Half is <c>1|2</c> and a tenth is <c>1|10</c>, which is what a
+    /// reader expects and what the binary form below cannot give.</para>
+    /// </summary>
+    public static Fraction FromReal(decimal value)
+    {
+        if (!Fits(value, out long numerator, out long denominator))
+        {
+            throw ArithmeticFailures.TooWideForAFraction(value);
+        }
+
+        return new Fraction(numerator, denominator);
+    }
+
+    /// <summary>
+    /// <para>Whether a real has a fraction to become, and what it is.</para>
+    /// <para><b>Both halves have to fit, not just the denominator.</b> The point's position
+    /// decides the denominator, so a value with more than eighteen places needs a power of ten
+    /// larger than an integer holds. But the digits themselves are the numerator, and the widest
+    /// reals outgrow an integer with no places at all — so a check on the scale alone would pass
+    /// a value that then overflowed.</para>
+    /// <para>Answered rather than raised, so that the checker can ask about a value written down
+    /// and report it where it is written.</para>
+    /// </summary>
+    public static bool Fits(decimal value, out long numerator, out long denominator)
+    {
+        numerator = 0;
+        denominator = 1;
+
+        int scale = (decimal.GetBits(value)[3] >> 16) & 0xFF;
+
+        // Ten to the nineteenth is already past an integer, so there is no point multiplying.
+        if (scale > 18)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < scale; i++)
+        {
+            denominator *= 10;
+        }
+
+        decimal digits = value * denominator;
+
+        if (digits < long.MinValue || digits > long.MaxValue)
+        {
+            return false;
+        }
+
+        numerator = (long)digits;
+        return true;
+    }
+
+    /// <summary>
+    /// <para>Converts a float to a fraction exactly, by reading the binary representation
     /// rather than approximating it.</para>
     /// <para>Every finite double <em>is</em> a rational, so this direction loses nothing —
-    /// though the result is often startling, since 0.1 is really
-    /// 3602879701896397|36028797018963968.</para>
+    /// though the result is often startling, since 0.1f is really
+    /// 3602879701896397|36028797018963968. That is the number a float actually holds, and
+    /// seeing it written out is the clearest answer to why 0.1f + 0.2f is not 0.3f.</para>
     /// </summary>
     /// <exception cref="OverflowException">The value is infinite or not a number.</exception>
-    public static Fraction FromReal(double value)
+    public static Fraction FromFloat(double value)
     {
         if (double.IsNaN(value) || double.IsInfinity(value))
         {
@@ -342,7 +405,10 @@ public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
             // Large enough that the shift would overflow a long.
             if (exponent > 62)
             {
-                throw new OverflowException("Real is too large to write as a fraction.");
+                throw new OverflowException(
+                    "This float is too large to write as a fraction. Every float is exactly some "
+                    + "ratio, but the parts of a fraction are whole numbers, and this one needs a "
+                    + "numerator larger than an integer holds.");
             }
 
             return new Fraction(checked(mantissa * (1L << exponent)), 1);

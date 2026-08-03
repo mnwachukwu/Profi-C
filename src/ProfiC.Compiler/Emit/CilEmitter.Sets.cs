@@ -85,6 +85,7 @@ public sealed partial class CilEmitter
         _il.Emit(OpCodes.Callvirt, SetMethod(built, "BeginWalk"));
 
         _il.BeginExceptionBlock();
+        _protection++;
 
         EmitStatements([walk.Body]);
 
@@ -93,6 +94,7 @@ public sealed partial class CilEmitter
         EmitExpression(walk.Sequence);
         _il.Emit(OpCodes.Callvirt, SetMethod(built, "EndWalk"));
 
+        _protection--;
         _il.EndExceptionBlock();
     }
 

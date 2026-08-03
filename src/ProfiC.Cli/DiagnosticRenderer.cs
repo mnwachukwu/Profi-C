@@ -41,6 +41,9 @@ public static class DiagnosticRenderer
     /// <para>The three kinds a program can cause are the language refusing to run further, an
     /// exception the language raised, and an exception the program declared and threw. Anything
     /// else is a fault in the compiler, and null tells the caller to let it travel.</para>
+    /// <para>Only the first two arms are the interpreter's. The sentence itself is
+    /// <see cref="ProfiCFailure"/>'s, because an emitted program has to say the same thing at its
+    /// own entry point and neither engine should own the wording.</para>
     /// </summary>
     public static string? DescribeFailure(string label, Exception failure)
     {
@@ -51,18 +54,13 @@ public static class DiagnosticRenderer
         {
             ProfiCRuntimeException => $"{label}: {failure.Message}",
 
+            // A model the program declared is an Instance here rather than an object of that
+            // type, so a throw of one travels in a wrapper. Unwrapping it is the interpreter's
+            // business; an emitted program throws the type itself and needs none of this.
             UncaughtProfiCException uncaught =>
-                $"{label}: unhandled {uncaught.TypeName}: {uncaught.Text}",
+                ProfiCFailure.Describe(label, uncaught.TypeName, uncaught.Text),
 
-            // Named, so a reader knows what stopped them, but never "unhandled" — that word
-            // implies a handler was the missing piece, and no clause could have taken this.
-            _ when !BuiltInExceptions.MayBeCaught(failure.GetType().Name) =>
-                $"{label}: {failure.GetType().Name}: {failure.Message}",
-
-            _ when BuiltInExceptions.IsBuiltIn(failure) =>
-                $"{label}: unhandled {failure.GetType().Name}: {failure.Message}",
-
-            _ => null,
+            _ => ProfiCFailure.Describe(label, failure),
         };
     }
 

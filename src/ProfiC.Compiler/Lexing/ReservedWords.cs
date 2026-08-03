@@ -35,6 +35,7 @@ public static class ReservedWords
             ["extends"] = TokenType.Extends,
             ["false"] = TokenType.False,
             ["finally"] = TokenType.Finally,
+            ["float"] = TokenType.Float,
             ["for"] = TokenType.For,
             ["fraction"] = TokenType.Fraction,
             ["function"] = TokenType.Function,

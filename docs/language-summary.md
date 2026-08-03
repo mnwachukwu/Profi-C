@@ -13,7 +13,7 @@ If you want that comparison as code rather than prose, [side-by-side.md](side-by
 ## Contents
 
 - [1. Reserved words](#1-reserved-words)
-  - [1.1 The 62 reserved words](#11-the-62-reserved-words)
+  - [1.1 The 63 reserved words](#11-the-63-reserved-words)
   - [1.1a How many words that is](#11a-how-many-words-that-is)
   - [1.2 Comments](#12-comments)
   - [1.3 Not reserved](#13-not-reserved)
@@ -43,20 +43,18 @@ Profi-C cannot.
 
 ## 1. Reserved words
 
-### 1.1 The 62 reserved words
+### 1.1 The 63 reserved words
 
 ```
-abstract    and         as          base        begin       bitwise
-boolean     break       case        catch       character   constant
-continue    default     delegate    each        else        end
-enumeration extends     false       finally     for         fraction
-function    if          import      in          integer     internal
-is          let         loop        model       namespace   new
-not         or          override    protected   public      real
-sealed      shared      shiftleft   shiftright  stepby      string
-structure   switch      then        this        throw       to
-true        try         until       using       virtual     while
-xor         yield
+abstract    and         as          base        begin       bitwise     boolean
+break       case        catch       character   constant    continue    default
+delegate    each        else        end         enumeration extends     false
+finally     float       for         fraction    function    if          import
+in          integer     internal    is          let         loop        model
+namespace   new         not         or          override    protected   public
+real        sealed      shared      shiftleft   shiftright  stepby      string
+structure   switch      then        this        throw       to          true
+try         until       using       virtual     while       xor         yield
 ```
 
 A name may take one back by writing `@` in front of it — `@end`, `@each` — which is the only
@@ -66,9 +64,9 @@ place a name may begin with something other than a letter.
 
 | | Profi-C | C# |
 |---|---|---|
-| Reserved everywhere | **62** | 77 |
+| Reserved everywhere | **63** | 77 |
 | Contextual — reserved only in one position | **0** | 46 |
-| Words that are special somewhere | **62** | 123 |
+| Words that are special somewhere | **63** | 123 |
 
 C#'s figures are Roslyn's own, from `SyntaxFacts.GetReservedKeywordKinds` and
 `GetContextualKeywordKinds`, minus four undocumented `__`-prefixed ones it also counts.
@@ -215,9 +213,13 @@ printing and calling never disagree.
 | `Math` | `Pi` and `E` as values; `Sqrt`, `Cbrt`, `Root`, `Pow`, `Log` and its family, the trig six and their hyperbolic counterparts, `Abs`, `Min`, `Max`, the three roundings, and `Factorial` |
 | `Random` | `new Random()` or `new Random(seed)`, and the same members through the name; `Next` excludes its upper bound, as .NET's does |
 | `DateTime` | `new DateTime(...)`; what .NET reads as a property is read as one here, so `Year` and `Now` take no parentheses |
-| `fraction` | `ToReal`; `Reciprocal` turns it over, so `(2\|3).Reciprocal()` is `3\|2` |
+| `fraction` | `ToReal`, `ToFloat`; `Reciprocal` turns it over, so `(2\|3).Reciprocal()` is `3\|2` |
 | enumerations | `ToString` returns the member name |
-| `real` | `ToFraction` |
+| `integer`, `real` | `ToFloat` |
+| `float` | `ToReal`, `ToFraction` |
+| `Integer`, `Real`, `Float`, `Character` | `MaxValue` and `MinValue`, read through a capitalized name beside the keyword since a reserved word cannot precede a dot |
+| `Float` | `Infinity`, `NegativeInfinity`, `NotANumber` — the three a `real` has no answer for |
+| `String` | `Empty` |
 
 File I/O is not here yet. Neither is a type for a span of time, so how far apart two moments
 are cannot be asked; `CompareTo` answers which came first.
@@ -306,6 +308,12 @@ The second pair is more confusable than the first, since both live near the idea
 
 Null and .NET coexist because **null is translated at the boundary and never enters Profi-C's type system.** Every .NET reference-typed return maps to `T?` unless documented non-null; an empty optional is what a Profi-C program sees. This makes the v1 curated wrappers do exactly what an automatic binder would do later, so no signature churn when one arrives.
 
+**A decimal point means decimal.** `real` counts in tens rather than in binary, so `0.1 + 0.2` is exactly `0.3` and a price or a mark holds the value it was written as. In C# that behavior belongs to `decimal`, and a decimal point on its own gets you `double` — which is what Profi-C spells `float`, offered by name so it is met on purpose. `Real.MaxValue` is about 79 followed by 27 zeros where a float reaches 1.8 times ten to the 308th, so the trade is range for exactness.
+
+A real also **stops where it runs out**, as an `integer` does: no infinity, and no value meaning "not a number". Those three exist only on `float`, named as `Float.Infinity`, `Float.NegativeInfinity` and `Float.NotANumber`.
+
+**The widths are the widest of each kind**, and that is a deliberate pair with the line above. `integer` is 64 bits where C#'s `int` is 32, and `float` is 64 bits where C#'s `float` is 32 and its `double` is 64. A reader learns one whole-number type and one binary type rather than a family of widths, and the concept transfers even though the spelling does not: what Profi-C calls `integer` is C#'s `long`, and what it calls `float` is C#'s `double`.
+
 **Models are reference types, structures are value types.** Both are user-definable in v1. Structures cannot inherit from another type, cannot contain themselves, and compare field by field.
 
 They do inherit `Model`'s members, which is where `ToString()` and `Equals()` come from, but they can never be **assigned** to a `Model` variable — that conversion is boxing, which Profi-C does not have and does not plan to add. So `Reference.Equals` on a structure stays a compile error rather than a runtime puzzle, and no assignment allocates behind your back. C# is looser here: assigning a struct to `object` compiles and quietly allocates.
@@ -326,7 +334,9 @@ They do inherit `Model`'s members, which is where `ToString()` and `Equals()` co
 
 **Deferred to v2:** generics, interfaces, and properties a program can declare. The library has properties — `scores.Count`, `Math.Pi`, `landing.Year` are read rather than called — but they are the compiler's, and a model a program writes cannot offer one.
 
-**Fractions are a primitive** with exact rational arithmetic. `fraction` and `real` never implicitly convert in either direction; both are explicit.
+**Fractions are a primitive** with exact rational arithmetic. A `real` widens to one unasked and exactly — a tenth is `1|10` — because a real counts in tens and so already is a ratio over a power of ten. Going the other way is written out, since a third has no decimal that ends. The whole chart is in [§3.1a of the specification](language-spec.md#31a-converting-between-numbers).
+
+**There are four number types, not two.** `real` counts in tens and is exact about them, so `0.1 + 0.2` is `0.3`; `float` is binary floating point and is not. See [§6.2](#62-semantics) for what that means beside C#.
 
 **`^` raises to a power** and is the only right-associative operator, so `2 ^ 3 ^ 2` is 512. It binds tighter than a leading minus, making `-2 ^ 2` equal to `-4` as on paper. A **whole** exponent preserves the base's type: an integer base gives an integer, and a fraction base stays exact, so `(1|2) ^ -3` is `8|1`. Any other exponent takes a root and gives a real, so `9 ^ 1|2` is `3` and `16 ^ 3|4` is `8` — the one place a fraction widens to a real unasked, since a root has no exact rational form to preserve. **In C# `^` is exclusive-or**, so the meaning does not carry across; the operation it names there is spelled `xor` here.
 

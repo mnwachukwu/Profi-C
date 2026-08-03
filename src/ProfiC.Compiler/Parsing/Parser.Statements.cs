@@ -366,7 +366,7 @@ public sealed partial class Parser
         // A range loop counts, and counting is done with integers, so the counter carries no
         // written type. Someone arriving from a language that wants one writes "for integer i",
         // which is caught here rather than left as a confusing "expected '='".
-        if (Current.Type is TokenType.Integer or TokenType.Real or TokenType.Boolean
+        if (Current.Type is TokenType.Integer or TokenType.Real or TokenType.Float or TokenType.Boolean
             or TokenType.Character or TokenType.String or TokenType.Fraction)
         {
             _diagnostics.Report(

@@ -69,7 +69,7 @@ public sealed class OperatorResultTests
 
         // A fractional exponent takes a root, which has no exact rational form, so this is
         // the one place a fraction widens to a real without being asked.
-        ["1|2 ^ 1|3"] = "0.7937005259840998",
+        ["1|2 ^ 1|3"] = "0.7937005259841",
 
         // Characters compare by their place in the alphabet, and nothing else.
         ["'a' == 'b'"] = "false", ["'a' != 'b'"] = "true",

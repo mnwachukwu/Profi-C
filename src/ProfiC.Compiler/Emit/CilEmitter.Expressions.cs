@@ -65,6 +65,18 @@ public sealed partial class CilEmitter
                 EmitIndexRead(index);
                 break;
 
+            case IfExpr conditional:
+                EmitConditional(conditional);
+                break;
+
+            case TypeTestExpr test:
+                EmitTypeTest(test);
+                break;
+
+            case TypeCastExpr cast:
+                EmitTypeCast(cast);
+                break;
+
             default:
                 throw Unhandled(expression.GetType().Name);
         }
@@ -73,16 +85,34 @@ public sealed partial class CilEmitter
     /// <summary>
     /// <para>Reads a field through the instance it belongs to, or straight off the type — or a
     /// member of the language that is a value rather than something to call.</para>
-    /// <para>A set's <c>Count</c> is the second kind. It reaches here rather than through the
-    /// call path because it is written without parentheses, which is the whole difference
-    /// between the two and the only thing that decides which way it arrives.</para>
+    /// <para><c>Count</c>, on a set and on a string alike, is the second kind. It reaches here
+    /// rather than through the call path because it is written without parentheses, which is the
+    /// whole difference between the two and the only thing that decides which way it arrives.
+    /// </para>
     /// </summary>
     private void EmitMemberRead(MemberExpr member)
     {
-        if (_model.GetBuiltIn(member) is { } builtIn && CilBuiltIns.IsOnASet(builtIn))
+        switch (_model.GetBuiltIn(member))
         {
-            EmitSetMember(member, [], builtIn);
-            return;
+            case { } onASet when CilBuiltIns.IsOnASet(onASet):
+                EmitSetMember(member, [], onASet);
+                return;
+
+            case { } onAString when CilBuiltIns.IsOnAString(onAString):
+                EmitStringMember(member, [], onAString);
+                return;
+
+            case { } onMath when CilBuiltIns.IsOnMath(onMath):
+                EmitMathMember([], onMath);
+                return;
+
+            case BuiltInId.ExceptionMessage:
+                EmitExceptionMessage(member);
+                return;
+
+            case { } bound when CilBuiltIns.IsABound(bound):
+                EmitBound(bound);
+                return;
         }
 
         if (_model.GetSymbol(member) is not FieldSymbol field
@@ -110,18 +140,35 @@ public sealed partial class CilEmitter
     /// </summary>
     private void EmitNew(NewExpr construction)
     {
-        if (_model.GetType(construction) is not DeclaredTypeSymbol type
-            || !_types.ContainsKey(type))
+        if (_model.GetType(construction) is not DeclaredTypeSymbol type)
         {
             throw Unhandled($"constructing '{construction.TypeName}'");
         }
 
-        foreach (Expression argument in construction.Arguments)
+        // One the language provides — an exception — is a type in the runtime, made by the
+        // constructor the argument count picks rather than by one this build defined.
+        if (!_types.ContainsKey(type))
+        {
+            if (CilTypes.OfBuiltInModel(type) is not { } provided)
+            {
+                throw Unhandled($"constructing '{construction.TypeName}'");
+            }
+
+            EmitArguments(construction.Arguments);
+            _il.Emit(OpCodes.Newobj, BuiltInConstructor(provided, construction.Arguments.Count));
+            return;
+        }
+
+        EmitArguments(construction.Arguments);
+        _il.Emit(OpCodes.Newobj, ConstructorFor(type, construction));
+    }
+
+    private void EmitArguments(IReadOnlyList<Expression> arguments)
+    {
+        foreach (Expression argument in arguments)
         {
             EmitExpression(argument);
         }
-
-        _il.Emit(OpCodes.Newobj, ConstructorFor(type, construction));
     }
 
     /// <summary>
@@ -155,8 +202,16 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Ldc_I8, value);
                 break;
 
+            case decimal value:
+                EmitReal(value);
+                break;
+
             case double value:
                 _il.Emit(OpCodes.Ldc_R8, value);
+                break;
+
+            case Fraction value:
+                EmitFraction(value);
                 break;
 
             case bool value:
@@ -245,6 +300,16 @@ public sealed partial class CilEmitter
 
         switch (unary.Operator)
         {
+            // A real has no 'neg' any more than it has an 'add' — the instruction knows integers
+            // and binary floating point, and a decimal is neither.
+            case UnaryOperator.Negate when IsReal(unary.Operand):
+                _il.Emit(OpCodes.Call, RealNegate);
+                break;
+
+            case UnaryOperator.Negate when IsFraction(unary.Operand):
+                _il.Emit(OpCodes.Call, FractionNegate);
+                break;
+
             case UnaryOperator.Negate:
                 _il.Emit(OpCodes.Neg);
                 break;
@@ -273,10 +338,43 @@ public sealed partial class CilEmitter
             case BinaryOperator.Add when IsString(binary):
                 EmitConcatenation(binary);
                 return;
+
+            // The one operator whose sides may differ in type, so it is settled before the
+            // matching-pair dispatch below.
+            case BinaryOperator.Power:
+                EmitPower(binary);
+                return;
         }
 
         EmitExpression(binary.Left);
         EmitExpression(binary.Right);
+
+        // Seven of the integer operators mean something the instruction does not, so each is a
+        // call into the runtime rather than one opcode. See ProfiCArithmetic: emitted as 'add'
+        // and the rest, a sum past the end of an integer comes back negative, a division by zero
+        // carries the framework's wording, and a shift of 64 quietly means a shift of none.
+        if (IsInteger(binary.Left) && ArithmeticMethod(binary.Operator) is { } shared)
+        {
+            _il.Emit(OpCodes.Call, shared);
+            return;
+        }
+
+        // <b>A real has no instructions at all.</b> The CLR knows integers and binary floating
+        // point; a decimal is a library type, so every operator on one is a call — the four the
+        // runtime guards, and the comparisons, which the framework's own operators answer.
+        if (IsReal(binary.Left) && RealMethod(binary.Operator) is { } onReals)
+        {
+            _il.Emit(OpCodes.Call, onReals);
+            return;
+        }
+
+        // A fraction has none either, and its operators are the runtime's own — so the reducing
+        // and the exactness live inside them rather than here.
+        if (IsFraction(binary.Left) && FractionMethod(binary.Operator) is { } onFractions)
+        {
+            _il.Emit(OpCodes.Call, onFractions);
+            return;
+        }
 
         switch (binary.Operator)
         {
@@ -328,13 +426,6 @@ public sealed partial class CilEmitter
     }
 
     /// <summary>
-    /// <para>Equality, which is reference comparison on a string and a bit comparison on
-    /// anything else.</para>
-    /// <para><c>ceq</c> on two strings compares references, so two equal strings built
-    /// differently would come out unequal — which is not what <c>==</c> means in Profi-C, where
-    /// a string is a value to a reader.</para>
-    /// </summary>
-    /// <summary>
     /// <para>Equality, which in this language compares what a value holds rather than where it
     /// lives.</para>
     /// <para>Three sequences, because the answer is the same and the way to it is not. A number
@@ -347,6 +438,17 @@ public sealed partial class CilEmitter
         if (IsString(binary.Left))
         {
             _il.Emit(OpCodes.Call, StringEquals);
+        }
+        else if (IsReal(binary.Left) || IsReal(binary.Right))
+        {
+            // A decimal has no 'ceq' either, for the same reason it has no 'add'.
+            _il.Emit(OpCodes.Call, RealEquals);
+        }
+        else if (IsFraction(binary.Left) || IsFraction(binary.Right))
+        {
+            // Compared by cross-multiplying rather than field by field, which is what makes
+            // 2|4 and 1|2 equal without either being reduced first.
+            _il.Emit(OpCodes.Call, FractionEquals);
         }
         else if (IsComparedDeeply(binary.Left) || IsComparedDeeply(binary.Right))
         {
@@ -362,6 +464,33 @@ public sealed partial class CilEmitter
             _il.Emit(OpCodes.Ldc_I4_0);
             _il.Emit(OpCodes.Ceq);
         }
+    }
+
+    /// <summary>
+    /// <para><c>if ... then ... else ...</c> written where a value belongs, which is what this
+    /// language has in place of a ternary.</para>
+    /// <para>A branch, so only the side taken is evaluated. That is a rule about the language
+    /// rather than an economy: the other side may be the one that would have failed, and
+    /// <c>if here then here.Value() else 0</c> is exactly the shape that rests on it.</para>
+    /// <para>Nothing converts either arm, because there is nothing to convert. The checker
+    /// requires the two to have the same type exactly — <c>if c then 1 else 2.5</c> is refused
+    /// rather than made a real — so both leave the same thing on the stack by construction.</para>
+    /// </summary>
+    private void EmitConditional(IfExpr conditional)
+    {
+        Label otherwise = _il.DefineLabel();
+        Label done = _il.DefineLabel();
+
+        EmitExpression(conditional.Condition);
+        _il.Emit(OpCodes.Brfalse, otherwise);
+
+        EmitExpression(conditional.ThenValue);
+        _il.Emit(OpCodes.Br, done);
+
+        _il.MarkLabel(otherwise);
+        EmitExpression(conditional.ElseValue);
+
+        _il.MarkLabel(done);
     }
 
     /// <summary>
@@ -431,6 +560,65 @@ public sealed partial class CilEmitter
         }
     }
 
+    /// <summary>
+    /// <para>The runtime method an integer operator means, or null where the instruction already
+    /// means it.</para>
+    /// <para>Comparison and the bitwise three are absent on purpose: those mean exactly what the
+    /// instruction means, so routing them through a call would buy nothing.</para>
+    /// </summary>
+    private static MethodInfo? ArithmeticMethod(BinaryOperator op) => op switch
+    {
+        BinaryOperator.Add => Arithmetic(nameof(ProfiCArithmetic.Add)),
+        BinaryOperator.Subtract => Arithmetic(nameof(ProfiCArithmetic.Subtract)),
+        BinaryOperator.Multiply => Arithmetic(nameof(ProfiCArithmetic.Multiply)),
+        BinaryOperator.Divide => Arithmetic(nameof(ProfiCArithmetic.Divide)),
+        BinaryOperator.Remainder => Arithmetic(nameof(ProfiCArithmetic.Remainder)),
+        BinaryOperator.ShiftLeft => Arithmetic(nameof(ProfiCArithmetic.ShiftLeft)),
+        BinaryOperator.ShiftRight => Arithmetic(nameof(ProfiCArithmetic.ShiftRight)),
+        _ => null,
+    };
+
+    private static MethodInfo Arithmetic(string name) =>
+        typeof(ProfiCArithmetic).GetMethod(name, [typeof(long), typeof(long)])!;
+
+    /// <summary>
+    /// <para>The method a <c>real</c> operator means. Every one of them is a call.</para>
+    /// <para>The four that can fail go to the runtime, so that a division by zero and a result
+    /// too large are refused in the language's words. The comparisons go to the framework's own
+    /// operators, which is what a decimal has instead of <c>clt</c> and <c>cgt</c> — those
+    /// instructions know integers and binary floating point, and a decimal is neither.</para>
+    /// </summary>
+    private static MethodInfo? RealMethod(BinaryOperator op) => op switch
+    {
+        BinaryOperator.Add => OnReals(nameof(ProfiCArithmetic.Add)),
+        BinaryOperator.Subtract => OnReals(nameof(ProfiCArithmetic.Subtract)),
+        BinaryOperator.Multiply => OnReals(nameof(ProfiCArithmetic.Multiply)),
+        BinaryOperator.Divide => OnReals(nameof(ProfiCArithmetic.Divide)),
+        BinaryOperator.Remainder => OnReals(nameof(ProfiCArithmetic.Remainder)),
+
+        BinaryOperator.LessThan => Comparing("op_LessThan"),
+        BinaryOperator.GreaterThan => Comparing("op_GreaterThan"),
+        BinaryOperator.LessThanOrEqual => Comparing("op_LessThanOrEqual"),
+        BinaryOperator.GreaterThanOrEqual => Comparing("op_GreaterThanOrEqual"),
+
+        _ => null,
+    };
+
+    private static MethodInfo OnReals(string name) =>
+        typeof(ProfiCArithmetic).GetMethod(name, [typeof(decimal), typeof(decimal)])!;
+
+    private static MethodInfo Comparing(string name) =>
+        typeof(decimal).GetMethod(name, [typeof(decimal), typeof(decimal)])!;
+
+    private bool IsInteger(Expression expression) =>
+        ReferenceEquals(_model.GetType(expression), PrimitiveType.Integer);
+
+    private bool IsReal(Expression expression) =>
+        ReferenceEquals(_model.GetType(expression), PrimitiveType.Real);
+
+    private bool IsFraction(Expression expression) =>
+        ReferenceEquals(_model.GetType(expression), PrimitiveType.Fraction);
+
     private bool IsString(BinaryExpr binary) => IsString(binary.Left) || IsString(binary.Right);
 
     private bool IsString(Expression expression) =>
@@ -458,8 +646,22 @@ public sealed partial class CilEmitter
 
         switch (conversion.Operation)
         {
+            // Not 'conv.r8', which produces binary floating point — the type a real stopped
+            // being. The widening is a constructor call, and it is exact: every whole number a
+            // long holds is a decimal.
             case ConversionOperation.IntegerToReal:
-                _il.Emit(OpCodes.Conv_R8);
+                _il.Emit(OpCodes.Newobj, RealFromInteger);
+                break;
+
+            // Both widenings into a fraction, and both exact. A real reaching one can outgrow the
+            // whole numbers a fraction is made of, which is PC0346 where it is written down and
+            // stops here where it arrived in a variable.
+            case ConversionOperation.IntegerToFraction:
+                _il.Emit(OpCodes.Call, FractionFromInteger);
+                break;
+
+            case ConversionOperation.RealToFraction:
+                _il.Emit(OpCodes.Call, FractionFromReal);
                 break;
 
             default:
@@ -534,6 +736,56 @@ public sealed partial class CilEmitter
             return;
         }
 
+        if (CilBuiltIns.IsOnAString(builtIn))
+        {
+            if (call.Callee is not MemberExpr onAString)
+            {
+                throw Unhandled($"'{builtIn}' reached through nothing");
+            }
+
+            EmitStringMember(onAString, call.Arguments, builtIn);
+            return;
+        }
+
+        // Math needs no receiver: it is a name in front of a dot rather than a value, so every
+        // member of it is emitted from its arguments alone.
+        if (CilBuiltIns.IsOnMath(builtIn))
+        {
+            EmitMathMember(call.Arguments, builtIn);
+            return;
+        }
+
+        // Making a fraction is reached through the name 'Fraction' rather than through a value,
+        // so it takes no receiver — unlike every other member here.
+        if (builtIn is BuiltInId.FractionCreate or BuiltInId.FractionCreateWhole)
+        {
+            EmitArguments(call.Arguments);
+
+            // Two parts is the constructor, which reduces; one is a whole number over one, and
+            // that is a call rather than a construction.
+            if (builtIn == BuiltInId.FractionCreate)
+            {
+                _il.Emit(OpCodes.Newobj, FractionFromParts);
+            }
+            else
+            {
+                _il.Emit(OpCodes.Call, FractionFromInteger);
+            }
+
+            return;
+        }
+
+        if (CilBuiltIns.IsOnAFraction(builtIn))
+        {
+            if (call.Callee is not MemberExpr onAFraction)
+            {
+                throw Unhandled($"'{builtIn}' reached through nothing");
+            }
+
+            EmitFractionMember(onAFraction, call.Arguments, builtIn);
+            return;
+        }
+
         if (CilBuiltIns.IsOnAnOptional(builtIn))
         {
             if (call.Callee is not MemberExpr onAnOptional)
@@ -573,12 +825,47 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Call, SameObject);
                 break;
 
+            // A number written by a pattern. The receiver is the number, and which of the two
+            // runtime methods it reaches is decided by the type it was written on rather than by
+            // the pattern, which says nothing about what it is formatting.
+            case BuiltInId.IntegerFormat:
+            case BuiltInId.RealFormat:
+            case BuiltInId.FloatFormat:
+                EmitExpression(ReceiverOf(call, builtIn));
+                EmitExpression(call.Arguments[0]);
+                _il.Emit(OpCodes.Call, FormatFor(builtIn));
+                break;
+
+            // Crossing between the two kinds of decimal-point number, each one call. Going out
+            // always answers and loses digits; coming back can fail three ways, and the runtime
+            // says which in the language's own words.
+            case BuiltInId.RealToFloat:
+            case BuiltInId.FloatToReal:
+                EmitExpression(ReceiverOf(call, builtIn));
+                _il.Emit(
+                    OpCodes.Call,
+                    builtIn == BuiltInId.RealToFloat ? RealAsFloat : FloatAsReal);
+                break;
+
+            // From a whole number, which is the one crossing that is an instruction: a long
+            // widens to binary floating point without a call, and cannot fail.
+            case BuiltInId.IntegerToFloat:
+                EmitExpression(ReceiverOf(call, builtIn));
+                _il.Emit(OpCodes.Conv_R8);
+                break;
+
             // The same walk '==' is, written as a call. Both sides are boxed rather than left as
             // they are, since a number reaching it has to arrive as something to look inside.
             case BuiltInId.ModelEquals:
                 EmitAsObject(ReceiverOf(call, builtIn));
                 EmitAsObject(call.Arguments[0]);
                 _il.Emit(OpCodes.Call, DeepEquals);
+                break;
+
+            case BuiltInId.ExceptionMessage:
+                EmitExceptionMessage(
+                    call.Callee as MemberExpr
+                    ?? throw Unhandled($"'{builtIn}' reached through nothing"));
                 break;
 
             default:
@@ -633,6 +920,43 @@ public sealed partial class CilEmitter
 
     private static readonly MethodInfo StringEquals =
         typeof(string).GetMethod(nameof(string.Equals), [typeof(string), typeof(string)])!;
+
+    private static readonly MethodInfo RealEquals =
+        typeof(decimal).GetMethod("op_Equality", [typeof(decimal), typeof(decimal)])!;
+
+    private static readonly System.Reflection.ConstructorInfo RealFromInteger =
+        typeof(decimal).GetConstructor([typeof(long)])!;
+
+    private static readonly MethodInfo RealNegate =
+        typeof(decimal).GetMethod("op_UnaryNegation", [typeof(decimal)])!;
+
+    private static readonly MethodInfo FormatInteger =
+        typeof(ProfiCText).GetMethod(
+            nameof(ProfiCText.Format), [typeof(long), typeof(string)])!;
+
+    private static readonly MethodInfo FormatReal =
+        typeof(ProfiCText).GetMethod(
+            nameof(ProfiCText.Format), [typeof(decimal), typeof(string)])!;
+
+    private static readonly MethodInfo FormatFloat =
+        typeof(ProfiCText).GetMethod(
+            nameof(ProfiCText.Format), [typeof(double), typeof(string)])!;
+
+    /// <summary>Which of the three <c>Format</c> overloads a number reaches, by its type.</summary>
+    private static MethodInfo FormatFor(BuiltInId id) => id switch
+    {
+        BuiltInId.IntegerFormat => FormatInteger,
+        BuiltInId.RealFormat => FormatReal,
+        _ => FormatFloat,
+    };
+
+    private static readonly MethodInfo RealAsFloat =
+        typeof(ProfiCArithmetic).GetMethod(
+            nameof(ProfiCArithmetic.ToFloat), [typeof(decimal)])!;
+
+    private static readonly MethodInfo FloatAsReal =
+        typeof(ProfiCArithmetic).GetMethod(
+            nameof(ProfiCArithmetic.ToReal), [typeof(double)])!;
 
     private static readonly MethodInfo WriteOfObject =
         typeof(ProfiCConsole).GetMethod(nameof(ProfiCConsole.Write), [typeof(object)])!;

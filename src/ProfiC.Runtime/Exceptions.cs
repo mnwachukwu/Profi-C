@@ -126,6 +126,30 @@ public static class ArithmeticFailures
         + "carrying on with a number that would look plausible and be wrong.");
 
     /// <summary>
+    /// <para>A real result too large to hold.</para>
+    /// <para>The bound is stated because it is the surprising one: a real counts in tens and runs
+    /// out far sooner than binary floating point, which does not run out at all. That it stops
+    /// rather than answering with an infinity is the same choice an integer makes, and is worth
+    /// saying beside the number.</para>
+    /// </summary>
+    public static OverflowException TooLargeForAReal() => new(
+        "This result is too large to hold. A real counts in tens up to about 79 followed by 27 "
+        + "zeros, and it stops at the end rather than carrying on into an infinity — which is "
+        + "what a float does, and what makes the two worth telling apart.");
+
+    /// <summary>
+    /// <para>A real with no fraction to become.</para>
+    /// <para>Not a rounding problem — every real is exactly a fraction — but a size one: the
+    /// parts of a fraction are integers, and either the digits or the power of ten the point
+    /// implies has outgrown one. Written down, this is refused while compiling; here it arrived
+    /// in a variable and could only be found now.</para>
+    /// </summary>
+    public static OverflowException TooWideForAFraction(decimal value) => new(
+        $"{value} has no fraction to become. Every real is exactly a fraction, but the parts of "
+        + "one are whole numbers — and this needs a numerator or a denominator larger than an "
+        + "integer holds. Up to eighteen places after the point will convert.");
+
+    /// <summary>
     /// A fraction whose parts no longer fit. Denominators multiply on every unlike addition, so
     /// this arrives from a chain of them rather than from one large number, which is worth
     /// saying: the operand a reader is looking at is rarely the one at fault.

@@ -8,6 +8,14 @@ public enum LiteralKind
 {
     Integer,
     Real,
+
+    /// <summary>
+    /// A number with an <c>f</c> written against it. Held apart from <see cref="Real"/> because
+    /// the two denote different types rather than different spellings of one: <c>0.1</c> is a
+    /// tenth and <c>0.1f</c> is the nearest binary number to it, which is not the same value.
+    /// </summary>
+    Float,
+
     Character,
     String,
     Fraction,
@@ -47,6 +55,7 @@ public sealed class LiteralExpr(SourceSpan span, LiteralKind kind, string text)
     {
         TokenType.IntegerLiteral => LiteralKind.Integer,
         TokenType.RealLiteral => LiteralKind.Real,
+        TokenType.FloatLiteral => LiteralKind.Float,
         TokenType.CharLiteral => LiteralKind.Character,
         TokenType.StringLiteral => LiteralKind.String,
         TokenType.BlockStringLiteral => LiteralKind.BlockString,

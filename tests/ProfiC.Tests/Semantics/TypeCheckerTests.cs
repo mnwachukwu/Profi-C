@@ -44,12 +44,14 @@ public sealed class TypeCheckerTests
     }
 
     /// <summary>
-    /// Neither direction is automatic. One third as a real is 0.33333333333333331 and one
-    /// tenth as a fraction is 3602879701896397 over 36028797018963968; both are surprising
-    /// enough that the program should ask.
+    /// <para>Between a fraction and a real, one direction converts on its own and one does not,
+    /// and exactness is what decides which.</para>
+    /// <para>A real counts in tens, so it already is a fraction over a power of ten and widens
+    /// unasked. A fraction going the other way is where exactness stops — a third has no decimal
+    /// form that ends — so that one is written out.</para>
     /// </summary>
     [Test]
-    public void AFractionAndARealNeverConvertOnTheirOwn()
+    public void ARealWidensToAFractionButNotTheOtherWayAround()
     {
         DiagnosticBag toReal = CheckBody("        real r = 1|2;");
         DiagnosticBag toFraction = CheckBody("        fraction f = 0.5;");
@@ -59,18 +61,32 @@ public sealed class TypeCheckerTests
             Assert.That(IdsOf(toReal), Is.EqualTo(new[] { "PC0301" }));
             Assert.That(toReal.Single().Message, Does.Contain("ToReal()"));
 
-            Assert.That(IdsOf(toFraction), Is.EqualTo(new[] { "PC0301" }));
-            Assert.That(toFraction.Single().Message, Does.Contain("ToFraction()"));
+            Assert.That(IdsOf(toFraction), Is.Empty);
         });
+    }
+
+    /// <summary>
+    /// A real too wide to be held as a fraction is refused where it is written, rather than
+    /// left to fail when it runs. <c>PC0324</c> draws the same line around dividing by zero.
+    /// </summary>
+    [Test]
+    public void ARealTooWideToBeAFractionIsRefusedWhereItIsWritten()
+    {
+        Assert.That(
+            IdsOf(CheckBody("        fraction tiny = 0.0000000000000000001;")),
+            Is.EqualTo(new[] { "PC0346" }));
     }
 
     [Test]
     public void TheExplicitConversionsWork()
     {
+        // The two that lose nothing and are written out anyway, because each answer is
+        // surprising: a third has no decimal form that ends, and what a float holds for a
+        // tenth is not a tenth. A real needs no such member — it widens on its own.
         Assert.That(IdsOf(CheckBody(
             """
                     let r = (1|2).ToReal();
-                    let f = (0.5).ToFraction();
+                    let f = (0.1f).ToFraction();
             """)), Is.Empty);
     }
 
@@ -265,12 +281,12 @@ public sealed class TypeCheckerTests
     }
 
     [Test]
-    public void MixingAFractionAndARealInArithmeticIsRejected()
+    public void MixingAFractionAndARealGivesAFraction()
     {
-        // They have no common type on purpose, so there is nothing for the operator to
-        // produce without a conversion nobody asked for.
-        Assert.That(IdsOf(CheckBody("        let x = 1|2 + 0.5;")),
-                    Is.EqualTo(new[] { "PC0303" }));
+        // The real widens, so the pair has a common type and it is the exact one: a half and
+        // a half really is one, and going through a real would only invite the rounding the
+        // fraction was there to avoid.
+        Assert.That(IdsOf(CheckBody("        let x = 1|2 + 0.5;")), Is.Empty);
     }
 
     [Test]

@@ -337,13 +337,43 @@ public sealed class CilEmitterTests
                     Console.WriteLine("c");
             """);
 
+    /// <summary>
+    /// <para>A real counts in tens, so the arithmetic comes out as written.</para>
+    /// <para><b>Emitted as binary floating point, the third line prints 0.30000000000000004.</b>
+    /// That is the whole reason a real is not a double, and it is the shape that would otherwise
+    /// pass unnoticed: the first two lines agree either way.</para>
+    /// </summary>
     [Test]
-    public void RealsAreFloatingPoint() =>
+    public void RealsCountInTens() =>
         Agrees("""
                     real x = 1.5;
                     real y = x * 2.0;
                     Console.WriteLine(y);
                     Console.WriteLine(7.0 / 2.0);
+                    Console.WriteLine(0.1 + 0.2);
+                    Console.WriteLine((0.1 + 0.2) == 0.3);
+                    Console.WriteLine(-2.5);
+            """);
+
+    /// <summary>
+    /// <para>A float is binary floating point, and keeps every part of that.</para>
+    /// <para>Written beside the test above, these two are the difference between the types: the
+    /// same sum, one exact and one not, and the values only a float has.</para>
+    /// </summary>
+    [Test]
+    public void FloatsAreBinaryFloatingPoint() =>
+        Agrees("""
+                    float x = 1.5f;
+                    Console.WriteLine(x * 2.0f);
+                    Console.WriteLine(0.1f + 0.2f);
+                    Console.WriteLine((0.1f + 0.2f) == 0.3f);
+
+                    # A division by zero produces an infinity rather than stopping, and the
+                    # value that is not a number is not equal to itself.
+                    float zero = 0.0f;
+                    Console.WriteLine(1.0f / zero);
+                    Console.WriteLine(zero / zero);
+                    Console.WriteLine((zero / zero) == (zero / zero));
             """);
 
     /// <summary>An integer used where a real belongs is widened, which is a recorded conversion.</summary>
@@ -1130,6 +1160,493 @@ public sealed class CilEmitterTests
             """);
 
     /// <summary>
+    /// <para>Every member of a string, run both ways.</para>
+    /// <para>The corpus already reaches most of these, but a member is easy to route to the wrong
+    /// overload and be right for the argument that happened to be written — <c>Subset</c> takes
+    /// where to stop while <c>Substring</c> takes how many, and either reading is plausible for
+    /// the pair (2, 4). So each is asked once here with an argument that tells the two apart.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void EveryMemberOfAStringMeansTheSameBothWays() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    string word = "  Hello, World  ";
+
+                    Console.WriteLine(word.Count);
+                    Console.WriteLine(word.Trim().Count);
+                    Console.WriteLine(word.Contains("World"));
+                    Console.WriteLine(word.IndexOf("World"));
+
+                    string plain = "abcdef";
+
+                    # The pair that is easy to confuse: how many, against where to stop.
+                    Console.WriteLine(plain.Substring(2, 3));
+                    Console.WriteLine(plain.Subset(2, 3));
+                    Console.WriteLine(plain.Subset(2));
+
+                    Console.WriteLine(plain.Insert("gh"));
+                    Console.WriteLine(plain.InsertAt(0, "z"));
+                    Console.WriteLine(plain.InsertAt(6, "z"));
+                    Console.WriteLine(plain.Remove("cd"));
+                    Console.WriteLine(plain.RemoveAt(0));
+                    Console.WriteLine(plain.Replace("cd", "--"));
+
+                    Console.WriteLine(plain.ToCharacters());
+                    Console.WriteLine(plain.ToCharacters().Count);
+                    Console.WriteLine("a,b,,c".Split(","));
+                    Console.WriteLine("a,b,,c".Split(",").Count);
+
+                    Console.WriteLine("xyABCyx".Trim("xy"));
+                    Console.WriteLine("xyABCyx".TrimStart("xy"));
+                    Console.WriteLine("xyABCyx".TrimEnd("xy"));
+
+                    character[] edges = {'x', 'y'};
+                    Console.WriteLine("xyABCyx".Trim(edges));
+                    Console.WriteLine("xyABCyx".TrimStart(edges));
+                    Console.WriteLine("xyABCyx".TrimEnd(edges));
+
+                    Console.WriteLine("mcDonald".ToUpper());
+                    Console.WriteLine("mcDonald".ToLower());
+                    Console.WriteLine("mcDonald".Capitalize());
+
+                    Console.WriteLine("42".ToInteger().Or(-1));
+                    Console.WriteLine("four".ToInteger().Or(-1));
+                    Console.WriteLine("3.5".ToReal().Or(0.0));
+                    Console.WriteLine("true".ToBoolean().Or(false));
+                    Console.WriteLine("yes".ToBoolean().Or(false));
+
+                    Console.WriteLine((1234).Format("N0"));
+                    Console.WriteLine((3.14159).Format("F2"));
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// The one rule that separates a Profi-C string from a .NET one: an empty argument matches
+    /// trivially and takes nothing away. .NET raises for two of these, so an emitter that called
+    /// its methods directly would stop a program the interpreter runs to the end.
+    /// </summary>
+    [Test]
+    public void AnEmptyArgumentChangesNothingInEitherEngine() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    string word = "abc";
+
+                    Console.WriteLine(word.Replace("", "-"));
+                    Console.WriteLine(word.Remove(""));
+                    Console.WriteLine(word.Trim(""));
+                    Console.WriteLine(word.Contains(""));
+                    Console.WriteLine(word.IndexOf(""));
+                    Console.WriteLine(word.Split(""));
+                    Console.WriteLine(word.Split("").Count);
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para><c>Math</c>, including the members whose answer is not the framework's.</para>
+    /// <para>A half away from zero, a rounding that lands on an integer, and a cube root corrected
+    /// to the whole number it is — each written here with the value that tells the language's
+    /// answer from .NET's, since for most inputs the two agree and prove nothing.</para>
+    /// </summary>
+    [Test]
+    public void MathAnswersTheLanguagesWayInBothEngines() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    Console.WriteLine(Math.Pi);
+                    Console.WriteLine(Math.E);
+
+                    # A half goes away from zero, so these are 3 and -3 rather than 2 and -2.
+                    Console.WriteLine(Math.Round(2.5));
+                    Console.WriteLine(Math.Round(-2.5));
+                    Console.WriteLine(Math.Round(3.14159, 2));
+
+                    Console.WriteLine(Math.Floor(2.7));
+                    Console.WriteLine(Math.Ceiling(2.1));
+                    Console.WriteLine(Math.Floor(-2.7));
+
+                    # Exactly 3, on every machine.
+                    Console.WriteLine(Math.Cbrt(27.0));
+                    Console.WriteLine(Math.Root(32.0, 5.0));
+                    Console.WriteLine(Math.Root(-8.0, 3.0));
+
+                    Console.WriteLine(Math.Sqrt(16.0));
+                    Console.WriteLine(Math.Pow(2.0, 10.0));
+                    Console.WriteLine(Math.Factorial(20));
+
+                    Console.WriteLine(Math.Log(Math.E));
+                    Console.WriteLine(Math.Log(8.0, 2.0));
+                    Console.WriteLine(Math.Log10(1000.0));
+                    Console.WriteLine(Math.Log2(8.0));
+
+                    Console.WriteLine(Math.Sin(0.0));
+                    Console.WriteLine(Math.Cos(0.0));
+                    Console.WriteLine(Math.Tan(0.0));
+                    Console.WriteLine(Math.Asin(0.0));
+                    Console.WriteLine(Math.Acos(1.0));
+                    Console.WriteLine(Math.Atan(0.0));
+                    Console.WriteLine(Math.Atan2(1.0, 1.0));
+                    Console.WriteLine(Math.Sinh(0.0));
+                    Console.WriteLine(Math.Cosh(0.0));
+                    Console.WriteLine(Math.Tanh(0.0));
+                    Console.WriteLine(Math.Asinh(0.0));
+                    Console.WriteLine(Math.Acosh(1.0));
+                    Console.WriteLine(Math.Atanh(0.0));
+
+                    Console.WriteLine(Math.Abs(-7));
+                    Console.WriteLine(Math.Abs(-7.5));
+                    Console.WriteLine(Math.Min(3, 9));
+                    Console.WriteLine(Math.Max(3, 9));
+                    Console.WriteLine(Math.Min(3.5, 9.5));
+                    Console.WriteLine(Math.Max(3.5, 9.5));
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para><c>if</c> written where a value belongs, which is what this language has instead of a
+    /// ternary.</para>
+    /// <para>The arm not taken must not run, and that is more than an economy: it may be the arm
+    /// that would have failed. <c>Chosen</c> prints as it goes, so an emitter that evaluated both
+    /// would print twice and disagree.</para>
+    /// </summary>
+    [Test]
+    public void AnIfExpressionRunsOnlyTheArmItTakes() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    Console.WriteLine(if true then "yes" else "no");
+                    Console.WriteLine(if 3 > 4 then 1 else 2);
+
+                    Console.WriteLine(Program.Chosen(true));
+                    Console.WriteLine(Program.Chosen(false));
+
+                    # Nested, and narrowing inside an arm the way the statement does.
+                    integer? here = 7;
+                    Console.WriteLine(if here.HasValue() then here.Value() else 0);
+
+                    integer n = 5;
+                    Console.WriteLine(if n < 0 then "under" else if n > 3 then "over" else "in");
+                end function
+
+                integer function Chosen(boolean take)
+                    yield if take then Program.Say("left") else Program.Say("right");
+                end function
+
+                integer function Say(string which)
+                    Console.WriteLine("  ran " + which);
+                    yield which.Count;
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para><c>is</c> and <c>as</c>, including the answers the checker settled while compiling.
+    /// </para>
+    /// <para>A settled test is the interesting half: the emitter must read what was recorded
+    /// rather than ask the value, and it must still run whatever was written on the left — so
+    /// <c>Made()</c> prints, and a program that skipped the operand would print less.</para>
+    /// </summary>
+    [Test]
+    public void IsAndAsAgreeIncludingTheTestsSettledWhileCompiling() =>
+        AgreesWholly("""
+            model Animal
+                public override string function ToString()
+                    yield "an animal";
+                end function
+            end model
+
+            model Dog extends Animal
+                public override string function ToString()
+                    yield "a dog";
+                end function
+            end model
+
+            model Cat extends Animal
+                public override string function ToString()
+                    yield "a cat";
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    Animal[] all = {new Dog(), new Cat(), new Animal()};
+
+                    loop each one in all
+                        Console.WriteLine(one + ": dog? " + (one is Dog)
+                                          + " cat? " + (one is Cat)
+                                          + " animal? " + (one is Animal));
+
+                        Console.WriteLine("  as a dog -> " + (one as Dog).HasValue());
+                    end loop
+
+                    # Settled while compiling: a Dog is always an Animal, and never a Cat.
+                    Dog rex = new Dog();
+                    Console.WriteLine(rex is Animal);
+                    Console.WriteLine(rex is Cat);
+                    Console.WriteLine((rex as Animal).HasValue());
+                    Console.WriteLine((rex as Cat).HasValue());
+
+                    # The operand still runs, settled or not.
+                    Console.WriteLine(Program.Made() is Animal);
+                    Console.WriteLine((Program.Made() as Cat).HasValue());
+                    Console.WriteLine((Program.Made() as Dog).HasValue());
+                end function
+
+                Dog function Made()
+                    Console.WriteLine("  made one");
+                    yield new Dog();
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para><c>try</c>, <c>catch</c> and <c>finally</c>, and the ways out of one.</para>
+    /// <para>The two engines reach this differently — the interpreter matches a thrown value
+    /// against each clause by hand, and emitted code hands the question to the CLR — so which
+    /// clause takes what is exactly the kind of thing they could quietly differ about. The first
+    /// matching clause wins in both, a parent's clause takes a child, and a <c>finally</c> runs
+    /// whichever way the block turned out.</para>
+    /// </summary>
+    [Test]
+    public void TryCatchAndFinallyAgree() =>
+        AgreesWholly("""
+            model Trouble extends Exception
+                public function Trouble(string what)
+                    base("trouble: " + what);
+                end function
+            end model
+
+            model WorseTrouble extends Trouble
+                public function WorseTrouble(string what)
+                    base("worse " + what);
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    Program.Catches(0);
+                    Program.Catches(1);
+                    Program.Catches(2);
+                    Program.Catches(3);
+
+                    Console.WriteLine(Program.Guarded(true));
+                    Console.WriteLine(Program.Guarded(false));
+                end function
+
+                function Catches(integer which)
+                    Console.WriteLine("-- " + which);
+
+                    try
+                        if which == 1
+                            throw new Trouble("mild");
+                        else if which == 2
+                            throw new WorseTrouble("indeed");
+                        else if which == 3
+                            throw new Exception("plain");
+                        end if
+
+                        Console.WriteLine("  nothing went wrong");
+                    catch Trouble problem
+                        # A clause for the parent takes the child too, and it is written first,
+                        # so a WorseTrouble arrives here rather than at the one below.
+                        Console.WriteLine("  caught trouble: " + problem.Message());
+                    catch Exception any
+                        Console.WriteLine("  caught something: " + any.Message());
+                    finally
+                        Console.WriteLine("  tidied up");
+                    end try
+                end function
+
+                # A yield out of a try still runs the finally, and a 'ret' inside a protected
+                # region is not something the CLR will run at all — so this is the shape that
+                # says whether the way out was written correctly.
+                integer function Guarded(boolean early)
+                    try
+                        if early
+                            yield 1;
+                        end if
+
+                        yield 2;
+                    finally
+                        Console.WriteLine("  left the guard");
+                    end try
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>Leaving a loop from under a <c>try</c>, which is not the branch it looks like.</para>
+    /// <para>The CLR refuses an ordinary jump out of a protected region, because leaving one has
+    /// to run its <c>finally</c> — so a <c>break</c> for a loop written outside the <c>try</c>
+    /// has to be a <c>leave</c>. Emitted as a plain branch the assembly does not verify, and
+    /// nothing about the program says so.</para>
+    /// </summary>
+    [Test]
+    public void BreakingOutOfATryStillLeavesTheLoop() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    loop for n = 1 to 5
+                        try
+                            if n == 3
+                                Console.WriteLine("stopping at " + n);
+                                break;
+                            end if
+
+                            if n == 2
+                                Console.WriteLine("skipping " + n);
+                                continue;
+                            end if
+
+                            Console.WriteLine("saw " + n);
+                        finally
+                            Console.WriteLine("  finished with " + n);
+                        end try
+                    end loop
+
+                    # The same, in a walk — which is already wrapped in a try of its own.
+                    integer[] counts = {1, 2, 3};
+
+                    loop each count in counts
+                        try
+                            if count == 2
+                                break;
+                            end if
+
+                            Console.WriteLine("walked " + count);
+                        finally
+                            Console.WriteLine("  done with " + count);
+                        end try
+                    end loop
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// The exceptions the language raises itself are the same .NET exceptions in both engines, so
+    /// a clause naming one takes what the runtime threw rather than what a program did.
+    /// </summary>
+    [Test]
+    public void TheLanguagesOwnFailuresAreCaughtByName() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    integer zero = 0;
+
+                    try
+                        Console.WriteLine(10 / zero);
+                    catch DivideByZeroException problem
+                        Console.WriteLine("divided by zero");
+                    end try
+
+                    integer[] few = {1, 2};
+
+                    try
+                        Console.WriteLine(few[9]);
+                    catch IndexOutOfRangeException problem
+                        Console.WriteLine("no such position");
+                    end try
+
+                    # Caught by the root, which every one of them descends from.
+                    try
+                        Console.WriteLine(few[9]);
+                    catch Exception any
+                        Console.WriteLine("caught by the root");
+                    end try
+                end function
+            end model
+            """);
+
+    /// <summary>
+    /// <para>Integer arithmetic stops where the language says it stops.</para>
+    /// <para><b>Emitted as the instruction of the same name, none of these does what the language
+    /// promises.</b> A sum past the end of an integer comes back negative, a shift of 64 quietly
+    /// means a shift of none, and a division by zero carries the framework's wording rather than
+    /// the one written to explain <c>PC0324</c>. The first is the worst by a distance: it is not a
+    /// stop in the wrong words, it is a wrong answer printed as though it were right — which the
+    /// language's own overflow message promises will never happen.</para>
+    /// <para>Every case here is caught rather than left to reach the top, so that the message is
+    /// compared as ordinary output.</para>
+    /// </summary>
+    [Test]
+    public void IntegerArithmeticStopsRatherThanWrappingRound() =>
+        AgreesWholly("""
+            shared model Program
+                function Main()
+                    integer big = 9223372036854775807;
+
+                    # Worked out rather than written: the smallest integer has no literal, since
+                    # the digits of it are one past the largest and the minus is a separate word.
+                    integer small = -9223372036854775807 - 1;
+
+                    integer zero = 0;
+                    integer minusOne = -1;
+                    integer wide = 64;
+
+                    # Wrapped round this would print a negative number and carry on.
+                    try
+                        Console.WriteLine(big + 1);
+                    catch OverflowException problem
+                        Console.WriteLine("add: " + problem.Message());
+                    end try
+
+                    try
+                        Console.WriteLine(small - 1);
+                    catch OverflowException problem
+                        Console.WriteLine("subtract: " + problem.Message());
+                    end try
+
+                    try
+                        Console.WriteLine(big * 2);
+                    catch OverflowException problem
+                        Console.WriteLine("multiply: " + problem.Message());
+                    end try
+
+                    # The one division that overflows: the smallest integer has no positive twin.
+                    try
+                        Console.WriteLine(small / minusOne);
+                    catch OverflowException problem
+                        Console.WriteLine("divide: " + problem.Message());
+                    end try
+
+                    try
+                        Console.WriteLine(10 / zero);
+                    catch DivideByZeroException problem
+                        Console.WriteLine("by zero: " + problem.Message());
+                    end try
+
+                    try
+                        Console.WriteLine(10 % zero);
+                    catch DivideByZeroException problem
+                        Console.WriteLine("remainder: " + problem.Message());
+                    end try
+
+                    # Folded into range this would quietly be a shift of none.
+                    try
+                        Console.WriteLine(1 shiftleft wide);
+                    catch ArgumentException problem
+                        Console.WriteLine("shift: " + problem.Message());
+                    end try
+
+                    # What still means exactly what the instruction means.
+                    Console.WriteLine(small % minusOne);
+                    Console.WriteLine(7 / 2);
+                    Console.WriteLine(7 % 2);
+                    Console.WriteLine(1 shiftleft 10);
+                    Console.WriteLine(1024 shiftright 3);
+                    Console.WriteLine(12 bitwise and 10);
+                    Console.WriteLine(12 bitwise or 10);
+                    Console.WriteLine(12 xor 10);
+                end function
+            end model
+            """);
+
+    /// <summary>
     /// <para><c>base.Member()</c> reaches past the override that is running.</para>
     /// <para>The one call in the language that must not dispatch. Emitted as an ordinary virtual
     /// call it finds the override it was written inside, and the program does not print the wrong
@@ -1560,9 +2077,9 @@ public sealed class CilEmitterTests
             Does.Contain("PC0501"),
             what);
 
-    [TestCase("a set of something unemittable", "fraction[] halves = {1|2};")]
-    [TestCase("an optional of something unemittable", "fraction? half = 1|2;")]
-    [TestCase("a fraction", "fraction half = 1|2;")]
+    [TestCase("a set of something unemittable", "DateTime[] days = {DateTime.Now};")]
+    [TestCase("an optional of something unemittable", "DateTime? day = DateTime.Now;")]
+    [TestCase("a moment", "DateTime day = DateTime.Now;")]
     [TestCase("a lambda", "integer delegate(integer) f = (n) yield n + 1;")]
     [TestCase("a switch", """
                 switch 1

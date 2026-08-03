@@ -13,6 +13,18 @@ namespace ProfiC.Runtime;
 public static class ModelOperations
 {
     /// <summary>
+    /// <para>How a <c>real</c> is written: every digit it holds, and no trailing zeros.</para>
+    /// <para><b>A decimal carries how precise it is, and the language does not.</b> Three point
+    /// zero times three point zero really is <c>9.00</c> to a decimal — the scale is part of the
+    /// value, and .NET prints it — but scale is a thing Profi-C never talks about anywhere else,
+    /// so showing it only here would leak the backing type into what a reader sees.</para>
+    /// <para>Written as a pattern rather than as <c>G29</c>, which normalizes the same way and
+    /// then turns a small number into <c>1E-10</c>. A reader who wrote a tenth of a billionth
+    /// should see one.</para>
+    /// </summary>
+    private const string WithoutTrailingZeros = "0.############################";
+
+    /// <summary>
     /// <para>Renders any value the way Profi-C prints it.</para>
     /// <para>Defaults differ by kind, and the difference is forced rather than chosen. A
     /// structure prints field by field, because a structure cannot contain itself and the
@@ -33,8 +45,19 @@ public static class ModelOperations
         bool flag => flag ? "true" : "false",
         char character => character.ToString(),
         Fraction fraction => fraction.ToString(),
-        double real => real.ToString("R", CultureInfo.InvariantCulture),
-        float real => real.ToString("R", CultureInfo.InvariantCulture),
+        // A real holds its digits as digits, so what it shows is what it holds and no shortest-
+        // round-trip rule is needed to hide a binary approximation.
+        decimal real => real.ToString(WithoutTrailingZeros, CultureInfo.InvariantCulture),
+
+        // The one a float has that no other number does, written the way the language names it
+        // rather than the way .NET abbreviates it. A reader who prints this and a reader who
+        // writes 'Float.NotANumber' should be looking at the same word.
+        double notANumber when double.IsNaN(notANumber) => "NotANumber",
+
+        // Binary floating point, where the shortest form that reads back as the same value is the
+        // only honest rendering: writing every digit would show noise the value never carried.
+        double binary => binary.ToString("R", CultureInfo.InvariantCulture),
+        float binary => binary.ToString("R", CultureInfo.InvariantCulture),
         Enum member => member.ToString(),
 
         // An enumeration member shows the name that was written, not the number behind it.

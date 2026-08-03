@@ -129,18 +129,25 @@ shared model Program
     end function
 
     ##
-        A fraction and a real never convert on their own, in either direction.
+        A fraction and a real convert one way on their own, and one way only.
 
-        One third as a real is 0.33333333333333331, and one tenth as a fraction is
-        3602879701896397 over 36028797018963968. Both are surprising enough that the program
-        should say which it wants.
+        A real counts in tens, so it already is a fraction over a power of ten: a tenth is
+        1|10, exactly, and nothing needs writing. Going the other way is where exactness
+        stops — a third has no decimal form that ends — so that one is asked for by name.
+
+        The rule is the same one everywhere in this file: what loses nothing happens on its
+        own, and what discards something is a decision you write down.
     ##
     function AskingForIt()
         fraction third = 1|3;
         real tenth = 0.1;
 
+        # Unasked, and exact.
+        fraction asRatio = tenth;
+        Console.WriteLine("a tenth as a fraction is " + asRatio);
+
+        # Asked for, because this is the direction that loses something.
         Console.WriteLine("a third as a real is " + third.ToReal());
-        Console.WriteLine("a tenth as a fraction is " + tenth.ToFraction());
 
         # Every type answers ToString(), which is what '+' uses to join one to a string.
         Console.WriteLine("and as text: " + third.ToString() + " " + tenth.ToString());

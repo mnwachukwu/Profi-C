@@ -75,8 +75,9 @@ public sealed partial class Interpreter
 
         return conversion.Operation switch
         {
-            ConversionOperation.IntegerToReal => (double)AsInteger(value),
+            ConversionOperation.IntegerToReal => (decimal)AsInteger(value),
             ConversionOperation.IntegerToFraction => Fraction.FromInteger(AsInteger(value)),
+            ConversionOperation.RealToFraction => value is decimal r ? Fraction.FromReal(r) : value,
             ConversionOperation.FractionToReal => value is Fraction f ? f.ToReal() : value,
             ConversionOperation.WrapOptional => value,
 
@@ -107,6 +108,7 @@ public sealed partial class Interpreter
         {
             (UnaryOperator.Not, bool flag) => !flag,
             (UnaryOperator.Negate, long number) => -number,
+            (UnaryOperator.Negate, decimal number) => -number,
             (UnaryOperator.Negate, double number) => -number,
             (UnaryOperator.Negate, Fraction fraction) => -fraction,
             _ => null,
@@ -158,7 +160,8 @@ public sealed partial class Interpreter
         return (left, right) switch
         {
             (long a, long b) => IntegerOperation(binary.Operator, a, b),
-            (double a, double b) => RealOperation(binary.Operator, a, b),
+            (decimal a, decimal b) => RealOperation(binary.Operator, a, b),
+            (double a, double b) => FloatOperation(binary.Operator, a, b),
             (Fraction a, Fraction b) => FractionOperation(binary.Operator, a, b),
             (char a, char b) => CharacterOperation(binary.Operator, a, b),
             _ => null,
@@ -174,81 +177,30 @@ public sealed partial class Interpreter
     private static object? Power(object? left, object? right) => (left, right) switch
     {
         (Fraction b, long e) => Fraction.Pow(b, e),
-        (long b, long e) => IntegerPower(b, e),
-        (double b, double e) => Math.Pow(b, e),
+        (long b, long e) => ProfiCArithmetic.Power(b, e),
+        (decimal b, decimal e) => ProfiCMath.Pow(b, e),
+        (double b, double e) => ProfiCMath.Pow(b, e),
         _ => null,
     };
 
     /// <summary>
-    /// <para>A whole power of a whole number, by squaring.</para>
-    /// <para>Every step is checked, so a result too large to hold stops the program rather
-    /// than wrapping silently into a wrong answer.</para>
+    /// <para>Integer arithmetic.</para>
+    /// <para>The seven that mean something other than what the CLR instruction of the same name
+    /// means are <see cref="ProfiCArithmetic"/>'s, so that an emitted program answers them the same
+    /// way — an overflow stops, a division by zero is refused in the language's words, and a shift
+    /// past the width is refused rather than folded. The rest mean exactly what the instruction
+    /// means and are written here.</para>
     /// </summary>
-    private static long IntegerPower(long value, long exponent)
+    private static object? IntegerOperation(BinaryOperator op, long a, long b) => op switch
     {
-        if (exponent < 0)
-        {
-            // Rejected while compiling wherever the exponent can be seen; a variable one
-            // reaches here instead. Thrown as an ArgumentException rather than an interpreter
-            // failure so that a program can catch it, exactly as it can catch dividing by a
-            // variable that turned out to be zero.
-            throw new ArgumentException(
-                $"An integer raised to the power {exponent} is not a whole number. Raise a "
-                + "fraction instead, or use Math.Pow for a real result.");
-        }
+        BinaryOperator.Add => ProfiCArithmetic.Add(a, b),
+        BinaryOperator.Subtract => ProfiCArithmetic.Subtract(a, b),
+        BinaryOperator.Multiply => ProfiCArithmetic.Multiply(a, b),
+        BinaryOperator.Divide => ProfiCArithmetic.Divide(a, b),
+        BinaryOperator.Remainder => ProfiCArithmetic.Remainder(a, b),
+        BinaryOperator.ShiftLeft => ProfiCArithmetic.ShiftLeft(a, b),
+        BinaryOperator.ShiftRight => ProfiCArithmetic.ShiftRight(a, b),
 
-        long result = 1;
-        long factor = value;
-
-        try
-        {
-            for (long remaining = exponent; remaining > 0; remaining /= 2)
-            {
-                if (remaining % 2 == 1)
-                {
-                    result = checked(result * factor);
-                }
-
-                if (remaining > 1)
-                {
-                    factor = checked(factor * factor);
-                }
-            }
-        }
-        catch (OverflowException)
-        {
-            throw ArithmeticFailures.TooLargeForAnInteger();
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// <para>Integer arithmetic. Division truncates, which is worth knowing: one divided by
-    /// three is zero, not a third.</para>
-    /// <para>The three checked operations are wrapped rather than each testing its own bounds,
-    /// so that one wording covers them and none can be added later without it. Nothing nested
-    /// runs inside the switch, so the only overflow it can catch is its own.</para>
-    /// </summary>
-    private static object? IntegerOperation(BinaryOperator op, long a, long b)
-    {
-        try
-        {
-            return CheckedIntegerOperation(op, a, b);
-        }
-        catch (OverflowException)
-        {
-            throw ArithmeticFailures.TooLargeForAnInteger();
-        }
-    }
-
-    private static object? CheckedIntegerOperation(BinaryOperator op, long a, long b) => op switch
-    {
-        BinaryOperator.Add => checked(a + b),
-        BinaryOperator.Subtract => checked(a - b),
-        BinaryOperator.Multiply => checked(a * b),
-        BinaryOperator.Divide => b == 0 ? throw ArithmeticFailures.DivideByZero() : a / b,
-        BinaryOperator.Remainder => b == 0 ? throw ArithmeticFailures.RemainderByZero() : a % b,
         BinaryOperator.LessThan => a < b,
         BinaryOperator.GreaterThan => a > b,
         BinaryOperator.LessThanOrEqual => a <= b,
@@ -258,21 +210,35 @@ public sealed partial class Interpreter
         BinaryOperator.BitwiseOr => a | b,
         BinaryOperator.Xor => a ^ b,
 
-        // An amount outside the width is refused rather than folded into range, which is what
-        // C# does and what makes "x shiftleft 64" quietly mean "x shiftleft 0" there. A literal
-        // amount is caught while compiling; this is one that arrived in a variable.
-        BinaryOperator.ShiftLeft => Shiftable(b) ? a << (int)b : throw OutsideTheWidth(b),
-        BinaryOperator.ShiftRight => Shiftable(b) ? a >> (int)b : throw OutsideTheWidth(b),
         _ => null,
     };
 
-    private static bool Shiftable(long amount) => amount is >= 0 and < 64;
+    /// <summary>
+    /// Real arithmetic, which counts in tens. The five that can fail are
+    /// <see cref="ProfiCArithmetic"/>'s, so that an emitted program stops in the same places and
+    /// says the same thing; the comparisons mean what they say and are written here.
+    /// </summary>
+    private static object? RealOperation(BinaryOperator op, decimal a, decimal b) => op switch
+    {
+        BinaryOperator.Add => ProfiCArithmetic.Add(a, b),
+        BinaryOperator.Subtract => ProfiCArithmetic.Subtract(a, b),
+        BinaryOperator.Multiply => ProfiCArithmetic.Multiply(a, b),
+        BinaryOperator.Divide => ProfiCArithmetic.Divide(a, b),
+        BinaryOperator.Remainder => ProfiCArithmetic.Remainder(a, b),
+        BinaryOperator.LessThan => a < b,
+        BinaryOperator.GreaterThan => a > b,
+        BinaryOperator.LessThanOrEqual => a <= b,
+        BinaryOperator.GreaterThanOrEqual => a >= b,
+        _ => null,
+    };
 
-    private static ArgumentException OutsideTheWidth(long amount) => new(
-        $"A shift of {amount} places is outside an integer, which holds 64 bits. An amount "
-        + "from 0 to 63 is what there is to move.");
-
-    private static object? RealOperation(BinaryOperator op, double a, double b) => op switch
+    /// <summary>
+    /// <para>Float arithmetic, which is binary floating point and stops at nothing.</para>
+    /// <para>Dividing by zero gives an infinity here rather than raising, and a comparison against
+    /// a value that is not a number is false however it is written — both are what the type is for
+    /// and neither is guarded.</para>
+    /// </summary>
+    private static object? FloatOperation(BinaryOperator op, double a, double b) => op switch
     {
         BinaryOperator.Add => a + b,
         BinaryOperator.Subtract => a - b,
@@ -393,7 +359,8 @@ public sealed partial class Interpreter
                             && string.Equals(enumeration.Name, member.TypeName, StringComparison.Ordinal),
 
         long => ReferenceEquals(target, PrimitiveType.Integer),
-        double => ReferenceEquals(target, PrimitiveType.Real),
+        decimal => ReferenceEquals(target, PrimitiveType.Real),
+        double => ReferenceEquals(target, PrimitiveType.Float),
         bool => ReferenceEquals(target, PrimitiveType.Boolean),
         char => ReferenceEquals(target, PrimitiveType.Character),
         string => ReferenceEquals(target, PrimitiveType.String),

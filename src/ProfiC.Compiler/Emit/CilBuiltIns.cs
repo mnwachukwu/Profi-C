@@ -17,7 +17,69 @@ internal static class CilBuiltIns
            or BuiltInId.ReferenceEquals
         || IsOnEveryValue(id)
         || IsOnASet(id)
-        || IsOnAnOptional(id);
+        || IsOnAString(id)
+        || IsOnMath(id)
+        || IsFormatting(id)
+        || IsCrossingBetweenReals(id)
+        || IsOnAFraction(id)
+        || IsABound(id)
+        || IsOnAnOptional(id)
+        || id is BuiltInId.ExceptionMessage;
+
+    /// <summary>
+    /// <para>The members a fraction answers, each one call on the runtime's own struct.</para>
+    /// <para>Making one is here too: <c>Fraction.Of</c> and its whole-number form are the two
+    /// ways a program builds a ratio from values rather than from a literal.</para>
+    /// </summary>
+    /// <summary>
+    /// <para>What each primitive knows about itself, read through a capitalized name beside its
+    /// keyword.</para>
+    /// <para>Every one is a constant, so each arrives as the value itself rather than as a field
+    /// to read — which is what lets the emitter answer them without the runtime holding
+    /// anything.</para>
+    /// </summary>
+    public static bool IsABound(BuiltInId id) =>
+        id is BuiltInId.IntegerMaxValue
+           or BuiltInId.IntegerMinValue
+           or BuiltInId.RealMaxValue
+           or BuiltInId.RealMinValue
+           or BuiltInId.FloatMaxValue
+           or BuiltInId.FloatMinValue
+           or BuiltInId.FloatInfinity
+           or BuiltInId.FloatNegativeInfinity
+           or BuiltInId.FloatNotANumber
+           or BuiltInId.CharacterMaxValue
+           or BuiltInId.CharacterMinValue
+           or BuiltInId.StringEmpty;
+
+    public static bool IsOnAFraction(BuiltInId id) =>
+        id is BuiltInId.FractionToReal
+           or BuiltInId.FractionToFloat
+           or BuiltInId.FractionReciprocal
+           or BuiltInId.FractionFormat
+           or BuiltInId.FractionCreate
+           or BuiltInId.FractionCreateWhole
+
+           // Reached on a float rather than on a fraction, but answering with one — so it belongs
+           // here, where the type it makes is.
+           or BuiltInId.FloatToFraction;
+
+    /// <summary>
+    /// <para>Writing a number by a pattern, which is the way out that reading one out of text is
+    /// the way in.</para>
+    /// <para>A fraction formats too, and is not here: it has no CLR type in an emitted program to
+    /// be written from.</para>
+    /// </summary>
+    public static bool IsFormatting(BuiltInId id) =>
+        id is BuiltInId.IntegerFormat or BuiltInId.RealFormat or BuiltInId.FloatFormat;
+
+    /// <summary>
+    /// Crossing between the two kinds of decimal-point number, which is one call each way — the
+    /// runtime's, so that the three ways back from a float can fail are said in the language's
+    /// words rather than reported as one overflow.
+    /// </summary>
+    public static bool IsCrossingBetweenReals(BuiltInId id) =>
+        id is BuiltInId.RealToFloat or BuiltInId.FloatToReal or BuiltInId.IntegerToFloat;
 
     /// <summary>
     /// <para>What every value answers, <c>Model</c> being the root of them all.</para>
@@ -29,6 +91,121 @@ internal static class CilBuiltIns
     /// </summary>
     public static bool IsOnEveryValue(BuiltInId id) =>
         id is BuiltInId.ModelToString or BuiltInId.ModelEquals;
+
+    /// <summary>
+    /// <para>The members of a string, each one call into the runtime's own text.</para>
+    /// <para>Every one of them but <c>ToFraction</c>, which waits on the fraction: reading text
+    /// into one means constructing one, and the emitter has no way to make a fraction yet.</para>
+    /// </summary>
+    public static bool IsOnAString(BuiltInId id) =>
+        id is BuiltInId.StringCount
+           or BuiltInId.StringContains
+           or BuiltInId.StringIndexOf
+           or BuiltInId.StringSubstring
+           or BuiltInId.StringSubsetFrom
+           or BuiltInId.StringSubsetBetween
+           or BuiltInId.StringInsert
+           or BuiltInId.StringInsertAt
+           or BuiltInId.StringRemove
+           or BuiltInId.StringRemoveAt
+           or BuiltInId.StringToCharacters
+           or BuiltInId.StringTrim
+           or BuiltInId.StringTrimText
+           or BuiltInId.StringTrimSet
+           or BuiltInId.StringTrimStart
+           or BuiltInId.StringTrimStartText
+           or BuiltInId.StringTrimStartSet
+           or BuiltInId.StringTrimEnd
+           or BuiltInId.StringTrimEndText
+           or BuiltInId.StringTrimEndSet
+           or BuiltInId.StringSplit
+           or BuiltInId.StringReplace
+           or BuiltInId.StringToUpper
+           or BuiltInId.StringToLower
+           or BuiltInId.StringCapitalize
+           or BuiltInId.StringToInteger
+           or BuiltInId.StringToReal
+           or BuiltInId.StringToBoolean;
+
+    /// <summary>
+    /// <para>The members of <c>Math</c>, each one call into the runtime's own arithmetic.</para>
+    /// <para>Every one of them that does not take or give back a fraction. Those wait on the
+    /// fraction itself, which is a type the emitter has no way to make.</para>
+    /// </summary>
+    public static bool IsOnMath(BuiltInId id) =>
+        id is BuiltInId.MathPi
+           or BuiltInId.MathE
+           or BuiltInId.MathSqrt
+           or BuiltInId.MathCbrt
+           or BuiltInId.MathRoot
+           or BuiltInId.MathPow
+           or BuiltInId.MathFactorial
+           or BuiltInId.MathLog
+           or BuiltInId.MathLogInBase
+           or BuiltInId.MathLog10
+           or BuiltInId.MathLog2
+           or BuiltInId.MathSin
+           or BuiltInId.MathCos
+           or BuiltInId.MathTan
+           or BuiltInId.MathAsin
+           or BuiltInId.MathAcos
+           or BuiltInId.MathAtan
+           or BuiltInId.MathAtan2
+           or BuiltInId.MathSinh
+           or BuiltInId.MathCosh
+           or BuiltInId.MathTanh
+           or BuiltInId.MathAsinh
+           or BuiltInId.MathAcosh
+           or BuiltInId.MathAtanh
+           or BuiltInId.MathAbsInteger
+           or BuiltInId.MathAbsReal
+           or BuiltInId.MathFloorReal
+           or BuiltInId.MathCeilingReal
+           or BuiltInId.MathRoundReal
+           or BuiltInId.MathRoundRealPlaces
+           or BuiltInId.MathMinInteger
+           or BuiltInId.MathMinReal
+           or BuiltInId.MathMaxInteger
+           or BuiltInId.MathMaxReal
+
+           // The binary half of every pair, all of which emit — a float is what the framework's
+           // own functions were written for, so none of them waits on anything.
+           or BuiltInId.MathSqrtFloat
+           or BuiltInId.MathCbrtFloat
+           or BuiltInId.MathRootFloat
+           or BuiltInId.MathPowFloat
+           or BuiltInId.MathLogFloat
+           or BuiltInId.MathLogInBaseFloat
+           or BuiltInId.MathLog10Float
+           or BuiltInId.MathLog2Float
+           or BuiltInId.MathSinFloat
+           or BuiltInId.MathCosFloat
+           or BuiltInId.MathTanFloat
+           or BuiltInId.MathAsinFloat
+           or BuiltInId.MathAcosFloat
+           or BuiltInId.MathAtanFloat
+           or BuiltInId.MathAtan2Float
+           or BuiltInId.MathSinhFloat
+           or BuiltInId.MathCoshFloat
+           or BuiltInId.MathTanhFloat
+           or BuiltInId.MathAsinhFloat
+           or BuiltInId.MathAcoshFloat
+           or BuiltInId.MathAtanhFloat
+           or BuiltInId.MathAbsFloat
+           or BuiltInId.MathFloorFloat
+           or BuiltInId.MathCeilingFloat
+           or BuiltInId.MathRoundFloat
+           or BuiltInId.MathRoundFloatPlaces
+           or BuiltInId.MathMinFloat
+           or BuiltInId.MathMaxFloat
+
+           // And the fraction forms, now that a fraction is a type the emitter can make.
+           or BuiltInId.MathAbsFraction
+           or BuiltInId.MathFloorFraction
+           or BuiltInId.MathCeilingFraction
+           or BuiltInId.MathRoundFraction
+           or BuiltInId.MathMinFraction
+           or BuiltInId.MathMaxFraction;
 
     /// <summary>The three members an optional has, and there are only three.</summary>
     public static bool IsOnAnOptional(BuiltInId id) =>

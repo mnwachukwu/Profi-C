@@ -1,7 +1,6 @@
 types.pc(16,5): error PC0119: 'let' works inside a function, where the value it holds is written beside it. A field is read far from here, so it says its type: 'integer inferred = ...'.
 types.pc(26,25): error PC0300: Cannot use a string where an integer is expected.
 types.pc(29,18): error PC0301: A fraction does not become a real on its own, because the result would surprise you. Write 'ToReal()' to ask for it.
-types.pc(30,22): error PC0301: A real does not become a fraction on its own, because the result would surprise you. Write 'ToFraction()' to ask for it.
 types.pc(33,19): error PC0303: '*' is not defined for a boolean and an integer.
 types.pc(36,20): error PC0300: Cannot use a Shape where a Circle is expected.
 types.pc(39,19): error PC0300: Cannot use an integer where a Model is expected.

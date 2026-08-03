@@ -14,7 +14,7 @@ public sealed partial class Parser
     /// </summary>
     private static bool StartsType(TokenType type) => type switch
     {
-        TokenType.Integer or TokenType.Real or TokenType.Character or TokenType.Boolean
+        TokenType.Integer or TokenType.Real or TokenType.Float or TokenType.Character or TokenType.Boolean
             or TokenType.String or TokenType.Fraction or TokenType.Identifier
             or TokenType.Delegate or TokenType.Function => true,
         _ => false,

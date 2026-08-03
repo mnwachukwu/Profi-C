@@ -1381,6 +1381,26 @@ public static class DiagnosticDescriptors
         + "and check that, or use 'Or(...)' or 'Value()' here.");
 
     /// <summary>
+    /// <para>A real written down where a fraction is wanted, too wide to become one.</para>
+    /// <para>A real becomes a fraction on its own because it already is one: it counts in tens,
+    /// so the point's position is a denominator and the digits are a numerator. Nothing is lost
+    /// and nothing needs asking — until the parts outgrow the whole numbers a fraction is made
+    /// of, which is what this reports.</para>
+    /// <para>An error rather than a warning, and reported here rather than left to run: the
+    /// value is written on the page, so the compiler can see it cannot be held, and a program
+    /// that stops on a line the reader can point at is better than one that stops later.</para>
+    /// <para>The bound is stated because "too wide" says nothing without it, and because the
+    /// number of places is the part a reader can act on.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor RealIsTooWideForAFraction = Error(
+        "PC0346",
+        "This real has no fraction to become",
+        "{0} cannot be held as a fraction. A real becomes one exactly — a tenth is '1|10' — but "
+        + "the parts of a fraction are whole numbers, and this needs a numerator or a "
+        + "denominator larger than an integer holds. Up to eighteen places after the point will "
+        + "convert.");
+
+    /// <summary>
     /// <para>A function the language provides, named without being called.</para>
     /// <para>A reader coming from a language with properties writes <c>xs.Count</c>, means
     /// the number, and would otherwise get something that is not one.</para>
