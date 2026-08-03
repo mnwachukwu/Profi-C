@@ -1401,6 +1401,25 @@ public static class DiagnosticDescriptors
         + "convert.");
 
     /// <summary>
+    /// <para><c>Reference.Equals</c> asked about a value.</para>
+    /// <para>"Are these two names reaching one thing" is a question only a reference can answer.
+    /// A value is not somewhere a name points; it is what the name holds, so two names holding
+    /// equal values are not holding <em>one</em> value in any sense a program can act on.</para>
+    /// <para>An error rather than an answer, because either answer teaches something false. Yes
+    /// invites a reader to believe a structure has identity, and no invites them to believe two
+    /// equal values differ — and <c>==</c>, which is the question they meant, gives neither
+    /// impression.</para>
+    /// <para>This is the same rule that stops a value being assigned to a <c>Model</c>. That one
+    /// is enforced by the conversion; this one has to be checked where it is written, because
+    /// <c>Reference.Equals</c> is declared as taking anything at all.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ValuesHaveNoIdentity = Error(
+        "PC0347",
+        "A value has no identity to compare",
+        "{0} is a value, so asking whether two of them are the same object has no answer. Use "
+        + "'==' to compare what they hold.");
+
+    /// <summary>
     /// <para>A function the language provides, named without being called.</para>
     /// <para>A reader coming from a language with properties writes <c>xs.Count</c>, means
     /// the number, and would otherwise get something that is not one.</para>
@@ -1729,19 +1748,4 @@ public static class DiagnosticDescriptors
         "'{0}' is listed by {1} and by {2}. A file belongs to one project. Let the project "
         + "that owns it keep it, and have the other reference that project.");
 
-    /// <summary>
-    /// <para>A construct the emitter cannot turn into CIL yet.</para>
-    /// <para>Temporary, and says so: the language accepts the program and the interpreter runs
-    /// it, so nothing is wrong with what was written. What is missing is the back end, and the
-    /// message points at the way to run it in the meantime rather than leaving a reader to
-    /// wonder what they did.</para>
-    /// <para>Reported before anything is written, so a build either produces a whole assembly
-    /// or produces no file at all. Emitting what is understood and leaving the rest out would
-    /// write an assembly that verifies and then fails partway through a run, which is a worse
-    /// answer than not building.</para>
-    /// </summary>
-    public static readonly DiagnosticDescriptor CannotEmitYet = Error(
-        "PC0501",
-        "The compiler cannot emit this yet",
-        "{0} cannot be compiled to an assembly yet. Run the program with 'run' until it can.");
 }

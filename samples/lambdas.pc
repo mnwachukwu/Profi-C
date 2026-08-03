@@ -274,6 +274,17 @@ shared model Program
         integer delegate() advance = counter.Next;
 
         Console.WriteLine("counting: " + advance() + " " + advance() + " " + counter.Next());
+
+        ##
+            Which version it is bound to is decided by what the instance turned out to be, not
+            by the type the name was written through — the same question a call answers, asked
+            at the moment the value is made. So a Dog held under the name Animal gives the Dog's
+            answer, and 'pet.Speaks' and 'pet.Speaks()' can never disagree.
+        ##
+        Animal pet = new Dog();
+        string delegate() heard = pet.Speaks;
+
+        Console.WriteLine("held:    " + heard() + ", called: " + pet.Speaks());
     end function
 
     # ---- Holding one without naming its shape ---------------------------------------
@@ -335,4 +346,27 @@ model Counter
         yield () yield this.count;
     end function
 
+end model
+
+##
+    @summary: An animal that says something, so a value made from one can be asked which.
+
+    @remarks: Two models rather than one, because the point is the override: a function value
+    made from an instance is bound to what that instance turned out to be.
+##
+model Animal
+    # @summary: What this animal says.
+    # @yields: nothing in particular, for an animal of no particular kind.
+    public virtual string function Speaks()
+        yield "...";
+    end function
+end model
+
+# @summary: An animal that says something in particular.
+model Dog extends Animal
+    # @summary: What a dog says.
+    # @yields: "woof".
+    public override string function Speaks()
+        yield "woof";
+    end function
 end model

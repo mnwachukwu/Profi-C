@@ -21,46 +21,39 @@ namespace ProfiC.Compiler.Emit;
 /// Everything hard about capture, iteration, and implicit conversion has already happened by
 /// then, so this file is a translation from a simple tree to a stack machine and nothing more.
 /// </para>
-/// <para><b>What it can emit is <see cref="EmitSurvey"/>'s to say</b>, and that runs first. Any
-/// construct reaching here that the survey should have refused is a fault in the compiler, and
-/// is thrown rather than reported — a reader can do nothing with it, and the alternative is an
+/// <para><b>It emits every program the checker accepts.</b> There is nothing it declines, so
+/// meeting a shape it has no sequence for is a fault in the compiler rather than a program to
+/// report, and it throws — a reader can do nothing with such a message, and the alternative is an
 /// assembly quietly missing a piece.</para>
 /// </summary>
 public sealed partial class CilEmitter
 {
     /// <summary>
-    /// <para>Emits an assembly, or reports why it cannot and writes nothing.</para>
-    /// <para>Nothing is written until the survey passes, so a refused build leaves no file
-    /// behind — an assembly that is missing part of a program still loads, and fails only when
-    /// a run reaches the gap.</para>
+    /// <para>Emits an assembly.</para>
+    /// <para><b>Every program the checker accepts is one this writes</b>, so there is nothing to
+    /// report and nothing to decline. What keeps that true is a test: every built-in the language
+    /// offers has to be one <see cref="CilBuiltIns"/> knows a sequence for, so a member added
+    /// without an emission fails a build here rather than a reader's build later.</para>
+    /// <para>Meeting a shape it has no sequence for is therefore a fault in the compiler rather
+    /// than anything a program did, and is thrown rather than reported. A reader can do nothing
+    /// with such a message, and the alternative is an assembly quietly missing a piece.</para>
     /// </summary>
     /// <param name="units">The lowered, closure-converted units.</param>
     /// <param name="model">What names and types were resolved to.</param>
     /// <param name="assemblyName">The name the assembly carries and its file is called.</param>
     /// <param name="path">Where to write the assembly.</param>
-    /// <param name="diagnostics">Where refusals are reported.</param>
-    /// <returns>True where an assembly was written.</returns>
-    public static bool Emit(
+    public static void Emit(
         IReadOnlyList<CompilationUnit> units,
         SemanticModel model,
         string assemblyName,
-        string path,
-        DiagnosticBag diagnostics)
+        string path)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(assemblyName);
         ArgumentNullException.ThrowIfNull(path);
-        ArgumentNullException.ThrowIfNull(diagnostics);
-
-        if (!EmitSurvey.CanEmit(units, model, diagnostics))
-        {
-            return false;
-        }
 
         new CilEmitter(model, assemblyName).Write(units, path);
-
-        return true;
     }
 
     private readonly SemanticModel _model;
@@ -101,24 +94,32 @@ public sealed partial class CilEmitter
 
     private void Write(IReadOnlyList<CompilationUnit> units, string path)
     {
-        ModelDecl[] models = [.. BasesFirst([.. units.SelectMany(Models)])];
+        Shaped[] models = [.. BasesFirst([.. units.SelectMany(Models)])];
         Declared[] functions = [.. models.SelectMany(Functions)];
 
         // Pass one: every type, then every field and signature. All of it before any body, so
         // that a body may name a method or a field whose own definition comes later — which is
         // what two models referring to each other requires.
-        foreach (ModelDecl model in models)
+
+        // Enumerations first, and they need no ordering among themselves: an enumeration extends
+        // nothing and holds nothing but numbers, so none of them can name another.
+        foreach (EnumerationDecl enumeration in units.SelectMany(Enumerations))
+        {
+            DefineEnumeration(enumeration);
+        }
+
+        foreach (Shaped model in models)
         {
             DefineType(model);
         }
 
-        foreach (ModelDecl model in models)
+        foreach (Shaped model in models)
         {
             DefineFields(model);
         }
 
         // After the fields, since what a model answers about its own parts is the list of them.
-        foreach (ModelDecl model in models)
+        foreach (Shaped model in models)
         {
             ImplementDeepEquality(model);
         }
@@ -132,9 +133,16 @@ public sealed partial class CilEmitter
         // field initializers have nowhere to run. Defined here with everything else, because a
         // body written below may construct it — and the builder cannot be found by asking the
         // type for its constructors, which is not answerable until the type is created.
-        foreach (ModelDecl model in models)
+        foreach (Shaped model in models)
         {
             DefineDefaultConstructor(model);
+        }
+
+        // The copy a structure needs, defined with everything else because a body written below
+        // calls it — every assignment of one does.
+        foreach (Shaped model in models.Where(m => m.IsStructure))
+        {
+            DefineCopy(model);
         }
 
         // Pass two: the bodies, which may now refer to anything defined above.
@@ -143,10 +151,15 @@ public sealed partial class CilEmitter
             EmitBody(function);
         }
 
-        foreach (ModelDecl model in models)
+        foreach (Shaped model in models)
         {
             EmitDefaultConstructor(model);
             EmitSharedFieldInitializers(model);
+
+            if (model.IsStructure)
+            {
+                EmitCopy(model);
+            }
         }
 
         DefineStart(units);
@@ -154,6 +167,13 @@ public sealed partial class CilEmitter
         foreach (TypeBuilder type in _types.Values)
         {
             type.CreateType();
+        }
+
+        // After the models, since a delegate is made while a body is being written and the loop
+        // above is over a collection that is no longer growing by then.
+        foreach (TypeBuilder built in _delegates.Values)
+        {
+            built.CreateType();
         }
 
         Save(path);
@@ -164,26 +184,54 @@ public sealed partial class CilEmitter
     /// does not name its owner and the emitter needs one to hang a method on — the walk knows
     /// it, so the walk is what says it.
     /// </summary>
-    private readonly record struct Declared(ModelDecl Owner, FunctionDecl Function);
+    private readonly record struct Declared(Shaped Owner, FunctionDecl Function);
 
     /// <summary>
-    /// Every model a unit declares. Namespaces are walked through, since a declaration inside
-    /// one is still a declaration the unit makes.
+    /// <para>A model or a structure, which the emitter builds the same way.</para>
+    /// <para>The two declarations carry the same things — modifiers, a name, members — and share
+    /// no base beyond <see cref="Declaration"/>, so this is what lets one pass define both.
+    /// <c>BaseTypeName</c> is the whole of what a model has and a structure does not, and a
+    /// structure extends nothing.</para>
+    /// <para>What <see cref="IsStructure"/> decides is copying, and nothing else. See
+    /// <see cref="DefineCopy"/> for why that is a method rather than a kind of type.</para>
     /// </summary>
-    private static IEnumerable<ModelDecl> Models(CompilationUnit unit) => Models(unit.Declarations);
+    private readonly record struct Shaped(
+        Declaration Node,
+        DeclarationModifiers Modifiers,
+        string Name,
+        IReadOnlyList<Declaration> Members,
+        bool IsStructure)
+    {
+        public static Shaped Of(ModelDecl model) =>
+            new(model, model.Modifiers, model.Name, model.Members, IsStructure: false);
 
-    private static IEnumerable<ModelDecl> Models(IEnumerable<Declaration> declarations)
+        public static Shaped Of(StructureDecl structure) =>
+            new(structure, structure.Modifiers, structure.Name, structure.Members,
+                IsStructure: true);
+    }
+
+    /// <summary>
+    /// Every model and structure a unit declares. Namespaces are walked through, since a
+    /// declaration inside one is still a declaration the unit makes.
+    /// </summary>
+    private static IEnumerable<Shaped> Models(CompilationUnit unit) => Models(unit.Declarations);
+
+    private static IEnumerable<Shaped> Models(IEnumerable<Declaration> declarations)
     {
         foreach (Declaration declaration in declarations)
         {
             switch (declaration)
             {
                 case ModelDecl model:
-                    yield return model;
+                    yield return Shaped.Of(model);
+                    break;
+
+                case StructureDecl structure:
+                    yield return Shaped.Of(structure);
                     break;
 
                 case NamespaceDecl inner:
-                    foreach (ModelDecl found in Models(inner.Declarations))
+                    foreach (Shaped found in Models(inner.Declarations))
                     {
                         yield return found;
                     }
@@ -193,7 +241,32 @@ public sealed partial class CilEmitter
         }
     }
 
-    private static IEnumerable<Declared> Functions(ModelDecl model) =>
+    /// <summary>Every enumeration a unit declares, namespaces walked through as models are.</summary>
+    private static IEnumerable<EnumerationDecl> Enumerations(CompilationUnit unit) =>
+        Enumerations(unit.Declarations);
+
+    private static IEnumerable<EnumerationDecl> Enumerations(IEnumerable<Declaration> declarations)
+    {
+        foreach (Declaration declaration in declarations)
+        {
+            switch (declaration)
+            {
+                case EnumerationDecl enumeration:
+                    yield return enumeration;
+                    break;
+
+                case NamespaceDecl inner:
+                    foreach (EnumerationDecl found in Enumerations(inner.Declarations))
+                    {
+                        yield return found;
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private static IEnumerable<Declared> Functions(Shaped model) =>
         model.Members.OfType<FunctionDecl>().Select(f => new Declared(model, f));
 
     /// <summary>
@@ -203,30 +276,30 @@ public sealed partial class CilEmitter
     /// order will not do: a file may declare a child above its parent, and two files have no
     /// order between them at all.</para>
     /// </summary>
-    private IEnumerable<ModelDecl> BasesFirst(IReadOnlyList<ModelDecl> models)
+    private IEnumerable<Shaped> BasesFirst(IReadOnlyList<Shaped> models)
     {
-        Dictionary<DeclaredTypeSymbol, ModelDecl> byType = [];
+        Dictionary<DeclaredTypeSymbol, Shaped> byType = [];
 
-        foreach (ModelDecl model in models)
+        foreach (Shaped model in models)
         {
-            if (_model.GetSymbol(model) is DeclaredTypeSymbol owner)
+            if (_model.GetSymbol(model.Node) is DeclaredTypeSymbol owner)
             {
                 byType.TryAdd(owner, model);
             }
         }
 
-        List<ModelDecl> ordered = new(models.Count);
-        HashSet<ModelDecl> placed = [];
-        HashSet<ModelDecl> walking = [];
+        List<Shaped> ordered = new(models.Count);
+        HashSet<Shaped> placed = [];
+        HashSet<Shaped> walking = [];
 
-        foreach (ModelDecl model in models)
+        foreach (Shaped model in models)
         {
             Place(model);
         }
 
         return ordered;
 
-        void Place(ModelDecl model)
+        void Place(Shaped model)
         {
             // 'walking' guards against an inheritance cycle, which the resolver reports and
             // which would otherwise be followed forever here.
@@ -235,8 +308,8 @@ public sealed partial class CilEmitter
                 return;
             }
 
-            if (_model.GetSymbol(model) is ModelSymbol { BaseType: { } parent }
-                && byType.TryGetValue(parent, out ModelDecl? above))
+            if (_model.GetSymbol(model.Node) is ModelSymbol { BaseType: { } parent }
+                && byType.TryGetValue(parent, out Shaped above))
             {
                 Place(above);
             }
@@ -256,9 +329,9 @@ public sealed partial class CilEmitter
     /// needs no adapter. <c>sealed</c> and <c>abstract</c> are written into the metadata for the
     /// same reason <c>shared</c> is: the runtime then enforces what the language promised.</para>
     /// </summary>
-    private void DefineType(ModelDecl declaration)
+    private void DefineType(Shaped declaration)
     {
-        if (_model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
+        if (_model.GetSymbol(declaration.Node) is not DeclaredTypeSymbol owner
             || _types.ContainsKey(owner))
         {
             return;
@@ -274,6 +347,13 @@ public sealed partial class CilEmitter
         }
 
         if (declaration.Modifiers.HasFlag(DeclarationModifiers.Sealed))
+        {
+            shape |= TypeAttributes.Sealed;
+        }
+
+        // A structure is sealed because nothing extends one — the language has no way to say it,
+        // and saying so in the metadata means the runtime enforces what the language promised.
+        if (declaration.IsStructure)
         {
             shape |= TypeAttributes.Sealed;
         }
@@ -308,9 +388,9 @@ public sealed partial class CilEmitter
     /// Defines a model's fields, and remembers which of them were written with a value so that
     /// every constructor can start by running those.
     /// </summary>
-    private void DefineFields(ModelDecl declaration)
+    private void DefineFields(Shaped declaration)
     {
-        if (_model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
+        if (_model.GetSymbol(declaration.Node) is not DeclaredTypeSymbol owner
             || !_types.TryGetValue(owner, out TypeBuilder? type))
         {
             return;
@@ -343,7 +423,7 @@ public sealed partial class CilEmitter
     private void DefineSignature(Declared declared)
     {
         if (_model.GetSymbol(declared.Function) is not FunctionSymbol function
-            || _model.GetSymbol(declared.Owner) is not DeclaredTypeSymbol owner
+            || _model.GetSymbol(declared.Owner.Node) is not DeclaredTypeSymbol owner
             || !_types.TryGetValue(owner, out TypeBuilder? type))
         {
             return;
@@ -395,7 +475,7 @@ public sealed partial class CilEmitter
     /// by the name alone. Without it a child declaring <c>Area(integer)</c> would hide the
     /// parent's <c>Area()</c> as well, which is not what either of them said.</para>
     /// </summary>
-    private static MethodAttributes ShapeOf(FunctionSymbol function, ModelDecl owner)
+    private static MethodAttributes ShapeOf(FunctionSymbol function, Shaped owner)
     {
         MethodAttributes shape = MethodAttributes.Public | MethodAttributes.HideBySig;
 
@@ -431,6 +511,17 @@ public sealed partial class CilEmitter
         return shape;
     }
 
+    /// <summary>
+    /// <para>Whether a member was reached through a type's name rather than through a value.</para>
+    /// <para><b>The node shape is half the question, and not a formality.</b> A <c>new</c> binds
+    /// to the type it makes, so asking the symbol alone calls <c>new Time(17, 30).AddHours(8.0)</c>
+    /// a member reached through a name and emits the call with nothing underneath it — which the
+    /// CLR refuses as an invalid program, a long way from the line that caused it.</para>
+    /// </summary>
+    private bool IsThroughATypeName(Expression receiver) =>
+        receiver is IdentifierExpr or MemberExpr
+        && _model.GetSymbol(receiver) is DeclaredTypeSymbol;
+
     private Type Returning(FunctionSymbol function) =>
         function.ReturnType is null ? typeof(void) : TypeOf(function.ReturnType, function.Name);
 
@@ -452,6 +543,19 @@ public sealed partial class CilEmitter
             return built;
         }
 
+        // One of the two roots — 'Model', or 'Function' — which is a place to hold something
+        // whose shape is not being named.
+        if (CilTypes.OfRoot(type) is { } root)
+        {
+            return root;
+        }
+
+        // A moment, a day, a time of day, a length of one, or a generator.
+        if (CilTypes.OfProvided(type) is { } holding)
+        {
+            return holding;
+        }
+
         // A model the language provides, which is a type in the runtime rather than one being
         // written here — an exception, so far.
         if (CilTypes.OfBuiltInModel(type) is { } provided)
@@ -471,6 +575,14 @@ public sealed partial class CilEmitter
             return CilTypes.OptionalOf(TypeOf(optional.UnderlyingType, what));
         }
 
+        // A function type becomes a delegate, made the first time that shape is wanted rather
+        // than in the pass above: what shapes a program needs is not knowable from its
+        // declarations, since one is written wherever a value is passed along.
+        if (type is FunctionType shape)
+        {
+            return DelegateFor(shape);
+        }
+
         return Required(null, what);
     }
 
@@ -481,7 +593,7 @@ public sealed partial class CilEmitter
     /// </summary>
     private static Type Required(Type? type, string what) =>
         type ?? throw new InvalidOperationException(
-            $"the emitter has no CLR type for '{what}', which the survey should have refused");
+            $"the emitter has no CLR type for '{what}', which it has no sequence for");
 
     /// <summary>
     /// <para>Writes the assembly, with the entry point recorded in the PE header.</para>

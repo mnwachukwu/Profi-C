@@ -411,105 +411,133 @@ public sealed partial class Interpreter
             BuiltInId.RandomNextBelow => new StrongBox<object?>(Chance().Next(Integer(0))),
             BuiltInId.RandomNextBetween =>
                 new StrongBox<object?>(Chance().Next(Integer(0), Integer(1))),
-            BuiltInId.RandomNextDouble => new StrongBox<object?>((decimal)Chance().NextDouble()),
+            BuiltInId.RandomNextDouble => new StrongBox<object?>(Chance().NextReal()),
 
             BuiltInId.DateTimeNewDate => new StrongBox<object?>(
-                MakeMoment(Integer(0), Integer(1), Integer(2), 0, 0, 0)),
-            BuiltInId.DateTimeNewMoment => new StrongBox<object?>(
-                MakeMoment(Integer(0), Integer(1), Integer(2), Integer(3), Integer(4), Integer(5))),
+                ProfiCMoments.MakeDay(Integer(0), Integer(1), Integer(2))),
+            BuiltInId.DateTimeNewMoment => new StrongBox<object?>(ProfiCMoments.MakeMoment(
+                Integer(0), Integer(1), Integer(2), Integer(3), Integer(4), Integer(5))),
 
-            BuiltInId.DateTimeNow => new StrongBox<object?>(DateTime.Now),
-            BuiltInId.DateTimeToday => new StrongBox<object?>(DateTime.Today),
+            BuiltInId.DateTimeNow => new StrongBox<object?>(ProfiCMoments.Now()),
+            BuiltInId.DateTimeToday => new StrongBox<object?>(ProfiCMoments.Today()),
 
-            BuiltInId.DateTimeYear => new StrongBox<object?>((long)Moment().Year),
-            BuiltInId.DateTimeMonth => new StrongBox<object?>((long)Moment().Month),
-            BuiltInId.DateTimeDay => new StrongBox<object?>((long)Moment().Day),
-            BuiltInId.DateTimeHour => new StrongBox<object?>((long)Moment().Hour),
-            BuiltInId.DateTimeMinute => new StrongBox<object?>((long)Moment().Minute),
-            BuiltInId.DateTimeSecond => new StrongBox<object?>((long)Moment().Second),
-            BuiltInId.DateTimeDayOfWeek => new StrongBox<object?>((long)Moment().DayOfWeek),
-            BuiltInId.DateTimeDayOfYear => new StrongBox<object?>((long)Moment().DayOfYear),
+            BuiltInId.DateTimeYear => new StrongBox<object?>(ProfiCMoments.Year(Moment())),
+            BuiltInId.DateTimeMonth => new StrongBox<object?>(ProfiCMoments.Month(Moment())),
+            BuiltInId.DateTimeDay => new StrongBox<object?>(ProfiCMoments.Day(Moment())),
+            BuiltInId.DateTimeHour => new StrongBox<object?>(ProfiCMoments.Hour(Moment())),
+            BuiltInId.DateTimeMinute => new StrongBox<object?>(ProfiCMoments.Minute(Moment())),
+            BuiltInId.DateTimeSecond => new StrongBox<object?>(ProfiCMoments.Second(Moment())),
+            BuiltInId.DateTimeDayOfWeek =>
+                new StrongBox<object?>(ProfiCMoments.DayOfWeek(Moment())),
+            BuiltInId.DateTimeDayOfYear =>
+                new StrongBox<object?>(ProfiCMoments.DayOfYear(Moment())),
 
-            // A moment never changes, so each of these yields another one.
-            BuiltInId.DateTimeAddDays => new StrongBox<object?>(Moment().AddDays((double)Real(0))),
-            BuiltInId.DateTimeAddHours => new StrongBox<object?>(Moment().AddHours((double)Real(0))),
-            BuiltInId.DateTimeAddMinutes => new StrongBox<object?>(Moment().AddMinutes((double)Real(0))),
-            BuiltInId.DateTimeAddSeconds => new StrongBox<object?>(Moment().AddSeconds((double)Real(0))),
-            BuiltInId.DateTimeAddYears => new StrongBox<object?>(Moment().AddYears((int)Integer(0))),
-            BuiltInId.DateTimeAddMonths => new StrongBox<object?>(Moment().AddMonths((int)Integer(0))),
+            BuiltInId.DateTimeAddDays =>
+                new StrongBox<object?>(ProfiCMoments.AddDays(Moment(), Real(0))),
+            BuiltInId.DateTimeAddHours =>
+                new StrongBox<object?>(ProfiCMoments.AddHours(Moment(), Real(0))),
+            BuiltInId.DateTimeAddMinutes =>
+                new StrongBox<object?>(ProfiCMoments.AddMinutes(Moment(), Real(0))),
+            BuiltInId.DateTimeAddSeconds =>
+                new StrongBox<object?>(ProfiCMoments.AddSeconds(Moment(), Real(0))),
+            BuiltInId.DateTimeAddYears =>
+                new StrongBox<object?>(ProfiCMoments.AddYears(Moment(), Integer(0))),
+            BuiltInId.DateTimeAddMonths =>
+                new StrongBox<object?>(ProfiCMoments.AddMonths(Moment(), Integer(0))),
 
             BuiltInId.DateTimeCompareTo =>
-                new StrongBox<object?>((long)Moment().CompareTo(OtherMoment(0))),
+                new StrongBox<object?>(ProfiCMoments.CompareMoments(Moment(), OtherMoment(0))),
 
-            BuiltInId.DateTimeSubtract => new StrongBox<object?>(Moment() - OtherMoment(0)),
-            BuiltInId.DateTimeSubtractSpan => new StrongBox<object?>(Moment() - Span(0)),
-            BuiltInId.DateTimeAdd => new StrongBox<object?>(Moment() + Span(0)),
+            BuiltInId.DateTimeSubtract =>
+                new StrongBox<object?>(ProfiCMoments.Subtract(Moment(), OtherMoment(0))),
+            BuiltInId.DateTimeSubtractSpan =>
+                new StrongBox<object?>(ProfiCMoments.SubtractSpan(Moment(), Span(0))),
+            BuiltInId.DateTimeAdd =>
+                new StrongBox<object?>(ProfiCMoments.Add(Moment(), Span(0))),
 
             BuiltInId.TimeSpanNewTime => new StrongBox<object?>(
-                MakeSpan(0, Integer(0), Integer(1), Integer(2))),
+                ProfiCMoments.MakeSpan(Integer(0), Integer(1), Integer(2))),
             BuiltInId.TimeSpanNewSpan => new StrongBox<object?>(
-                MakeSpan(Integer(0), Integer(1), Integer(2), Integer(3))),
+                ProfiCMoments.MakeSpan(Integer(0), Integer(1), Integer(2), Integer(3))),
 
-            BuiltInId.TimeSpanZero => new StrongBox<object?>(TimeSpan.Zero),
-            BuiltInId.TimeSpanFromDays => new StrongBox<object?>(TimeSpan.FromDays((double)Real(0))),
-            BuiltInId.TimeSpanFromHours => new StrongBox<object?>(TimeSpan.FromHours((double)Real(0))),
-            BuiltInId.TimeSpanFromMinutes => new StrongBox<object?>(TimeSpan.FromMinutes((double)Real(0))),
-            BuiltInId.TimeSpanFromSeconds => new StrongBox<object?>(TimeSpan.FromSeconds((double)Real(0))),
+            BuiltInId.TimeSpanZero => new StrongBox<object?>(ProfiCMoments.Zero()),
+            BuiltInId.TimeSpanFromDays =>
+                new StrongBox<object?>(ProfiCMoments.FromDays(Real(0))),
+            BuiltInId.TimeSpanFromHours =>
+                new StrongBox<object?>(ProfiCMoments.FromHours(Real(0))),
+            BuiltInId.TimeSpanFromMinutes =>
+                new StrongBox<object?>(ProfiCMoments.FromMinutes(Real(0))),
+            BuiltInId.TimeSpanFromSeconds =>
+                new StrongBox<object?>(ProfiCMoments.FromSeconds(Real(0))),
 
-            BuiltInId.TimeSpanDays => new StrongBox<object?>((long)Length().Days),
-            BuiltInId.TimeSpanHours => new StrongBox<object?>((long)Length().Hours),
-            BuiltInId.TimeSpanMinutes => new StrongBox<object?>((long)Length().Minutes),
-            BuiltInId.TimeSpanSeconds => new StrongBox<object?>((long)Length().Seconds),
+            BuiltInId.TimeSpanDays => new StrongBox<object?>(ProfiCMoments.Days(Length())),
+            BuiltInId.TimeSpanHours => new StrongBox<object?>(ProfiCMoments.Hours(Length())),
+            BuiltInId.TimeSpanMinutes => new StrongBox<object?>(ProfiCMoments.Minutes(Length())),
+            BuiltInId.TimeSpanSeconds => new StrongBox<object?>(ProfiCMoments.Seconds(Length())),
 
-            BuiltInId.TimeSpanTotalDays => new StrongBox<object?>((decimal)Length().TotalDays),
-            BuiltInId.TimeSpanTotalHours => new StrongBox<object?>((decimal)Length().TotalHours),
-            BuiltInId.TimeSpanTotalMinutes => new StrongBox<object?>((decimal)Length().TotalMinutes),
-            BuiltInId.TimeSpanTotalSeconds => new StrongBox<object?>((decimal)Length().TotalSeconds),
+            BuiltInId.TimeSpanTotalDays =>
+                new StrongBox<object?>(ProfiCMoments.TotalDays(Length())),
+            BuiltInId.TimeSpanTotalHours =>
+                new StrongBox<object?>(ProfiCMoments.TotalHours(Length())),
+            BuiltInId.TimeSpanTotalMinutes =>
+                new StrongBox<object?>(ProfiCMoments.TotalMinutes(Length())),
+            BuiltInId.TimeSpanTotalSeconds =>
+                new StrongBox<object?>(ProfiCMoments.TotalSeconds(Length())),
 
-            BuiltInId.TimeSpanAdd => new StrongBox<object?>(Length() + Span(0)),
-            BuiltInId.TimeSpanSubtract => new StrongBox<object?>(Length() - Span(0)),
-            BuiltInId.TimeSpanNegate => new StrongBox<object?>(Length().Negate()),
-            BuiltInId.TimeSpanDuration => new StrongBox<object?>(Length().Duration()),
+            BuiltInId.TimeSpanAdd =>
+                new StrongBox<object?>(ProfiCMoments.AddSpan(Length(), Span(0))),
+            BuiltInId.TimeSpanSubtract =>
+                new StrongBox<object?>(ProfiCMoments.SubtractSpans(Length(), Span(0))),
+            BuiltInId.TimeSpanNegate => new StrongBox<object?>(ProfiCMoments.Negate(Length())),
+            BuiltInId.TimeSpanDuration => new StrongBox<object?>(ProfiCMoments.Duration(Length())),
             BuiltInId.TimeSpanCompareTo =>
-                new StrongBox<object?>((long)Length().CompareTo(Span(0))),
+                new StrongBox<object?>(ProfiCMoments.CompareSpans(Length(), Span(0))),
 
             BuiltInId.DateNew => new StrongBox<object?>(
-                MakeDate(Integer(0), Integer(1), Integer(2))),
-            BuiltInId.DateToday => new StrongBox<object?>(DateOnly.FromDateTime(DateTime.Now)),
+                ProfiCMoments.MakeDate(Integer(0), Integer(1), Integer(2))),
+            BuiltInId.DateToday => new StrongBox<object?>(ProfiCMoments.TodayOnly()),
             BuiltInId.DateFromMoment =>
-                new StrongBox<object?>(DateOnly.FromDateTime(OtherMoment(0))),
+                new StrongBox<object?>(ProfiCMoments.DateFromMoment(OtherMoment(0))),
 
-            BuiltInId.DateYear => new StrongBox<object?>((long)Day().Year),
-            BuiltInId.DateMonth => new StrongBox<object?>((long)Day().Month),
-            BuiltInId.DateDay => new StrongBox<object?>((long)Day().Day),
-            BuiltInId.DateDayOfWeek => new StrongBox<object?>((long)Day().DayOfWeek),
-            BuiltInId.DateDayOfYear => new StrongBox<object?>((long)Day().DayOfYear),
+            BuiltInId.DateYear => new StrongBox<object?>(ProfiCMoments.DateYear(Day())),
+            BuiltInId.DateMonth => new StrongBox<object?>(ProfiCMoments.DateMonth(Day())),
+            BuiltInId.DateDay => new StrongBox<object?>(ProfiCMoments.DateDay(Day())),
+            BuiltInId.DateDayOfWeek => new StrongBox<object?>(ProfiCMoments.DateDayOfWeek(Day())),
+            BuiltInId.DateDayOfYear => new StrongBox<object?>(ProfiCMoments.DateDayOfYear(Day())),
 
-            BuiltInId.DateAddDays => new StrongBox<object?>(Day().AddDays((int)Integer(0))),
-            BuiltInId.DateAddMonths => new StrongBox<object?>(Day().AddMonths((int)Integer(0))),
-            BuiltInId.DateAddYears => new StrongBox<object?>(Day().AddYears((int)Integer(0))),
+            BuiltInId.DateAddDays =>
+                new StrongBox<object?>(ProfiCMoments.DateAddDays(Day(), Integer(0))),
+            BuiltInId.DateAddMonths =>
+                new StrongBox<object?>(ProfiCMoments.DateAddMonths(Day(), Integer(0))),
+            BuiltInId.DateAddYears =>
+                new StrongBox<object?>(ProfiCMoments.DateAddYears(Day(), Integer(0))),
 
-            BuiltInId.DateAtTime => new StrongBox<object?>(Day().ToDateTime(Clock(0))),
-            BuiltInId.DateCompareTo => new StrongBox<object?>((long)Day().CompareTo(OtherDay(0))),
+            BuiltInId.DateAtTime =>
+                new StrongBox<object?>(ProfiCMoments.DateAtTime(Day(), Clock(0))),
+            BuiltInId.DateCompareTo =>
+                new StrongBox<object?>(ProfiCMoments.CompareDates(Day(), OtherDay(0))),
 
             BuiltInId.TimeNewToMinute => new StrongBox<object?>(
-                MakeTime(Integer(0), Integer(1), 0)),
+                ProfiCMoments.MakeTime(Integer(0), Integer(1))),
             BuiltInId.TimeNewToSecond => new StrongBox<object?>(
-                MakeTime(Integer(0), Integer(1), Integer(2))),
-            BuiltInId.TimeNow => new StrongBox<object?>(TimeOnly.FromDateTime(DateTime.Now)),
+                ProfiCMoments.MakeTime(Integer(0), Integer(1), Integer(2))),
+            BuiltInId.TimeNow => new StrongBox<object?>(ProfiCMoments.TimeNow()),
             BuiltInId.TimeFromMoment =>
-                new StrongBox<object?>(TimeOnly.FromDateTime(OtherMoment(0))),
+                new StrongBox<object?>(ProfiCMoments.TimeFromMoment(OtherMoment(0))),
 
-            BuiltInId.TimeHour => new StrongBox<object?>((long)OnTheClock().Hour),
-            BuiltInId.TimeMinute => new StrongBox<object?>((long)OnTheClock().Minute),
-            BuiltInId.TimeSecond => new StrongBox<object?>((long)OnTheClock().Second),
+            BuiltInId.TimeHour => new StrongBox<object?>(ProfiCMoments.TimeHour(OnTheClock())),
+            BuiltInId.TimeMinute => new StrongBox<object?>(ProfiCMoments.TimeMinute(OnTheClock())),
+            BuiltInId.TimeSecond => new StrongBox<object?>(ProfiCMoments.TimeSecond(OnTheClock())),
 
-            BuiltInId.TimeAddHours => new StrongBox<object?>(OnTheClock().AddHours((double)Real(0))),
-            BuiltInId.TimeAddMinutes => new StrongBox<object?>(OnTheClock().AddMinutes((double)Real(0))),
+            BuiltInId.TimeAddHours =>
+                new StrongBox<object?>(ProfiCMoments.TimeAddHours(OnTheClock(), Real(0))),
+            BuiltInId.TimeAddMinutes =>
+                new StrongBox<object?>(ProfiCMoments.TimeAddMinutes(OnTheClock(), Real(0))),
 
-            BuiltInId.TimeToTimeSpan => new StrongBox<object?>(OnTheClock().ToTimeSpan()),
+            BuiltInId.TimeToTimeSpan =>
+                new StrongBox<object?>(ProfiCMoments.TimeToSpan(OnTheClock())),
             BuiltInId.TimeCompareTo =>
-                new StrongBox<object?>((long)OnTheClock().CompareTo(Clock(0))),
+                new StrongBox<object?>(ProfiCMoments.CompareTimes(OnTheClock(), Clock(0))),
 
             // ---- Reached through a value --------------------------------------------------
 
@@ -615,72 +643,47 @@ public sealed partial class Interpreter
             BuiltInId.StringToBoolean =>
                 new StrongBox<object?>(Held(ProfiCText.ToBoolean(Subject()))),
 
-            BuiltInId.StringToFraction => new StrongBox<object?>(ReadFraction(Subject())),
+            BuiltInId.StringToFraction => new StrongBox<object?>(ProfiCText.ToFractionUntyped(Subject())),
 
             // ---- Files ----------------------------------------------------------------
             //
             // A file that is not there gives nothing back, so the ordinary question needs no
             // guard. Every other failure travels as the IOException it already is, which is
             // the type a program names after 'catch'.
-            BuiltInId.FileRead => new StrongBox<object?>(
-                File.Exists(Text(0)) ? File.ReadAllText(Text(0), Utf8) : null),
-            BuiltInId.FileReadLines => new StrongBox<object?>(
-                File.Exists(Text(0))
-                    ? new ProfiCSet<object?>(
-                        File.ReadAllLines(Text(0), Utf8).Select(line => (object?)line))
-                    : null),
+            BuiltInId.FileRead => new StrongBox<object?>(ProfiCFiles.ReadUntyped(Text(0))),
+            BuiltInId.FileReadLines =>
+                new StrongBox<object?>(ProfiCFiles.ReadLinesUntyped(Text(0))),
 
-            BuiltInId.FileWrite => Then(() => File.WriteAllText(Text(0), Text(1), Utf8)),
-            BuiltInId.FileWriteLines => Then(() => File.WriteAllText(
-                Text(0),
-                string.Concat(OtherSet(1).Select(line => AsText(line) + "\n")),
-                Utf8)),
-            BuiltInId.FileAppend => Then(() => File.AppendAllText(Text(0), Text(1), Utf8)),
+            BuiltInId.FileWrite => Then(() => ProfiCFiles.Write(Text(0), Text(1))),
+            BuiltInId.FileWriteLines => Then(() => ProfiCFiles.WriteLines(Text(0), OtherSet(1))),
+            BuiltInId.FileAppend => Then(() => ProfiCFiles.Append(Text(0), Text(1))),
 
-            BuiltInId.FileExists => new StrongBox<object?>(File.Exists(Text(0))),
+            BuiltInId.FileExists => new StrongBox<object?>(ProfiCFiles.Exists(Text(0))),
 
-            BuiltInId.FileDelete => new StrongBox<object?>(Removed(Text(0))),
+            BuiltInId.FileDelete => new StrongBox<object?>(ProfiCFiles.Delete(Text(0))),
 
-            BuiltInId.FileCopy => Then(() => File.Copy(Text(0), Text(1), overwrite: true)),
-            BuiltInId.FileMove => Then(() => File.Move(Text(0), Text(1), overwrite: true)),
+            BuiltInId.FileCopy => Then(() => ProfiCFiles.Copy(Text(0), Text(1))),
+            BuiltInId.FileMove => Then(() => ProfiCFiles.Move(Text(0), Text(1))),
 
-            BuiltInId.FileSize => new StrongBox<object?>(
-                File.Exists(Text(0)) ? new FileInfo(Text(0)).Length : null),
-            BuiltInId.FileChanged => new StrongBox<object?>(
-                File.Exists(Text(0)) ? File.GetLastWriteTime(Text(0)) : null),
+            BuiltInId.FileSize => new StrongBox<object?>(ProfiCFiles.SizeUntyped(Text(0))),
+            BuiltInId.FileChanged => new StrongBox<object?>(ProfiCFiles.ChangedUntyped(Text(0))),
 
-            BuiltInId.DirectoryCurrent => new StrongBox<object?>(
-                System.IO.Directory.GetCurrentDirectory()),
-            BuiltInId.DirectoryExists => new StrongBox<object?>(
-                System.IO.Directory.Exists(Text(0))),
-            BuiltInId.DirectoryCreate => Then(
-                () => System.IO.Directory.CreateDirectory(Text(0))),
-            BuiltInId.DirectoryDelete => new StrongBox<object?>(RemovedFolder(Text(0))),
+            BuiltInId.DirectoryCurrent => new StrongBox<object?>(ProfiCFiles.Current()),
+            BuiltInId.DirectoryExists => new StrongBox<object?>(ProfiCFiles.FolderExists(Text(0))),
+            BuiltInId.DirectoryCreate => Then(() => ProfiCFiles.CreateFolder(Text(0))),
+            BuiltInId.DirectoryDelete => new StrongBox<object?>(ProfiCFiles.DeleteFolder(Text(0))),
 
-            // Named in a settled order rather than whatever the file system offers, so a
-            // program prints the same list twice and on two machines.
-            BuiltInId.DirectoryFiles => new StrongBox<object?>(
-                System.IO.Directory.Exists(Text(0))
-                    ? new ProfiCSet<object?>(
-                        System.IO.Directory.GetFiles(Text(0))
-                            .OrderBy(p => p, StringComparer.Ordinal)
-                            .Select(p => (object?)p))
-                    : null),
-            BuiltInId.DirectoryFolders => new StrongBox<object?>(
-                System.IO.Directory.Exists(Text(0))
-                    ? new ProfiCSet<object?>(
-                        System.IO.Directory.GetDirectories(Text(0))
-                            .OrderBy(p => p, StringComparer.Ordinal)
-                            .Select(p => (object?)p))
-                    : null),
+            BuiltInId.DirectoryFiles => new StrongBox<object?>(ProfiCFiles.FilesUntyped(Text(0))),
+            BuiltInId.DirectoryFolders =>
+                new StrongBox<object?>(ProfiCFiles.FoldersUntyped(Text(0))),
 
             // The halves of a moment, and the ways of building one from them.
-            BuiltInId.DateTimeDatePart => new StrongBox<object?>(DateOnly.FromDateTime(Moment())),
-            BuiltInId.DateTimeTimePart => new StrongBox<object?>(TimeOnly.FromDateTime(Moment())),
-            BuiltInId.DateTimeFromDate => new StrongBox<object?>(
-                OtherDay(0).ToDateTime(TimeOnly.MinValue)),
-            BuiltInId.DateTimeFromDateAndTime => new StrongBox<object?>(
-                OtherDay(0).ToDateTime(Clock(1))),
+            BuiltInId.DateTimeDatePart => new StrongBox<object?>(ProfiCMoments.DatePart(Moment())),
+            BuiltInId.DateTimeTimePart => new StrongBox<object?>(ProfiCMoments.TimePart(Moment())),
+            BuiltInId.DateTimeFromDate =>
+                new StrongBox<object?>(ProfiCMoments.FromDate(OtherDay(0))),
+            BuiltInId.DateTimeFromDateAndTime =>
+                new StrongBox<object?>(ProfiCMoments.FromDateAndTime(OtherDay(0), Clock(1))),
 
             // Read back from text. Nothing is raised: an optional is what says the text did
             // not read, and text that does not read is the ordinary case rather than a fault.
@@ -688,48 +691,23 @@ public sealed partial class Interpreter
             // Invariant here too, so a value written on one machine reads on another. The
             // second form takes exactly the pattern given, which is how something written by
             // a pattern is read back by the same one.
-            BuiltInId.DateTimeParse => new StrongBox<object?>(
-                DateTime.TryParse(Text(0), CultureInfo.InvariantCulture,
-                                  DateTimeStyles.None, out DateTime moment)
-                    ? moment
-                    : null),
-            BuiltInId.DateTimeParseExact => new StrongBox<object?>(
-                DateTime.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
-                                       DateTimeStyles.None, out DateTime exact)
-                    ? exact
-                    : null),
+            BuiltInId.DateTimeParse =>
+                new StrongBox<object?>(ProfiCMoments.ParseMomentUntyped(Text(0))),
+            BuiltInId.DateTimeParseExact =>
+                new StrongBox<object?>(ProfiCMoments.ParseMomentExactlyUntyped(Text(0), Text(1))),
 
-            BuiltInId.TimeSpanParse => new StrongBox<object?>(
-                TimeSpan.TryParse(Text(0), CultureInfo.InvariantCulture, out TimeSpan length)
-                    ? length
-                    : null),
-            BuiltInId.TimeSpanParseExact => new StrongBox<object?>(
-                TimeSpan.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
-                                       out TimeSpan exactLength)
-                    ? exactLength
-                    : null),
+            BuiltInId.TimeSpanParse =>
+                new StrongBox<object?>(ProfiCMoments.ParseSpanUntyped(Text(0))),
+            BuiltInId.TimeSpanParseExact =>
+                new StrongBox<object?>(ProfiCMoments.ParseSpanExactlyUntyped(Text(0), Text(1))),
 
-            BuiltInId.DateParse => new StrongBox<object?>(
-                DateOnly.TryParse(Text(0), CultureInfo.InvariantCulture,
-                                  DateTimeStyles.None, out DateOnly day)
-                    ? day
-                    : null),
-            BuiltInId.DateParseExact => new StrongBox<object?>(
-                DateOnly.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
-                                       DateTimeStyles.None, out DateOnly exactDay)
-                    ? exactDay
-                    : null),
+            BuiltInId.DateParse => new StrongBox<object?>(ProfiCMoments.ParseDateUntyped(Text(0))),
+            BuiltInId.DateParseExact =>
+                new StrongBox<object?>(ProfiCMoments.ParseDateExactlyUntyped(Text(0), Text(1))),
 
-            BuiltInId.TimeParse => new StrongBox<object?>(
-                TimeOnly.TryParse(Text(0), CultureInfo.InvariantCulture,
-                                  DateTimeStyles.None, out TimeOnly clock)
-                    ? clock
-                    : null),
-            BuiltInId.TimeParseExact => new StrongBox<object?>(
-                TimeOnly.TryParseExact(Text(0), Text(1), CultureInfo.InvariantCulture,
-                                       DateTimeStyles.None, out TimeOnly exactClock)
-                    ? exactClock
-                    : null),
+            BuiltInId.TimeParse => new StrongBox<object?>(ProfiCMoments.ParseTimeUntyped(Text(0))),
+            BuiltInId.TimeParseExact =>
+                new StrongBox<object?>(ProfiCMoments.ParseTimeExactlyUntyped(Text(0), Text(1))),
 
             // Written by a pattern. Invariant, as everything else here is: a program prints
             // the same on every machine, and the pattern is what says otherwise.
@@ -745,14 +723,14 @@ public sealed partial class Interpreter
                 new StrongBox<object?>(ProfiCText.Format(target is double f ? f : 0, Text(0))),
             BuiltInId.FractionFormat => new StrongBox<object?>(
                 ProfiCText.Format(((Fraction)target!).ToReal(), Text(0))),
-            BuiltInId.DateTimeFormat => new StrongBox<object?>(
-                Moment().ToString(Text(0), CultureInfo.InvariantCulture)),
-            BuiltInId.TimeSpanFormat => new StrongBox<object?>(
-                Length().ToString(Text(0), CultureInfo.InvariantCulture)),
-            BuiltInId.DateFormat => new StrongBox<object?>(
-                Day().ToString(Text(0), CultureInfo.InvariantCulture)),
-            BuiltInId.TimeFormat => new StrongBox<object?>(
-                OnTheClock().ToString(Text(0), CultureInfo.InvariantCulture)),
+            BuiltInId.DateTimeFormat =>
+                new StrongBox<object?>(ProfiCMoments.Format(Moment(), Text(0))),
+            BuiltInId.TimeSpanFormat =>
+                new StrongBox<object?>(ProfiCMoments.Format(Length(), Text(0))),
+            BuiltInId.DateFormat =>
+                new StrongBox<object?>(ProfiCMoments.Format(Day(), Text(0))),
+            BuiltInId.TimeFormat =>
+                new StrongBox<object?>(ProfiCMoments.Format(OnTheClock(), Text(0))),
 
             BuiltInId.FractionToReal => new StrongBox<object?>(((Fraction)target!).ToReal()),
             BuiltInId.FractionReciprocal =>
@@ -785,72 +763,6 @@ public sealed partial class Interpreter
     }
 #pragma warning restore CS8524
 
-    /// <summary>
-    /// UTF-8 with no mark at the front, which is what everything else reads without being
-    /// told. A mark would travel into files a Profi-C program wrote and nothing else expects.
-    /// </summary>
-    private static readonly System.Text.UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
-
-    /// <summary>
-    /// Deletes a file if there is one, saying whether there was. Asked and done in one step
-    /// rather than checked first, so that nothing can slip in between the two.
-    /// </summary>
-    private static bool Removed(string path)
-    {
-        if (!File.Exists(path))
-        {
-            return false;
-        }
-
-        File.Delete(path);
-        return true;
-    }
-
-    /// <summary>The same for a folder, and everything inside it.</summary>
-    private static bool RemovedFolder(string path)
-    {
-        if (!System.IO.Directory.Exists(path))
-        {
-            return false;
-        }
-
-        System.IO.Directory.Delete(path, recursive: true);
-        return true;
-    }
-
-    /// <summary>
-    /// <para>Reads a ratio written with either mark between its halves, or a whole number.
-    /// </para>
-    /// <para><c>22|7</c> is how the language writes one, because a slash already means
-    /// division. <c>22/7</c> is how a person writes one, because that is what a fraction looks
-    /// like everywhere outside a compiler. Both are read, and a bare <c>22</c> is a ratio over
-    /// one — the same three shapes <c>Fraction.Create</c> accepts.</para>
-    /// </summary>
-    private static object? ReadFraction(string text)
-    {
-        string trimmed = text.Trim();
-        int mark = trimmed.IndexOfAny(['|', '/']);
-
-        if (mark < 0)
-        {
-            return long.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture,
-                                 out long whole)
-                ? new Fraction(whole, 1)
-                : null;
-        }
-
-        if (!long.TryParse(trimmed[..mark].Trim(), NumberStyles.Integer,
-                           CultureInfo.InvariantCulture, out long numerator)
-            || !long.TryParse(trimmed[(mark + 1)..].Trim(), NumberStyles.Integer,
-                              CultureInfo.InvariantCulture, out long denominator)
-            || denominator == 0)
-        {
-            return null;
-        }
-
-        return new Fraction(numerator, denominator);
-    }
-
     /// <summary>Runs something that produces no value, and reports that it produced none.</summary>
     private static StrongBox<object?> Then(Action action)
     {
@@ -859,75 +771,6 @@ public sealed partial class Interpreter
     }
 
     private static string AsText(object? value) => ModelOperations.ToDisplayString(value);
-
-    /// <summary>
-    /// <para>Builds a moment, reporting a date that is not one.</para>
-    /// <para>The platform raises an argument error for the thirty-first of February, which is
-    /// the right answer; it is caught and thrown again as the language's own so that the
-    /// message names the numbers that were written.</para>
-    /// </summary>
-    private static DateTime MakeMoment(
-        long year, long month, long day, long hour, long minute, long second)
-    {
-        try
-        {
-            return new DateTime(
-                (int)year, (int)month, (int)day, (int)hour, (int)minute, (int)second);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            string written = hour == 0 && minute == 0 && second == 0
-                ? $"{year}-{month}-{day}"
-                : $"{year}-{month}-{day} {hour}:{minute}:{second}";
-
-            throw new ArgumentException($"There is no such moment as {written}.");
-        }
-    }
-
-    /// <summary>Builds a day, reporting one that is not a day.</summary>
-    private static DateOnly MakeDate(long year, long month, long day)
-    {
-        try
-        {
-            return new DateOnly((int)year, (int)month, (int)day);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            throw new ArgumentException($"There is no such date as {year}-{month}-{day}.");
-        }
-    }
-
-    /// <summary>Builds a time of day, reporting one that no clock reads.</summary>
-    private static TimeOnly MakeTime(long hour, long minute, long second)
-    {
-        try
-        {
-            return new TimeOnly((int)hour, (int)minute, (int)second);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            throw new ArgumentException(
-                $"There is no such time of day as {hour}:{minute}:{second}.");
-        }
-    }
-
-    /// <summary>
-    /// Builds a span, reporting one too large to hold. Days are counted separately rather
-    /// than folded in, so that a span of hours beyond a day still reads as hours.
-    /// </summary>
-    private static TimeSpan MakeSpan(long days, long hours, long minutes, long seconds)
-    {
-        try
-        {
-            return new TimeSpan((int)days, (int)hours, (int)minutes, (int)seconds);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            throw new OverflowException(
-                $"A span of {days} days, {hours} hours, {minutes} minutes and {seconds} "
-                + "seconds is too long to hold.");
-        }
-    }
 
 }
 

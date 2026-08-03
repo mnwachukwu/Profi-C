@@ -41,9 +41,15 @@ internal static class CilTypes
     public static bool IsSupported(TypeSymbol type) =>
         Of(type) is not null
         || IsDeclaredModel(type)
+        || type is EnumerationSymbol
+        || OfRoot(type) is not null
+        || OfProvided(type) is not null
         || OfBuiltInModel(type) is not null
         || (type is SetType set && IsSupported(set.ElementType))
-        || (type is OptionalType optional && IsSupported(optional.UnderlyingType));
+        || (type is OptionalType optional && IsSupported(optional.UnderlyingType))
+        || (type is FunctionType shape
+            && (shape.ReturnType is null || IsSupported(shape.ReturnType))
+            && shape.ParameterTypes.All(IsSupported));
 
     /// <summary>
     /// <para>The CLR type a model the <em>language</em> provides denotes, or null where the
@@ -83,6 +89,51 @@ internal static class CilTypes
         typeof(Runtime.Optional<>).MakeGenericType(underlying);
 
     /// <summary>
+    /// <para>The CLR type one of the two roots denotes, or null for anything else.</para>
+    /// <para><c>Model</c> is what every value is one of, and <c>Function</c> what every function
+    /// value is one of. Neither is written for its own sake — what they are for is holding
+    /// something whose shape is not being named, which is why both map to the type the framework
+    /// already has for exactly that.</para>
+    /// <para>Kept apart from <see cref="OfBuiltInModel"/> rather than folded into it, because
+    /// that answer is also what decides whether a <c>new</c> can build one. Neither of these is
+    /// a thing to construct.</para>
+    /// </summary>
+    /// <summary>
+    /// <para>The CLR type one of the provided value types denotes, or null for anything else.
+    /// </para>
+    /// <para>Each is the platform's own — a moment is a <c>System.DateTime</c>, a day a
+    /// <c>DateOnly</c>, a time of day a <c>TimeOnly</c> — so a Profi-C moment handed to .NET is a
+    /// .NET moment and nothing has to be unwrapped at the boundary. A generator is the runtime's,
+    /// because <c>Next(low, high)</c> is the language's rule about an excluded upper bound rather
+    /// than the framework's.</para>
+    /// <para>What none of them is, is constructible by a plain <c>newobj</c>: the factories in
+    /// <see cref="Runtime.ProfiCMoments"/> refuse an impossible date in the language's words, and
+    /// the emitter calls those instead.</para>
+    /// </summary>
+    public static Type? OfProvided(TypeSymbol type) =>
+        type is ModelSymbol model && ReferenceEquals(model.Container, BuiltInTypes.Standard)
+            ? model.Name switch
+            {
+                "DateTime" => typeof(DateTime),
+                "Date" => typeof(DateOnly),
+                "Time" => typeof(TimeOnly),
+                "TimeSpan" => typeof(TimeSpan),
+                "Random" => typeof(Runtime.ProfiCRandom),
+                _ => null,
+            }
+            : null;
+
+    public static Type? OfRoot(TypeSymbol type) =>
+        type is ModelSymbol model && ReferenceEquals(model.Container, BuiltInTypes.Standard)
+            ? model.Name switch
+            {
+                "Model" => typeof(object),
+                "Function" => typeof(Delegate),
+                _ => null,
+            }
+            : null;
+
+    /// <summary>
     /// <para>Whether this is a model the program itself declares, as against one the language
     /// provides.</para>
     /// <para>The difference matters because a declared model becomes a type in the assembly
@@ -90,8 +141,12 @@ internal static class CilTypes
     /// emitter would have to know how to construct and call. Both are models and both are
     /// <see cref="ModelSymbol"/>; what tells them apart is which namespace holds them.</para>
     /// </summary>
+    /// <para>A structure is one of these too. It is not a model, but the emitter builds it the
+    /// same way — a type in the assembly being written — and every question this answers is
+    /// about that rather than about how it is copied.</para>
     public static bool IsDeclaredModel(TypeSymbol type) =>
-        type is ModelSymbol model && !ReferenceEquals(model.Container, BuiltInTypes.Standard);
+        type is StructureSymbol
+        || (type is ModelSymbol model && !ReferenceEquals(model.Container, BuiltInTypes.Standard));
 
     /// <summary>
     /// The CLR type a function gives back. Null in Profi-C means it yields nothing, which is
@@ -105,12 +160,15 @@ internal static class CilTypes
 internal static class CilConversions
 {
     /// <summary>
-    /// The numeric widenings and the wrap into an optional. What is left needs a conversion
-    /// between a string and a set of characters, which the emitter does not yet perform.
+    /// The numeric widenings, the wrap into an optional, and both crossings between a string and
+    /// its characters. What is left is <c>ToStringValue</c>, which lowering records where a value
+    /// is joined to text — and the emitter renders that at the join rather than as a conversion.
     /// </summary>
     public static bool IsSupported(ConversionOperation operation) =>
         operation is ConversionOperation.IntegerToReal
                   or ConversionOperation.IntegerToFraction
                   or ConversionOperation.RealToFraction
+                  or ConversionOperation.StringToCharacters
+                  or ConversionOperation.CharactersToString
                   or ConversionOperation.WrapOptional;
 }

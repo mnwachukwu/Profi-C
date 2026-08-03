@@ -16,6 +16,15 @@ public sealed class ProfiCRandom
     private readonly Random _source;
 
     /// <summary>A generator seeded from the clock, so two runs differ.</summary>
+    /// <summary>
+    /// <para>The one an emitted program keeps, for code that did not ask for a generator of its
+    /// own.</para>
+    /// <para>One per process, which for an emitted program is one per run — the rule the
+    /// interpreter states and keeps with a field of its own, since it runs many programs in the
+    /// one process and two of them must not draw from each other's sequence.</para>
+    /// </summary>
+    public static ProfiCRandom Shared { get; } = new();
+
     public ProfiCRandom() => _source = new Random();
 
     /// <summary>
@@ -50,6 +59,11 @@ public sealed class ProfiCRandom
         return _source.NextInt64(low, high);
     }
 
-    /// <summary>A real from zero up to but never reaching one.</summary>
-    public double NextDouble() => _source.NextDouble();
+    /// <summary>
+    /// <para>A real from zero up to but never reaching one.</para>
+    /// <para>Answered as a real rather than as the binary floating point underneath it, because
+    /// that is the type the language says this yields — and doing the crossing here means both
+    /// back ends cross it the same way.</para>
+    /// </summary>
+    public decimal NextReal() => (decimal)_source.NextDouble();
 }

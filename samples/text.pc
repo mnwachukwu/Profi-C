@@ -13,6 +13,8 @@ shared model Program
         Program.SayingHowToWriteIt();
         Program.BlockStrings();
         Program.TakingStringsApart();
+        Program.OneCharacterAtATime();
+        Program.ReadingNumbersBack();
     end function
 
     # ---- Putting values into a sentence -----------------------------------------------
@@ -151,6 +153,58 @@ shared model Program
         integer[] counts = {1, 2, 3};
 
         Console.WriteLine("  counts:     {{counts.Join(", ")}}");
+    end function
+
+    ##
+        A string is read by position with the brackets a set uses, counting from zero, and the
+        character that comes back is a character rather than a string of one.
+
+        A position outside the string stops the program rather than giving something back, which
+        is the same answer a set gives and for the same reason: there is no character there, and
+        inventing one would hide the mistake.
+    ##
+    # @summary: Reading one character at a time.
+    function OneCharacterAtATime()
+        Console.WriteLine("== by position ==");
+
+        let word = "cast";
+
+        Console.WriteLine("  first:      {{word[0]}}");
+        Console.WriteLine("  last:       {{word[word.Count - 1]}}");
+
+        # Counting through it, which is what the brackets are usually for.
+        string spelled = "";
+
+        loop for i = 0 until word.Count
+            spelled = spelled + word[i] + " ";
+        end loop
+
+        Console.WriteLine("  spelled:    {{spelled.Trim()}}");
+    end function
+
+    ##
+        Text becomes a number by asking, and the asking answers with an optional: text arriving
+        in a shape nobody promised is the ordinary case rather than a fault, so there is nothing
+        to catch and nothing to guard against.
+
+        A fraction reads either way it is written. '22|7' is the language's spelling, because a
+        slash already means division; '22/7' is how a person writes one on paper. Both are read,
+        since text comes from people.
+    ##
+    # @summary: Reading numbers back out of text.
+    function ReadingNumbersBack()
+        Console.WriteLine("== text into numbers ==");
+
+        Console.WriteLine("  an integer: {{"42".ToInteger().Or(0)}}");
+        Console.WriteLine("  a real:     {{"3.5".ToReal().Or(0.0)}}");
+        Console.WriteLine("  a boolean:  {{"true".ToBoolean().Or(false)}}");
+
+        Console.WriteLine("  a ratio:    {{"22|7".ToFraction().Or(0|1)}}");
+        Console.WriteLine("  written /:  {{"22/7".ToFraction().Or(0|1)}}");
+        Console.WriteLine("  a whole:    {{"5".ToFraction().Or(0|1)}}");
+
+        # Nothing raised, nothing caught: the answer is simply absent.
+        Console.WriteLine("  not a number: {{"seven".ToInteger().HasValue()}}");
     end function
 
 end model

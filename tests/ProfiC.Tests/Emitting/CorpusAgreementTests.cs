@@ -26,14 +26,6 @@ namespace ProfiC.Tests.Emitting;
 [TestFixture]
 public sealed class CorpusAgreementTests : LexerTestBase
 {
-    /// <summary>
-    /// <para>How many samples the emitter can compile today.</para>
-    /// <para>A ratchet, not a target. Closing a gate makes more of them emit and never fails
-    /// this; a gate quietly reopening does. Raise it when a gate lands, which is the moment the
-    /// number is worth writing down.</para>
-    /// </summary>
-    private const int EmitsAtLeast = 23;
-
     private static IEnumerable<string> Programs =>
         ProfiC.Tests.Interpreting.SampleProgramTests.RunnableSampleNames;
 
@@ -58,9 +50,8 @@ public sealed class CorpusAgreementTests : LexerTestBase
 
     /// <summary>
     /// <para>One sample, run both ways.</para>
-    /// <para>A sample the emitter still refuses is ignored with the reason it gave, since a gate
-    /// that is honestly closed is not a failure — the refusals are counted separately, which is
-    /// what stops one being ignored that should not be.</para>
+    /// <para>Every sample is a real comparison: the emitter declines nothing, so a sample that
+    /// will not build is a failure rather than something to skip past.</para>
     /// </summary>
     [TestCaseSource(nameof(Programs))]
     public void Sample_MeansTheSameEmittedAsInterpreted(string name)
@@ -73,14 +64,8 @@ public sealed class CorpusAgreementTests : LexerTestBase
         try
         {
             string assembly = Path.Combine(folder, "Emitted.dll");
-            DiagnosticBag emitting = new();
 
-            if (!CilEmitter.Emit(units, model, "Emitted", assembly, emitting))
-            {
-                Assert.Ignore(
-                    $"{name} cannot be emitted yet: "
-                    + string.Join("; ", emitting.Select(d => d.Message).Distinct().Take(3)));
-            }
+            CilEmitter.Emit(units, model, "Emitted", assembly);
 
             StringWriter interpreted = new();
             ProfiC.Interpreter.Interpreter.Run(units, model, interpreted, TextReader.Null);
@@ -94,47 +79,6 @@ public sealed class CorpusAgreementTests : LexerTestBase
         {
             Directory.Delete(folder, recursive: true);
         }
-    }
-
-    /// <summary>
-    /// <para>How much of the corpus the emitter reaches, held to a floor.</para>
-    /// <para>The per-sample test above ignores what cannot be emitted, so on its own a gate
-    /// reopening would read as a run full of skips and pass. This is what makes that a
-    /// failure.</para>
-    /// </summary>
-    [Test]
-    public void TheCorpusTheEmitterReachesDoesNotShrink()
-    {
-        List<string> emitted = [];
-
-        foreach (string name in Programs)
-        {
-            (IReadOnlyList<CompilationUnit> units, SemanticModel model) = FrontEnd(name);
-
-            string folder = Path.Combine(Path.GetTempPath(), $"profi-c-reach-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(folder);
-
-            try
-            {
-                DiagnosticBag emitting = new();
-
-                if (CilEmitter.Emit(
-                        units, model, "Emitted", Path.Combine(folder, "Emitted.dll"), emitting))
-                {
-                    emitted.Add(name);
-                }
-            }
-            finally
-            {
-                Directory.Delete(folder, recursive: true);
-            }
-        }
-
-        Assert.That(
-            emitted,
-            Has.Count.AtLeast(EmitsAtLeast),
-            $"the emitter used to reach {EmitsAtLeast} samples and now reaches "
-            + $"{emitted.Count}: {string.Join(", ", emitted)}");
     }
 
     /// <summary>

@@ -89,6 +89,10 @@ CompilationUnit
         CallExpr
           MemberExpr 'PassingThemToFunctions'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'InsideASet'
+            IdentifierExpr 'Program'
     FunctionDecl 'CopyingAStructure'
       VarDeclStmt 'a'
         NamedTypeSyntax 'Point'
@@ -340,3 +344,95 @@ CompilationUnit
               NewExpr 'Point'
                 LiteralExpr 4 [Integer]
                 LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "moved copy: " [String]
+                MemberExpr 'X'
+                  CallExpr
+                    MemberExpr 'Moved'
+                      IdentifierExpr 'Program'
+                    IdentifierExpr 'point'
+              LiteralExpr ", original " [String]
+            MemberExpr 'X'
+              IdentifierExpr 'point'
+    FunctionDecl 'Moved'
+      NamedTypeSyntax 'Point'
+      ParameterDecl 'given'
+        NamedTypeSyntax 'Point'
+      AssignmentStmt
+        MemberExpr 'X'
+          IdentifierExpr 'given'
+        BinaryExpr '+'
+          MemberExpr 'X'
+            IdentifierExpr 'given'
+          LiteralExpr 10 [Integer]
+      YieldStmt
+        IdentifierExpr 'given'
+    FunctionDecl 'InsideASet'
+      VarDeclStmt 'grid'
+        SetTypeSyntax
+          NamedTypeSyntax 'Point'
+        CollectionExpr
+          NewExpr 'Point'
+            LiteralExpr 1 [Integer]
+            LiteralExpr 1 [Integer]
+          NewExpr 'Point'
+            LiteralExpr 2 [Integer]
+            LiteralExpr 2 [Integer]
+      AssignmentStmt
+        MemberExpr 'X'
+          IndexExpr
+            IdentifierExpr 'grid'
+            LiteralExpr 0 [Integer]
+        LiteralExpr 99 [Integer]
+      VarDeclStmt 'taken'
+        NamedTypeSyntax 'Point'
+        IndexExpr
+          IdentifierExpr 'grid'
+          LiteralExpr 1 [Integer]
+      AssignmentStmt
+        MemberExpr 'X'
+          IdentifierExpr 'taken'
+        LiteralExpr 77 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "in the set: " [String]
+                MemberExpr 'X'
+                  IndexExpr
+                    IdentifierExpr 'grid'
+                    LiteralExpr 0 [Integer]
+              LiteralExpr ", " [String]
+            MemberExpr 'X'
+              IndexExpr
+                IdentifierExpr 'grid'
+                LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "taken out:  " [String]
+            MemberExpr 'X'
+              IdentifierExpr 'taken'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "equal:      " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IndexExpr
+                  IdentifierExpr 'grid'
+                  LiteralExpr 1 [Integer]
+                IdentifierExpr 'taken'

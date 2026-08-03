@@ -11,3 +11,7 @@ one differs:    true
 and by value:   true
 point kept 1, marker became changed
 distance:   7
+moved copy: 11, original 1
+in the set: 99, 2
+taken out:  77
+equal:      false

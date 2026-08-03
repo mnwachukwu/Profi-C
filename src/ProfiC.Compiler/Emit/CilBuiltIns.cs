@@ -24,7 +24,144 @@ internal static class CilBuiltIns
         || IsOnAFraction(id)
         || IsABound(id)
         || IsOnAnOptional(id)
-        || id is BuiltInId.ExceptionMessage;
+        || IsOnAMoment(id)
+        || IsOnAFile(id)
+        || IsOnAGenerator(id)
+        || IsConstructingAProvidedType(id)
+        || id is BuiltInId.ExceptionMessage or BuiltInId.EnumerationToInteger;
+
+    /// <summary>
+    /// <para>The four types that measure time: a moment, a length of one, a day, and a time of
+    /// day.</para>
+    /// <para>Together rather than four lists, because they are one family — every member of each
+    /// is a call into <see cref="Runtime.ProfiCMoments"/>, and several take one and answer with
+    /// another.</para>
+    /// </summary>
+    public static bool IsOnAMoment(BuiltInId id) =>
+        id is BuiltInId.DateTimeNow
+           or BuiltInId.DateTimeToday
+           or BuiltInId.DateTimeYear
+           or BuiltInId.DateTimeMonth
+           or BuiltInId.DateTimeDay
+           or BuiltInId.DateTimeHour
+           or BuiltInId.DateTimeMinute
+           or BuiltInId.DateTimeSecond
+           or BuiltInId.DateTimeDayOfWeek
+           or BuiltInId.DateTimeDayOfYear
+           or BuiltInId.DateTimeAddDays
+           or BuiltInId.DateTimeAddHours
+           or BuiltInId.DateTimeAddMinutes
+           or BuiltInId.DateTimeAddSeconds
+           or BuiltInId.DateTimeAddYears
+           or BuiltInId.DateTimeAddMonths
+           or BuiltInId.DateTimeCompareTo
+           or BuiltInId.DateTimeAdd
+           or BuiltInId.DateTimeSubtract
+           or BuiltInId.DateTimeSubtractSpan
+           or BuiltInId.DateTimeDatePart
+           or BuiltInId.DateTimeTimePart
+           or BuiltInId.DateTimeFromDate
+           or BuiltInId.DateTimeFromDateAndTime
+           or BuiltInId.DateTimeFormat
+           or BuiltInId.DateTimeParse
+           or BuiltInId.DateTimeParseExact
+
+           or BuiltInId.TimeSpanZero
+           or BuiltInId.TimeSpanFromDays
+           or BuiltInId.TimeSpanFromHours
+           or BuiltInId.TimeSpanFromMinutes
+           or BuiltInId.TimeSpanFromSeconds
+           or BuiltInId.TimeSpanDays
+           or BuiltInId.TimeSpanHours
+           or BuiltInId.TimeSpanMinutes
+           or BuiltInId.TimeSpanSeconds
+           or BuiltInId.TimeSpanTotalDays
+           or BuiltInId.TimeSpanTotalHours
+           or BuiltInId.TimeSpanTotalMinutes
+           or BuiltInId.TimeSpanTotalSeconds
+           or BuiltInId.TimeSpanNegate
+           or BuiltInId.TimeSpanDuration
+           or BuiltInId.TimeSpanAdd
+           or BuiltInId.TimeSpanSubtract
+           or BuiltInId.TimeSpanCompareTo
+           or BuiltInId.TimeSpanFormat
+           or BuiltInId.TimeSpanParse
+           or BuiltInId.TimeSpanParseExact
+
+           or BuiltInId.DateToday
+           or BuiltInId.DateFromMoment
+           or BuiltInId.DateYear
+           or BuiltInId.DateMonth
+           or BuiltInId.DateDay
+           or BuiltInId.DateDayOfWeek
+           or BuiltInId.DateDayOfYear
+           or BuiltInId.DateAddDays
+           or BuiltInId.DateAddMonths
+           or BuiltInId.DateAddYears
+           or BuiltInId.DateAtTime
+           or BuiltInId.DateCompareTo
+           or BuiltInId.DateFormat
+           or BuiltInId.DateParse
+           or BuiltInId.DateParseExact
+
+           or BuiltInId.TimeNow
+           or BuiltInId.TimeFromMoment
+           or BuiltInId.TimeHour
+           or BuiltInId.TimeMinute
+           or BuiltInId.TimeSecond
+           or BuiltInId.TimeAddHours
+           or BuiltInId.TimeAddMinutes
+           or BuiltInId.TimeToTimeSpan
+           or BuiltInId.TimeCompareTo
+           or BuiltInId.TimeFormat
+           or BuiltInId.TimeParse
+           or BuiltInId.TimeParseExact;
+
+    /// <summary>Reaching a disk, which is <c>File</c> and <c>Directory</c>.</summary>
+    public static bool IsOnAFile(BuiltInId id) =>
+        id is BuiltInId.FileRead
+           or BuiltInId.FileReadLines
+           or BuiltInId.FileWrite
+           or BuiltInId.FileWriteLines
+           or BuiltInId.FileAppend
+           or BuiltInId.FileExists
+           or BuiltInId.FileDelete
+           or BuiltInId.FileCopy
+           or BuiltInId.FileMove
+           or BuiltInId.FileSize
+           or BuiltInId.FileChanged
+           or BuiltInId.DirectoryCurrent
+           or BuiltInId.DirectoryExists
+           or BuiltInId.DirectoryCreate
+           or BuiltInId.DirectoryDelete
+           or BuiltInId.DirectoryFiles
+           or BuiltInId.DirectoryFolders;
+
+    /// <summary>
+    /// What a generator answers. Told apart from the rest because it is an object rather than a
+    /// value, so its members are called on it rather than passed it.
+    /// </summary>
+    public static bool IsOnAGenerator(BuiltInId id) =>
+        id is BuiltInId.RandomNext
+           or BuiltInId.RandomNextBelow
+           or BuiltInId.RandomNextBetween
+           or BuiltInId.RandomNextDouble;
+
+    /// <summary>
+    /// <para>Making one of the provided types, which is a <c>new</c> rather than a member.</para>
+    /// <para>Every one but a generator goes through a runtime factory rather than a constructor,
+    /// so that a date nobody could write is refused in the language's words.</para>
+    /// </summary>
+    public static bool IsConstructingAProvidedType(BuiltInId id) =>
+        id is BuiltInId.DateTimeNewDate
+           or BuiltInId.DateTimeNewMoment
+           or BuiltInId.DateNew
+           or BuiltInId.TimeNewToMinute
+           or BuiltInId.TimeNewToSecond
+           or BuiltInId.TimeSpanNewTime
+           or BuiltInId.TimeSpanNewSpan
+           or BuiltInId.RandomNew
+           or BuiltInId.RandomNewSeeded;
 
     /// <summary>
     /// <para>The members a fraction answers, each one call on the runtime's own struct.</para>
@@ -125,7 +262,8 @@ internal static class CilBuiltIns
            or BuiltInId.StringCapitalize
            or BuiltInId.StringToInteger
            or BuiltInId.StringToReal
-           or BuiltInId.StringToBoolean;
+           or BuiltInId.StringToBoolean
+           or BuiltInId.StringToFraction;
 
     /// <summary>
     /// <para>The members of <c>Math</c>, each one call into the runtime's own arithmetic.</para>

@@ -1706,6 +1706,27 @@ A structure holding a model copies the *reference*. Two copies of the structure 
 model, which is the case [§3.4](#34-values-and-references) flags and the reason `constant` does not accept such a
 structure.
 
+Copying happens where a structure is **kept** — stored in a name, put in a set, passed to a
+function, handed back from one. Reading one does not copy it, so reaching through a read to
+change what was read changes the original:
+
+```
+Point[] grid = {new Point(1, 2)};
+
+grid[0].x = 99;              the point in the set is now 99
+Point taken = grid[0];       this is a copy
+taken.x = 55;                the set still reads 99
+```
+
+`Reference.Equals` may not be asked about a structure. "Are these two names reaching one thing"
+is a question only a reference can answer, and a value is not somewhere a name points — so it is
+`PC0347` rather than an answer, the same rule that refuses a structure in a `Model`-typed slot.
+`==` is the comparison that applies.
+
+> Readers coming from C# should note the first of these. A C# `struct` in a `List` cannot be
+> changed through the list at all — the compiler refuses it, because the indexer hands back a
+> copy — while here the set holds the structures themselves and reaching through it works.
+
 ### 7.4 Equality
 
 `==` on two models compares them **field by field, all the way down** — not by reference.
@@ -2700,6 +2721,7 @@ of a reader.
 | `PC0344` | warning | This exception cannot be caught |
 | `PC0345` | error | Optional is changed by something that captured it |
 | `PC0346` | error | This real has no fraction to become |
+| `PC0347` | error | A value has no identity to compare |
 
 ### PC0400 to PC0499
 
@@ -2716,9 +2738,8 @@ of a reader.
 
 ### PC0500 to PC0599
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0501` | error | The compiler cannot emit this yet |
+Lowering and emission, which report nothing: every program that checks is a program that
+compiles.
 
 ### PC0600 to PC0699
 

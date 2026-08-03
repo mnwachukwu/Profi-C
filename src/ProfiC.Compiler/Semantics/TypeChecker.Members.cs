@@ -424,6 +424,22 @@ public sealed partial class TypeChecker
                 Report(DiagnosticDescriptors.EmptyLineNeedsNoArgument, call.Arguments[0]);
             }
 
+            // Asking whether two values are the same object, which is a question a value has no
+            // answer to. Checked here rather than by the parameter types because the two this
+            // takes are written as accepting anything — which is right for everything else that
+            // does, and wrong for exactly this one.
+            // Once, at the first one that is a value: both sides being values is one mistake
+            // rather than two, and the same sentence twice reads as a compiler stuttering.
+            if (chosenBuiltIn.Id is BuiltInId.ReferenceEquals
+                && call.Arguments.FirstOrDefault(
+                       a => _model.GetType(a) is { IsValueType: true, IsError: false }) is { } written)
+            {
+                Report(
+                    DiagnosticDescriptors.ValuesHaveNoIdentity,
+                    written,
+                    _model.GetType(written)!.WithArticleCapitalized());
+            }
+
             // A fraction with a denominator of zero is the same mistake as dividing by zero,
             // so it is caught in the same place when it can be seen while compiling.
             if (onType

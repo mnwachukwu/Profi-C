@@ -9,3 +9,4 @@ types.pc(45,31): error PC0324: This divides by zero.
 types.pc(50,17): error PC0117: 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.
 types.pc(54,9): error PC0116: 'Function' is the type every function descends from and takes no parentheses. For a function of a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'.
 types.pc(54,36): error PC0300: Cannot use an integer function(integer) where a function(integer) is expected.
+types.pc(61,44): error PC0347: An integer is a value, so asking whether two of them are the same object has no answer. Use '==' to compare what they hold.

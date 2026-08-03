@@ -113,6 +113,35 @@ public sealed partial class CilEmitter
             case { } bound when CilBuiltIns.IsABound(bound):
                 EmitBound(bound);
                 return;
+
+            // Read rather than called — 'DateTime.Now', 'length.TotalHours', 'Directory.Current'
+            // — which is the same sequence a call is, with nothing after the receiver.
+            case { } provided when CilBuiltIns.IsOnAMoment(provided)
+                                   || CilBuiltIns.IsOnAFile(provided)
+                                   || CilBuiltIns.IsOnAGenerator(provided):
+                EmitProvidedMember(member, [], provided);
+                return;
+        }
+
+        // A member of an enumeration, which is a constant rather than anything to read at run
+        // time — the type name in front of it names no value to reach through.
+        if (_model.GetSymbol(member) is EnumMemberSymbol declared)
+        {
+            EmitEnumerationMember(declared);
+            return;
+        }
+
+        // A function named rather than called, which is what every function value is after
+        // closure conversion. The receiver is what it ends up bound to, and is nothing where the
+        // name in front is a type.
+        if (_model.GetSymbol(member) is FunctionSymbol named)
+        {
+            EmitFunctionValue(
+                IsThroughATypeName(member.Receiver) ? null : member.Receiver,
+                named,
+                _model.GetType(member) ?? throw Unhandled($"the type of '{member.MemberName}'"));
+
+            return;
         }
 
         if (_model.GetSymbol(member) is not FieldSymbol field
@@ -140,6 +169,15 @@ public sealed partial class CilEmitter
     /// </summary>
     private void EmitNew(NewExpr construction)
     {
+        // One of the types the language provides that holds a value — a moment, a day, a length,
+        // a generator. Built by a runtime factory rather than by a constructor, so that a date
+        // nobody could write is refused in the language's own words.
+        if (_model.GetBuiltIn(construction) is { } making)
+        {
+            EmitProvidedConstruction(construction, making);
+            return;
+        }
+
         if (_model.GetType(construction) is not DeclaredTypeSymbol type)
         {
             throw Unhandled($"constructing '{construction.TypeName}'");
@@ -167,7 +205,7 @@ public sealed partial class CilEmitter
     {
         foreach (Expression argument in arguments)
         {
-            EmitExpression(argument);
+            EmitValueInto(argument);
         }
     }
 
@@ -344,6 +382,14 @@ public sealed partial class CilEmitter
             case BinaryOperator.Power:
                 EmitPower(binary);
                 return;
+
+            // Settled here rather than below because how the operands are pushed depends on the
+            // answer: a deep comparison is a call taking two objects, so a value going into one
+            // has to be boxed on the way.
+            case BinaryOperator.Equal:
+            case BinaryOperator.NotEqual:
+                EmitComparison(binary);
+                return;
         }
 
         EmitExpression(binary.Left);
@@ -389,14 +435,6 @@ public sealed partial class CilEmitter
             case BinaryOperator.ShiftLeft: _il.Emit(OpCodes.Shl); break;
             case BinaryOperator.ShiftRight: _il.Emit(OpCodes.Shr); break;
 
-            case BinaryOperator.Equal:
-                EmitEquality(binary, wanted: true);
-                break;
-
-            case BinaryOperator.NotEqual:
-                EmitEquality(binary, wanted: false);
-                break;
-
             case BinaryOperator.LessThan:
                 _il.Emit(OpCodes.Clt);
                 break;
@@ -433,24 +471,55 @@ public sealed partial class CilEmitter
     /// the same object. Anything else — a model, a set — is the runtime's deep walk, and
     /// <c>ceq</c> there would compare references and find two equal values different.</para>
     /// </summary>
-    private void EmitEquality(BinaryExpr binary, bool wanted)
+    /// <summary>
+    /// <para><c>==</c> and <c>/=</c>: the two operands, then whichever comparison their types
+    /// call for.</para>
+    /// <para><b>A deep comparison is a call taking two objects</b>, so a value type going into
+    /// one is boxed on the way — a moment, a day, a length of time. Pushed unboxed the assembly
+    /// does not verify at all, which is a loud failure and the good case; what makes this worth
+    /// its own step is that the decision about how to push cannot be made after pushing.</para>
+    /// </summary>
+    private void EmitComparison(BinaryExpr binary)
     {
-        if (IsString(binary.Left))
+        if (IsComparedDeeply(binary.Left) || IsComparedDeeply(binary.Right))
+        {
+            EmitAsObject(binary.Left);
+            EmitAsObject(binary.Right);
+        }
+        else
+        {
+            EmitExpression(binary.Left);
+            EmitExpression(binary.Right);
+        }
+
+        EmitEqualityOf(binary.Left, binary.Right, binary.Operator == BinaryOperator.Equal);
+    }
+
+    /// <summary>
+    /// <para>Compares two values already on the stack, by whichever of the four sequences their
+    /// types call for.</para>
+    /// <para>Written against a pair of expressions rather than against the operator, because a
+    /// <c>switch</c> asks the same question of a subject and a label and has to get the same
+    /// answer — one place deciding, so the two cannot part company.</para>
+    /// </summary>
+    private void EmitEqualityOf(Expression left, Expression right, bool wanted)
+    {
+        if (IsString(left))
         {
             _il.Emit(OpCodes.Call, StringEquals);
         }
-        else if (IsReal(binary.Left) || IsReal(binary.Right))
+        else if (IsReal(left) || IsReal(right))
         {
             // A decimal has no 'ceq' either, for the same reason it has no 'add'.
             _il.Emit(OpCodes.Call, RealEquals);
         }
-        else if (IsFraction(binary.Left) || IsFraction(binary.Right))
+        else if (IsFraction(left) || IsFraction(right))
         {
             // Compared by cross-multiplying rather than field by field, which is what makes
             // 2|4 and 1|2 equal without either being reduced first.
             _il.Emit(OpCodes.Call, FractionEquals);
         }
-        else if (IsComparedDeeply(binary.Left) || IsComparedDeeply(binary.Right))
+        else if (IsComparedDeeply(left) || IsComparedDeeply(right))
         {
             _il.Emit(OpCodes.Call, DeepEquals);
         }
@@ -629,8 +698,15 @@ public sealed partial class CilEmitter
     /// <para>The shapes that hold other values: a model and a set. Both arrive as references, so
     /// they are already what the walk takes and need no boxing on the way in.</para>
     /// </summary>
+    /// <summary>
+    /// <para>Whether <c>==</c> on this is the runtime's walk rather than an instruction.</para>
+    /// <para>A structure is here for the same reason a model is: two of them holding equal fields
+    /// are equal, whether or not they are the same object. That it is emitted as a class makes
+    /// the mistake easy — <c>ceq</c> would compile, run, and answer false for two points at the
+    /// same place.</para>
+    /// </summary>
     private bool IsComparedDeeply(Expression expression) =>
-        _model.GetType(expression) is ModelSymbol or SetType;
+        _model.GetType(expression) is ModelSymbol or StructureSymbol or SetType;
 
     private void EmitConversion(ConversionExpr conversion)
     {
@@ -642,9 +718,68 @@ public sealed partial class CilEmitter
             return;
         }
 
-        EmitExpression(conversion.Operand);
+        // A conversion recorded between two optionals is a conversion of the value one holds,
+        // and no work at all on one holding nothing. The checker writes the operation down
+        // seeing through both sides, so this is where the seeing-through is done: without it
+        // a string? reaching a character[]? would hand the optional itself to a method
+        // expecting the string inside it.
+        if (_model.GetType(conversion.Operand) is OptionalType from
+            && _model.GetType(conversion) is OptionalType to)
+        {
+            EmitConversionThroughOptional(conversion, from, to);
+            return;
+        }
 
-        switch (conversion.Operation)
+        EmitExpression(conversion.Operand);
+        EmitConversionStep(conversion.Operation);
+    }
+
+    /// <summary>
+    /// <para>Converts what an optional holds, and carries absence across untouched.</para>
+    /// <para>Absence is not a value to convert. An empty <c>string?</c> becoming an empty
+    /// <c>character[]?</c> has no characters to produce, and the answer is an optional holding
+    /// nothing rather than one holding an empty set — which are different answers, and a reader
+    /// asking <c>HasValue</c> can tell them apart.</para>
+    /// </summary>
+    private void EmitConversionThroughOptional(
+        ConversionExpr conversion,
+        OptionalType from,
+        OptionalType to)
+    {
+        Type source = TypeOf(from, "an optional");
+        Type answer = TypeOf(to, "an optional");
+
+        LocalBuilder held = _il.DeclareLocal(source);
+
+        EmitExpression(conversion.Operand);
+        _il.Emit(OpCodes.Stloc, held);
+
+        Label absent = _il.DefineLabel();
+        Label done = _il.DefineLabel();
+
+        _il.Emit(OpCodes.Ldloca, held);
+        _il.Emit(OpCodes.Call, OptionalMethod(source, "get_HasValue"));
+        _il.Emit(OpCodes.Brfalse, absent);
+
+        _il.Emit(OpCodes.Ldloca, held);
+        _il.Emit(OpCodes.Call, OptionalMethod(source, "get_Value"));
+        EmitConversionStep(conversion.Operation);
+        _il.Emit(OpCodes.Call, OptionalMethod(answer, "Of"));
+        _il.Emit(OpCodes.Br, done);
+
+        _il.MarkLabel(absent);
+        EmitEmptyOptional(answer);
+
+        _il.MarkLabel(done);
+    }
+
+    /// <summary>
+    /// The conversion itself, for a value already on the stack. Split out from the walk so that
+    /// the same instruction sequence serves a plain value and the value inside an optional.
+    /// </summary>
+    private void EmitConversionStep(ConversionOperation operation)
+    {
+        switch (operation)
         {
             // Not 'conv.r8', which produces binary floating point — the type a real stopped
             // being. The widening is a constructor call, and it is exact: every whole number a
@@ -664,8 +799,19 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Call, FractionFromReal);
                 break;
 
+            // Between a string and its characters, each way one call. Not a widening like the
+            // three above: nothing is lost or gained, and the same characters come back — which
+            // is what lets the language convert both ways without either being written.
+            case ConversionOperation.StringToCharacters:
+                _il.Emit(OpCodes.Call, TextToCharacters);
+                break;
+
+            case ConversionOperation.CharactersToString:
+                _il.Emit(OpCodes.Call, TextFromCharacters);
+                break;
+
             default:
-                throw Unhandled($"the conversion {conversion.Operation}");
+                throw Unhandled($"the conversion {operation}");
         }
     }
 
@@ -674,6 +820,15 @@ public sealed partial class CilEmitter
         if (_model.GetBuiltIn(call.Callee) is { } builtIn)
         {
             EmitBuiltIn(call, builtIn);
+            return;
+        }
+
+        // A value being called rather than a function being called: a local, a parameter, or a
+        // field holding one. What it is bound to travels inside it, so there is no receiver to
+        // put on the stack and nothing here decides which body runs.
+        if (_model.GetType(call.Callee) is FunctionType held)
+        {
+            EmitCallThroughValue(call, held);
             return;
         }
 
@@ -693,7 +848,7 @@ public sealed partial class CilEmitter
 
         foreach (Expression argument in call.Arguments)
         {
-            EmitExpression(argument);
+            EmitValueInto(argument);
         }
 
         // 'callvirt' on an instance method, which dispatches on what the receiver turned out to
@@ -797,6 +952,19 @@ public sealed partial class CilEmitter
             return;
         }
 
+        if (CilBuiltIns.IsOnAMoment(builtIn)
+            || CilBuiltIns.IsOnAFile(builtIn)
+            || CilBuiltIns.IsOnAGenerator(builtIn))
+        {
+            if (call.Callee is not MemberExpr provided)
+            {
+                throw Unhandled($"'{builtIn}' reached through nothing");
+            }
+
+            EmitProvidedMember(provided, call.Arguments, builtIn);
+            return;
+        }
+
         switch (builtIn)
         {
             case BuiltInId.ConsoleWrite:
@@ -852,6 +1020,13 @@ public sealed partial class CilEmitter
             case BuiltInId.IntegerToFloat:
                 EmitExpression(ReceiverOf(call, builtIn));
                 _il.Emit(OpCodes.Conv_R8);
+                break;
+
+            // The one crossing that is no instructions at all. A member of an enumeration is
+            // represented as its ordinal, so the value already on the stack is the answer and
+            // the type it counted as was only ever metadata.
+            case BuiltInId.EnumerationToInteger:
+                EmitExpression(ReceiverOf(call, builtIn));
                 break;
 
             // The same walk '==' is, written as a call. Both sides are boxed rather than left as

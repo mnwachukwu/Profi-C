@@ -15,6 +15,10 @@ letters: {'c', 'a', 's', 't', 's'}
 word:    cast, now 5 letters
 spelled: 5 letters
 nothing stays nothing: true
+== widening on the way in ==
+  a real, so halving keeps the half: 1.5
+  a fraction, so it reads as a ratio: 1|1
+  a string arrives as characters:     2
 a circle of radius 2
 a square, which has no radius to read
 a circle of radius 0.5

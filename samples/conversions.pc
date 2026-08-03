@@ -74,6 +74,7 @@ shared model Program
         Program.Widening();
         Program.AskingForIt();
         Program.StringsAndCharacters();
+        Program.BothAtOnce();
         Program.UpAndDownTheFamily();
         Program.Enumerations();
     end function
@@ -185,6 +186,31 @@ shared model Program
     string? function NothingToSay()
         string? none;
         yield none;
+    end function
+
+    # ---- Two things at once ---------------------------------------------------------
+
+    ##
+        A value reaching an optional may have two things to do rather than one: become the type
+        the optional holds, and then be wrapped in it.
+
+        Nothing about that is written down, and nothing needs to be. It is worth knowing only
+        because the result is the type the slot says and not the type the number was: 'real?
+        tally = 3' holds a real, so halving it gives 1.5 rather than 1.
+    ##
+    function BothAtOnce()
+        Console.WriteLine("== widening on the way in ==");
+
+        real? tally = 3;
+        Console.WriteLine("  a real, so halving keeps the half: " + (tally.Or(0.0) / 2));
+
+        fraction? part = 1;
+        Console.WriteLine("  a fraction, so it reads as a ratio: " + part.Or(0|1));
+
+        # The same for the two views of text, and an empty set literal takes its type from the
+        # slot it is going into, since a set of nothing says nothing about what it holds.
+        character[]? spelled = "hi";
+        Console.WriteLine("  a string arrives as characters:     " + spelled.Or({}).Count);
     end function
 
     ##

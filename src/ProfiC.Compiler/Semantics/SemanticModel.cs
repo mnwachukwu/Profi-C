@@ -12,8 +12,9 @@ public sealed class SemanticModel
 {
     private readonly Dictionary<SyntaxNode, Symbol> _symbols = [];
     private readonly Dictionary<SyntaxNode, TypeSymbol> _types = [];
-    private readonly Dictionary<SyntaxNode, (ConversionOperation Operation, TypeSymbol Target)>
-        _conversions = [];
+    private readonly Dictionary<
+        SyntaxNode,
+        IReadOnlyList<(ConversionOperation Operation, TypeSymbol Target)>> _conversions = [];
 
     private readonly Dictionary<SyntaxNode, BuiltInId> _builtIns = [];
 
@@ -73,21 +74,28 @@ public sealed class SemanticModel
         _settledTests.TryGetValue(node, out bool answer) ? answer : null;
 
     /// <summary>
-    /// <para>Records that a value needs converting where it sits.</para>
+    /// <para>Records what a value has to do to reach where it sits, in order.</para>
     /// <para>Written down by the type checker, because it is the only pass that knows both
     /// what a value is and what is expected of it. Lowering then makes the conversion a real
     /// node rather than working the question out a second time.</para>
+    /// <para><b>A sequence, because one value may have two things to do.</b> <c>real? tally =
+    /// 3</c> widens the integer and then wraps the result, and either step alone leaves the slot
+    /// holding something its type says it does not.</para>
     /// </summary>
-    internal void RecordConversion(SyntaxNode node, ConversionOperation operation, TypeSymbol target) =>
-        _conversions[node] = (operation, target);
+    internal void RecordConversion(
+        SyntaxNode node,
+        IReadOnlyList<(ConversionOperation Operation, TypeSymbol Target)> steps) =>
+        _conversions[node] = steps;
 
     /// <summary>
-    /// The conversion a node needs and the type it produces, or null when it needs none. The
-    /// target is recorded rather than derived, since the node's own type is what it was
-    /// <em>before</em> converting.
+    /// What a node has to do to reach its place, in the order it has to do it — empty where it
+    /// needs nothing. Each step carries the type it produces rather than leaving it to be
+    /// derived, since the node's own type is what it was <em>before</em> converting.
     /// </summary>
-    public (ConversionOperation Operation, TypeSymbol Target)? GetConversion(SyntaxNode node) =>
-        _conversions.TryGetValue(node, out (ConversionOperation, TypeSymbol) found) ? found : null;
+    public IReadOnlyList<(ConversionOperation Operation, TypeSymbol Target)> GetConversion(
+        SyntaxNode node) =>
+        _conversions.TryGetValue(
+            node, out IReadOnlyList<(ConversionOperation, TypeSymbol)>? found) ? found : [];
 
     /// <summary>Every type declared anywhere, for tooling and for tests.</summary>
     public IEnumerable<TypeSymbol> AllTypes()

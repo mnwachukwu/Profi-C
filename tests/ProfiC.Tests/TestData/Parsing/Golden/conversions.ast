@@ -55,6 +55,10 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
+          MemberExpr 'BothAtOnce'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
           MemberExpr 'UpAndDownTheFamily'
             IdentifierExpr 'Program'
       ExpressionStmt
@@ -307,6 +311,59 @@ CompilationUnit
           NamedTypeSyntax 'string'
       YieldStmt
         IdentifierExpr 'none'
+    FunctionDecl 'BothAtOnce'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== widening on the way in ==" [String]
+      VarDeclStmt 'tally'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'real'
+        LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a real, so halving keeps the half: " [String]
+            ParenthesizedExpr
+              BinaryExpr '/'
+                CallExpr
+                  MemberExpr 'Or'
+                    IdentifierExpr 'tally'
+                  LiteralExpr 0.0 [Real]
+                LiteralExpr 2 [Integer]
+      VarDeclStmt 'part'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'fraction'
+        LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a fraction, so it reads as a ratio: " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'part'
+              LiteralExpr 0|1 [Fraction]
+      VarDeclStmt 'spelled'
+        OptionalTypeSyntax
+          SetTypeSyntax
+            NamedTypeSyntax 'character'
+        LiteralExpr "hi" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a string arrives as characters:     " [String]
+            MemberExpr 'Count'
+              CallExpr
+                MemberExpr 'Or'
+                  IdentifierExpr 'spelled'
+                CollectionExpr
     FunctionDecl 'UpAndDownTheFamily'
       VarDeclStmt 'shapes'
         SetTypeSyntax

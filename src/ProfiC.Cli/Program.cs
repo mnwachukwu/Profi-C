@@ -445,10 +445,8 @@ public static class Program
 
     /// <summary>
     /// <para>Checks a program and compiles it to a .NET assembly.</para>
-    /// <para>The back end is unfinished, so a program using something it cannot emit yet is
-    /// refused with <c>PC0501</c> naming the construct — and nothing is written, since an
-    /// assembly missing part of a program still loads and fails only once a run reaches the
-    /// gap.</para>
+    /// <para>Every program that checks is one that builds: the back end declines nothing, so the
+    /// only thing that stops a build is a diagnostic from the front end.</para>
     /// <para>What is emitted is the closure-converted tree rather than the lowered one. The
     /// emitter is the reason that pass exists: it receives a tree with no captures left in it
     /// and never reasons about them.</para>
@@ -485,14 +483,9 @@ public static class Program
         IReadOnlyList<CompilationUnit> emitting = ClosureConversion.Convert(
             Lowering.Lower(compilation.Units, model), model);
 
-        bool emitted = CilEmitter.Emit(emitting, model, name, output, diagnostics);
+        CilEmitter.Emit(emitting, model, name, output);
 
         DiagnosticRenderer.WriteAll(diagnostics);
-
-        if (!emitted)
-        {
-            return 1;
-        }
 
         Console.WriteLine($"{compilation.Label}: wrote {output}");
 

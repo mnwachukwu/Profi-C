@@ -251,7 +251,7 @@ as the emitter has reached.
 | Namespaces, `using`, qualified names | Complete |
 | Standard library | Complete |
 | Debugger | Complete |
-| CIL emitter | In progress |
+| CIL emitter | Complete |
 | Language server | Not started |
 
 Source becomes a syntax tree, every name resolves, every expression has a type, nothing can be
@@ -264,20 +264,15 @@ nearest, and a qualified one — `Shapes.Circle`, `Standard.Math` — reaches pa
 `using` required. The library lives in `Standard`, which is in scope in every file without
 being asked for.
 
-**The back end is the work in progress.** Expressions, control flow, functions, and models with
-instance state and fields already emit and run as CIL; inheritance and virtual dispatch are next,
-and most of the corpus waits on them. Nothing is half-compiled in the meantime — a program using
-a construct the emitter has not reached is refused by name:
+**The back end is finished.** Every program that checks is a program that builds — the emitter
+declines nothing, and all thirty-five runnable samples compile to CIL and print exactly what the
+interpreter prints. Expressions, control flow, models with inheritance and virtual dispatch,
+structures, enumerations, sets, optionals, exceptions, fractions, switches, functions as values,
+and the standard library's own types all emit.
 
-```
-samples/bank.pc(19,1): error PC0501: The model 'Book' cannot be compiled to an assembly yet.
-```
-
-That refusal is decided before anything is written, so what `pc build` accepts is exactly what it
-can be trusted with. Everything the emitter cannot take yet still **runs** on the interpreter.
-
-The interpreter is not a stopgap. It runs the same lowered tree the emitter does, so it stays on
-as the oracle: where the two disagree about what a program means, the compiler has the bug.
+The interpreter is not a stopgap, and does not go away. It runs the same lowered tree the emitter
+does, so it stays on as the oracle: where the two disagree about what a program means, one of them
+has a bug, and the corpus is run through both on every build to find out.
 
 [Writing and running a program](#writing-and-running-a-program) is everything needed to try it,
 and every file in [Samples](#samples) runs today.

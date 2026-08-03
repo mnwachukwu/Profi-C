@@ -568,10 +568,7 @@ public sealed partial class Interpreter
         return target switch
         {
             ProfiCSet<object?> set => set[(int)position],
-            string text => position >= 0 && position < text.Length
-                ? text[(int)position]
-                : throw new IndexOutOfRangeException(
-                    $"Index {position} is outside a string of {text.Length} characters."),
+            string text => ProfiCText.At(text, position),
             _ => null,
         };
     }
@@ -624,10 +621,13 @@ public sealed partial class Interpreter
             }
 
             // A method named through a value is that method bound to the value, so calling it
-            // later still knows which one it belongs to. Which method is the checker's
-            // decision, as it is for a call.
+            // later still knows which one it belongs to — and which method that is is decided
+            // by what the value turned out to be, exactly as it is for a call. The name the
+            // checker settled says only which one was written; binding that one would make
+            // 'pet.Speaks' and 'pet.Speaks()' answer differently about the same pet.
             if (_model.GetSymbol(member) is FunctionSymbol method
-                && BodyOf(method) is { } body)
+                && FindMethod(instance.Type, member.MemberName, method.Parameters.Count) is { } found
+                && BodyOf(found) is { } body)
             {
                 return new FunctionValue(
                     body.Parameters, body.Body, expressionBody: null, _shared, instance);

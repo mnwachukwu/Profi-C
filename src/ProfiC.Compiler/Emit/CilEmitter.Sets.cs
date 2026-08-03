@@ -41,7 +41,7 @@ public sealed partial class CilEmitter
             // The set stays on the stack under each element, so one literal is one value at the
             // end however many elements it held.
             _il.Emit(OpCodes.Dup);
-            EmitExpression(element);
+            EmitValueInto(element);
             _il.Emit(OpCodes.Callvirt, SetMethod(built, "Insert"));
         }
     }
@@ -49,6 +49,18 @@ public sealed partial class CilEmitter
     /// <summary>Reads one element: the set, the index narrowed, then the indexer.</summary>
     private void EmitIndexRead(IndexExpr index)
     {
+        // A string is indexed too, and is not the runtime's set: it answers a position by its
+        // own route, and out of range in the language's words rather than the platform's. The
+        // position stays 64 bits on the way in, since the runtime takes it as an integer is.
+        if (IsString(index.Receiver))
+        {
+            EmitExpression(index.Receiver);
+            EmitExpression(index.Index);
+
+            _il.Emit(OpCodes.Call, TextAt);
+            return;
+        }
+
         Type built = SetTypeOf(index.Receiver);
 
         EmitExpression(index.Receiver);
@@ -64,7 +76,7 @@ public sealed partial class CilEmitter
 
         EmitExpression(index.Receiver);
         EmitIndexValue(index.Index);
-        EmitExpression(value);
+        EmitValueInto(value);
 
         _il.Emit(OpCodes.Callvirt, SetMethod(built, "set_Item"));
     }

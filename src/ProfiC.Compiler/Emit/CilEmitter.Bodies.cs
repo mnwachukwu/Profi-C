@@ -99,7 +99,7 @@ public sealed partial class CilEmitter
     private void EmitConstructor(Declared declared, FunctionSymbol function)
     {
         if (!_constructors.TryGetValue(function, out ConstructorBuilder? constructor)
-            || _model.GetSymbol(declared.Owner) is not DeclaredTypeSymbol owner)
+            || _model.GetSymbol(declared.Owner.Node) is not DeclaredTypeSymbol owner)
         {
             return;
         }
@@ -147,7 +147,7 @@ public sealed partial class CilEmitter
         {
             foreach (Expression argument in written.Arguments)
             {
-                EmitExpression(argument);
+                EmitValueInto(argument);
             }
         }
 
@@ -204,10 +204,10 @@ public sealed partial class CilEmitter
     /// for a class defined by a compiler that asked for one, and this emitter defines every
     /// member itself. A shared model is skipped: it has no instances to construct.</para>
     /// </summary>
-    private void DefineDefaultConstructor(ModelDecl declaration)
+    private void DefineDefaultConstructor(Shaped declaration)
     {
         if (declaration.Modifiers.HasFlag(DeclarationModifiers.Shared)
-            || _model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
+            || _model.GetSymbol(declaration.Node) is not DeclaredTypeSymbol owner
             || !_types.TryGetValue(owner, out TypeBuilder? type)
             || declaration.Members.OfType<FunctionDecl>().Any(IsConstructor))
         {
@@ -221,9 +221,9 @@ public sealed partial class CilEmitter
     }
 
     /// <summary>Fills in that constructor: this model's fields, then the parent.</summary>
-    private void EmitDefaultConstructor(ModelDecl declaration)
+    private void EmitDefaultConstructor(Shaped declaration)
     {
-        if (_model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
+        if (_model.GetSymbol(declaration.Node) is not DeclaredTypeSymbol owner
             || !_defaultConstructors.TryGetValue(owner, out ConstructorBuilder? constructor))
         {
             return;
@@ -252,7 +252,7 @@ public sealed partial class CilEmitter
         foreach (FieldDecl declared in InitializersOf(owner, shared: false))
         {
             _il.Emit(OpCodes.Ldarg_0);
-            EmitExpression(declared.Initializer!);
+            EmitValueInto(declared.Initializer!);
             _il.Emit(OpCodes.Stfld, _fields[(FieldSymbol)_model.GetSymbol(declared)!]);
         }
     }
@@ -263,9 +263,9 @@ public sealed partial class CilEmitter
     /// so a shared field holds what it was written with whether an instance was ever made or
     /// not, and holds it however many are.</para>
     /// </summary>
-    private void EmitSharedFieldInitializers(ModelDecl declaration)
+    private void EmitSharedFieldInitializers(Shaped declaration)
     {
-        if (_model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
+        if (_model.GetSymbol(declaration.Node) is not DeclaredTypeSymbol owner
             || !_types.TryGetValue(owner, out TypeBuilder? type))
         {
             return;
@@ -282,7 +282,7 @@ public sealed partial class CilEmitter
 
         foreach (FieldDecl declared in shared)
         {
-            EmitExpression(declared.Initializer!);
+            EmitValueInto(declared.Initializer!);
             _il.Emit(OpCodes.Stsfld, _fields[(FieldSymbol)_model.GetSymbol(declared)!]);
         }
 
@@ -386,6 +386,10 @@ public sealed partial class CilEmitter
                 EmitIf(branch);
                 break;
 
+            case SwitchStmt chosen:
+                EmitSwitch(chosen);
+                break;
+
             case WhileStmt loop:
                 EmitWhile(loop);
                 break;
@@ -440,7 +444,7 @@ public sealed partial class CilEmitter
             return;
         }
 
-        EmitExpression(declaration.Initializer);
+        EmitValueInto(declaration.Initializer);
         _il.Emit(OpCodes.Stloc, slot);
     }
 
@@ -496,7 +500,7 @@ public sealed partial class CilEmitter
             return;
         }
 
-        EmitExpression(value);
+        EmitValueInto(value);
 
         switch (_model.GetSymbol(name))
         {
@@ -539,7 +543,7 @@ public sealed partial class CilEmitter
             EmitReceiver(receiver);
         }
 
-        EmitExpression(value);
+        EmitValueInto(value);
         _il.Emit(field.IsShared ? OpCodes.Stsfld : OpCodes.Stfld, slot);
     }
 
@@ -601,6 +605,85 @@ public sealed partial class CilEmitter
         _il.Emit(OpCodes.Br, after);
 
         _il.MarkLabel(next);
+    }
+
+    /// <summary>
+    /// <para>A <c>switch</c>: every test first, then the groups they jump to.</para>
+    /// <para><b>Tests and bodies are separated, which an <c>if</c> chain does not need to do.</b>
+    /// Several labels may share one group, so a group is a place two or more tests jump to rather
+    /// than something that follows its own test — and putting the bodies after every test is what
+    /// lets each of them be one destination.</para>
+    /// <para>Compared with the same sequence <c>==</c> uses, which is what makes a label mean what
+    /// a reader thinks it means: <c>case "deal"</c> compares the text rather than asking whether
+    /// two strings are the same object.</para>
+    /// <para><b>Nothing falls through</b>, so each group ends by jumping past the rest. That is
+    /// also why <c>break</c> is untouched here: a switch is not something control has to be got
+    /// out of, so the word still means the loop around it — see <see cref="_loops"/>, which this
+    /// does not push to.</para>
+    /// <para>The subject is evaluated once, into a slot, since a label being tested against a call
+    /// must not run the call again.</para>
+    /// </summary>
+    private void EmitSwitch(SwitchStmt chosen)
+    {
+        LocalBuilder subject = _il.DeclareLocal(
+            TypeOf(
+                _model.GetType(chosen.Subject)
+                ?? throw Unhandled("a switch on something with no type"),
+                "the subject of a switch"));
+
+        EmitExpression(chosen.Subject);
+        _il.Emit(OpCodes.Stloc, subject);
+
+        Label after = _il.DefineLabel();
+        Label[] groups = [.. chosen.Cases.Select(_ => _il.DefineLabel())];
+
+        // Whether the comparison is the runtime's deep walk, which takes two objects and so
+        // needs a value boxed on the way in. Asked rather than assumed: what a label may be is
+        // the checker's to say, and the two have to agree about which comparison is emitted.
+        bool deeply = IsComparedDeeply(chosen.Subject);
+
+        for (int at = 0; at < chosen.Cases.Count; at++)
+        {
+            foreach (Expression label in chosen.Cases[at].Labels)
+            {
+                _il.Emit(OpCodes.Ldloc, subject);
+
+                if (deeply && subject.LocalType.IsValueType)
+                {
+                    _il.Emit(OpCodes.Box, subject.LocalType);
+                }
+
+                if (deeply)
+                {
+                    EmitAsObject(label);
+                }
+                else
+                {
+                    EmitExpression(label);
+                }
+
+                EmitEqualityOf(chosen.Subject, label, wanted: true);
+                _il.Emit(OpCodes.Brtrue, groups[at]);
+            }
+        }
+
+        // Reached when no label matched, whether or not a 'default' was written — a switch that
+        // matches nothing and has no default does nothing at all.
+        if (chosen.DefaultBody is { } otherwise)
+        {
+            EmitStatements(otherwise);
+        }
+
+        _il.Emit(OpCodes.Br, after);
+
+        for (int at = 0; at < chosen.Cases.Count; at++)
+        {
+            _il.MarkLabel(groups[at]);
+            EmitStatements(chosen.Cases[at].Body);
+            _il.Emit(OpCodes.Br, after);
+        }
+
+        _il.MarkLabel(after);
     }
 
     /// <summary>
@@ -775,7 +858,7 @@ public sealed partial class CilEmitter
     {
         if (yield.Value is not null)
         {
-            EmitExpression(yield.Value);
+            EmitValueInto(yield.Value);
             _il.Emit(OpCodes.Stloc, _result!);
         }
 
@@ -816,5 +899,5 @@ public sealed partial class CilEmitter
     }
 
     private static InvalidOperationException Unhandled(string what) =>
-        new($"the emitter met {what}, which the survey should have refused");
+        new($"the emitter met {what}, which it has no sequence for");
 }

@@ -316,7 +316,13 @@ A real also **stops where it runs out**, as an `integer` does: no infinity, and 
 
 **Models are reference types, structures are value types.** Both are user-definable in v1. Structures cannot inherit from another type, cannot contain themselves, and compare field by field.
 
-They do inherit `Model`'s members, which is where `ToString()` and `Equals()` come from, but they can never be **assigned** to a `Model` variable — that conversion is boxing, which Profi-C does not have and does not plan to add. So `Reference.Equals` on a structure stays a compile error rather than a runtime puzzle, and no assignment allocates behind your back. C# is looser here: assigning a struct to `object` compiles and quietly allocates.
+They do inherit `Model`'s members, which is where `ToString()` and `Equals()` come from, but they can never be **assigned** to a `Model` variable — that conversion is boxing, which Profi-C does not have and does not plan to add. So no assignment allocates behind your back. C# is looser here: assigning a struct to `object` compiles and quietly allocates.
+
+**A structure copies where it is kept, not where it is read** — and this is where a C# reader's intuition about `struct` will mislead them.
+
+Kept means stored in a name, put in a set, passed to a function, handed back from one. Reading does not copy, so reaching through a read to change what was read changes the original: `grid[0].x = 99` changes the point in the set. **C# refuses that line outright** (`CS1612`), because a `List<T>` of a value type hands back a copy and the write would land on a temporary — so the compiler stops you rather than let it silently do nothing.
+
+That is possible because a Profi-C structure is a **reference underneath, with copying done at every point the language says a copy happens**, rather than a CLR value type. The difference is invisible otherwise: `Model x = somePoint;` is still refused, nothing boxes, and assignment still copies. And it is kept invisible on purpose — **`Reference.Equals` may not be asked about a value** (`PC0347`), so no program can observe that a structure has a location. C# leaves that question askable and answers `false` about a value and itself, because each mention boxes afresh.
 
 **Sets and strings are reference types**, like models. `string` is immutable and is `System.String` outright; sets are mutable and are `List<T>`. Assignment aliases rather than copying, as in C#.
 

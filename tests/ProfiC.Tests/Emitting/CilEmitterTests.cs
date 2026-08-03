@@ -73,12 +73,8 @@ public sealed class CilEmitterTests
         try
         {
             string assembly = Path.Combine(folder, "Emitted.dll");
-            DiagnosticBag diagnostics = new();
 
-            Assert.That(
-                CilEmitter.Emit(compiled.Emitting, compiled.Model, "Emitted", assembly, diagnostics),
-                Is.True,
-                string.Join("\n", diagnostics.Select(d => d.Message)));
+            CilEmitter.Emit(compiled.Emitting, compiled.Model, "Emitted", assembly);
 
             return Run(assembly);
         }
@@ -382,6 +378,502 @@ public sealed class CilEmitterTests
         Agrees("""
                     real half = 1 / 2.0;
                     Console.WriteLine(half);
+            """);
+
+    /// <summary>
+    /// <para>A value reaching an optional does both the widening and the wrapping.</para>
+    /// <para><b>Two steps, and for a while only the second was recorded.</b> Both engines read
+    /// one record, so both were wrong together and the corpus could not see it — the integer sat
+    /// in the slot unwidened and <c>tally.Or(0.0) / 2</c> answered <c>empty</c> interpreted and
+    /// refused to verify emitted.</para>
+    /// </summary>
+    [Test]
+    public void AValueReachingAnOptionalConvertsBeforeItIsWrapped() =>
+        Agrees("""
+                    real? tally = 3;
+                    Console.WriteLine(tally.Or(0.0) / 2);
+
+                    fraction? part = 1;
+                    Console.WriteLine(part.Or(0|1));
+
+                    character[]? spelled = "hi";
+                    Console.WriteLine(spelled.Or({'?'}).Count);
+            """);
+
+    /// <summary>
+    /// <para>A string and its characters convert into each other, and through an optional too.
+    /// </para>
+    /// <para>Absence is carried across rather than converted, which is the part worth asserting:
+    /// an empty <c>string?</c> becomes an empty <c>character[]?</c> rather than one holding a set
+    /// with nothing in it, and those are different answers.</para>
+    /// </summary>
+    [Test]
+    public void AStringAndItsCharactersConvertBothWays() =>
+        AgreesWholly("""
+            shared model Program
+
+                function Main()
+                    character[] letters = "cast";
+                    letters.Insert('s');
+
+                    string word = letters;
+                    Console.WriteLine(word);
+                    Console.WriteLine(letters.Count);
+
+                    string? spoken = "hi";
+                    character[]? spelled = spoken;
+                    Console.WriteLine(spelled.Or({'?'}).Count);
+
+                    string? unsaid = Program.Nothing();
+                    character[]? unspelled = unsaid;
+                    Console.WriteLine(unspelled.HasValue());
+                end function
+
+                string? function Nothing()
+                    string? none;
+                    yield none;
+                end function
+
+            end model
+            """);
+
+    // ---- Choosing among alternatives ---------------------------------------------------------
+
+    /// <summary>
+    /// <para>A switch runs one group and stops, whatever it is switching on.</para>
+    /// <para>Every kind of subject in one test, because what changes between them is the
+    /// comparison: a string label compares its text, and <c>ceq</c> there would ask whether two
+    /// strings were the same object and find "de" + "al" different from "deal".</para>
+    /// </summary>
+    [Test]
+    public void ASwitchRunsOneGroupAndStops() =>
+        Agrees("""
+                    string command = "de" + "al";
+
+                    switch command
+                        case "deal":
+                            Console.WriteLine("dealing");
+                        case "fold":
+                            Console.WriteLine("folding");
+                        default:
+                            Console.WriteLine("unknown");
+                    end switch
+
+                    # Several labels sharing one group, which is what other languages need
+                    # 'break' for.
+                    switch 'B'
+                        case 'A':
+                        case 'B':
+                            Console.WriteLine("passing");
+                        default:
+                            Console.WriteLine("not passing");
+                    end switch
+
+                    # No label matches and nothing is written for it, so nothing happens.
+                    switch 99
+                        case 1:
+                            Console.WriteLine("one");
+                    end switch
+
+                    Console.WriteLine("after");
+            """);
+
+    /// <summary>
+    /// <para><c>break</c> inside a switch ends the loop around it, not the switch.</para>
+    /// <para>The language's settled answer, and the one place an emitted switch could quietly
+    /// disagree: had it pushed itself onto the stack of loops, this would print every number and
+    /// still look like working code.</para>
+    /// </summary>
+    [Test]
+    public void BreakingInsideASwitchEndsTheLoop() =>
+        Agrees("""
+                    loop for i = 1 to 5
+                        switch i
+                            case 3:
+                                break;
+                            default:
+                                Console.WriteLine(i);
+                        end switch
+                    end loop
+            """);
+
+    // ---- Enumerations ------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>An enumeration, which becomes a CLR one: its members, their ordinals, and the way
+    /// back from a number.</para>
+    /// <para>A member prints the name that was written rather than the number behind it, which is
+    /// what the type in the metadata is for — the instructions carry only the ordinal.</para>
+    /// </summary>
+    [Test]
+    public void AnEnumerationNamesItsMembers() =>
+        AgreesWholly("""
+            enumeration Suit
+                Hearts, Diamonds, Clubs, Spades
+            end enumeration
+
+            enumeration Rank
+                Two = 2, Three, Four
+            end enumeration
+
+            shared model Program
+
+                function Main()
+                    Suit chosen = Suit.Clubs;
+
+                    Console.WriteLine(chosen);
+                    Console.WriteLine(chosen.ToInteger());
+                    Console.WriteLine(chosen == Suit.Clubs);
+                    Console.WriteLine(chosen == Suit.Hearts);
+
+                    # An explicit ordinal, and the ones that follow from it.
+                    Console.WriteLine(Rank.Two.ToInteger());
+                    Console.WriteLine(Rank.Four.ToInteger());
+
+                    Suit[] all = {Suit.Hearts, Suit.Spades};
+                    Console.WriteLine(all);
+
+                    loop each one in all
+                        Console.Write(one.ToInteger() + " ");
+                    end loop
+
+                    Console.WriteLine();
+
+                    # A number names a member or it does not, which is why 'as' yields an
+                    # optional here as everywhere.
+                    Program.Name(1);
+                    Program.Name(9);
+                end function
+
+                function Name(integer ordinal)
+                    Suit? found = ordinal as Suit;
+
+                    if found.HasValue()
+                        Console.WriteLine(ordinal + " is " + found.Value());
+                    else
+                        Console.WriteLine(ordinal + " names no suit");
+                    end if
+                end function
+
+            end model
+            """);
+
+    // ---- Structures -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A structure is a value: storing one copies it, passing one copies it, and a copy has
+    /// nothing to do with the original afterwards.</para>
+    /// <para>Copying is the emitter's own work rather than the runtime's — see
+    /// <c>CilEmitter.Structures.cs</c> for why a structure is not a CLR value type — so every one
+    /// of these is a place a missing copy would show as a value changing behind a reader's back.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void AStructureCopiesWhereverItIsKept() =>
+        AgreesWholly("""
+            structure Point
+                public integer X;
+                public integer Y;
+
+                public function Point(integer x, integer y)
+                    this.X = x;
+                    this.Y = y;
+                end function
+            end structure
+
+            model Marker
+                public string Label;
+
+                public function Marker(string label)
+                    this.Label = label;
+                end function
+            end model
+
+            structure Pin
+                public Point Where;
+                public Marker Tag;
+
+                public function Pin(Point where, Marker tag)
+                    this.Where = where;
+                    this.Tag = tag;
+                end function
+            end structure
+
+            shared model Program
+
+                function Main()
+                    # Assigned.
+                    Point a = new Point(1, 2);
+                    Point b = a;
+                    b.X = 99;
+                    Console.WriteLine(a.X + " " + b.X);
+
+                    # Passed, and the one that came back.
+                    Console.WriteLine(Program.Moved(a).X + " " + a.X);
+
+                    # Held in a set, and taken out of one. Taking it out copies; reaching
+                    # through the set to change it does not.
+                    Point[] grid = {a, new Point(7, 8)};
+                    Point taken = grid[0];
+                    taken.X = 55;
+                    grid[1].X = 66;
+                    Console.WriteLine(grid[0].X + " " + grid[1].X + " " + taken.X);
+
+                    # A structure inside a structure is copied with it; a model inside one is
+                    # shared, so the copy and the original see one marker.
+                    Pin first = new Pin(new Point(0, 0), new Marker("home"));
+                    Pin second = first;
+                    second.Where.X = 5;
+                    second.Tag.Label = "renamed";
+
+                    Console.WriteLine(first.Where.X + " " + second.Where.X);
+                    Console.WriteLine(first.Tag.Label);
+                    Console.WriteLine(Reference.Equals(first.Tag, second.Tag));
+
+                    # Compared by what they hold, like everything else in this language.
+                    # 'Reference.Equals' is not asked of one at all: a value has no identity,
+                    # and asking is PC0347 rather than an answer.
+                    Console.WriteLine(new Point(3, 4) == new Point(3, 4));
+                    Console.WriteLine(new Point(3, 4) == new Point(3, 5));
+                end function
+
+                # Changing a parameter changes this function's own copy, and nothing outside.
+                Point function Moved(Point given)
+                    given.X = given.X + 100;
+                    yield given;
+                end function
+
+            end model
+            """);
+
+    // ---- The types the standard library provides -----------------------------------------------
+
+    /// <summary>
+    /// <para>Moments, days, times of day and lengths of time: made, read, moved, and compared.
+    /// </para>
+    /// <para>Only values that do not depend on when the test runs, so the two engines can be held
+    /// to the same output — which is the point. Every one of these is a call into the runtime,
+    /// and the answers are the ones a program sees rather than the ones .NET would give: a year
+    /// as a 64-bit integer, an <c>AddHours</c> counted in tens.</para>
+    /// </summary>
+    [Test]
+    public void TheTimeTypesAgree() =>
+        Agrees("""
+                    DateTime liftoff = new DateTime(1969, 7, 16, 13, 32, 0);
+                    DateTime landing = new DateTime(1969, 7, 20, 20, 17, 40);
+
+                    Console.WriteLine(liftoff);
+                    Console.WriteLine(liftoff.Year + " " + liftoff.Month + " " + liftoff.Day);
+                    Console.WriteLine(liftoff.Hour + " " + liftoff.Minute + " " + liftoff.Second);
+                    Console.WriteLine(liftoff.DayOfWeek + " " + liftoff.DayOfYear);
+                    Console.WriteLine(liftoff.AddDays(1.5));
+                    Console.WriteLine(liftoff.AddYears(1) + " " + liftoff.AddMonths(2));
+                    Console.WriteLine(liftoff.Format("yyyy/MM/dd HH:mm"));
+
+                    # A length of time, its parts against its totals.
+                    TimeSpan mission = landing.Subtract(liftoff);
+
+                    Console.WriteLine(mission);
+                    Console.WriteLine(mission.Days + " " + mission.Hours + " " + mission.Minutes);
+                    Console.WriteLine(Math.Round(mission.TotalHours));
+                    Console.WriteLine(liftoff.Add(mission));
+                    Console.WriteLine(TimeSpan.FromMinutes(30.0).Subtract(TimeSpan.FromHours(1.0)));
+                    Console.WriteLine(mission.CompareTo(TimeSpan.Zero));
+
+                    # A day and a time of day, and the moment they make together. The clock wraps
+                    # round midnight rather than running past it.
+                    Date birthday = new Date(1969, 7, 20);
+                    Time opening = new Time(9, 0);
+
+                    Console.WriteLine(birthday + " " + birthday.DayOfWeek);
+                    Console.WriteLine(birthday.AddDays(40) + " " + birthday.AddYears(1));
+                    Console.WriteLine(new Time(17, 30).AddHours(8.0));
+                    Console.WriteLine(birthday.ToDateTime(opening));
+                    Console.WriteLine(Date.FromDateTime(landing) + " " + Time.FromDateTime(landing));
+                    Console.WriteLine(birthday == new Date(1969, 7, 20));
+                    Console.WriteLine(birthday.CompareTo(new Date(2000, 1, 1)) < 0);
+
+                    # Read back from text, which answers with an optional rather than raising.
+                    Console.WriteLine(Date.Parse("2026-08-15").Or(new Date(1, 1, 1)));
+                    Console.WriteLine(Date.Parse("the fifteenth").HasValue());
+            """);
+
+    /// <summary>
+    /// <para>A seeded generator draws the same sequence in both engines.</para>
+    /// <para>The one thing about randomness worth asserting across the two: the sequence is the
+    /// runtime's, so seeding it is a promise the language keeps rather than the platform's own
+    /// behavior leaking through. An unseeded one is asked only for properties that hold whatever
+    /// it drew.</para>
+    /// </summary>
+    [Test]
+    public void ASeededGeneratorDrawsTheSameSequence() =>
+        Agrees("""
+                    Random rolls = new Random(42);
+
+                    loop for i = 1 to 5
+                        Console.Write(rolls.Next(1, 7) + " ");
+                    end loop
+
+                    Console.WriteLine();
+
+                    Console.WriteLine(Random.Next() >= 0);
+                    Console.WriteLine(Random.Next(5) < 5);
+                    Console.WriteLine(Random.NextDouble() < 1.0);
+            """);
+
+    /// <summary>
+    /// <para>An empty set literal takes its type from what it is passed to.</para>
+    /// <para><b>A whole-set-of-nothing has no type of its own</b>, so it waits for a target the
+    /// way a lambda with bare parameter names does. Left to infer, it settles as a set of
+    /// nothing-in-particular and reaches the emitter as a type there is no CLR shape for —
+    /// which the interpreter never noticed, holding every set as one of objects.</para>
+    /// </summary>
+    [Test]
+    public void AnEmptySetLearnsItsTypeFromWhereItGoes() =>
+        Agrees("""
+                    string[] named = {"a", "b"};
+                    string? missing;
+
+                    Console.WriteLine(named.Count);
+                    Console.WriteLine(missing.Or("none"));
+
+                    integer[] none = {};
+                    Console.WriteLine(none.Count);
+            """);
+
+    // ---- Functions as values ------------------------------------------------------------------
+
+    /// <summary>
+    /// <para>A function is a value: written down, passed along, handed back, and held in a set.
+    /// </para>
+    /// <para>Every one of these is a delegate by the time it runs, and the shapes are shared by
+    /// signature — so <c>Twice</c> taking one and <c>picked</c> holding one are the same CLR type
+    /// without either of them saying so.</para>
+    /// </summary>
+    [Test]
+    public void AFunctionIsAValue() =>
+        AgreesWholly("""
+            shared model Program
+
+                function Main()
+                    integer delegate(integer) increment = (a) yield a + 1;
+                    Console.WriteLine(increment(41));
+
+                    # The block form, which yields the way any other function does.
+                    integer delegate(integer, integer) larger = function(a, b)
+                        if a > b
+                            yield a;
+                        else
+                            yield b;
+                        end if
+                    end function;
+
+                    Console.WriteLine(larger(3, 9));
+
+                    # Taking nothing, and yielding nothing.
+                    string delegate() greet = () yield "hello";
+                    delegate(string) announce = (what) yield Console.WriteLine("* " + what);
+
+                    announce(greet());
+
+                    # Passed along, handed back, and named without being called.
+                    Console.WriteLine(Program.Twice(increment, 5));
+                    Console.WriteLine(Program.AdderOf(10)(7));
+                    Console.WriteLine(Program.Twice(Program.Triple, 2));
+
+                    # Held in a set, and picked out of one.
+                    integer delegate(integer)[] all = {increment, Program.Triple};
+                    Console.WriteLine(all[1](6));
+                end function
+
+                integer function Twice(integer delegate(integer) what, integer start)
+                    yield what(what(start));
+                end function
+
+                integer delegate(integer) function AdderOf(integer by)
+                    yield (n) yield n + by;
+                end function
+
+                integer function Triple(integer n)
+                    yield n * 3;
+                end function
+
+            end model
+            """);
+
+    /// <summary>
+    /// <para>A captured name is one place, seen by everything that named it.</para>
+    /// <para><b>The assertion closure conversion exists for.</b> Handing the values over where
+    /// the value is made would print 0 for the total and 1, 1, 1 for the loop — both of which
+    /// look like working programs.</para>
+    /// </summary>
+    [Test]
+    public void ACapturedNameIsOnePlace() =>
+        Agrees("""
+                    integer total = 0;
+
+                    delegate() bump = function()
+                        total = total + 1;
+                    end function;
+
+                    bump();
+                    bump();
+
+                    # Written from outside after being captured, and seen from inside.
+                    total = total + 10;
+                    bump();
+
+                    Console.WriteLine(total);
+
+                    # A loop declares its names afresh each turn, so each value holds its own.
+                    integer delegate()[] remembered = {};
+
+                    loop for i = 1 to 3
+                        integer mine = i;
+                        remembered.Insert(() yield mine);
+                    end loop
+
+                    loop each one in remembered
+                        Console.Write(one() + " ");
+                    end loop
+
+                    Console.WriteLine();
+            """);
+
+    /// <summary>
+    /// <para>A function value made from an instance carries that instance with it.</para>
+    /// <para>And it dispatches on what the receiver turned out to be, which is settled where the
+    /// value is made rather than where it is called — <c>ldvirtftn</c> rather than
+    /// <c>ldftn</c>. Emitted the other way this prints the parent's answer.</para>
+    /// </summary>
+    [Test]
+    public void AFunctionValueFromAnInstanceKeepsIt() =>
+        AgreesWholly("""
+            model Animal
+                public virtual string function Speaks()
+                    yield "...";
+                end function
+            end model
+
+            model Dog extends Animal
+                public override string function Speaks()
+                    yield "woof";
+                end function
+            end model
+
+            shared model Program
+                function Main()
+                    Animal pet = new Dog();
+
+                    string delegate() heard = pet.Speaks;
+                    Console.WriteLine(heard());
+
+                    # Held without its shape, which is what the root of every function type is
+                    # for — and it is still the same one.
+                    Function shapeless = heard;
+                    Console.WriteLine(Reference.Equals(shapeless, heard));
+                end function
+            end model
             """);
 
     // ---- Models with state ------------------------------------------------------------------
@@ -2013,120 +2505,4 @@ public sealed class CilEmitterTests
 
             end model
             """);
-
-    // ---- What it will not emit yet ----------------------------------------------------------
-
-    /// <summary>
-    /// Tries to emit a program and gives back what was refused, along with whatever the attempt
-    /// left in the folder — read before it is cleaned up, since that is the thing worth knowing.
-    /// </summary>
-    private static (string[] Refusals, string[] Written) Refused(string source)
-    {
-        Compiled compiled = Compile(source);
-
-        string folder = Path.Combine(Path.GetTempPath(), $"profi-c-refuse-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(folder);
-
-        try
-        {
-            DiagnosticBag diagnostics = new();
-
-            bool emitted = CilEmitter.Emit(
-                compiled.Emitting,
-                compiled.Model,
-                "Refused",
-                Path.Combine(folder, "Refused.dll"),
-                diagnostics);
-
-            Assert.That(emitted, Is.False, "this should not have been emitted");
-
-            return (
-                [.. diagnostics.Select(d => d.Id)],
-                [.. Directory.GetFiles(folder).Select(Path.GetFileName)!]);
-        }
-        finally
-        {
-            Directory.Delete(folder, recursive: true);
-        }
-    }
-
-    private static string[] RefusalsFor(string source) => Refused(source).Refusals;
-
-    [TestCase("structure", """
-        structure Point
-            integer x;
-        end structure
-        """)]
-    [TestCase("enumeration", """
-        enumeration Color
-            Red,
-            Green
-        end enumeration
-        """)]
-    public void ADeclarationItCannotEmitIsRefused(string what, string declaration) =>
-        Assert.That(
-            RefusalsFor($$"""
-                {{declaration}}
-
-                shared model Program
-                    function Main()
-                        Console.WriteLine("hello");
-                    end function
-                end model
-                """),
-            Does.Contain("PC0501"),
-            what);
-
-    [TestCase("a set of something unemittable", "DateTime[] days = {DateTime.Now};")]
-    [TestCase("an optional of something unemittable", "DateTime? day = DateTime.Now;")]
-    [TestCase("a moment", "DateTime day = DateTime.Now;")]
-    [TestCase("a lambda", "integer delegate(integer) f = (n) yield n + 1;")]
-    [TestCase("a switch", """
-                switch 1
-                    case 1:
-                        Console.WriteLine("one");
-                end switch
-        """)]
-    public void AStatementItCannotEmitIsRefused(string what, string body) =>
-        Assert.That(
-            RefusalsFor($$"""
-                shared model Program
-                    function Main()
-                {{body}}
-                    end function
-                end model
-                """),
-            Does.Contain("PC0501"),
-            what);
-
-    /// <summary>
-    /// <para>A refused build writes no file at all.</para>
-    /// <para>The reason the survey runs ahead of the emitter rather than inside it. An assembly
-    /// missing one method still loads and still verifies, and fails only when a run reaches the
-    /// gap — which is a worse answer than not building, and much harder to trace back to here.
-    /// </para>
-    /// </summary>
-    [Test]
-    public void ARefusedBuildLeavesNothingBehind()
-    {
-        (string[] refusals, string[] written) = Refused("""
-            structure Point
-                integer x;
-            end structure
-
-            shared model Program
-                function Main()
-                    Console.WriteLine("hello");
-                end function
-            end model
-            """);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(refusals, Does.Contain("PC0501"));
-
-            Assert.That(written, Is.Empty,
-                        "a refused build should write no assembly, no config, and no runtime");
-        });
-    }
 }

@@ -64,6 +64,14 @@ public sealed partial class CilEmitter
                 return;
         }
 
+        // An ordinal being asked whether it names a member, which is a different question from
+        // every other 'as' and has its own sequence.
+        if (_model.GetType(cast.TargetType) is EnumerationSymbol enumeration)
+        {
+            EmitIntegerAsEnumeration(cast, TypeOf(enumeration, enumeration.Name), built);
+            return;
+        }
+
         Label missed = _il.DefineLabel();
         Label done = _il.DefineLabel();
 

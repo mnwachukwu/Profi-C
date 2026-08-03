@@ -17,6 +17,14 @@ CompilationUnit
         CallExpr
           MemberExpr 'TakingStringsApart'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'OneCharacterAtATime'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ReadingNumbersBack'
+            IdentifierExpr 'Program'
     FunctionDecl 'Interpolation'
       ExpressionStmt
         CallExpr
@@ -286,3 +294,146 @@ CompilationUnit
                 MemberExpr 'Join'
                   IdentifierExpr 'counts'
                 LiteralExpr ", " [String]
+    FunctionDecl 'OneCharacterAtATime'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== by position ==" [String]
+      VarDeclStmt 'word' [inferred]
+        LiteralExpr "cast" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  first:      ' ''
+            InterpolationPart
+              IndexExpr
+                IdentifierExpr 'word'
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  last:       ' ''
+            InterpolationPart
+              IndexExpr
+                IdentifierExpr 'word'
+                BinaryExpr '-'
+                  MemberExpr 'Count'
+                    IdentifierExpr 'word'
+                  LiteralExpr 1 [Integer]
+      VarDeclStmt 'spelled'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      ForStmt 'i' until
+        LiteralExpr 0 [Integer]
+        MemberExpr 'Count'
+          IdentifierExpr 'word'
+        AssignmentStmt
+          IdentifierExpr 'spelled'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              IdentifierExpr 'spelled'
+              IndexExpr
+                IdentifierExpr 'word'
+                IdentifierExpr 'i'
+            LiteralExpr " " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  spelled:    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Trim'
+                  IdentifierExpr 'spelled'
+    FunctionDecl 'ReadingNumbersBack'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== text into numbers ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  an integer: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToInteger'
+                      LiteralExpr "42" [String]
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a real:     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToReal'
+                      LiteralExpr "3.5" [String]
+                LiteralExpr 0.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a boolean:  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToBoolean'
+                      LiteralExpr "true" [String]
+                LiteralExpr false [Boolean]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a ratio:    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToFraction'
+                      LiteralExpr "22|7" [String]
+                LiteralExpr 0|1 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  written /:  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToFraction'
+                      LiteralExpr "22/7" [String]
+                LiteralExpr 0|1 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a whole:    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToFraction'
+                      LiteralExpr "5" [String]
+                LiteralExpr 0|1 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  not a number: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'HasValue'
+                  CallExpr
+                    MemberExpr 'ToInteger'
+                      LiteralExpr "seven" [String]

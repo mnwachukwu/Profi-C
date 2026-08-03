@@ -31,3 +31,15 @@ and the last word is "this"
   as a title: The quick brown fox
   swapped:    the slow brown fox
   counts:     1, 2, 3
+== by position ==
+  first:      c
+  last:       t
+  spelled:    c a s t
+== text into numbers ==
+  an integer: 42
+  a real:     3.5
+  a boolean:  true
+  a ratio:    22|7
+  written /:  22|7
+  a whole:    5|1
+  not a number: false

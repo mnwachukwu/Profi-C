@@ -44,9 +44,9 @@ public sealed partial class CilEmitter
     /// <para>A shared model is skipped: it is never instantiated, so there are never two of them
     /// to compare.</para>
     /// </summary>
-    private void ImplementDeepEquality(ModelDecl declaration)
+    private void ImplementDeepEquality(Shaped declaration)
     {
-        if (_model.GetSymbol(declaration) is not DeclaredTypeSymbol owner
+        if (_model.GetSymbol(declaration.Node) is not DeclaredTypeSymbol owner
             || !_types.TryGetValue(owner, out TypeBuilder? type)
             || declaration.Modifiers.HasFlag(DeclarationModifiers.Shared))
         {

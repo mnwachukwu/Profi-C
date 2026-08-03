@@ -80,6 +80,7 @@ public sealed partial class CilEmitter
             case BuiltInId.StringToInteger:
             case BuiltInId.StringToReal:
             case BuiltInId.StringToBoolean:
+            case BuiltInId.StringToFraction:
                 foreach (Expression argument in arguments)
                 {
                     EmitExpression(argument);
@@ -145,6 +146,7 @@ public sealed partial class CilEmitter
         BuiltInId.StringToInteger => Text(nameof(ProfiCText.ToInteger), typeof(string)),
         BuiltInId.StringToReal => Text(nameof(ProfiCText.ToReal), typeof(string)),
         BuiltInId.StringToBoolean => Text(nameof(ProfiCText.ToBoolean), typeof(string)),
+        BuiltInId.StringToFraction => Text(nameof(ProfiCText.ToFraction), typeof(string)),
 
         _ => throw new InvalidOperationException($"No runtime method stands behind '{id}'."),
     };
@@ -155,4 +157,18 @@ public sealed partial class CilEmitter
 
     private static readonly MethodInfo StringLength =
         typeof(string).GetProperty(nameof(string.Length))!.GetMethod!;
+
+    /// <summary>
+    /// The two crossings between a string and its characters, which the language performs without
+    /// either being written. Neither loses anything, which is why both are implicit.
+    /// </summary>
+    private static readonly MethodInfo TextToCharacters =
+        Text(nameof(ProfiCText.ToCharacters), typeof(string));
+
+    private static readonly MethodInfo TextFromCharacters =
+        Text(nameof(ProfiCText.FromCharacters), typeof(IProfiCSet));
+
+    /// <summary>A character by position, which is what indexing a string means.</summary>
+    private static readonly MethodInfo TextAt =
+        Text(nameof(ProfiCText.At), typeof(string), typeof(long));
 }

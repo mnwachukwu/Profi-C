@@ -301,44 +301,69 @@ public sealed partial class TypeChecker
     /// </summary>
     private void RecordConversion(SyntaxNode node, TypeSymbol from, TypeSymbol to)
     {
-        ConversionOperation? operation = (from, to) switch
+        List<(ConversionOperation Operation, TypeSymbol Target)> steps = [];
+
+        // What the value is and what it has to become, with any optional on either side set
+        // aside. Whether absence is permitted is a separate question from what the value has to
+        // turn into, and answering the two together is what let 'real? tally = 3' record only
+        // the wrap and leave an integer in a slot that says real.
+        bool wrapping = to is OptionalType && from is not OptionalType;
+
+        if (StepFor(Held(from), Held(to)) is { } step)
         {
-            _ when to is OptionalType optional && !Conversions.SameType(from, optional)
-                   && from is not OptionalType => ConversionOperation.WrapOptional,
-
-            _ when ReferenceEquals(from, PrimitiveType.Integer)
-                   && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.IntegerToReal,
-
-            _ when ReferenceEquals(from, PrimitiveType.Integer)
-                   && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.IntegerToFraction,
-
-            _ when ReferenceEquals(from, PrimitiveType.Real)
-                   && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.RealToFraction,
-
-            _ when ReferenceEquals(from, PrimitiveType.Fraction)
-                   && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.FractionToReal,
-
-            // Written to see through an optional on both sides, since a string? reaching a
-            // character[]? has the same work to do on a value that is there and none at all
-            // on one that is not.
-            _ when IsText(from) && IsCharacters(to) => ConversionOperation.StringToCharacters,
-
-            _ when IsCharacters(from) && IsText(to) => ConversionOperation.CharactersToString,
-
-            // Reaching an ancestor changes nothing at run time, so it is not recorded.
-            _ => null,
-        };
-
-        if (operation is { } needed)
-        {
-            if (needed == ConversionOperation.RealToFraction)
-            {
-                RequireItFitsAFraction(node);
-            }
-
-            _model.RecordConversion(node, needed, to);
+            // Where both sides admit absence the step converts what is held, so it is recorded
+            // against the optional types and the emitter reaches inside. Where only the target
+            // does, the step runs on the plain value before the wrap below.
+            steps.Add((step, wrapping ? Held(to) : to));
         }
+
+        if (wrapping)
+        {
+            steps.Add((ConversionOperation.WrapOptional, to));
+        }
+
+        if (steps.Count == 0)
+        {
+            // Reaching an ancestor changes nothing at run time, so nothing is recorded.
+            return;
+        }
+
+        if (steps.Any(s => s.Operation == ConversionOperation.RealToFraction))
+        {
+            RequireItFitsAFraction(node);
+        }
+
+        _model.RecordConversion(node, steps);
     }
+
+    /// <summary>What an optional holds, or the type itself where it is not one.</summary>
+    private static TypeSymbol Held(TypeSymbol type) =>
+        type is OptionalType optional ? optional.UnderlyingType : type;
+
+    /// <summary>
+    /// The one thing a value of one type does to become another, or null where being one already
+    /// makes it the other — which is every widening up an inheritance chain.
+    /// </summary>
+    private static ConversionOperation? StepFor(TypeSymbol from, TypeSymbol to) => (from, to) switch
+    {
+        _ when ReferenceEquals(from, PrimitiveType.Integer)
+               && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.IntegerToReal,
+
+        _ when ReferenceEquals(from, PrimitiveType.Integer)
+               && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.IntegerToFraction,
+
+        _ when ReferenceEquals(from, PrimitiveType.Real)
+               && ReferenceEquals(to, PrimitiveType.Fraction) => ConversionOperation.RealToFraction,
+
+        _ when ReferenceEquals(from, PrimitiveType.Fraction)
+               && ReferenceEquals(to, PrimitiveType.Real) => ConversionOperation.FractionToReal,
+
+        _ when IsText(from) && IsCharacters(to) => ConversionOperation.StringToCharacters,
+
+        _ when IsCharacters(from) && IsText(to) => ConversionOperation.CharactersToString,
+
+        _ => null,
+    };
 
     /// <summary>
     /// <para>Reports a real written down that has no fraction to become.</para>

@@ -93,6 +93,76 @@ public static class ProfiCText
         new(subject.Select(c => (object?)c));
 
     /// <summary>
+    /// <para>Reads a ratio written with either mark between its halves, or a whole number.</para>
+    /// <para><c>22|7</c> is how the language writes one, because a slash already means division.
+    /// <c>22/7</c> is how a person writes one, because that is what a fraction looks like
+    /// everywhere outside a compiler. Both are read, and a bare <c>22</c> is a ratio over one —
+    /// the same three shapes <c>Fraction.Create</c> accepts.</para>
+    /// <para>Text that does not read is an absence rather than a failure, as it is everywhere
+    /// else a value is read back out of text.</para>
+    /// </summary>
+    public static Optional<Fraction> ToFraction(string subject)
+    {
+        ArgumentNullException.ThrowIfNull(subject);
+
+        string trimmed = subject.Trim();
+        int mark = trimmed.IndexOfAny(['|', '/']);
+
+        if (mark < 0)
+        {
+            return Whole(trimmed, out long whole)
+                ? Optional<Fraction>.Of(new Fraction(whole, 1))
+                : default;
+        }
+
+        return Whole(trimmed[..mark], out long numerator)
+               && Whole(trimmed[(mark + 1)..], out long denominator)
+               && denominator != 0
+            ? Optional<Fraction>.Of(new Fraction(numerator, denominator))
+            : default;
+
+        static bool Whole(string part, out long value) =>
+            long.TryParse(part.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                          out value);
+    }
+
+    /// <inheritdoc cref="ToFraction"/>
+    public static object? ToFractionUntyped(string subject)
+    {
+        Optional<Fraction> read = ToFraction(subject);
+
+        return read.HasValue ? read.Value : null;
+    }
+
+    /// <summary>
+    /// <para>The character at a position, counting from zero.</para>
+    /// <para>Refused in the language's own words rather than the platform's, which names an
+    /// array and an index and mentions neither the string nor how long it was. What a reader
+    /// needs is the number they asked for beside the number there were.</para>
+    /// </summary>
+    public static char At(string subject, long position)
+    {
+        ArgumentNullException.ThrowIfNull(subject);
+
+        if (position < 0 || position >= subject.Length)
+        {
+            throw new IndexOutOfRangeException(
+                $"Index {position} is outside a string of {subject.Length} characters.");
+        }
+
+        return subject[(int)position];
+    }
+
+    /// <summary>
+    /// <para>The characters of a set, read back as one string.</para>
+    /// <para>The way back from <see cref="ToCharacters"/>, and it needs only one form: what it
+    /// answers with is a string either way, so the element type an engine holds its sets as
+    /// makes no difference to what comes out. <see cref="IProfiCSet"/> is what lets one method
+    /// take both.</para>
+    /// </summary>
+    public static string FromCharacters(IProfiCSet these) => new(Characters(these));
+
+    /// <summary>
     /// <para>The pieces between each appearance of a separator.</para>
     /// <para>Separating on nothing leaves one piece, which is the whole string — the same answer
     /// as every other member gives for an empty argument.</para>

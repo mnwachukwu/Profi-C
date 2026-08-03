@@ -80,6 +80,7 @@ shared model Program
         Program.WhenAStructureHoldsAModel();
         Program.Equality();
         Program.PassingThemToFunctions();
+        Program.InsideASet();
     end function
 
     # ---- A structure copies ------------------------------------------------------
@@ -173,6 +174,55 @@ shared model Program
 
         Console.WriteLine("point kept " + point.X + ", marker became " + marker.Label);
         Console.WriteLine("distance:   " + point.ManhattanFrom(new Point(4, 5)));
+
+        # Handed back, which is a copy for the same reason: the result is stored.
+        Console.WriteLine("moved copy: " + Program.Moved(point).X + ", original " + point.X);
+    end function
+
+    ##
+        @summary: A point moved to the right.
+
+        @remarks: Changing the parameter changes this function's own copy. Nothing outside sees
+        it, so handing the copy back is the only way to give the caller the new value.
+
+        @given: the point to move.
+        @yields: a point ten to the right of it.
+    ##
+    Point function Moved(Point given)
+        given.X = given.X + 10;
+        yield given;
+    end function
+
+    # ---- Inside a set -----------------------------------------------------------------
+
+    ##
+        A set holds the structures themselves rather than copies of them, so reaching through
+        the set to change one changes the one in the set. Taking it out is a different act: that
+        stores it somewhere, and storing copies.
+
+        The rule is the same everywhere and worth saying once more, because these two lines look
+        alike and do not agree: **reading does not copy, keeping does.**
+    ##
+    function InsideASet()
+        Point[] grid = {new Point(1, 1), new Point(2, 2)};
+
+        # Reached through the set, so the point in the set moves.
+        grid[0].X = 99;
+
+        # Taken out of the set, so this is a copy and the set is untouched.
+        Point taken = grid[1];
+        taken.X = 77;
+
+        Console.WriteLine("in the set: " + grid[0].X + ", " + grid[1].X);
+        Console.WriteLine("taken out:  " + taken.X);
+
+        ##
+            'Reference.Equals' is not asked here, and cannot be: a value has no identity to
+            compare, so the question is refused rather than answered. Either answer would teach
+            something false — that a point is somewhere, or that two equal points differ — and
+            '==' is the question a reader meant anyway.
+        ##
+        Console.WriteLine("equal:      " + (grid[1] == taken));
     end function
 
 end model

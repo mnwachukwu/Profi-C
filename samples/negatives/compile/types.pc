@@ -52,5 +52,12 @@ shared model Program
         # And 'Function' is the root every one of them descends from, not a way to spell a
         # particular shape, so it takes no parentheses.
         Function(integer) thrice = (n) yield n * 3;
+
+        ##
+            'Reference.Equals' asks whether two names reach one object. A value is not somewhere
+            a name points, so it has no answer — which is the same rule that refuses 'Model m = 1'
+            above, reaching a case the conversion cannot see because this member takes anything.
+        ##
+        Console.WriteLine(Reference.Equals(1, 1));
     end function
 end model

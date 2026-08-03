@@ -287,17 +287,20 @@ public sealed class Lowering
     {
         Expression lowered = LowerExpressionCore(expression);
 
-        if (_model.GetConversion(expression) is not { } needed)
+        // In order, since a value may have two things to do and the second is written against
+        // what the first produced — widening an integer to a real before wrapping the real.
+        foreach ((ConversionOperation operation, TypeSymbol target)
+                 in _model.GetConversion(expression))
         {
-            return lowered;
+            ConversionExpr conversion = new(expression.Span, lowered, operation);
+
+            // The conversion produces the target type, not the type the operand had.
+            _model.BindType(conversion, target);
+
+            lowered = conversion;
         }
 
-        ConversionExpr conversion = new(expression.Span, lowered, needed.Operation);
-
-        // The conversion produces the target type, not the type the operand had.
-        _model.BindType(conversion, needed.Target);
-
-        return conversion;
+        return lowered;
     }
 
     private Expression LowerExpressionCore(Expression expression)

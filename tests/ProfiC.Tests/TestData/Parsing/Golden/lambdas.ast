@@ -590,6 +590,28 @@ CompilationUnit
             CallExpr
               MemberExpr 'Next'
                 IdentifierExpr 'counter'
+      VarDeclStmt 'pet'
+        NamedTypeSyntax 'Animal'
+        NewExpr 'Dog'
+      VarDeclStmt 'heard'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'string'
+        MemberExpr 'Speaks'
+          IdentifierExpr 'pet'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "held:    " [String]
+                CallExpr
+                  IdentifierExpr 'heard'
+              LiteralExpr ", called: " [String]
+            CallExpr
+              MemberExpr 'Speaks'
+                IdentifierExpr 'pet'
     FunctionDecl 'HoldingAnyFunctionAtAll'
       VarDeclStmt 'assorted'
         SetTypeSyntax
@@ -667,3 +689,13 @@ CompilationUnit
         LambdaExpr inline
           MemberExpr 'count'
             ThisExpr
+  ModelDecl 'Animal'
+    FunctionDecl 'Speaks' [public virtual]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "..." [String]
+  ModelDecl 'Dog' extends Animal
+    FunctionDecl 'Speaks' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "woof" [String]

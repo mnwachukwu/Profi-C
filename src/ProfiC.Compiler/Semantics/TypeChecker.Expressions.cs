@@ -106,11 +106,19 @@ public sealed partial class TypeChecker
     }
 
     /// <summary>
-    /// True for a lambda that cannot be checked until something says what it is being written
-    /// into, because at least one of its parameters is a bare name.
+    /// <para>True for an argument that cannot be checked until something says what it is being
+    /// written into.</para>
+    /// <para>Two shapes have that property. A lambda written with a bare parameter name does not
+    /// know what the name stands for; an empty set literal does not know what it would hold. Both
+    /// are complete as written and neither can be given a type on its own, so both wait for the
+    /// parameter they are being passed to and neither steers the choice it is waiting on.</para>
     /// </summary>
-    private static bool NeedsATarget(Expression expression) =>
-        expression is LambdaExpr lambda && lambda.Parameters.Any(p => p.Type is null);
+    private static bool NeedsATarget(Expression expression) => expression switch
+    {
+        LambdaExpr lambda => lambda.Parameters.Any(p => p.Type is null),
+        CollectionExpr collection => collection.Elements.Count == 0,
+        _ => false,
+    };
 
     /// <summary>
     /// Checks every element against the element type that was asked for, rather than against
