@@ -33,8 +33,6 @@ public enum BuiltInId
     FloatInfinity,
     FloatNegativeInfinity,
     FloatNotANumber,
-    CharacterMaxValue,
-    CharacterMinValue,
     StringEmpty,
 
     MathSqrt,
@@ -543,6 +541,12 @@ public static class BuiltIns
         // kept, because a reserved word cannot stand in front of a dot: 'integer.MaxValue' is
         // not something the grammar can read, and 'Integer.MaxValue' is.
         //
+        // Bounds belong to the numbers. Where a number runs out is a fact about the number,
+        // and meeting it is how a beginner learns that a type has an edge at all. A character
+        // has no such fact to tell — where the alphabet stops is a fact about how text is
+        // stored rather than about the language, and not every value in that range names a
+        // character anyway — so 'character' has no capitalized name beside it.
+        //
         // None of these can be constructed or extended. They hold values and nothing else.
         new("Integer", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
@@ -570,12 +574,6 @@ public static class BuiltIns
             // Spelled out rather than abbreviated, as this language spells out 'shiftleft' and
             // 'bitwise and'. A reader meeting it for the first time should be able to read it.
             Value(BuiltInId.FloatNotANumber, "NotANumber", PrimitiveType.Float),
-        ]),
-
-        new("Character", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
-        [
-            Value(BuiltInId.CharacterMaxValue, "MaxValue", PrimitiveType.Character),
-            Value(BuiltInId.CharacterMinValue, "MinValue", PrimitiveType.Character),
         ]),
 
         // Not a bound but a name for the string with nothing in it, which reads better than an

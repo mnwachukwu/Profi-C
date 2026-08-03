@@ -65,10 +65,6 @@ public sealed class BuiltInCatalogTests
         // printing rather than by comparing.
         (BuiltInId.FloatNotANumber, "Console.WriteLine(Float.NotANumber)", "NotANumber\n"),
 
-        (BuiltInId.CharacterMinValue, "Console.WriteLine(Character.MinValue == '\\0')", "true\n"),
-        (BuiltInId.CharacterMaxValue,
-         "Console.WriteLine(Character.MaxValue > Character.MinValue)", "true\n"),
-
         (BuiltInId.StringEmpty, "Console.WriteLine(String.Empty == \"\")", "true\n"),
 
         (BuiltInId.FloatToFraction, "Console.WriteLine((0.5f).ToFraction())", "1|2\n"),

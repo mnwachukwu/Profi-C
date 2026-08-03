@@ -306,9 +306,6 @@ public sealed partial class Interpreter
             BuiltInId.FloatNegativeInfinity => new StrongBox<object?>(double.NegativeInfinity),
             BuiltInId.FloatNotANumber => new StrongBox<object?>(double.NaN),
 
-            BuiltInId.CharacterMaxValue => new StrongBox<object?>(char.MaxValue),
-            BuiltInId.CharacterMinValue => new StrongBox<object?>(char.MinValue),
-
             BuiltInId.StringEmpty => new StrongBox<object?>(string.Empty),
 
             BuiltInId.MathSqrt => new StrongBox<object?>(ProfiCMath.Sqrt(Real(0))),

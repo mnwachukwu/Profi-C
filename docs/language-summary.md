@@ -6,7 +6,7 @@ A condensed reference and a full comparison to C#. For the normative definition 
 is listed in the specification's [diagnostics appendix](language-spec.md#appendix-a-diagnostics),
 which gives every id, its severity, and what it says.
 
-**Profi-C is a teaching language.** It aims to make concepts legible to a beginner while staying close enough to C# that what a student learns transfers. The comparison in [§5](#5-similar-to-c) and [§6](#6-different-from-c) is therefore a map of the bridge a student will eventually cross, not a list of gotchas for working C# developers.
+**Profi-C is a teaching language.** It aims to make concepts legible to a beginner while staying close enough to C# that what a student learns transfers. The comparison in [§5](#5-similar-to-c) and [§6](#6-different-from-c) is therefore a map of the bridge a student will eventually cross, and potentially, a list of gotchas for working C# developers.
 
 If you want that comparison as code rather than prose, [side-by-side.md](side-by-side.md) writes every construct out both ways — and gives two sections to what C# does better and what it has that Profi-C has no form for.
 
@@ -217,7 +217,7 @@ printing and calling never disagree.
 | enumerations | `ToString` returns the member name |
 | `integer`, `real` | `ToFloat` |
 | `float` | `ToReal`, `ToFraction` |
-| `Integer`, `Real`, `Float`, `Character` | `MaxValue` and `MinValue`, read through a capitalized name beside the keyword since a reserved word cannot precede a dot |
+| `Integer`, `Real`, `Float` | `MaxValue` and `MinValue`, read through a capitalized name beside the keyword since a reserved word cannot precede a dot. Only the numbers have bounds — where a `character` stops is a fact about how text is stored, so there is no `Character` |
 | `Float` | `Infinity`, `NegativeInfinity`, `NotANumber` — the three a `real` has no answer for |
 | `String` | `Empty` |
 

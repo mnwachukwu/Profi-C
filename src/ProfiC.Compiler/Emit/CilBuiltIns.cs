@@ -185,8 +185,6 @@ internal static class CilBuiltIns
            or BuiltInId.FloatInfinity
            or BuiltInId.FloatNegativeInfinity
            or BuiltInId.FloatNotANumber
-           or BuiltInId.CharacterMaxValue
-           or BuiltInId.CharacterMinValue
            or BuiltInId.StringEmpty;
 
     public static bool IsOnAFraction(BuiltInId id) =>

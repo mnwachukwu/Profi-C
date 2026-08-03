@@ -193,9 +193,6 @@ public sealed partial class CilEmitter
                 return;
             case BuiltInId.FloatNotANumber: _il.Emit(OpCodes.Ldc_R8, double.NaN); return;
 
-            case BuiltInId.CharacterMaxValue: _il.Emit(OpCodes.Ldc_I4, char.MaxValue); return;
-            case BuiltInId.CharacterMinValue: _il.Emit(OpCodes.Ldc_I4, char.MinValue); return;
-
             case BuiltInId.StringEmpty: _il.Emit(OpCodes.Ldstr, string.Empty); return;
 
             default:

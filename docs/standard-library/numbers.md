@@ -108,10 +108,15 @@ Console.WriteLine(Fraction.Create(4, 8));          # 1|2 — reduced
 
 ## What each type knows about itself
 
-Every primitive has a capitalized name beside its keyword, holding the facts about it. The
+Each number has a capitalized name beside its keyword, holding the facts about it. The
 keyword names the type and the capital names where those facts live — a reserved word cannot
 stand in front of a dot, so `integer.MaxValue` is not something the grammar can read and
 `Integer.MaxValue` is. `Fraction` already read this way beside `fraction`.
+
+Bounds are a number's business. Where a number runs out is a fact about that number, and
+meeting it is how you learn a type has an edge at all. A `character` has no such fact to
+tell — where the alphabet stops is a fact about how text is stored rather than about the
+language — so there is no `Character` to ask.
 
 | Member | Yields | What it is |
 |---|---|---|
@@ -121,8 +126,6 @@ stand in front of a dot, so `integer.MaxValue` is not something the grammar can 
 | `Real.MinValue` | `real` | Its negative |
 | `Float.MaxValue` | `float` | The largest finite float, about 1.8 times ten to the 308th |
 | `Float.MinValue` | `float` | Its negative |
-| `Character.MinValue` | `character` | The first character, `'\0'` |
-| `Character.MaxValue` | `character` | The last |
 | `String.Empty` | `string` | The string with nothing in it, which reads better than `""` wherever the emptiness is the point |
 
 ### What only a `float` has

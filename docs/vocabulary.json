@@ -69,7 +69,6 @@
 
   "typeNames": [
     "ArgumentException",
-    "Character",
     "Console",
     "Date",
     "DateTime",

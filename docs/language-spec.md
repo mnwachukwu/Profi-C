@@ -39,7 +39,7 @@ This document is the normative one: where they disagree, this is right.
   - [1.5 Literals](#15-literals)
   - [1.5a Interpolated strings](#15a-interpolated-strings)
   - [1.6 Escape sequences](#16-escape-sequences)
-- [2. Tokens and reserved words](#2-tokens-and-reserved-words) — the 57 words, the operators, end of file
+- [2. Tokens and reserved words](#2-tokens-and-reserved-words) — the 63 words, the operators, end of file
   - [2.1 Reserved words](#21-reserved-words)
   - [2.2 Operators and punctuation](#22-operators-and-punctuation)
   - [2.3 End of file](#23-end-of-file)
