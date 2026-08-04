@@ -39,7 +39,13 @@ public sealed partial class CilEmitter
         IReadOnlyList<Expression> arguments,
         BuiltInId id)
     {
-        EmitExpression(member.Receiver);
+        // A string member is called on a value, so the string goes down first. A Parse is called
+        // on a type's own name, which holds nothing there is a value for — the text it reads is
+        // the argument, and pushing anything for the name would leave what nothing takes off.
+        if (!CilBuiltIns.IsParsedThroughATypeName(id))
+        {
+            EmitExpression(member.Receiver);
+        }
 
         switch (id)
         {
@@ -87,8 +93,8 @@ public sealed partial class CilEmitter
             // The same readings reached through a type's own name. They arrive here rather than
             // beside the type's constants because what stands behind them is the same runtime
             // method the string members call — one implementation, so the two spellings cannot
-            // come to disagree. The receiver holds nothing, so the text is simply the argument
-            // and the loop below reads it the same way.
+            // come to disagree. Nothing was pushed for the name, so the loop below reads the
+            // text out of the argument exactly as it reads every other argument.
             case BuiltInId.IntegerParse:
             case BuiltInId.RealParse:
             case BuiltInId.FloatParse:

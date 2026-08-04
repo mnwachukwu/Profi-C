@@ -25,6 +25,10 @@ CompilationUnit
         CallExpr
           MemberExpr 'ReadingNumbersBack'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ReadingByTheTypesName'
+            IdentifierExpr 'Program'
     FunctionDecl 'Interpolation'
       ExpressionStmt
         CallExpr
@@ -382,6 +386,18 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a float:    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToFloat'
+                      LiteralExpr "3.5" [String]
+                LiteralExpr 0.0f [Float]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
           InterpolatedStringExpr '  a boolean:  ' ''
             InterpolationPart
               CallExpr
@@ -390,6 +406,18 @@ CompilationUnit
                     MemberExpr 'ToBoolean'
                       LiteralExpr "true" [String]
                 LiteralExpr false [Boolean]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  one letter: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'ToCharacter'
+                      LiteralExpr "A" [String]
+                LiteralExpr '?' [Character]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -437,3 +465,136 @@ CompilationUnit
                   CallExpr
                     MemberExpr 'ToInteger'
                       LiteralExpr "seven" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  two letters:  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'HasValue'
+                  CallExpr
+                    MemberExpr 'ToCharacter'
+                      LiteralExpr "ab" [String]
+    FunctionDecl 'ReadingByTheTypesName'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== the same, by the type's name ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  an integer: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Parse'
+                      IdentifierExpr 'Integer'
+                    LiteralExpr "42" [String]
+                LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a real:     ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Parse'
+                      IdentifierExpr 'Real'
+                    LiteralExpr "3.5" [String]
+                LiteralExpr 0.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a float:    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Parse'
+                      IdentifierExpr 'Float'
+                    LiteralExpr "3.5" [String]
+                LiteralExpr 0.0f [Float]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a boolean:  ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Parse'
+                      IdentifierExpr 'Boolean'
+                    LiteralExpr "true" [String]
+                LiteralExpr false [Boolean]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  one letter: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Parse'
+                      IdentifierExpr 'Character'
+                    LiteralExpr "A" [String]
+                LiteralExpr '?' [Character]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a ratio:    ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  CallExpr
+                    MemberExpr 'Parse'
+                      IdentifierExpr 'Fraction'
+                    LiteralExpr "22/7" [String]
+                LiteralExpr 0|1 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  agreeing:     ' ''
+            InterpolationPart
+              BinaryExpr '=='
+                CallExpr
+                  MemberExpr 'Or'
+                    CallExpr
+                      MemberExpr 'Parse'
+                        IdentifierExpr 'Integer'
+                      LiteralExpr "42" [String]
+                  LiteralExpr 0 [Integer]
+                CallExpr
+                  MemberExpr 'Or'
+                    CallExpr
+                      MemberExpr 'ToInteger'
+                        LiteralExpr "42" [String]
+                  LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  and on junk:  ' ''
+            InterpolationPart
+              BinaryExpr '=='
+                CallExpr
+                  MemberExpr 'HasValue'
+                    CallExpr
+                      MemberExpr 'Parse'
+                        IdentifierExpr 'Integer'
+                      LiteralExpr "x" [String]
+                CallExpr
+                  MemberExpr 'HasValue'
+                    CallExpr
+                      MemberExpr 'ToInteger'
+                        LiteralExpr "x" [String]

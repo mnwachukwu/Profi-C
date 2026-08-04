@@ -155,20 +155,3 @@ internal static class CilTypes
     public static Type? Returning(TypeSymbol? returnType) =>
         returnType is null ? typeof(void) : Of(returnType);
 }
-
-/// <summary>Which recorded conversions the emitter can perform.</summary>
-internal static class CilConversions
-{
-    /// <summary>
-    /// The numeric widenings, the wrap into an optional, and both crossings between a string and
-    /// its characters. What is left is <c>ToStringValue</c>, which lowering records where a value
-    /// is joined to text — and the emitter renders that at the join rather than as a conversion.
-    /// </summary>
-    public static bool IsSupported(ConversionOperation operation) =>
-        operation is ConversionOperation.IntegerToReal
-                  or ConversionOperation.IntegerToFraction
-                  or ConversionOperation.RealToFraction
-                  or ConversionOperation.StringToCharacters
-                  or ConversionOperation.CharactersToString
-                  or ConversionOperation.WrapOptional;
-}

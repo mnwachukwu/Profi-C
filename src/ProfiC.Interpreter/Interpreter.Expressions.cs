@@ -90,7 +90,6 @@ public sealed partial class Interpreter
 
             ConversionOperation.CharactersToString =>
                 value is ProfiCSet<object?> ? CharactersToString(value) : null,
-            ConversionOperation.ToStringValue => ModelOperations.ToDisplayString(value),
             _ => value,
         };
     }

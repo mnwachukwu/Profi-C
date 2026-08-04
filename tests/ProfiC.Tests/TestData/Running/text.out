@@ -38,8 +38,20 @@ and the last word is "this"
 == text into numbers ==
   an integer: 42
   a real:     3.5
+  a float:    3.5
   a boolean:  true
+  one letter: A
   a ratio:    22|7
   written /:  22|7
   a whole:    5|1
   not a number: false
+  two letters:  false
+== the same, by the type's name ==
+  an integer: 42
+  a real:     3.5
+  a float:    3.5
+  a boolean:  true
+  one letter: A
+  a ratio:    22|7
+  agreeing:     true
+  and on junk:  true

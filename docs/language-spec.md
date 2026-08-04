@@ -2213,9 +2213,14 @@ the language: the alternative teaches people to write `catch` clauses that swall
 ## 11. The standard library
 
 The library is small, and lives in a namespace named **`Standard`**: `Model`, `Function`,
-`Exception` and its subtypes, `Console`, `Reference`, `Math`, `Fraction`, `Random`,
-`DateTime`, `TimeSpan`, `Date`, `Time`, `File`, and `Directory`. Of these only `Exception` may
+`Exception` and its subtypes, `Console`, `Reference`, `Math`, `Random`, `DateTime`, `TimeSpan`,
+`Date`, `Time`, `File`, `Directory`, and the capitalized name beside each primitive — `Integer`,
+`Real`, `Float`, `Fraction`, `Boolean`, `Character` and `String`. Of these only `Exception` may
 be extended.
+
+That last group is there because **a reserved word cannot stand in front of a dot**. `integer`
+names the type; `Integer` is where the facts about it live, since `integer.MaxValue` is not
+something the grammar can read.
 
 **`Standard` is in scope in every file with nothing written**, so the library is reached
 without importing anything, and `Standard.Math` is legal without a `using` too — qualifying a
@@ -2240,9 +2245,10 @@ meaning "the language gives you this" if nothing else may write there.
 `Program` is not part of `Standard`. It is a name reserved for something a program *provides*
 rather than something the language does, and must be declared exactly once ([§12](#12-execution-and-entry-point)).
 
-**Four of them hold no values** — `Console`, `Math`, `Reference`, and `Fraction`. They are
-names to reach members through, and naming one where a value's type belongs is an error
-(`PC0233`), as it is for any `shared model`, which has no instances by definition:
+**Twelve of them hold no values** — `Boolean`, `Character`, `Console`, `Directory`, `File`,
+`Float`, `Fraction`, `Integer`, `Math`, `Real`, `Reference` and `String`. They are names to
+reach members through, and naming one where a value's type belongs is an error (`PC0233`), as
+it is for any `shared model`, which has no instances by definition:
 
 ```text
 Math m;              PC0233: nothing can be of this type

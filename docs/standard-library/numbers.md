@@ -131,7 +131,7 @@ stand in front of a dot, so `integer.MaxValue` is not something the grammar can 
 Bounds are a number's business. Where a number runs out is a fact about that number, and
 meeting it is how you learn a type has an edge at all. A `character` has no such fact to
 tell — where the alphabet stops is a fact about how text is stored rather than about the
-language — so there is no `Character` to ask.
+language — so `Character` carries only the way in from text that every one of these has.
 
 | Member | Yields | What it is |
 |---|---|---|
@@ -141,9 +141,19 @@ language — so there is no `Character` to ask.
 | `Real.MinValue` | `real` | Its negative |
 | `Float.MaxValue` | `float` | The largest finite float, about 1.8 times ten to the 308th |
 | `Float.MinValue` | `float` | Its negative |
+| `Integer.Parse(string)` | `integer?` | The number the text spells, or nothing |
+| `Real.Parse(string)` | `real?` | The same, as a `real` |
+| `Float.Parse(string)` | `float?` | The same, as a `float` |
+| `Fraction.Parse(string)` | `fraction?` | The ratio the text spells, or nothing |
+
+`Parse` is the other spelling of the string's own [`ToInteger` and its
+family](text.md#reading-a-value-back-out) — one method answers both, so neither can drift from
+the other. Which reads better is a matter of where the text is: in hand it answers
+`typed.ToInteger()`, and arriving from elsewhere it reads as `Integer.Parse(typed)`.
 
 A `string` has a capitalized name too, holding [`String.Empty`](text.md#string) — not a bound, but
-the same idea: a fact about the type, kept where a reserved word cannot reach.
+the same idea: a fact about the type, kept where a reserved word cannot reach. So do `boolean`
+and `character`, each holding [nothing but a `Parse`](text.md#boolean-and-character).
 
 ### What only a `float` has
 

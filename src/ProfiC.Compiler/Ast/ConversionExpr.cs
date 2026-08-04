@@ -37,12 +37,6 @@ public enum ConversionOperation
 
     /// <summary>Copy a set of characters into a string.</summary>
     CharactersToString,
-
-    /// <summary>Render a value as a string, for joining one to a string with '+'.</summary>
-    ToStringValue,
-
-    /// <summary>Treat a model as one of its ancestors. Nothing happens at run time.</summary>
-    Upcast,
 }
 
 /// <summary>

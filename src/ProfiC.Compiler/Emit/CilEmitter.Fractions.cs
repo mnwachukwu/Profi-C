@@ -109,9 +109,22 @@ public sealed partial class CilEmitter
     /// </summary>
     private void EmitAddressOfFraction(Expression receiver)
     {
+        EmitExpression(receiver);
+        TakeAddressOfFraction();
+    }
+
+    /// <summary>
+    /// <para>The address of the fraction already on the stack.</para>
+    /// <para>A fraction's members are instance methods on a struct, so they are reached through
+    /// a managed pointer rather than through the value — and a value has no address until it is
+    /// put somewhere that has one. Held apart from the call above because a fraction does not
+    /// always arrive as an expression to emit: a conversion is handed one already computed.
+    /// </para>
+    /// </summary>
+    private void TakeAddressOfFraction()
+    {
         LocalBuilder slot = _il.DeclareLocal(typeof(Fraction));
 
-        EmitExpression(receiver);
         _il.Emit(OpCodes.Stloc, slot);
         _il.Emit(OpCodes.Ldloca, slot);
     }

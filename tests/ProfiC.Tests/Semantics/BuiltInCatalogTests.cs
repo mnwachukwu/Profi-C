@@ -796,6 +796,8 @@ public sealed class BuiltInCatalogTests
     [TestCase("\"42\".ToInteger().Or(-1)", "42")]
     [TestCase("\"nope\".ToInteger().Or(-1)", "-1")]
     [TestCase("\"3.14\".ToReal().Or(0.0)", "3.14")]
+    [TestCase("\"3.14\".ToFloat().Or(0.0f)", "3.14")]
+    [TestCase("\"nope\".ToFloat().HasValue()", "false")]
     [TestCase("\"TRUE\".ToBoolean().Or(false)", "true")]
     [TestCase("\"yes\".ToBoolean().HasValue()", "false")]
     [TestCase("\"22/7\".ToFraction().Or(0|1)", "22|7")]
@@ -803,6 +805,12 @@ public sealed class BuiltInCatalogTests
     [TestCase("\"4/8\".ToFraction().Or(0|1)", "1|2")]
     [TestCase("\"5\".ToFraction().Or(0|1)", "5|1")]
     [TestCase("\"1/0\".ToFraction().HasValue()", "false")]
+
+    // One character and nothing else. Two is as empty an answer as none, which is the whole
+    // reason this yields an optional rather than the first letter of whatever it was given.
+    [TestCase("\"A\".ToCharacter().Or('?')", "A")]
+    [TestCase("\"ab\".ToCharacter().HasValue()", "false")]
+    [TestCase("\"\".ToCharacter().HasValue()", "false")]
     public void TheTextMembers(string expression, string expected) => Assert.That(
         RunProgram($$"""
             shared model Program
@@ -812,6 +820,35 @@ public sealed class BuiltInCatalogTests
             end model
             """),
         Is.EqualTo(expected + "\n"));
+
+    /// <summary>
+    /// <para>Reading a value out of text answers the same however it was asked for.</para>
+    /// <para>Held against each other rather than against an answer written here, because what is
+    /// worth pinning is not what either spelling produces but that the two cannot come apart. A
+    /// reader who learns one and meets the other in somebody else's program has to be able to
+    /// read it as the same question, and every way that could stop being true — a different
+    /// method behind one of them, a different answer for text that is not a number — shows up
+    /// as these two disagreeing.</para>
+    /// <para>Text that reads and text that does not, both, since the interesting half of an
+    /// optional is the empty one.</para>
+    /// </summary>
+    [TestCase("Integer.Parse(\"42\").Or(-1)", "\"42\".ToInteger().Or(-1)")]
+    [TestCase("Integer.Parse(\"nope\").Or(-1)", "\"nope\".ToInteger().Or(-1)")]
+    [TestCase("Real.Parse(\"3.14\").Or(0.0)", "\"3.14\".ToReal().Or(0.0)")]
+    [TestCase("Real.Parse(\"nope\").HasValue()", "\"nope\".ToReal().HasValue()")]
+    [TestCase("Float.Parse(\"3.14\").Or(0.0f)", "\"3.14\".ToFloat().Or(0.0f)")]
+    [TestCase("Float.Parse(\"nope\").HasValue()", "\"nope\".ToFloat().HasValue()")]
+    [TestCase("Boolean.Parse(\"TRUE\").Or(false)", "\"TRUE\".ToBoolean().Or(false)")]
+    [TestCase("Boolean.Parse(\"yes\").HasValue()", "\"yes\".ToBoolean().HasValue()")]
+    [TestCase("Character.Parse(\"A\").Or('?')", "\"A\".ToCharacter().Or('?')")]
+    [TestCase("Character.Parse(\"ab\").HasValue()", "\"ab\".ToCharacter().HasValue()")]
+    [TestCase("Fraction.Parse(\"4/8\").Or(0|1)", "\"4/8\".ToFraction().Or(0|1)")]
+    [TestCase("Fraction.Parse(\"1/0\").HasValue()", "\"1/0\".ToFraction().HasValue()")]
+    public void EachTypeReadsTextTheWayItsStringMemberDoes(string named, string asked) =>
+        Assert.That(
+            Run($"Console.WriteLine({named})"),
+            Is.EqualTo(Run($"Console.WriteLine({asked})")),
+            $"'{named}' and '{asked}' are meant to be one question asked two ways");
 
     /// <summary>
     /// What the rows above exercise. Listed rather than inferred so that adding a value member
@@ -834,7 +871,9 @@ public sealed class BuiltInCatalogTests
         BuiltInId.StringToLower, BuiltInId.StringCapitalize, BuiltInId.SetJoin,
         BuiltInId.SetUnion, BuiltInId.SetIntersect, BuiltInId.SetExcept, BuiltInId.SetDistinct,
         BuiltInId.StringToInteger, BuiltInId.StringToReal, BuiltInId.StringToBoolean,
-        BuiltInId.StringToFraction,
+        BuiltInId.StringToFraction, BuiltInId.StringToFloat, BuiltInId.StringToCharacter,
+        BuiltInId.IntegerParse, BuiltInId.RealParse, BuiltInId.FloatParse,
+        BuiltInId.BooleanParse, BuiltInId.CharacterParse, BuiltInId.FractionParse,
         BuiltInId.IntegerFormat, BuiltInId.RealFormat, BuiltInId.FractionFormat,
         BuiltInId.DateTimeFormat, BuiltInId.TimeSpanFormat, BuiltInId.DateFormat,
         BuiltInId.TimeFormat,
@@ -1023,6 +1062,68 @@ public sealed class BuiltInCatalogTests
         Does.Contain(
             $"{Written(ProfiC.Runtime.BuiltInExceptions.Names.Count)} exception types, and "
             + "every one descends from `Exception`"));
+
+    /// <summary>
+    /// <para>The specification names every model that holds no values, and says how many.</para>
+    /// <para>These are the ones <c>PC0233</c> refuses where a value's type belongs, so a reader
+    /// meeting that message goes to this sentence to find out which names it means. A name
+    /// missing from it is a refusal nothing accounts for; a count left behind is worse, because
+    /// it reads as a complete list and is one somebody will quote.</para>
+    /// <para>Both halves are held, since the sentence has been wrong in each way separately: it
+    /// said four over a list of twelve, six of which had been there for months.</para>
+    /// </summary>
+    [Test]
+    public void TheSpecificationNamesEveryModelThatHoldsNoValues()
+    {
+        string specification = File.ReadAllText(SpecificationPath);
+
+        IEnumerable<string> holding =
+            BuiltIns.Models.Where(model => model.HasNoInstances).Select(model => model.Name);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                holding.Where(name => !specification.Contains(
+                    $"`{name}`", StringComparison.Ordinal)),
+                Is.Empty,
+                "models that hold no values and are named nowhere in the specification");
+
+            Assert.That(
+                specification,
+                Does.Contain($"**{Written(holding.Count())} of them hold no values**"));
+        });
+    }
+
+    /// <summary>
+    /// <para>Section 11 opens by naming what is in <c>Standard</c>, and names all of it.</para>
+    /// <para>That sentence is the roster — the one place a reader is told what the library
+    /// consists of before being sent to the reference for the members. A name absent from it is
+    /// a type the language provides that nothing introduces, which is how <c>Integer</c> and the
+    /// five beside it went unlisted from the day they were added.</para>
+    /// <para>The exceptions are excused: the sentence says "and its subtypes" and there is a
+    /// table below it, held by <see cref="TheSpecificationListsEveryBuiltInException"/>.</para>
+    /// </summary>
+    [Test]
+    public void TheSpecificationOpensSectionElevenWithEveryNameInStandard()
+    {
+        string specification = File.ReadAllText(SpecificationPath);
+
+        int opens = specification.IndexOf(
+            "The library is small", StringComparison.Ordinal);
+
+        Assert.That(opens, Is.GreaterThanOrEqualTo(0), "section 11 has no opening roster");
+
+        string roster = specification[opens..specification.IndexOf(
+            "\n\n**`Standard` is in scope", opens, StringComparison.Ordinal)];
+
+        IEnumerable<string> named = BuiltIns.AllTypeNames.Where(
+            name => name == "Exception" || !ProfiC.Runtime.BuiltInExceptions.Names.Contains(name));
+
+        Assert.That(
+            named.Where(name => !roster.Contains($"`{name}`", StringComparison.Ordinal)),
+            Is.Empty,
+            "names the language owns that section 11's opening roster leaves out");
+    }
 
     /// <summary>The spec writes its counts as words, so a count has to be one to be found.</summary>
     private static string Written(int count) => count switch

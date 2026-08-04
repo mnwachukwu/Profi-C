@@ -50,11 +50,13 @@ one could never be filled, and declaring it is reported.
 | `Directory` | The folders files sit in | [Directory](input-output.md#directory) |
 | `Math` | Roots, logarithms, angles, rounding and sizing | [Math](math.md) |
 | `Reference` | The one way to ask whether two names reach the same object | [Reference.Equals](every-value.md#referenceequals) |
-| `Integer` | Where an `integer` runs out | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
-| `Real` | Where a `real` runs out | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
+| `Integer` | Where an `integer` runs out, and reading one from text | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
+| `Real` | Where a `real` runs out, and reading one from text | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
 | `Float` | Where a `float` runs out, and its three odd values | [What only a float has](numbers.md#what-only-a-float-has) |
+| `Boolean` | Reading a `boolean` from text, and nothing else | [Boolean and Character](text.md#boolean-and-character) |
+| `Character` | Reading a `character` from text, and nothing else | [Boolean and Character](text.md#boolean-and-character) |
 | `String` | The name for an empty string | [String](text.md#string) |
-| `Fraction` | Building a `fraction` from values | [Fraction](numbers.md#fraction) |
+| `Fraction` | Building a `fraction` from values, and reading one from text | [Fraction](numbers.md#fraction) |
 
 A reserved word cannot stand in front of a dot, which is why the facts about a primitive live
 beside it under a capital: `integer.MaxValue` is not something the grammar can read, and
@@ -170,7 +172,7 @@ answered by both a string and a set, and reading them apart would hide that.
 | `NotANumber` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
 | `Now` | `DateTime` · `Time` | that type | [Reading the clock](dates-and-times.md#reading-the-clock) |
 | `Or(fallback)` | `T?` | `T` · `T?` | [Or supplies a fallback](optionals.md#or-supplies-a-fallback) |
-| `Parse(text)` | `DateTime` · `Date` · `Time` · `TimeSpan` | that type, optional | [Reading one back](dates-and-times.md#writing-one-out-and-reading-one-back) |
+| `Parse(text)` | `Integer` · `Real` · `Float` · `Boolean` · `Character` · `Fraction` · `DateTime` · `Date` · `Time` · `TimeSpan` | that type, optional | [Reading a value back out](text.md#reading-a-value-back-out) · [Reading one back](dates-and-times.md#writing-one-out-and-reading-one-back) |
 | `Pi` | `Math` | `real` | [Constants](math.md#constants) |
 | `Pow(x, by)` | `Math` | `real` | [Roots and powers](math.md#roots-and-powers) |
 | `new Random()` · `new Random(seed)` | `Random` | `Random` | [Making one](random.md#making-one) |
@@ -198,9 +200,10 @@ answered by both a string and a set, and reading them apart would hide that.
 | `new Time(h, m)` · `new Time(h, m, s)` | `Time` | `Time` | [Making one](dates-and-times.md#making-one) |
 | `new TimeSpan(...)` | `TimeSpan` | `TimeSpan` | [Making one](dates-and-times.md#making-one) |
 | `ToBoolean()` | `string` | `boolean?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToCharacter()` | `string` | `character?` | [Reading a value back out](text.md#reading-a-value-back-out) |
 | `ToCharacters()` | `string` | `character[]` | [Splitting and joining](text.md#splitting-and-joining) |
 | `ToDateTime(Time)` | `Date` | `DateTime` | [Moving between the four](dates-and-times.md#moving-between-the-four) |
-| `ToFloat()` | `integer` · `real` · `fraction` | `float` | [On a number](numbers.md#members-on-a-number) |
+| `ToFloat()` | `integer` · `real` · `fraction` · `string` | `float` · `float?` | [On a number](numbers.md#members-on-a-number) · [Reading a value back out](text.md#reading-a-value-back-out) |
 | `ToFraction()` | `float` · `string` | `fraction` · `fraction?` | [On a number](numbers.md#members-on-a-number) · [Reading a value back out](text.md#reading-a-value-back-out) |
 | `ToInteger()` | `string` · an enumeration | `integer?` · `integer` | [Reading a value back out](text.md#reading-a-value-back-out) · [Enumerations](every-value.md#enumerations) |
 | `ToLower()` | `string` | `string` | [Case](text.md#case) |

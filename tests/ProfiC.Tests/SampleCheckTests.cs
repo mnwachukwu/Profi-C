@@ -53,4 +53,43 @@ public sealed class SampleCheckTests : LexerTestBase
 
         Assert.That(() => Lowering.Lower(unit, model), Throws.Nothing);
     }
+
+    /// <summary>
+    /// <para>Every conversion the language performs unasked happens somewhere in the corpus.</para>
+    /// <para>These exist only after lowering, so nothing that reads a parse tree can see them —
+    /// and a conversion no sample provokes is one the emitter is never asked to perform. That is
+    /// not a hypothetical: a fraction in the exponent of <c>^</c> is the one place a fraction
+    /// becomes a real on its own, no sample wrote one, and the emitter had no sequence for it.
+    /// It type-checked, interpreted correctly, and died on the way to CIL.</para>
+    /// <para>Held with no exclusions. Every member of the enumeration is one the type checker
+    /// chooses, so any that goes unwritten here is either a gap in the corpus or a member
+    /// nothing produces, and both are worth being told about.</para>
+    /// </summary>
+    [Test]
+    public void Corpus_PerformsEveryConversionTheLanguageMakes()
+    {
+        HashSet<ConversionOperation> performed = [];
+
+        foreach (string name in SampleNames)
+        {
+            SourceText source = LoadSample(name);
+            DiagnosticBag diagnostics = new();
+
+            CompilationUnit unit = Parser.Parse(source, diagnostics);
+            SemanticModel model = Resolver.Resolve(unit, diagnostics);
+            TypeChecker.Check(unit, model, diagnostics);
+            DefiniteAssignment.Analyze(unit, model, diagnostics);
+
+            performed.UnionWith(
+                Lowering.Lower(unit, model)
+                        .Descendants()
+                        .OfType<ConversionExpr>()
+                        .Select(conversion => conversion.Operation));
+        }
+
+        Assert.That(
+            Enum.GetValues<ConversionOperation>().Where(one => !performed.Contains(one)),
+            Is.Empty,
+            "conversions the language performs that no sample provokes");
+    }
 }

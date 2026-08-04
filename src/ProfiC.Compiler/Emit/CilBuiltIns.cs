@@ -265,10 +265,19 @@ internal static class CilBuiltIns
            or BuiltInId.StringToCharacter
            or BuiltInId.StringToFraction
 
-           // Reached through a type's own name rather than on a string, and answered here all
-           // the same: what stands behind each is the very runtime method the string member
-           // beside it calls. Two spellings of one question, and one place it is answered.
-           or BuiltInId.IntegerParse
+           // Answered here all the same: what stands behind each is the very runtime method the
+           // string member beside it calls. Two spellings of one question, and one place it is
+           // answered.
+           || IsParsedThroughATypeName(id);
+
+    /// <summary>
+    /// <para>The readings reached through a type's own name rather than on a string.</para>
+    /// <para>Told apart from the rest of <see cref="IsOnAString"/> by what stands in front of the
+    /// dot. A string member is called on a value, which goes down first; these are called on a
+    /// name that holds nothing, so the text they read is simply the argument.</para>
+    /// </summary>
+    public static bool IsParsedThroughATypeName(BuiltInId id) =>
+        id is BuiltInId.IntegerParse
            or BuiltInId.RealParse
            or BuiltInId.FloatParse
            or BuiltInId.BooleanParse

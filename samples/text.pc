@@ -15,6 +15,7 @@ shared model Program
         Program.TakingStringsApart();
         Program.OneCharacterAtATime();
         Program.ReadingNumbersBack();
+        Program.ReadingByTheTypesName();
     end function
 
     # ---- Putting values into a sentence -----------------------------------------------
@@ -197,7 +198,9 @@ shared model Program
 
         Console.WriteLine("  an integer: {{"42".ToInteger().Or(0)}}");
         Console.WriteLine("  a real:     {{"3.5".ToReal().Or(0.0)}}");
+        Console.WriteLine("  a float:    {{"3.5".ToFloat().Or(0.0f)}}");
         Console.WriteLine("  a boolean:  {{"true".ToBoolean().Or(false)}}");
+        Console.WriteLine("  one letter: {{"A".ToCharacter().Or('?')}}");
 
         Console.WriteLine("  a ratio:    {{"22|7".ToFraction().Or(0|1)}}");
         Console.WriteLine("  written /:  {{"22/7".ToFraction().Or(0|1)}}");
@@ -205,6 +208,34 @@ shared model Program
 
         # Nothing raised, nothing caught: the answer is simply absent.
         Console.WriteLine("  not a number: {{"seven".ToInteger().HasValue()}}");
+
+        # One character means one. Two is as empty an answer as none.
+        Console.WriteLine("  two letters:  {{"ab".ToCharacter().HasValue()}}");
+    end function
+
+    ##
+        The same six readings, reached through each type's own name instead of through the text.
+
+        Neither spelling is the preferred one, and they cannot come to disagree: one method
+        stands behind each pair, so 'Integer.Parse(said)' and 'said.ToInteger()' are the same
+        question with the same answer. Which reads better is a matter of where the text is. A
+        string already in hand answers for itself; text arriving from somewhere else reads more
+        directly when the type asks for it.
+    ##
+    # @summary: The same readings, asked of the type rather than of the text.
+    function ReadingByTheTypesName()
+        Console.WriteLine("== the same, by the type's name ==");
+
+        Console.WriteLine("  an integer: {{Integer.Parse("42").Or(0)}}");
+        Console.WriteLine("  a real:     {{Real.Parse("3.5").Or(0.0)}}");
+        Console.WriteLine("  a float:    {{Float.Parse("3.5").Or(0.0f)}}");
+        Console.WriteLine("  a boolean:  {{Boolean.Parse("true").Or(false)}}");
+        Console.WriteLine("  one letter: {{Character.Parse("A").Or('?')}}");
+        Console.WriteLine("  a ratio:    {{Fraction.Parse("22/7").Or(0|1)}}");
+
+        # Both spellings answer alike, on text that reads and on text that does not.
+        Console.WriteLine("  agreeing:     {{Integer.Parse("42").Or(0) == "42".ToInteger().Or(0)}}");
+        Console.WriteLine("  and on junk:  {{Integer.Parse("x").HasValue() == "x".ToInteger().HasValue()}}");
     end function
 
 end model

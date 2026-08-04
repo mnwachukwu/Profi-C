@@ -164,12 +164,22 @@ Console.WriteLine(words.Join(" & "));  # one & two & three
 Each of these yields an [optional](optionals.md) rather than raising, because text that will not
 read is the ordinary case — most of it was typed by somebody.
 
-| Member | Yields | What it does |
-|---|---|---|
-| `ToInteger()` | `integer?` | The whole number the text spells, or nothing |
-| `ToReal()` | `real?` | The number the text spells, or nothing |
-| `ToBoolean()` | `boolean?` | `true` or `false`, or nothing |
-| `ToFraction()` | `fraction?` | The ratio the text spells, or nothing |
+| Member | Yields | Written the other way | What it does |
+|---|---|---|---|
+| `ToInteger()` | `integer?` | `Integer.Parse(text)` | The whole number the text spells, or nothing |
+| `ToReal()` | `real?` | `Real.Parse(text)` | The number the text spells, or nothing |
+| `ToFloat()` | `float?` | `Float.Parse(text)` | The same, held as a `float` |
+| `ToBoolean()` | `boolean?` | `Boolean.Parse(text)` | `true` or `false`, or nothing |
+| `ToCharacter()` | `character?` | `Character.Parse(text)` | The one character the text holds, or nothing |
+| `ToFraction()` | `fraction?` | `Fraction.Parse(text)` | The ratio the text spells, or nothing |
+
+**Both spellings are the same question**, and the same one method answers each pair, so they
+cannot come to disagree. Which one reads better depends on where you are: a string already in
+hand answers `typed.ToInteger()`, and text arriving from somewhere else reads more directly as
+`Integer.Parse(Console.Read().Or(""))`. Neither is the preferred form.
+
+**`ToCharacter` wants exactly one character.** Two is as empty an answer as none — there is no
+reason to think a reader meant the first of them — so `"ab"` yields nothing rather than `'a'`.
 
 **`ToFraction` reads either mark between the halves.** The language writes `22|7`, because a slash
 already means division; a person writes `22/7`, because that is what a fraction looks like
@@ -183,6 +193,12 @@ if typed.ToInteger().HasValue()
 else
     Console.WriteLine("that is not a whole number");
 end if
+```
+
+```
+# The same reading, reached through the type's own name.
+integer year = Integer.Parse(Console.Read().Or("")).Or(2026);
+Console.WriteLine(year);
 ```
 
 ## Writing a number into text
@@ -206,6 +222,32 @@ Not a bound, unlike the [capitalized names beside the numbers](numbers.md#what-e
 ```
 string typed = String.Empty;
 Console.WriteLine(typed.Count);   # 0
+```
+
+## `Boolean` and `Character`
+
+The same two spellings again, and these two capitals hold one thing each: the way in from text.
+
+| Member | Yields | What it does |
+|---|---|---|
+| `Boolean.Parse(string)` | `boolean?` | `true` or `false`, or nothing |
+| `Character.Parse(string)` | `character?` | The one character the text holds, or nothing |
+
+They exist for the sake of the convention rather than for anything they add. `Integer.Parse` and
+`Real.Parse` are there because a number has bounds to keep beside them; a boolean and a character
+have no such fact, and leaving these two out would have left a reader who found the first pair to
+guess that the other two simply cannot be read from text — which is the guess a half-applied
+convention invites, and it would be wrong.
+
+The numbers keep their own capitals, holding [where each one runs
+out](numbers.md#what-each-type-knows-about-itself) as well as a `Parse`.
+
+```
+boolean agreed = Boolean.Parse(Console.Read().Or("")).Or(false);
+character grade = Character.Parse("A").Or('?');
+
+Console.WriteLine(agreed);
+Console.WriteLine(grade);
 ```
 
 ## Also on every string

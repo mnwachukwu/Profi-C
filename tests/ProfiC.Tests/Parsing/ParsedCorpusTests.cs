@@ -162,6 +162,75 @@ public sealed class ParsedCorpusTests : LexerTestBase
         });
     }
 
+    /// <summary>
+    /// <para>Every way a declaration can be marked, every operator, every kind of literal and
+    /// every receiver appears somewhere in the corpus.</para>
+    /// <para>What the node-kind check above cannot see. A modifier is a flag on a declaration
+    /// and an operator is a field on a node, so <c>sealed</c>, <c>shiftleft</c> and a binary
+    /// literal each leave a tree of exactly the same shape as the thing beside them — and a
+    /// construct the grammar has, the compiler implements, and no program ever writes is one
+    /// nothing runs and nobody learns exists.</para>
+    /// <para>Held per dimension rather than as one list, so a failure names which kind of thing
+    /// went unwritten instead of only that something did.</para>
+    /// </summary>
+    [Test]
+    public void Corpus_WritesEveryModifierOperatorLiteralAndReceiver()
+    {
+        HashSet<DeclarationModifiers> modifiers = [];
+        HashSet<UnaryOperator> unary = [];
+        HashSet<BinaryOperator> binary = [];
+        HashSet<LiteralKind> literals = [];
+        HashSet<ReceiverKind> receivers = [];
+
+        foreach (string name in SampleNames)
+        {
+            foreach (SyntaxNode node in ParseSample(name).Unit.Descendants())
+            {
+                switch (node)
+                {
+                    case ModelDecl d: Mark(d.Modifiers); break;
+                    case StructureDecl d: Mark(d.Modifiers); break;
+                    case EnumerationDecl d: Mark(d.Modifiers); break;
+                    case FieldDecl d: Mark(d.Modifiers); break;
+                    case FunctionDecl d: Mark(d.Modifiers); break;
+                    case UnaryExpr e: unary.Add(e.Operator); break;
+                    case BinaryExpr e: binary.Add(e.Operator); break;
+                    case LiteralExpr e: literals.Add(e.Kind); break;
+                    case ReceiverExpr e: receivers.Add(e.Receiver); break;
+                }
+            }
+        }
+
+        Assert.Multiple(() =>
+        {
+            // None is a modifier's absence rather than one of them, so it is not a thing to
+            // write down and asking for it would be asking for nothing.
+            Unwritten("modifiers", modifiers, DeclarationModifiers.None);
+            Unwritten("unary operators", unary);
+            Unwritten("binary operators", binary);
+            Unwritten("kinds of literal", literals);
+            Unwritten("receivers", receivers);
+        });
+
+        void Mark(DeclarationModifiers written)
+        {
+            foreach (DeclarationModifiers one in Enum.GetValues<DeclarationModifiers>())
+            {
+                if (one != DeclarationModifiers.None && written.HasFlag(one))
+                {
+                    modifiers.Add(one);
+                }
+            }
+        }
+
+        static void Unwritten<T>(string what, HashSet<T> written, params T[] excused)
+            where T : struct, Enum =>
+            Assert.That(
+                Enum.GetValues<T>().Where(one => !written.Contains(one) && !excused.Contains(one)),
+                Is.Empty,
+                $"{what} no sample writes");
+    }
+
     // ---- Golden trees ---------------------------------------------------------------------
 
     private static bool UpdateRequested =>

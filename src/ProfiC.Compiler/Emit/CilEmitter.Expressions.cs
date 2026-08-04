@@ -799,6 +799,15 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Call, FractionFromReal);
                 break;
 
+            // The one narrowing the language performs unasked, and it happens in a single
+            // place: the exponent of '^'. A fractional power is a root, so there is no exact
+            // answer to give up — which is the whole reason this one needs no writing out
+            // where every other way of leaving a fraction does.
+            case ConversionOperation.FractionToReal:
+                TakeAddressOfFraction();
+                _il.Emit(OpCodes.Call, FractionMember(nameof(Runtime.Fraction.ToReal)));
+                break;
+
             // Between a string and its characters, each way one call. Not a widening like the
             // three above: nothing is lost or gained, and the same characters come back — which
             // is what lets the language convert both ways without either being written.
