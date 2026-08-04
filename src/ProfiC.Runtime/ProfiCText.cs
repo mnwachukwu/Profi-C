@@ -242,6 +242,23 @@ public static class ProfiCText
         bool.TryParse(subject.Trim(), out bool truth) ? Optional<bool>.Of(truth) : Optional<bool>.Empty;
 
     /// <summary>
+    /// <para>The one character a string holds, or nothing where it holds more or fewer.</para>
+    /// <para><b>Not trimmed, unlike the numbers above.</b> A space is a character, so text that is
+    /// one space is one character and reading it as nothing would be losing the answer. What is
+    /// surrounding whitespace to a number is the whole value here.</para>
+    /// <para>Counted in the units a character is stored in rather than in what a reader would call
+    /// letters, which is the same limit the type already has: a mark that takes two of them — most
+    /// emoji — is two characters to this language, so no single one of them can be read out. A
+    /// program wanting those wants a string.</para>
+    /// </summary>
+    public static Optional<char> ToCharacter(string subject)
+    {
+        ArgumentNullException.ThrowIfNull(subject);
+
+        return subject.Length == 1 ? Optional<char>.Of(subject[0]) : Optional<char>.Empty;
+    }
+
+    /// <summary>
     /// <para>A number written by a pattern, which is the way out that <see cref="ToInteger"/> and
     /// <see cref="ToReal"/> are the way in.</para>
     /// <para>Written without regard to where the program is running. A decimal point is a point

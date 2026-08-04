@@ -815,6 +815,51 @@ public sealed class AnswersTests
         });
     }
 
+    /// <summary>
+    /// <para>A call to a member the language provides says what it takes, and what it is for.
+    /// </para>
+    /// <para><b>These were refused outright</b>, because signature help asked for a function a
+    /// program declared and a provided member is a catalog entry rather than a symbol. So
+    /// <c>Console.WriteLine(</c> and <c>Math.Round(</c> showed nothing at all — and those are the
+    /// calls whose documentation is best, since every one of them carries a written summary while
+    /// most functions somebody writes carry none. It reads as the feature being broken rather
+    /// than as a function nobody documented.</para>
+    /// </summary>
+    [Test]
+    public void ACallToSomethingProvidedSaysWhatItTakesAndWhatItIsFor()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write("Program.pc", """
+            shared model Program
+                function Main()
+                    Console.WriteLine(Math.Round(2.5, 1));
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 44: on the 1, which is the second argument of Round.
+        JsonObject? help = Answers.Signature(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 44));
+
+        JsonObject? signature = (JsonObject?)help?["signatures"]?[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((string?)signature?["label"], Does.Contain("Round"));
+
+            Assert.That(
+                (string?)signature?["documentation"]?["value"],
+                Is.Not.Null.And.Not.Empty,
+                "the catalog says what it is for");
+
+            Assert.That((int?)help?["activeParameter"], Is.EqualTo(1));
+        });
+    }
+
     /// <summary>Nothing is said where the cursor is not inside a call at all.</summary>
     [Test]
     public void NoSignatureWhereThereIsNoCall()
@@ -872,6 +917,97 @@ public sealed class AnswersTests
                 Does.Not.Contain("*Greeting*"),
                 "in plain text — a hover is markdown, and markdown has no smaller");
         });
+    }
+
+    /// <summary>
+    /// <para>A type hovers as the word that declares it, not as its own name.</para>
+    /// <para><b>Its name alone is the word already under the pointer</b>, so the hover repeated
+    /// what the reader could see and added nothing — and a name standing on its own is the one
+    /// shape the grammar has no rule for, so it arrived uncolored beside every other hover that
+    /// lit up. Which is how this was reported: as missing highlighting rather than as a missing
+    /// word, since the two look the same from the outside.</para>
+    /// <para>Every declared kind, because they were all the same bare name: a model, a structure
+    /// and an enumeration each said only what was already on screen.</para>
+    /// </summary>
+    [TestCase(14, 9, "model Account")]
+    [TestCase(15, 9, "structure Point")]
+    [TestCase(16, 9, "enumeration Suit")]
+    public void ATypeHoversAsTheWordThatDeclaresIt(int line, int column, string said)
+    {
+        using Workspace workspace = new();
+
+        workspace.Write("Program.pc", """
+            model Account
+            end model
+
+            structure Point
+                public integer x;
+            end structure
+
+            enumeration Suit
+                Hearts
+            end enumeration
+
+            shared model Program
+                function Main()
+                    Account[] accounts = {};
+                    Point here = new Point();
+                    Suit played = Suit.Hearts;
+
+                    Console.WriteLine(accounts.Count + here.x + played);
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Column 9 on each: the type at the left of the declaration, inside its name.
+        Assert.That(
+            (string?)Answers.Hover(
+                units, unit, model, unit.Source, OffsetOf(unit.Source, line, column))
+                ?["contents"]?["value"],
+            Does.Contain(said));
+    }
+
+    /// <summary>
+    /// <para>A member of an enumeration hovers as a program writes it.</para>
+    /// <para><b>It used to hover as its bare name</b>, which is the one form that says nothing: not
+    /// which enumeration it belongs to, and not that it is one — and a hover's code block is
+    /// colored by the grammar, which has no rule for a name standing on its own. So the answer was
+    /// the word already under the pointer, in the same color as the prose around it.</para>
+    /// </summary>
+    [Test]
+    public void AMemberOfAnEnumerationHoversAsOneIsWritten()
+    {
+        using Workspace workspace = new();
+
+        workspace.Write("Program.pc", """
+            enumeration Suit
+                Hearts,
+                Spades
+            end enumeration
+
+            shared model Program
+                function Main()
+                    Suit played = Suit.Hearts;
+                    Console.WriteLine(played);
+                end function
+            end model
+            """);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 8, column 30: on 'Hearts' in 'Suit.Hearts'.
+        string said = (string?)Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 8, 30))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.That(
+            said,
+            Does.Contain("Suit.Hearts"),
+            "the enumeration it belongs to, and the form a program would copy");
     }
 
     // ---- Which function documented a parameter -----------------------------------------------

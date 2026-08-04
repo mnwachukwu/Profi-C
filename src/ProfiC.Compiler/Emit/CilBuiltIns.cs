@@ -260,8 +260,20 @@ internal static class CilBuiltIns
            or BuiltInId.StringCapitalize
            or BuiltInId.StringToInteger
            or BuiltInId.StringToReal
+           or BuiltInId.StringToFloat
            or BuiltInId.StringToBoolean
-           or BuiltInId.StringToFraction;
+           or BuiltInId.StringToCharacter
+           or BuiltInId.StringToFraction
+
+           // Reached through a type's own name rather than on a string, and answered here all
+           // the same: what stands behind each is the very runtime method the string member
+           // beside it calls. Two spellings of one question, and one place it is answered.
+           or BuiltInId.IntegerParse
+           or BuiltInId.RealParse
+           or BuiltInId.FloatParse
+           or BuiltInId.BooleanParse
+           or BuiltInId.CharacterParse
+           or BuiltInId.FractionParse;
 
     /// <summary>
     /// <para>The members of <c>Math</c>, each one call into the runtime's own arithmetic.</para>

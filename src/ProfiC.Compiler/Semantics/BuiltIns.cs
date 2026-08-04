@@ -35,6 +35,21 @@ public enum BuiltInId
     FloatNotANumber,
     StringEmpty,
 
+    /// <summary>
+    /// <para>Reading a value back out of text, one way per type that can be written as text.</para>
+    /// <para>The same answer as the string's own <c>ToInteger</c> and the rest, reached from the
+    /// other side — and the same optional, so a program that reads text has one thing to check
+    /// however it asked. Both spellings exist because both read well in different places: a
+    /// string in hand answers <c>said.ToInteger()</c>, and text arriving from somewhere answers
+    /// <c>Integer.Parse(said)</c>.</para>
+    /// </summary>
+    IntegerParse,
+    RealParse,
+    FloatParse,
+    BooleanParse,
+    FractionParse,
+    CharacterParse,
+
     MathSqrt,
     MathCbrt,
     MathRoot,
@@ -299,6 +314,8 @@ public enum BuiltInId
     StringToReal,
     StringToBoolean,
     StringToFraction,
+    StringToFloat,
+    StringToCharacter,
 
     /// <summary>
     /// <para>Files, whole at a time.</para>
@@ -552,12 +569,44 @@ public static class BuiltIns
         [
             Value(BuiltInId.IntegerMaxValue, "MaxValue", PrimitiveType.Integer),
             Value(BuiltInId.IntegerMinValue, "MinValue", PrimitiveType.Integer),
+            Member(
+                BuiltInId.IntegerParse,
+                "Parse",
+                new OptionalType(PrimitiveType.Integer),
+                PrimitiveType.String),
         ]),
 
         new("Real", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
         [
             Value(BuiltInId.RealMaxValue, "MaxValue", PrimitiveType.Real),
             Value(BuiltInId.RealMinValue, "MinValue", PrimitiveType.Real),
+            Member(
+                BuiltInId.RealParse,
+                "Parse",
+                new OptionalType(PrimitiveType.Real),
+                PrimitiveType.String),
+        ]),
+
+        // Two names the language owns that hold nothing but a way in from text. Written all the
+        // same, because the alternative is a reader finding Integer.Parse and Real.Parse and
+        // guessing that the two remaining types simply cannot be read — which is the guess a
+        // half-applied convention invites, and it would be wrong.
+        new("Boolean", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Member(
+                BuiltInId.BooleanParse,
+                "Parse",
+                new OptionalType(PrimitiveType.Boolean),
+                PrimitiveType.String),
+        ]),
+
+        new("Character", "Standard", MayBeExtended: false, HasNoInstances: true, Members:
+        [
+            Member(
+                BuiltInId.CharacterParse,
+                "Parse",
+                new OptionalType(PrimitiveType.Character),
+                PrimitiveType.String),
         ]),
 
         // A float knows three things a real has no answer for, and that is the difference
@@ -575,6 +624,12 @@ public static class BuiltIns
             // Spelled out rather than abbreviated, as this language spells out 'shiftleft' and
             // 'bitwise and'. A reader meeting it for the first time should be able to read it.
             Value(BuiltInId.FloatNotANumber, "NotANumber", PrimitiveType.Float),
+
+            Member(
+                BuiltInId.FloatParse,
+                "Parse",
+                new OptionalType(PrimitiveType.Float),
+                PrimitiveType.String),
         ]),
 
         // Not a bound but a name for the string with nothing in it, which reads better than an
@@ -740,6 +795,12 @@ public static class BuiltIns
             // "let f = 3;" holds an integer, and "let f = Fraction.Create(3);" holds 3|1.
             Member(BuiltInId.FractionCreateWhole, "Create", PrimitiveType.Fraction,
                    PrimitiveType.Integer),
+
+            Member(
+                BuiltInId.FractionParse,
+                "Parse",
+                new OptionalType(PrimitiveType.Fraction),
+                PrimitiveType.String),
         ]),
 
         // Chance, in two shapes: a generator a program holds, which disturbs nothing of
@@ -1213,7 +1274,13 @@ public static class BuiltIns
         // not read is the ordinary case, since most of it was typed by somebody.
         Member(BuiltInId.StringToInteger, "ToInteger", new OptionalType(PrimitiveType.Integer)),
         Member(BuiltInId.StringToReal, "ToReal", new OptionalType(PrimitiveType.Real)),
+        Member(BuiltInId.StringToFloat, "ToFloat", new OptionalType(PrimitiveType.Float)),
         Member(BuiltInId.StringToBoolean, "ToBoolean", new OptionalType(PrimitiveType.Boolean)),
+
+        // One character, and only where the text holds exactly one. Not trimmed, unlike the
+        // numbers beside it: a space is a character, so text that is one space is one character.
+        Member(
+            BuiltInId.StringToCharacter, "ToCharacter", new OptionalType(PrimitiveType.Character)),
 
         // A ratio reads with either mark between its halves. The language writes '22|7',
         // because a slash is already division; a person writes '22/7', because that is what a

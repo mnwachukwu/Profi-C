@@ -79,8 +79,22 @@ public sealed partial class CilEmitter
             case BuiltInId.StringCapitalize:
             case BuiltInId.StringToInteger:
             case BuiltInId.StringToReal:
+            case BuiltInId.StringToFloat:
             case BuiltInId.StringToBoolean:
+            case BuiltInId.StringToCharacter:
             case BuiltInId.StringToFraction:
+
+            // The same readings reached through a type's own name. They arrive here rather than
+            // beside the type's constants because what stands behind them is the same runtime
+            // method the string members call — one implementation, so the two spellings cannot
+            // come to disagree. The receiver holds nothing, so the text is simply the argument
+            // and the loop below reads it the same way.
+            case BuiltInId.IntegerParse:
+            case BuiltInId.RealParse:
+            case BuiltInId.FloatParse:
+            case BuiltInId.BooleanParse:
+            case BuiltInId.CharacterParse:
+            case BuiltInId.FractionParse:
                 foreach (Expression argument in arguments)
                 {
                     EmitExpression(argument);
@@ -143,10 +157,18 @@ public sealed partial class CilEmitter
         BuiltInId.StringToLower => Text(nameof(ProfiCText.ToLower), typeof(string)),
         BuiltInId.StringCapitalize => Text(nameof(ProfiCText.Capitalize), typeof(string)),
 
-        BuiltInId.StringToInteger => Text(nameof(ProfiCText.ToInteger), typeof(string)),
-        BuiltInId.StringToReal => Text(nameof(ProfiCText.ToReal), typeof(string)),
-        BuiltInId.StringToBoolean => Text(nameof(ProfiCText.ToBoolean), typeof(string)),
-        BuiltInId.StringToFraction => Text(nameof(ProfiCText.ToFraction), typeof(string)),
+        BuiltInId.StringToInteger or BuiltInId.IntegerParse =>
+            Text(nameof(ProfiCText.ToInteger), typeof(string)),
+        BuiltInId.StringToReal or BuiltInId.RealParse =>
+            Text(nameof(ProfiCText.ToReal), typeof(string)),
+        BuiltInId.StringToFloat or BuiltInId.FloatParse =>
+            Text(nameof(ProfiCText.ToFloat), typeof(string)),
+        BuiltInId.StringToBoolean or BuiltInId.BooleanParse =>
+            Text(nameof(ProfiCText.ToBoolean), typeof(string)),
+        BuiltInId.StringToCharacter or BuiltInId.CharacterParse =>
+            Text(nameof(ProfiCText.ToCharacter), typeof(string)),
+        BuiltInId.StringToFraction or BuiltInId.FractionParse =>
+            Text(nameof(ProfiCText.ToFraction), typeof(string)),
 
         _ => throw new InvalidOperationException($"No runtime method stands behind '{id}'."),
     };

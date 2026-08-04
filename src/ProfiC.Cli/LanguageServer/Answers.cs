@@ -373,6 +373,21 @@ public static class Answers
         FieldSymbol field => $"{field.Type} {field.Name}",
         ParameterSymbol parameter => $"{parameter.Type} {parameter.Name}",
         FunctionSymbol function => Signature(function),
+
+        // Written as a program writes it, which is the only form that says which enumeration it
+        // belongs to — and the only one a reader of the hover can copy. A bare 'Hearts' says
+        // neither, and is what every member of every enumeration used to hover as.
+        EnumMemberSymbol member => $"{member.Owner.Name}.{member.Name}",
+
+        // A type says the word that declares it. Its name alone is the word already under the
+        // pointer, so the hover repeats what the reader can see and adds nothing — and a name
+        // standing on its own is the one shape this language's grammar has no rule for, so it
+        // arrives uncolored beside every other hover that lights up.
+        //
+        // Declared types only. A primitive is written as a reserved word, so 'integer' is the
+        // whole of how one appears and 'type integer' would be a phrase from nowhere.
+        DeclaredTypeSymbol declared => $"{declared.Kind} {declared.Name}",
+
         TypeSymbol type => type.ToString() ?? type.Name,
         _ => symbol.Name,
     };
@@ -468,46 +483,57 @@ public static class Answers
             return null;
         }
 
-        if (model.GetSymbol(call.Callee) is not FunctionSymbol function)
+        // Both kinds of callable, because the one left out is the one whose documentation is
+        // best. A member the language provides carries a written summary in the catalog, and for
+        // a long time this refused every call to one — so 'Console.WriteLine(' and 'Math.Round('
+        // showed nothing at all, which reads as the feature not working rather than as a function
+        // nobody documented.
+        string label;
+        int count;
+        JsonArray parameters = [];
+        string? summary;
+
+        if (model.GetSymbol(call.Callee) is FunctionSymbol function)
+        {
+            label = Signature(function);
+            count = function.Parameters.Count;
+            summary = Documented(units, model, call.Callee);
+
+            int past = 0;
+
+            foreach (ParameterSymbol parameter in function.Parameters)
+            {
+                // Named in front of what is said about it. The widget shows one line of prose
+                // under a signature naming several parameters, and without the name in it there
+                // is nothing saying which one it belongs to.
+                string? about = Documented(units, parameter) is { Length: > 0 } said
+                    ? $"**{parameter.Name}:** {said}"
+                    : null;
+
+                parameters.Add(Placed(
+                    label, $"{parameter.Type} {parameter.Name}", ref past, about));
+            }
+        }
+        else if (model.GetBuiltIn(call.Callee) is { } provided
+                 && BuiltIns.Find(provided) is { IsValue: false } member)
+        {
+            label = Written(member);
+            count = member.ParameterTypes.Count;
+            summary = BuiltInDocs.Summary(provided);
+
+            int past = 0;
+
+            foreach (TypeSymbol? parameter in member.ParameterTypes)
+            {
+                // No name to show — the catalog holds types and the back end switches on an id,
+                // so there is nothing a name would be read from. Inventing one would be inventing
+                // it.
+                parameters.Add(Placed(label, parameter?.ToString() ?? "anything", ref past, null));
+            }
+        }
+        else
         {
             return null;
-        }
-
-        // Written as offsets into the signature rather than as text. Given text, an editor finds
-        // the parameter by searching the line for it — so two parameters written the same way,
-        // which is ordinary in a function taking two of a kind, both point at the first.
-        string label = Signature(function);
-        JsonArray parameters = [];
-        int past = 0;
-
-        foreach (ParameterSymbol parameter in function.Parameters)
-        {
-            // Found forward from the last one rather than from the start, since two written the
-            // same way would otherwise both land on the first of them.
-            string written = $"{parameter.Type} {parameter.Name}";
-            int at = label.IndexOf(written, past, StringComparison.Ordinal);
-
-            past = at < 0 ? past : at + written.Length;
-
-            JsonObject described = new()
-            {
-                ["label"] = at < 0
-                    ? written
-                    : new JsonArray(at, past),
-            };
-
-            // What the function's own documentation says about this one, which is what somebody
-            // halfway through typing an argument wanted to know.
-            if (Documented(units, parameter) is { Length: > 0 } about)
-            {
-                described["documentation"] = new JsonObject
-                {
-                    ["kind"] = "markdown",
-                    ["value"] = about,
-                };
-            }
-
-            parameters.Add(described);
         }
 
         JsonObject signature = new()
@@ -519,12 +545,12 @@ public static class Answers
         // What the function is for, under the signature and above the parameter being written.
         // The two together are the whole of what somebody halfway through a call wanted: what
         // this does, and what goes where the caret is.
-        if (Documented(units, model, call.Callee) is { Length: > 0 } summary)
+        if (summary is { Length: > 0 } written)
         {
             signature["documentation"] = new JsonObject
             {
                 ["kind"] = "markdown",
-                ["value"] = summary,
+                ["value"] = written,
             };
         }
 
@@ -533,9 +559,39 @@ public static class Answers
             ["signatures"] = new JsonArray(signature),
             ["activeSignature"] = 0,
             ["activeParameter"] = Math.Min(
-                NodeAt.ArgumentAt(call.Arguments, offset),
-                Math.Max(0, function.Parameters.Count - 1)),
+                NodeAt.ArgumentAt(call.Arguments, offset), Math.Max(0, count - 1)),
         };
+    }
+
+    /// <summary>
+    /// <para>One parameter, marked by where it sits in the signature rather than by its text.
+    /// </para>
+    /// <para>Given text, an editor finds the parameter by searching the signature for it — so two
+    /// written the same way, which is ordinary in a function taking two of a kind, would both mark
+    /// the first. Found forward from the last one for the same reason.</para>
+    /// </summary>
+    private static JsonObject Placed(
+        string label, string written, ref int past, string? about)
+    {
+        int at = label.IndexOf(written, past, StringComparison.Ordinal);
+
+        past = at < 0 ? past : at + written.Length;
+
+        JsonObject described = new()
+        {
+            ["label"] = at < 0 ? written : new JsonArray(at, past),
+        };
+
+        if (about is { Length: > 0 } said)
+        {
+            described["documentation"] = new JsonObject
+            {
+                ["kind"] = "markdown",
+                ["value"] = said,
+            };
+        }
+
+        return described;
     }
 
     /// <summary>The file a piece of syntax came from, or null where none of these holds it.</summary>

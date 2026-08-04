@@ -203,8 +203,20 @@ public static class BuiltInDocs
             // ---- Reading a value out of text -------------------------------------------------
             [BuiltInId.StringToInteger] = "Read as a whole number, or nothing",
             [BuiltInId.StringToReal] = "Read as a real, or nothing",
+            [BuiltInId.StringToFloat] = "Read as a float, or nothing",
             [BuiltInId.StringToBoolean] = "Read as true or false, or nothing",
+            [BuiltInId.StringToCharacter] = "Read as one character, or nothing where it is not one",
             [BuiltInId.StringToFraction] = "Read as a fraction, or nothing",
+
+            // The same readings, reached through the type rather than through the text. Written
+            // the other way round because that is how each reads at its own call: a string in
+            // hand answers what it can become, and a type asked to read text says what it wants.
+            [BuiltInId.IntegerParse] = "Read text as a whole number, or nothing",
+            [BuiltInId.RealParse] = "Read text as a real, or nothing",
+            [BuiltInId.FloatParse] = "Read text as a float, or nothing",
+            [BuiltInId.BooleanParse] = "Read text as true or false, or nothing",
+            [BuiltInId.CharacterParse] = "Read text as one character, or nothing where it is not one",
+            [BuiltInId.FractionParse] = "Read text as a fraction, or nothing",
 
             // ---- Optionals -------------------------------------------------------------------
             [BuiltInId.OptionalHasValue] = "Whether there is anything in it",

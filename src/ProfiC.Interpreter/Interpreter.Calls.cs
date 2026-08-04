@@ -637,10 +637,33 @@ public sealed partial class Interpreter
                 new StrongBox<object?>(Held(ProfiCText.ToInteger(Subject()))),
             BuiltInId.StringToReal =>
                 new StrongBox<object?>(Held(ProfiCText.ToReal(Subject()))),
+            BuiltInId.StringToFloat =>
+                new StrongBox<object?>(Held(ProfiCText.ToFloat(Subject()))),
             BuiltInId.StringToBoolean =>
                 new StrongBox<object?>(Held(ProfiCText.ToBoolean(Subject()))),
+            BuiltInId.StringToCharacter =>
+                new StrongBox<object?>(Held(ProfiCText.ToCharacter(Subject()))),
 
             BuiltInId.StringToFraction => new StrongBox<object?>(ProfiCText.ToFractionUntyped(Subject())),
+
+            // The same readings reached through the type's own name, and deliberately the same
+            // call underneath: two spellings of one question have to give one answer, and the
+            // only way to be sure of that is for there to be one place it is answered.
+            //
+            // The text is an argument here rather than the receiver, since the receiver is a name
+            // that holds nothing.
+            BuiltInId.IntegerParse =>
+                new StrongBox<object?>(Held(ProfiCText.ToInteger(Text(0)))),
+            BuiltInId.RealParse =>
+                new StrongBox<object?>(Held(ProfiCText.ToReal(Text(0)))),
+            BuiltInId.FloatParse =>
+                new StrongBox<object?>(Held(ProfiCText.ToFloat(Text(0)))),
+            BuiltInId.BooleanParse =>
+                new StrongBox<object?>(Held(ProfiCText.ToBoolean(Text(0)))),
+            BuiltInId.CharacterParse =>
+                new StrongBox<object?>(Held(ProfiCText.ToCharacter(Text(0)))),
+            BuiltInId.FractionParse =>
+                new StrongBox<object?>(ProfiCText.ToFractionUntyped(Text(0))),
 
             // ---- Files ----------------------------------------------------------------
             //

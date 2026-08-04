@@ -22,7 +22,13 @@ public sealed class ConversionsTests
     /// <c>Path.GetFullPath</c> read the drive as a folder name under the current drive, so a file
     /// in <c>D:\Repos\samples</c> is looked for in <c>D:\d:\Repos\samples</c>, which exists
     /// nowhere.</para>
+    /// <para><b>Windows only, because a drive letter is.</b> Elsewhere <c>D:</c> is an ordinary
+    /// folder name: nothing roots the path, so the expected side gains the working directory in
+    /// front of it, and the actual side keeps the backslashes <c>Uri.LocalPath</c> produced
+    /// because a backslash is not a separator there. Both sides are then nonsense about a URI no
+    /// editor on that platform sends.</para>
     /// </summary>
+    [Platform("Win", Reason = "a drive letter is a Windows idea, and this is about reading one")]
     [TestCase("file:///d%3A/Repos/Profi-C/samples/hello.pc")]
     [TestCase("file:///D%3A/Repos/Profi-C/samples/hello.pc")]
     [TestCase("file:///D:/Repos/Profi-C/samples/hello.pc")]
@@ -34,11 +40,25 @@ public sealed class ConversionsTests
     }
 
     /// <summary>A space arrives escaped too, and is a space again on the other side.</summary>
+    [Platform("Win", Reason = "written with a drive letter; the same claim is made below without one")]
     [Test]
     public void AnEscapedSpaceIsASpace() =>
         Assert.That(
             Conversions.PathOf("file:///d%3A/My%20Programs/hello.pc"),
             Is.EqualTo(Path.GetFullPath("D:/My Programs/hello.pc")).IgnoreCase);
+
+    /// <summary>
+    /// <para>The same, for a path with no drive in it at all.</para>
+    /// <para>Here so that this file says something on every platform rather than skipping itself
+    /// away: the escaping is what is being tested, and a rooted path is what an editor sends
+    /// anywhere that has no drives.</para>
+    /// </summary>
+    [Platform("Linux,MacOsX", Reason = "a rooted path with no drive is what those platforms use")]
+    [Test]
+    public void AnEscapedSpaceIsASpaceWithNoDriveEither() =>
+        Assert.That(
+            Conversions.PathOf("file:///home/matt/My%20Programs/hello.pc"),
+            Is.EqualTo("/home/matt/My Programs/hello.pc"));
 
     /// <summary>
     /// <para>The answer is spelled the way the rest of the compiler spells a path.</para>
