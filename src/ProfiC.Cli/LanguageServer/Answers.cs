@@ -101,15 +101,9 @@ public static class Answers
             return null;
         }
 
-        string? writing = Writing(units, unit, model, offset);
-
         if (Describe(model, node) is not { } said)
         {
-            // Nothing under the cursor to say anything about, but the place says what belongs in
-            // it — which is the whole of an argument nobody has typed yet.
-            return writing is null
-                ? null
-                : Reply(writing, Conversions.RangeOf(node.NameSpan, source));
+            return null;
         }
 
         string written = $"```profi-c\n{said}\n```";
@@ -119,14 +113,6 @@ public static class Answers
         if (Documented(units, model, node) is { Length: > 0 } summary)
         {
             written += $"\n\n{summary}";
-        }
-
-        // What the reader is looking at is the value; where it is going is the next question, not
-        // the first one. Opens with a bold word, which is what separates it from the prose above
-        // without spending a rule on it.
-        if (writing is not null)
-        {
-            written += $"\n\n{writing}";
         }
 
         // Where it came from, which a bare name cannot say: two models called Circle are told
@@ -157,55 +143,6 @@ public static class Answers
         },
         ["range"] = range,
     };
-
-    /// <summary>
-    /// <para>Which parameter the cursor is writing, where it is inside an argument list.</para>
-    /// <para><b>Signature help says this and then goes away.</b> It shows while the arguments are
-    /// being typed and dismisses on the first thing that is not typing, so a reader who stops to
-    /// look at what they wrote has to delete a character to bring it back — or go up to the call
-    /// and hover the name, which is the trip this exists to save.</para>
-    /// <para>Only among the arguments. A cursor on the name being called is asking about the
-    /// function, and the rest of the hover already answers that.</para>
-    /// <para>Walked outward and stopped at the first call, so an argument written inside a nested
-    /// call belongs to the nested one. A lambda in between claims nothing here — what the reader
-    /// is writing is still an argument of something, even if it is several lines above.</para>
-    /// </summary>
-    private static string? Writing(
-        IReadOnlyList<CompilationUnit> units, CompilationUnit unit, SemanticModel model, int offset)
-    {
-        foreach (SyntaxNode node in NodeAt.Enclosing(unit, offset))
-        {
-            if (Called.Of(node, model, offset) is not { } call)
-            {
-                continue;
-            }
-
-            string? shape = call.Parameter is { } parameter
-                ? $"{parameter.Type} {parameter.Name}"
-                : call.Type?.ToString();
-
-            if (shape is null)
-            {
-                // The cursor is in an argument list the compiler could not work out — a name
-                // nothing declares, most often. Naming a position in a call nobody found would be
-                // an answer about nothing.
-                return null;
-            }
-
-            string where = call.Count is { } total
-                ? $" ({call.At + 1} of {total})"
-                : string.Empty;
-
-            string said = $"**Writing** `{shape}`{where}";
-
-            return call.Parameter is { } named
-                   && Documented(units, named) is { Length: > 0 } about
-                ? $"{said}\n\n{about}"
-                : said;
-        }
-
-        return null;
-    }
 
     /// <summary>
     /// <para>One line saying what a node is, or null where nothing was recorded about it.</para>
@@ -515,8 +452,13 @@ public static class Answers
     /// something.</para>
     /// </summary>
     public static JsonObject? Signature(
-        CompilationUnit unit, SemanticModel model, SourceText source, int offset)
+        IReadOnlyList<CompilationUnit> units,
+        CompilationUnit unit,
+        SemanticModel model,
+        SourceText source,
+        int offset)
     {
+        ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(source);
@@ -531,20 +473,64 @@ public static class Answers
             return null;
         }
 
+        // Written as offsets into the signature rather than as text. Given text, an editor finds
+        // the parameter by searching the line for it — so two parameters written the same way,
+        // which is ordinary in a function taking two of a kind, both point at the first.
+        string label = Signature(function);
         JsonArray parameters = [];
+        int past = 0;
 
         foreach (ParameterSymbol parameter in function.Parameters)
         {
-            parameters.Add(new JsonObject { ["label"] = $"{parameter.Type} {parameter.Name}" });
+            // Found forward from the last one rather than from the start, since two written the
+            // same way would otherwise both land on the first of them.
+            string written = $"{parameter.Type} {parameter.Name}";
+            int at = label.IndexOf(written, past, StringComparison.Ordinal);
+
+            past = at < 0 ? past : at + written.Length;
+
+            JsonObject described = new()
+            {
+                ["label"] = at < 0
+                    ? written
+                    : new JsonArray(at, past),
+            };
+
+            // What the function's own documentation says about this one, which is what somebody
+            // halfway through typing an argument wanted to know.
+            if (Documented(units, parameter) is { Length: > 0 } about)
+            {
+                described["documentation"] = new JsonObject
+                {
+                    ["kind"] = "markdown",
+                    ["value"] = about,
+                };
+            }
+
+            parameters.Add(described);
+        }
+
+        JsonObject signature = new()
+        {
+            ["label"] = label,
+            ["parameters"] = parameters,
+        };
+
+        // What the function is for, under the signature and above the parameter being written.
+        // The two together are the whole of what somebody halfway through a call wanted: what
+        // this does, and what goes where the caret is.
+        if (Documented(units, model, call.Callee) is { Length: > 0 } summary)
+        {
+            signature["documentation"] = new JsonObject
+            {
+                ["kind"] = "markdown",
+                ["value"] = summary,
+            };
         }
 
         return new JsonObject
         {
-            ["signatures"] = new JsonArray(new JsonObject
-            {
-                ["label"] = Signature(function),
-                ["parameters"] = parameters,
-            }),
+            ["signatures"] = new JsonArray(signature),
             ["activeSignature"] = 0,
             ["activeParameter"] = Math.Min(
                 NodeAt.ArgumentAt(call.Arguments, offset),

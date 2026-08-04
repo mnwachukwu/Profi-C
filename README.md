@@ -645,7 +645,8 @@ ordered by what would fit where the caret is — signature help, quick fixes, **
 everywhere it is written**, **coloring every name for what the compiler worked out it is**, marking
 every use of the name under the caret, **finding every use of it across the whole program**,
 **formatting**, and buttons to run or build what you are looking at.
-Project management is what remains. Installing it, and the rest of what it does, is covered there.
+It also manages `.pcp` projects: starting one, listing a file in it or taking it out, and saying
+which program it starts at. Installing it, and the rest of what it does, is covered there.
 
 **Almost none of the debugger is over there**, which is the point. `pc debug` is the whole of it;
 the extension only says which command to start. Two implementations of one set of rules about

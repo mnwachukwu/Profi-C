@@ -30,18 +30,18 @@ public static class Hints
 
     /// <summary>
     /// <para>Which hints somebody asked for.</para>
-    /// <para><b>Both are settings, and they do not default the same way.</b> A type fills in
-    /// something the language does not write and a reader has no other way to see, so it is on. A
-    /// parameter name repeats what is one hover away and is written on every argument of every
-    /// call — including <c>Console.WriteLine</c>, where it says nothing at all — so it is off
-    /// until asked for.</para>
-    /// <para>Off by default is not the same as absent: somebody reading unfamiliar code with
-    /// four-argument calls in it wants these, and the reason to keep them off is that most reading
-    /// is not that.</para>
+    /// <para><b>Both are off until asked for.</b> A hint is text the editor writes into code
+    /// nobody wrote, and a reader who has not asked for that should not have to work out where it
+    /// came from — least of all a beginner, who has no way to tell the language's own syntax from
+    /// their editor's opinion about it.</para>
+    /// <para>Off by default is not the same as absent. Types are worth turning on while learning
+    /// what the checker concludes, and parameter names while reading unfamiliar code with
+    /// four-argument calls in it. The reason to keep both off is that most reading is neither.
+    /// </para>
     /// </summary>
     public sealed record Wants(bool Types, bool ParameterNames)
     {
-        public static Wants Default { get; } = new(Types: true, ParameterNames: false);
+        public static Wants Default { get; } = new(Types: false, ParameterNames: false);
 
         /// <summary>Whether there is nothing to look for, so the file need not be read at all.</summary>
         public bool Nothing => !Types && !ParameterNames;

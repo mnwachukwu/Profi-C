@@ -457,8 +457,7 @@ public sealed class LanguageServer : IDisposable
             return null;
         }
 
-        _ = units;
-        return Answers.Signature(unit, model, unit.Source, offset);
+        return Answers.Signature(units, unit, model, unit.Source, offset);
     }
 
     /// <summary>

@@ -696,7 +696,7 @@ public sealed class AnswersTests
 
         // Line 3, column 39: just inside the argument list.
         JsonObject? help = Answers.Signature(
-            unit, model, unit.Source, OffsetOf(unit.Source, 3, 39));
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 39));
 
         Assert.Multiple(() =>
         {
@@ -726,16 +726,92 @@ public sealed class AnswersTests
             Compile(workspace, "Program.pc");
 
         JsonObject? first = Answers.Signature(
-            unit, model, unit.Source, OffsetOf(unit.Source, 3, 39));
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 39));
 
         // Past the comma, into the second argument.
         JsonObject? second = Answers.Signature(
-            unit, model, unit.Source, OffsetOf(unit.Source, 3, 42));
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 42));
 
         Assert.Multiple(() =>
         {
             Assert.That((int?)first?["activeParameter"], Is.EqualTo(0));
             Assert.That((int?)second?["activeParameter"], Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>
+    /// <para>What the function is for, and what the parameter being written is for.</para>
+    /// <para><b>Both, because they answer different halves of one question.</b> Somebody stopped
+    /// halfway through a call wants to know what the thing does and what goes where the caret is,
+    /// and going to find either one means leaving the line they are writing.</para>
+    /// <para>Each parameter is placed by where it sits in the signature rather than by its text.
+    /// Given text, an editor finds the parameter by searching the line for it — so two written
+    /// the same way, which is ordinary in a function taking two of a kind, would both point at
+    /// the first.</para>
+    /// </summary>
+    [Test]
+    public void ACallSaysWhatItIsForAndWhatEachParameterIsFor()
+    {
+        const string Documented = """
+            shared model Program
+                function Main()
+                    Console.WriteLine(Program.Repeat("ha", 3));
+                end function
+
+                ##
+                    @summary: One string written over and over.
+                    @word: what to repeat.
+                    @times: how many copies to make.
+                    @yields: the copies, run together.
+                ##
+                string function Repeat(string word, integer times)
+                    string all = "";
+
+                    loop for i = 1 to times
+                        all = all + word;
+                    end loop
+
+                    yield all;
+                end function
+            end model
+            """;
+
+        using Workspace workspace = new();
+        workspace.Write("Program.pc", Documented);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 48: on the 3, which is the second argument of Repeat.
+        JsonObject? help = Answers.Signature(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 48));
+
+        JsonObject? signature = (JsonObject?)help?["signatures"]?[0];
+        string label = (string?)signature?["label"] ?? string.Empty;
+        JsonArray? parameters = (JsonArray?)signature?["parameters"];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                (string?)signature?["documentation"]?["value"],
+                Does.Contain("One string written over and over"),
+                "what the function is for");
+
+            Assert.That((int?)help?["activeParameter"], Is.EqualTo(1));
+
+            Assert.That(
+                (string?)parameters?[1]?["documentation"]?["value"],
+                Does.Contain("how many copies to make"),
+                "and what the one being written is for");
+
+            // Where it sits, so an editor marks exactly those characters.
+            JsonArray where = (JsonArray)parameters![1]!["label"]!;
+            int from = (int)where[0]!;
+
+            Assert.That(
+                label[from..(int)where[1]!],
+                Is.EqualTo("integer times"),
+                "placed by position rather than by searching for its text");
         });
     }
 
@@ -749,7 +825,7 @@ public sealed class AnswersTests
             Compile(workspace, "Program.pc");
 
         Assert.That(
-            Answers.Signature(unit, model, unit.Source, unit.Source.Text.Length + 50),
+            Answers.Signature(units, unit, model, unit.Source, unit.Source.Text.Length + 50),
             Is.Null);
     }
 
@@ -798,16 +874,14 @@ public sealed class AnswersTests
         });
     }
 
-    // ---- Which parameter is being written ----------------------------------------------------
+    // ---- Which function documented a parameter -----------------------------------------------
 
     /// <summary>
-    /// <para>A call whose parameters are documented, and a second function reusing one of the
-    /// names.</para>
-    /// <para>The reuse is the point of the second one: a parameter is documented on the function
-    /// that takes it, and two functions taking a <c>label</c> is the ordinary case rather than a
-    /// contrived one.</para>
+    /// <para>Two functions that take a parameter of the same name, each documenting it.</para>
+    /// <para>The reuse is the point: a parameter is documented on the function that takes it, and
+    /// two functions taking a <c>label</c> is the ordinary case rather than a contrived one.</para>
     /// </summary>
-    private const string Writing = """
+    private const string Documenting = """
         shared model Program
             function Main()
                 integer count = 3;
@@ -848,73 +922,6 @@ public sealed class AnswersTests
     }
 
     /// <summary>
-    /// <para>Hovering an argument says what it is and what it is being written into.</para>
-    /// <para><b>Signature help says the second half and then goes away.</b> It shows while the
-    /// arguments are being typed and dismisses on the first thing that is not typing, so a reader
-    /// who stops to look at what they wrote has to delete a character to bring it back — or go up
-    /// to the call and hover the name. Saying it here puts the answer where they are looking, and
-    /// the two halves together are what catches an argument in the wrong place.</para>
-    /// </summary>
-    [Test]
-    public void HoveringAnArgumentSaysWhichParameterItIsWriting()
-    {
-        using Workspace workspace = new();
-        workspace.Write("Program.pc", Writing);
-
-        // Line 5, column 34: inside 'count', the second argument.
-        string said = Said(workspace, 5, 34);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(said, Does.Contain("integer count"), "what the name is");
-            Assert.That(said, Does.Contain("integer times"), "and what it is being written into");
-            Assert.That(said, Does.Contain("2 of 2"), "which one of them, without counting commas");
-            Assert.That(said, Does.Contain("how many times to write it"), "what it is for");
-        });
-    }
-
-    /// <summary>
-    /// The argument nobody has typed yet, which is the state a reader is in for as long as it
-    /// takes them to decide what goes there.
-    /// </summary>
-    [Test]
-    public void AnArgumentNotYetWrittenStillNamesItsParameter()
-    {
-        const string Halfway = """
-            shared model Program
-                function Main()
-                    Program.Show("counted", );
-                end function
-
-                function Show(string label, integer times)
-                    Console.WriteLine(label);
-                end function
-            end model
-            """;
-
-        using Workspace workspace = new();
-        workspace.Write("Program.pc", Halfway);
-
-        // Line 3, column 32: after the comma, where nothing has been written.
-        Assert.That(Said(workspace, 3, 32), Does.Contain("integer times"));
-    }
-
-    /// <summary>
-    /// The cursor on the name being called is asking about the function, which the rest of the
-    /// hover already answers. Saying which parameter as well would name the first one wherever a
-    /// reader pointed.
-    /// </summary>
-    [Test]
-    public void HoveringTheNameBeingCalledSaysNothingAboutParameters()
-    {
-        using Workspace workspace = new();
-        workspace.Write("Program.pc", Writing);
-
-        // Line 5, column 18: inside 'Show'.
-        Assert.That(Said(workspace, 5, 18), Does.Not.Contain("Writing"));
-    }
-
-    /// <summary>
     /// <para>A parameter is documented by the function that takes it, and not by another one that
     /// happens to use the same name.</para>
     /// <para>Taken by name from every documentation comment in the file, the answer is whichever
@@ -925,7 +932,7 @@ public sealed class AnswersTests
     public void AParameterIsDocumentedByItsOwnFunction()
     {
         using Workspace workspace = new();
-        workspace.Write("Program.pc", Writing);
+        workspace.Write("Program.pc", Documenting);
 
         // Line 24, column 24: on 'label' inside Once, which is the second function taking one.
         string said = Said(workspace, 24, 24);

@@ -33,14 +33,22 @@ public sealed class HintsTests
         return (unit, model, source);
     }
 
-    /// <summary>Each hint as the line it lands on and what it says.</summary>
+    /// <summary>
+    /// Each hint as the line it lands on and what it says. Types unless a test says otherwise,
+    /// since that is what most of these are about — and not the default, which is nothing.
+    /// </summary>
     private static IReadOnlyList<(int Line, string Label)> Shown(
         string text, Hints.Wants? wants = null)
     {
         (CompilationUnit unit, SemanticModel model, SourceText source) = Compile(text);
 
         JsonArray hints = Hints.In(
-            unit, model, source, 0, source.Text.Length, wants ?? Hints.Wants.Default);
+            unit,
+            model,
+            source,
+            0,
+            source.Text.Length,
+            wants ?? new Hints.Wants(Types: true, ParameterNames: false));
 
         return
         [
@@ -102,13 +110,25 @@ public sealed class HintsTests
         });
     }
 
-    /// <summary>Turned off, there is nothing to see — which is the point of it being a setting.</summary>
+    /// <summary>
+    /// <para>Nothing is shown until somebody asks, and asking for nothing shows nothing.</para>
+    /// <para>Off is the default for both kinds. A hint is text the editor writes into code nobody
+    /// wrote, and a reader who has not asked for that has no way to tell the language's own syntax
+    /// from their editor's opinion about it — least of all a beginner, which is who this language
+    /// is for.</para>
+    /// </summary>
     [Test]
-    public void TypesCanBeTurnedOff()
+    public void NothingIsShownUntilSomebodyAsks()
     {
-        Assert.That(
-            Shown(Counting, new Hints.Wants(Types: false, ParameterNames: false)),
-            Is.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                Hints.Wants.Default,
+                Is.EqualTo(new Hints.Wants(Types: false, ParameterNames: false)));
+
+            Assert.That(Shown(Counting, Hints.Wants.Default), Is.Empty);
+            Assert.That(Shown(Calling, Hints.Wants.Default), Is.Empty);
+        });
     }
 
     // ---- The names of the parameters being written to -----------------------------------------
@@ -204,14 +224,14 @@ public sealed class HintsTests
                 Hints.Wanted(JsonNode.Parse("""
                     {"profi-c": {"inlayHints": {"parameterNames": true}}}
                     """) as JsonObject),
-                Is.EqualTo(new Hints.Wants(Types: true, ParameterNames: true)),
+                Is.EqualTo(new Hints.Wants(Types: false, ParameterNames: true)),
                 "one of the two said, and the other keeps its default");
 
             Assert.That(
                 Hints.Wanted(JsonNode.Parse("""
-                    {"profi-c": {"inlayHints": {"types": false}}}
+                    {"profi-c": {"inlayHints": {"types": true}}}
                     """) as JsonObject),
-                Is.EqualTo(new Hints.Wants(Types: false, ParameterNames: false)));
+                Is.EqualTo(new Hints.Wants(Types: true, ParameterNames: false)));
         });
     }
 }

@@ -246,7 +246,7 @@ it to every line of the file it is written in, wherever in that file it sits:
 A project file widens it once more, over every file the project builds
 ([§12.1](#121-what-a-compilation-is-made-of)):
 
-```
+```text
 project Library
     source Program.pc
     ignore opinion
@@ -277,6 +277,8 @@ model Account
 
     # @summary: Whose account this is.
     string owner;
+
+end model
 ```
 
 Documentation sits above what it documents, and what it may document is a type, a member of
@@ -486,7 +488,7 @@ Written on one line, it is exactly what lies between the quotes.
 as the opening one.** Any shorter run inside is text, which is what lets a block hold quotes at
 all:
 
-```
+```text
 """say "hi" now"""            →  say "hi" now
 """"holds """ here""""        →  holds """ here
 ```
@@ -507,7 +509,7 @@ A block whose text ends in a quotation mark has no single-line form, since that 
 against the closing run and lengthens it whatever the delimiter's length. Putting the closing
 run on its own line separates them:
 
-```
+```text
 """
 say "hi"
 """
@@ -518,6 +520,9 @@ say "hi"
 A string literal may hold expressions, written between **doubled braces**:
 
 ```
+integer apples = 3;
+integer pears = 4;
+
 Console.WriteLine("{{apples}} apples and {{pears}} pears is {{apples + pears}} fruit");
 ```
 
@@ -533,7 +538,7 @@ the right pair.
 **A colon says how to write the value.** What follows it is a pattern rather than code, taken
 whole to the closing braces:
 
-```
+```text
 "to a penny: {{price:F2}}"        →  to a penny: 1234.50
 "the date: {{when:yyyy-MM-dd}}"   →  the date: 2026-08-15
 ```
@@ -583,7 +588,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 Profi-C has **63** reserved words. A name may take one back by writing `@` in front of it —
 `@end`, `@each` — which is the only place a name may begin with something other than a letter.
 
-```
+```text
 abstract     and          as           base         begin        bitwise      boolean
 break        case         catch        character    constant     continue     default
 delegate     each         else         end          enumeration  extends      false
@@ -606,7 +611,7 @@ nothing the language defines is abbreviated.
 
 ### 2.2 Operators and punctuation
 
-```
+```text
 +   -   *   /   %   ^
 ==  !=  <   >   <=  >=
 =   ?   :   |
@@ -733,7 +738,7 @@ same division `PC0324` draws around dividing by zero.
 
 Any type takes two suffixes, and they nest:
 
-```
+```text
 integer[]     a set of integers
 integer?      an integer that may be absent
 Node?[]       a set of optionals
@@ -755,7 +760,7 @@ node, and `Node?` is the type that may not. [§8](#8-optionals) gives the rules.
 `[]` means "a set of", and what it is said about may be a set already. Nothing is added for
 this; it falls out of the suffix applying to any type.
 
-```
+```text
 integer[][]     a set of sets of integers — a grid
 integer[][][]   a set of those — a cube
 ```
@@ -778,7 +783,7 @@ measuring one and assuming. A fixed-shape kind, indexed `grid[row, column]`, is 
 A function type is written with **`delegate`** — the result, then `delegate`, then what it
 takes:
 
-```
+```text
 integer delegate(integer)             takes an integer, yields an integer
 integer delegate(integer, integer)    takes two, yields one
 delegate(string)                      takes a string, yields nothing
@@ -795,7 +800,7 @@ The split is what lets these nest. A result may itself be a function type, and s
 `delegate` may follow a result, each one plainly begins another type rather than a
 declaration:
 
-```
+```text
 integer delegate(integer) delegate(integer)    takes an integer, yields a function
 ```
 
@@ -811,7 +816,7 @@ may be held without its signature being named:
 
 ```
 Function held = (integer n) yield n + 1;
-Function[] all = { held, Program.Twice, (string s) yield Console.WriteLine(s) };
+Function[] all = { held, (integer a, integer b) yield a + b, (string s) yield Console.WriteLine(s) };
 ```
 
 The set is what it is for: a set holds one type, so without a root there is no way to keep
@@ -882,7 +887,7 @@ wrong thing about what a character is.
 **Every model converts to `Model`**, whether or not it wrote `extends Model`. The two spellings
 declare the same model, so writing the implicit thing out changes nothing:
 
-```
+```text
 model Thing
 end model
 
@@ -902,7 +907,7 @@ through the wider name, and the squares would no longer all be squares.
 a `Square?` fits a `Shape?`, and an `integer?` fits a `real?` — each staying absent if that is
 what it was:
 
-```
+```text
 string? word = "abc";
 character[]? letters = word;      converts, and an absent word stays absent
 ```
@@ -943,7 +948,7 @@ call rather than a conversion the language admits.
 
 A local is declared with its type, or with `let` and a value to take the type from:
 
-```
+```text
 integer count = 0;
 integer count;              declared now, assigned before it is read
 let name = "Ada";           the value on the right says what it holds
@@ -960,7 +965,7 @@ rather than written, and it may be assigned again afterwards.
 loop's binding, a lambda's parameter, or a caught exception may not take a name already in
 use by a scope around it (`PC0237`):
 
-```
+```text
 let value = 1;
 begin
     let value = 2;          PC0237: 'value' is already the name of something here
@@ -973,7 +978,7 @@ let show = (integer items) yield items;    PC0237, for the same reason
 Two scopes that cannot see one another are not in conflict, so the same name may be used in
 each:
 
-```
+```text
 begin
     let value = 1;
 end
@@ -989,7 +994,7 @@ nothing the name could be confused with, so a marking would carry no information
 **A local may still carry a field's name.** Fields are never reached by a bare name — that is
 what `this.` is for — so the two never compete:
 
-```
+```text
 model Box
     public string name;
 
@@ -1010,7 +1015,7 @@ in an enclosing scope is always a few lines above, in the same body.
 
 `constant` marks a binding that never changes:
 
-```
+```text
 constant integer maxScore = 100;
 shared constant real Pi = 3.14159;
 ```
@@ -1030,7 +1035,7 @@ constant.
 
 A field is declared inside a model or structure, and is **private unless it says otherwise**:
 
-```
+```text
 model Account
     integer balance;                    private
     protected integer limit;            and anything extending Account
@@ -1067,6 +1072,8 @@ result:
 
 ```
 model Account
+    integer balance;
+
     public function Account(integer opening)
         this.balance = opening;
     end function
@@ -1089,7 +1096,7 @@ declaration sits says where to read it rather than when it exists — the same a
 What that costs is paid by `PC0405`. The locals such a function names come into being in order,
 so calling one from above a local it uses would read a place holding nothing yet:
 
-```
+```text
 Console.WriteLine(Doubled());       PC0405: 'Doubled' uses 'total', which is not ready
 integer total = 7;
 
@@ -1107,7 +1114,7 @@ calling it. Move the call below what it needs, or move what it needs above the c
 zeroing anything. Two diagnostics say it, because the two cases read differently: `PC0400`
 where no path assigns it, and `PC0401` where only some do.
 
-```
+```text
 integer n;
 Console.WriteLine(n);       PC0400: n was never assigned
 
@@ -1158,7 +1165,7 @@ rule costs a single-file program nothing. Projects only start to matter once one
 another, which is exactly when a boundary is worth having: without `internal`, a project
 reference would be nothing but a shorter way to list somebody else's folders.
 
-```
+```text
 public model Book                       Library, which references Books, may use this
     integer copies;                     Book alone
     internal integer shelf;             anything in Books
@@ -1227,7 +1234,7 @@ there is spelled `xor` here.
 
 **The operations on bits are written as words**, and take integers on both sides:
 
-```
+```text
 flags bitwise and mask      the bits both have
 flags bitwise or mask       the bits either has
 flags xor mask              the bits exactly one has
@@ -1302,7 +1309,7 @@ names no type at all.
 `x is T` asks whether a value is a `T`, and yields `boolean`. `x as T` converts if it can and
 yields `T?` — an optional, because the answer may be no.
 
-```
+```text
 if shape is Square
     Console.WriteLine("square");
 end if
@@ -1321,7 +1328,7 @@ run: `PC0334` for a test that is always true, `PC0327` for one that never can be
 
 `if ... then ... else` is an expression and produces a value:
 
-```
+```text
 let label = if score > 50 then "pass" else "fail";
 ```
 
@@ -1364,7 +1371,7 @@ end
 
 ### 6.2 Choosing
 
-```
+```text
 if ready
     Console.WriteLine("go");
 else if waiting
@@ -1381,7 +1388,7 @@ the whole chain closes with one `end if`.
 through to its statements only — there is no fall-through from one group to the next, so no
 `break` is needed to prevent it:
 
-```
+```text
 switch suit
     case Suit.Hearts:
     case Suit.Diamonds:
@@ -1410,7 +1417,7 @@ two members naming one value are handled together.
 
 **Every loop opens with `loop`**, and the word after it says which kind:
 
-```
+```text
 loop for i = 1 to 10            counts 1 through 10
 loop for i = 1 until 10         counts 1 through 9
 loop for i = 10 to 1 stepby -1  counts down
@@ -1471,7 +1478,7 @@ that every path yields.
 there is nothing else it could mean; the bound and the step are read again at the top of each
 turn, so `until x` is a condition about `x` as it stands rather than as it was:
 
-```
+```text
 integer limit = 10;
 
 loop for i = 1 until limit    three turns: the bound moves down to meet the counter
@@ -1506,7 +1513,7 @@ meaning it does not have.
 there is nothing about it for a `break` to end and no next turn for a `continue` to go to. Both
 pass straight through to the loop around them:
 
-```
+```text
 loop for i = 1 to 3
     switch i
         case 2:
@@ -1648,7 +1655,7 @@ A member is dispatched on the runtime type only where it says so. `virtual` perm
 overriding, `override` does it, and both words are required — an override that omits
 `override` is rejected rather than silently hiding the parent's member.
 
-```
+```text
 Shape shape = new Square(3);
 Console.WriteLine(shape.Area());     9, from Square
 ```
@@ -1678,6 +1685,12 @@ it wrote `extends`, so both may be overridden with no base named:
 
 ```
 model Tag
+    string label;
+
+    public function Tag(string named)
+        this.label = named;
+    end function
+
     public override string function ToString()
         yield "<" + this.label + ">";
     end function
@@ -1694,7 +1707,7 @@ prints its type name ([§3.3](#33-function-types) of the summary explains why th
 
 A **structure** is a value type. Assigning one copies it:
 
-```
+```text
 structure Point
     public integer x;
     public integer y;
@@ -1718,7 +1731,7 @@ Copying happens where a structure is **kept** — stored in a name, put in a set
 function, handed back from one. Reading one does not copy it, so reaching through a read to
 change what was read changes the original:
 
-```
+```text
 Point[] grid = {new Point(1, 2)};
 
 grid[0].x = 99;              the point in the set is now 99
@@ -1740,7 +1753,7 @@ is a question only a reference can answer, and a value is not somewhere a name p
 `==` on two models compares them **field by field, all the way down** — not by reference.
 Two separately built accounts with the same owner and balance are equal.
 
-```
+```text
 Reference.Equals(a, b)       true only if a and b are the same object
 a == b                       true if they hold the same values
 ```
@@ -1795,7 +1808,7 @@ offer a shape where it cannot. C# refuses the same thing for the same reason.
 
 ### 8.1 The three members
 
-```
+```text
 integer? found = Program.Search(items, 7);
 
 found.HasValue()      boolean: is there a value?
@@ -1815,7 +1828,7 @@ willing to say so.
 
 Inside a guard that has proved presence, the optional reads as its underlying type:
 
-```
+```text
 if found.HasValue()
     Console.WriteLine(found + 1);      found is an integer here
 end if
@@ -1825,7 +1838,7 @@ The compiler tracks this the same way it tracks definite assignment — forward,
 merge points. It also follows the negative case, so an early exit narrows the rest of the
 function:
 
-```
+```text
 if not found.HasValue()
     yield 0;
 end if
@@ -1841,7 +1854,7 @@ and it is not only about guards: where one arm leaves, what the other one stored
 presence exactly as a guard does, and it survives a join only where every way through the branch
 stored one:
 
-```
+```text
 integer? n;
 if ready
     n = 5;
@@ -1861,7 +1874,7 @@ at all; a field is not, because any call in between could replace it and a check
 call says nothing about after it. A local is in the same position the moment a lambda or a nested
 function assigns it, since that function holds the name and may be called at any point:
 
-```
+```text
 integer? n;
 n = 5;
 
@@ -1891,17 +1904,37 @@ Narrowing settles it. Inside the guard the receiver is a `Temperature`, so every
 on it is the `Temperature`'s:
 
 ```
-Temperature? reading = new Temperature(21.5);
+model Temperature
+    real degrees;
 
-# No guard, so this is still an optional: Value() unwraps it.
-let t = reading.Value();            # t is a Temperature
-Console.WriteLine(t.Describe());
+    public function Temperature(real at)
+        this.degrees = at;
+    end function
 
-if reading.HasValue()
-    # Narrowed, so this is a Temperature: Value() is the model's.
-    let degrees = reading.Value();  # degrees is a real
-    Console.WriteLine(reading.Describe());
-end if
+    public real function Value()
+        yield this.degrees;
+    end function
+
+    public string function Describe()
+        yield this.degrees + " degrees";
+    end function
+end model
+
+shared model Program
+    function Main()
+        Temperature? reading = new Temperature(21.5);
+
+        # No guard, so this is still an optional: Value() unwraps it.
+        let t = reading.Value();            # t is a Temperature
+        Console.WriteLine(t.Describe());
+
+        if reading.HasValue()
+            # Narrowed, so this is a Temperature: Value() is the model's.
+            let degrees = reading.Value();  # degrees is a real
+            Console.WriteLine(reading.Describe());
+        end if
+    end function
+end model
 ```
 
 Anything the narrowed type does not declare still falls back to the optional's members, so
@@ -1911,7 +1944,7 @@ claims for itself is taken from the optional.
 The question does not arise before narrowing. An optional exposes its own three members and
 nothing else, so the underlying type's members are unreachable until presence is proven:
 
-```
+```text
 Temperature? t = new Temperature(21.5);
 
 let unwrapped = t.Value();          # the optional's Value; unwrapped is a Temperature
@@ -1931,10 +1964,33 @@ a set, passed to another function, and handed back from one.
 A function that already has a name is already a value and needs no lambda around it:
 
 ```
-integer delegate(integer) tripled = Program.Triple;
+model Counter
+    integer at;
 
-Counter counter = new Counter(10);
-integer delegate() advance = counter.Next;
+    public function Counter(integer from)
+        this.at = from;
+    end function
+
+    public integer function Next()
+        this.at = this.at + 1;
+        yield this.at;
+    end function
+end model
+
+shared model Program
+    function Main()
+        integer delegate(integer) tripled = Program.Triple;
+
+        Counter counter = new Counter(10);
+        integer delegate() advance = counter.Next;
+
+        Console.WriteLine(tripled(2) + advance());
+    end function
+
+    integer function Triple(integer n)
+        yield n * 3;
+    end function
+end model
 ```
 
 A member reached through an instance is that member *bound to that instance*, so calling it
@@ -1943,7 +1999,7 @@ later still knows which one it belongs to.
 **A lambda closes over the variables around it.** The function handed back below remembers
 `by`, which belonged to the call that made it:
 
-```
+```text
 integer delegate(integer) function AdderOf(integer by)
     yield (n) yield n + by;
 end function
@@ -1955,7 +2011,7 @@ Console.WriteLine(addFive(3));            8
 
 **That first line comes apart in four pieces**, and each word says which:
 
-```
+```text
 integer delegate(integer)   function   AdderOf   (integer by)
 └──── the result type ───┘  └keyword┘  └─name─┘  └parameter─┘
 ```
@@ -2009,7 +2065,7 @@ Four things say it, and between them they cover every place a lambda can be writ
 declared type, the element type of a set being built, the parameter of the function being
 called, and the result of the function doing the yielding.
 
-```
+```text
 integer delegate(integer)[] steps = { (n) yield n + 1 };     # element type
 Console.WriteLine(Program.Apply(numbers, (n) yield n * 2));  # parameter
 yield (n) yield n + by;                                      # result
@@ -2109,6 +2165,8 @@ is the language's own guard rather than the machine giving out.
 ### 10.2 Throwing and catching
 
 ```
+integer[] numbers = {1, 2, 3};
+
 try
     Console.WriteLine(numbers[10]);
 catch IndexOutOfRangeException problem
@@ -2186,7 +2244,7 @@ rather than something the language does, and must be declared exactly once ([§1
 names to reach members through, and naming one where a value's type belongs is an error
 (`PC0233`), as it is for any `shared model`, which has no instances by definition:
 
-```
+```text
 Math m;              PC0233: nothing can be of this type
 fraction half = 1|2;  the type; Fraction is the model beside it
 ```
@@ -2266,7 +2324,7 @@ reads a little oddly and is much the smaller of the two problems.
 
 A program is run with `pc run`, which checks it and executes it:
 
-```
+```text
 pc run hello.pc                 one file, with the shared code beside it
 pc run bookshelf/Program.pc     the same rule across a folder — see §12.1
 pc run app.pcp                  a project file listing what to build
@@ -2318,7 +2376,7 @@ the others. The rule does not descend into subfolders.
 **A project file names files and folders.** A `.pcp` lists what a build is made of, across as
 many folders as it names:
 
-```
+```text
 # A storefront, spread across folders.
 
 project Storefront
@@ -2340,7 +2398,7 @@ is compiled, and its vocabulary is only `project`, `source`, `reference`, and `e
 **A project names another project with `reference`.** The referenced project's types are then
 available, exactly as though they were declared in this one:
 
-```
+```text
 project Storefront
     reference ../Core/Core.pcp
     source Program.pc
@@ -2421,7 +2479,7 @@ its own file list.
 
 **A project names it**, and only needs to where there is a choice:
 
-```
+```text
 project tools
     entry Tools.Program
     source Tools.pc
@@ -2456,7 +2514,7 @@ deliberately rather than fallen into.
 
 A namespace is written in either of two forms:
 
-```
+```text
 namespace Shapes;              file-scoped: everything after it belongs to Shapes
 
 namespace Shapes               block: closes with "end namespace"
@@ -2487,7 +2545,7 @@ order between themselves. It is reported where the name is read, not at the `usi
 
 Writing the namespace in front reaches past all of that:
 
-```
+```text
 Shapes.Circle flat = new Shapes.Circle();
 Solids.Circle round = new Solids.Circle();
 ```
@@ -2511,7 +2569,7 @@ from a namespace holding a type. A run that reaches no type is a value, which is
 Both forms may appear in one file, and a block written under a file-scoped one is **a child of
 it**:
 
-```
+```text
 namespace App;
 
 namespace Models              this is App.Models
