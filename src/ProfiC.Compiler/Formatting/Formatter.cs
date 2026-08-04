@@ -53,6 +53,24 @@ public static class Formatter
     }
 
     /// <summary>
+    /// <para>Where one line begins, in spaces, for a caller placing that line rather than
+    /// rewriting the file.</para>
+    /// <para><b>Not the same question <see cref="Format"/> answers.</b> Format writes an empty
+    /// line empty, because spaces on a line with nothing on it are not layout — and somebody who
+    /// has just pressed Enter is standing on exactly such a line, wanting to know where it
+    /// begins. Asking Format would move their cursor to the left margin.</para>
+    /// <para>Null where the line is not this formatter's to place: inside a block string those
+    /// spaces are characters the program holds, and inside a block comment they are prose
+    /// somebody laid out.</para>
+    /// </summary>
+    public static int? IndentOf(SourceText source, int line)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return line >= 1 && line <= source.LineCount ? new Layout(source).Placing(line) : null;
+    }
+
+    /// <summary>
     /// <para>Where each line's content should begin, in spaces.</para>
     /// <para>Worked out in one walk down the file, because a wrapped line is placed against the
     /// bracket it is inside and that bracket's own line may have been wrapped too. Reading the
@@ -133,6 +151,13 @@ public static class Formatter
             }
         }
 
+        /// <summary>
+        /// Where this line begins, or nothing where its spacing is the writer's rather than
+        /// this formatter's.
+        /// </summary>
+        public int? Placing(int line) =>
+            _asWritten[line] ? null : Math.Max(0, _indent[line]);
+
         /// <summary>The indent a line was written with, for the lines this one does not place.</summary>
         private int AsFound(int line)
         {
@@ -141,9 +166,16 @@ public static class Formatter
             return text.Length - text.TrimStart(' ', '\t').Length;
         }
 
-        /// <summary>A bracket that is still open, and what lines inside it are measured against.</summary>
+        /// <summary>
+        /// <para>A bracket that is still open, and what lines inside it are measured against.
+        /// </para>
+        /// <para>Two columns, because the two kinds of line inside a bracket answer to different
+        /// things. <c>Anchor</c> is where the first item begins, and every later item lines up
+        /// under it. <c>Column</c> is the bracket itself, and a line carrying another on steps in
+        /// from there.</para>
+        /// </summary>
         private readonly record struct Bracket(
-            TokenType Closer, int Opener, int Anchor, int Constructs);
+            TokenType Closer, int Opener, int Anchor, int Column, int Constructs);
 
         /// <summary>
         /// <para>Reads the file a line at a time and settles where each one begins.</para>
@@ -266,7 +298,14 @@ public static class Formatter
                 && previous[^1].Type is TokenType.Comma or TokenType.LeftParen
                     or TokenType.LeftBracket or TokenType.LeftBrace;
 
-            return beginning ? bracket.Anchor : bracket.Anchor + IndentWidth;
+            // An item lines up with the item above it, wherever that fell. A continuation takes
+            // the first tab stop past the bracket instead — past it, so it cannot be read as an
+            // item, and on a stop, because that is the column an editor puts a wrapped line at
+            // and anything else leaves every one of them a space or two adrift of where typing
+            // it would have landed.
+            return beginning
+                ? bracket.Anchor
+                : bracket.Column + IndentWidth - (bracket.Column % IndentWidth);
         }
 
         /// <summary>
@@ -326,10 +365,14 @@ public static class Formatter
 
         /// <summary>
         /// <para>What lines inside this bracket are measured against.</para>
-        /// <para>Where something follows the bracket on its own line, that something is what the
-        /// lines below line up with. Where the bracket ends its line there is nothing to line up
-        /// with, so they take one level in from the line that opened it instead — which has the
-        /// advantage of not depending on how long the name in front of the bracket is.</para>
+        /// <para>Where something follows the bracket on its own line, that something is what
+        /// later items line up with, and the bracket is what a carried-on line steps in from.
+        /// The two differ by one column — the bracket, and the character after it — and that one
+        /// column is doing work: an item sits level with the item above it, and a continuation
+        /// sits at a depth no item ever occupies, so neither can be read as the other.</para>
+        /// <para>Where the bracket ends its line there is nothing to line up with, so both take
+        /// one level in from the line that opened it instead — which has the advantage of not
+        /// depending on how long the name in front of the bracket is.</para>
         /// </summary>
         private static Bracket Measure(
             IReadOnlyList<Token> line,
@@ -340,8 +383,13 @@ public static class Formatter
             int constructs) =>
             at + 1 < line.Count
                 ? new Bracket(
-                    closer, indent, line[at + 1].Span.Start.Column - 1 + shift, constructs)
-                : new Bracket(closer, indent, indent + IndentWidth, constructs);
+                    closer,
+                    indent,
+                    line[at + 1].Span.Start.Column - 1 + shift,
+                    line[at].Span.Start.Column - 1 + shift,
+                    constructs)
+                : new Bracket(
+                    closer, indent, indent + IndentWidth, indent + IndentWidth, constructs);
 
         private static TokenType? Bracketing(Token token) => token.Type switch
         {

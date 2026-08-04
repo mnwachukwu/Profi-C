@@ -7,13 +7,15 @@ A teaching language that compiles to CIL and runs on .NET.
 
 The name is a nod to Profisee, the company I work for. It is pronounced "prophecy" — so
 "Profi-C" reads the same way out loud. It is also a pun, because I put a "C" in it. Har, har.
+This project is not endorsed by or affiliated with Profisee. I created this in my spare time with
+my own resources.
 
-This project grew out of a course assignment for my Software Engineering degree where we created
-a lexer which then fed a semantic parser. We stopped short of creating an interpreter or compiler
-however, so I took it upon myself to implement AST generation in the parser then implement an 
-interpreter to walk that tree.
+This project grew out of a course project for a class I took for my Software Engineering degree
+where we created a lexer which then fed a semantic parser. We stopped short of creating an
+interpreter or compiler however (summer semester crunch), so I took it upon myself to implement
+AST generation in the parser then implement an interpreter to walk that tree.
 
-This language is heavily influenced by and implemented in C#.
+This language is heavily influenced by and implemented with C#.
 
 **There is a VS Code extension, and it lives in its own repository:**
 **[Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors).** It gives a `.pc` file

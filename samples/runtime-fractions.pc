@@ -22,7 +22,7 @@ shared model Program
         loop for d = 2 to 6
             let piece = Fraction.Create(1, d);
             Console.WriteLine("  1 over " + d + " is " + piece
-                                  + ", and " + d + " of them make " + piece * Fraction.Create(d));
+                                + ", and " + d + " of them make " + piece * Fraction.Create(d));
         end loop
 
         Console.WriteLine();

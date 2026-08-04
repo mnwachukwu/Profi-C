@@ -248,7 +248,7 @@ shared model Program
         first.Next();
 
         Console.WriteLine("after raising the first: "
-                              + readFirst() + " " + readSecond());
+                            + readFirst() + " " + readSecond());
     end function
 
     # ---- Naming one that already exists --------------------------------------------

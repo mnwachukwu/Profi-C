@@ -83,16 +83,181 @@ each.
 | `IOException` | Anything that goes wrong with a file except its absence |
 | `RecursionTooDeepException` | Recursion with no base case — **and the one nothing catches**, since there is nothing useful to do about it. A `catch` naming it is reported (`PC0344`) |
 
-## Every member, A–Z
+## Every member, by what it is on
 
-One row per name. Where a name is on more than one type, the row says so — `Insert` is one idea
-answered by both a string and a set, and reading them apart would hide that.
+Grouped by the type you reach it through, because that is what you know when you go looking: you
+have a string in hand, or a set, and you want to know what it will answer.
+
+Within a group the names are alphabetical. **A name on more than one type appears under each of
+them**, so a group can be read straight down without having to know what else exists — and the
+*On* column stays wherever a group has more than one owner, since `Insert` is one idea answered by
+both a string and a set and reading them apart would hide that.
+
+- [The Profi-C standard library](#the-profi-c-standard-library)
+  - [Every type](#every-type)
+    - [Types you write down](#types-you-write-down)
+    - [Names you reach members through](#names-you-reach-members-through)
+    - [Names for what went wrong](#names-for-what-went-wrong)
+  - [Every member, by what it is on](#every-member-by-what-it-is-on)
+    - [On every value](#on-every-value)
+    - [On a string](#on-a-string)
+    - [On a set](#on-a-set)
+    - [On an optional](#on-an-optional)
+    - [On a number](#on-a-number)
+    - [Math](#math)
+    - [Random](#random)
+    - [Dates and times](#dates-and-times)
+    - [Input and output](#input-and-output)
+    - [On an exception](#on-an-exception)
+  - [The pages](#the-pages)
+  - [How to read a signature](#how-to-read-a-signature)
+  - [Two kinds of member](#two-kinds-of-member)
+  - [What the library does not have](#what-the-library-does-not-have)
+  - [Where the shapes come from](#where-the-shapes-come-from)
+
+### On every value
 
 | Member | On | Yields | Where |
 |---|---|---|---|
-| `Abs(x)` | `Math` | the type given | [Comparing and sizing](math.md#comparing-and-sizing) |
-| `Acos(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Acosh(real)` | `Math` | `real` | [Angles](math.md#angles) |
+| `Equals(anything)` | every value | `boolean` | [Members](every-value.md#members) |
+| `Equals(a, b)` | `Reference` | `boolean` | [Reference.Equals](every-value.md#referenceequals) |
+| `ToInteger()` | an enumeration | `integer` | [Enumerations](every-value.md#enumerations) |
+| `ToString()` | every value | `string` | [Members](every-value.md#members) |
+
+### On a string
+
+| Member | On | Yields | Where |
+|---|---|---|---|
+| `Capitalize()` | `string` | `string` | [Case](text.md#case) |
+| `Contains(what)` | `string` | `boolean` | [Asking about it](text.md#asking-about-it) |
+| `Count` | `string` | `integer` | [Asking about it](text.md#asking-about-it) |
+| `Empty` | `String` | `string` | [String](text.md#string) |
+| `IndexOf(what)` | `string` | `integer` | [Asking about it](text.md#asking-about-it) |
+| `Insert(what)` | `string` | `string` | [Building a new one](text.md#building-a-new-one) |
+| `InsertAt(where, what)` | `string` | `string` | [Building a new one](text.md#building-a-new-one) |
+| `Remove(what)` | `string` | `string` | [Building a new one](text.md#building-a-new-one) |
+| `RemoveAt(where)` | `string` | `string` | [Building a new one](text.md#building-a-new-one) |
+| `Replace(what, with)` | `string` | `string` | [Building a new one](text.md#building-a-new-one) |
+| `Split(separator)` | `string` | `string[]` | [Splitting and joining](text.md#splitting-and-joining) |
+| `Subset(start)` · `Subset(start, end)` | `string` | `string` | [Taking a piece](text.md#taking-a-piece) |
+| `Substring(start, length)` | `string` | `string` | [Taking a piece](text.md#taking-a-piece) |
+| `ToBoolean()` | `string` | `boolean?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToCharacter()` | `string` | `character?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToCharacters()` | `string` | `character[]` | [Splitting and joining](text.md#splitting-and-joining) |
+| `ToFloat()` | `string` | `float?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToFraction()` | `string` | `fraction?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToInteger()` | `string` | `integer?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToLower()` | `string` | `string` | [Case](text.md#case) |
+| `ToReal()` | `string` | `real?` | [Reading a value back out](text.md#reading-a-value-back-out) |
+| `ToUpper()` | `string` | `string` | [Case](text.md#case) |
+| `Trim(...)` | `string` | `string` | [Trimming](text.md#trimming) |
+| `TrimEnd(...)` | `string` | `string` | [Trimming](text.md#trimming) |
+| `TrimStart(...)` | `string` | `string` | [Trimming](text.md#trimming) |
+
+### On a set
+
+The `Trim` family is on a set of optionals only — there is nothing empty to drop anywhere else.
+
+| Member | On | Yields | Where |
+|---|---|---|---|
+| `Clear()` | `T[]` | nothing | [Changing it](sets.md#changing-it) |
+| `Contains(what)` | `T[]` | `boolean` | [Asking about it](sets.md#asking-about-it) |
+| `Count` | `T[]` | `integer` | [Asking about it](sets.md#asking-about-it) |
+| `Distinct()` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
+| `Except(other)` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
+| `IndexOf(what)` | `T[]` | `integer` | [Asking about it](sets.md#asking-about-it) |
+| `Insert(what)` | `T[]` | nothing | [Changing it](sets.md#changing-it) |
+| `InsertAt(where, what)` | `T[]` | nothing | [Changing it](sets.md#changing-it) |
+| `Intersect(other)` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
+| `Join(separator)` | `T[]` | `string` | [Joining](sets.md#joining) |
+| `Remove(what)` | `T[]` | `boolean` | [Changing it](sets.md#changing-it) |
+| `RemoveAt(where)` | `T[]` | nothing | [Changing it](sets.md#changing-it) |
+| `Subset(start)` · `Subset(start, end)` | `T[]` | `T[]` | [Taking a run](sets.md#taking-a-run) |
+| `Trim()` | `T?[]` | `T?[]` | [Dropping the empties](sets.md#dropping-the-empties) |
+| `TrimAll()` | `T?[]` | `T[]` | [Dropping the empties](sets.md#dropping-the-empties) |
+| `TrimEnd()` | `T?[]` | `T?[]` | [Dropping the empties](sets.md#dropping-the-empties) |
+| `TrimStart()` | `T?[]` | `T?[]` | [Dropping the empties](sets.md#dropping-the-empties) |
+| `Union(other)` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
+
+### On an optional
+
+Three, and there are only three.
+
+| Member | Yields | Where |
+|---|---|---|
+| `HasValue()` | `boolean` | [Members](optionals.md#members) |
+| `Or(fallback)` | `T` · `T?` | [Or supplies a fallback](optionals.md#or-supplies-a-fallback) |
+| `Value()` | `T` | [Members](optionals.md#members) |
+
+### On a number
+
+The capitalized name beside each keyword is where that type's own facts live, since a reserved
+word cannot stand in front of a dot.
+
+| Member | On | Yields | Where |
+|---|---|---|---|
+| `Create(...)` | `Fraction` | `fraction` | [Fraction](numbers.md#fraction) |
+| `Format(pattern)` | every number | `string` | [Writing a number out](numbers.md#writing-a-number-out) |
+| `Infinity` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
+| `MaxValue` | `Integer` · `Real` · `Float` | that type | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
+| `MinValue` | `Integer` · `Real` · `Float` | that type | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
+| `NegativeInfinity` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
+| `NotANumber` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
+| `Parse(text)` | `Integer` · `Real` · `Float` · `Boolean` · `Character` · `Fraction` | that type, optional | [What each type knows](numbers.md#what-each-type-knows-about-itself) · [Boolean and Character](text.md#boolean-and-character) |
+| `Reciprocal()` | `fraction` | `fraction` | [On a number](numbers.md#members-on-a-number) |
+| `ToFloat()` | `integer` · `real` · `fraction` | `float` | [On a number](numbers.md#members-on-a-number) |
+| `ToFraction()` | `float` | `fraction` | [On a number](numbers.md#members-on-a-number) |
+| `ToReal()` | `float` · `fraction` | `real` | [On a number](numbers.md#members-on-a-number) |
+
+### Math
+
+| Member | Yields | Where |
+|---|---|---|
+| `Abs(x)` | the type given | [Comparing and sizing](math.md#comparing-and-sizing) |
+| `Acos(real)` | `real` | [Angles](math.md#angles) |
+| `Acosh(real)` | `real` | [Angles](math.md#angles) |
+| `Asin(real)` | `real` | [Angles](math.md#angles) |
+| `Asinh(real)` | `real` | [Angles](math.md#angles) |
+| `Atan(real)` | `real` | [Angles](math.md#angles) |
+| `Atan2(y, x)` | `real` | [Angles](math.md#angles) |
+| `Atanh(real)` | `real` | [Angles](math.md#angles) |
+| `Cbrt(real)` | `real` | [Roots and powers](math.md#roots-and-powers) |
+| `Ceiling(x)` | `integer` | [Rounding](math.md#rounding) |
+| `Cos(real)` | `real` | [Angles](math.md#angles) |
+| `Cosh(real)` | `real` | [Angles](math.md#angles) |
+| `E` | `real` | [Constants](math.md#constants) |
+| `Factorial(integer)` | `integer` | [Roots and powers](math.md#roots-and-powers) |
+| `Floor(x)` | `integer` | [Rounding](math.md#rounding) |
+| `Log(x)` · `Log(x, base)` | `real` | [Logarithms](math.md#logarithms) |
+| `Log10(x)` | `real` | [Logarithms](math.md#logarithms) |
+| `Log2(x)` | `real` | [Logarithms](math.md#logarithms) |
+| `Max(a, b)` | the type given | [Comparing and sizing](math.md#comparing-and-sizing) |
+| `Min(a, b)` | the type given | [Comparing and sizing](math.md#comparing-and-sizing) |
+| `Pi` | `real` | [Constants](math.md#constants) |
+| `Pow(x, by)` | `real` | [Roots and powers](math.md#roots-and-powers) |
+| `Root(x, degree)` | `real` | [Roots and powers](math.md#roots-and-powers) |
+| `Round(x)` · `Round(x, places)` | `integer` · the type given | [Rounding](math.md#rounding) |
+| `Sin(real)` | `real` | [Angles](math.md#angles) |
+| `Sinh(real)` | `real` | [Angles](math.md#angles) |
+| `Sqrt(real)` | `real` | [Roots and powers](math.md#roots-and-powers) |
+| `Tan(real)` | `real` | [Angles](math.md#angles) |
+| `Tanh(real)` | `real` | [Angles](math.md#angles) |
+
+### Random
+
+Every one is on a `Random` you hold, and on the name itself for a program that wants one number
+and no generator to keep.
+
+| Member | Yields | Where |
+|---|---|---|
+| `new Random()` · `new Random(seed)` | `Random` | [Making one](random.md#making-one) |
+| `Next(...)` | `integer` | [Asking for a number](random.md#asking-for-a-number) |
+| `NextDouble()` | `real` | [Asking for a number](random.md#asking-for-a-number) |
+
+### Dates and times
+
+| Member | On | Yields | Where |
+|---|---|---|---|
 | `Add(TimeSpan)` | `DateTime` · `TimeSpan` | the receiver's type | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
 | `AddDays(n)` | `DateTime` · `Date` | the receiver's type | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
 | `AddHours(real)` | `DateTime` · `Time` | the receiver's type | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
@@ -100,25 +265,7 @@ answered by both a string and a set, and reading them apart would hide that.
 | `AddMonths(integer)` | `DateTime` · `Date` | the receiver's type | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
 | `AddSeconds(real)` | `DateTime` | `DateTime` | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
 | `AddYears(integer)` | `DateTime` · `Date` | the receiver's type | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
-| `Append(path, text)` | `File` | nothing | [Writing](input-output.md#writing) |
-| `Asin(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Asinh(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Atan(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Atan2(y, x)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Atanh(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Capitalize()` | `string` | `string` | [Case](text.md#case) |
-| `Cbrt(real)` | `Math` | `real` | [Roots and powers](math.md#roots-and-powers) |
-| `Ceiling(x)` | `Math` | `integer` | [Rounding](math.md#rounding) |
-| `Changed(path)` | `File` | `DateTime?` | [Managing](input-output.md#managing) |
-| `Clear()` | `T[]` | nothing | [Changing it](sets.md#changing-it) |
 | `CompareTo(same type)` | `DateTime` · `Date` · `Time` · `TimeSpan` | `integer` | [Comparing](dates-and-times.md#comparing) |
-| `Contains(what)` | `string` · `T[]` | `boolean` | [Text](text.md#asking-about-it) · [Sets](sets.md#asking-about-it) |
-| `Copy(from, to)` | `File` | nothing | [Managing](input-output.md#managing) |
-| `Cos(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Cosh(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Count` | `string` · `T[]` | `integer` | [Text](text.md#asking-about-it) · [Sets](sets.md#asking-about-it) |
-| `Create(...)` | `Fraction` | `fraction` | [Fraction](numbers.md#fraction) |
-| `Current` | `Directory` | `string` | [Directory](input-output.md#directory) |
 | `Date` | `DateTime` | `Date` | [Moving between the four](dates-and-times.md#moving-between-the-four) |
 | `new Date(y, m, d)` | `Date` | `Date` | [Making one](dates-and-times.md#making-one) |
 | `new DateTime(...)` | `DateTime` | `DateTime` | [Making one](dates-and-times.md#making-one) |
@@ -126,104 +273,64 @@ answered by both a string and a set, and reading them apart would hide that.
 | `DayOfWeek` | `DateTime` · `Date` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
 | `DayOfYear` | `DateTime` · `Date` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
 | `Days` | `TimeSpan` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
-| `Delete(path)` | `File` · `Directory` | `boolean` | [Managing](input-output.md#managing) · [Directory](input-output.md#directory) |
-| `Distinct()` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
 | `Duration()` | `TimeSpan` | `TimeSpan` | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
-| `E` | `Math` | `real` | [Constants](math.md#constants) |
-| `Empty` | `String` | `string` | [String](text.md#string) |
-| `Equals(anything)` | every value | `boolean` | [Members](every-value.md#members) |
-| `Except(other)` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
-| `Exists(path)` | `File` · `Directory` | `boolean` | [Managing](input-output.md#managing) · [Directory](input-output.md#directory) |
-| `Factorial(integer)` | `Math` | `integer` | [Roots and powers](math.md#roots-and-powers) |
-| `Files(path)` | `Directory` | `string[]?` | [Directory](input-output.md#directory) |
-| `Floor(x)` | `Math` | `integer` | [Rounding](math.md#rounding) |
-| `Folders(path)` | `Directory` | `string[]?` | [Directory](input-output.md#directory) |
-| `Format(pattern)` | every number · `DateTime` · `Date` · `Time` · `TimeSpan` | `string` | [Writing a number out](numbers.md#writing-a-number-out) · [Writing one out](dates-and-times.md#writing-one-out-and-reading-one-back) |
+| `Format(pattern)` | `DateTime` · `Date` · `Time` · `TimeSpan` | `string` | [Writing one out](dates-and-times.md#writing-one-out-and-reading-one-back) |
 | `FromDateTime(DateTime)` | `Date` · `Time` | the receiver's type | [Moving between the four](dates-and-times.md#moving-between-the-four) |
 | `FromDays(real)` | `TimeSpan` | `TimeSpan` | [From an amount](dates-and-times.md#making-a-timespan-from-an-amount) |
 | `FromHours(real)` | `TimeSpan` | `TimeSpan` | [From an amount](dates-and-times.md#making-a-timespan-from-an-amount) |
 | `FromMinutes(real)` | `TimeSpan` | `TimeSpan` | [From an amount](dates-and-times.md#making-a-timespan-from-an-amount) |
 | `FromSeconds(real)` | `TimeSpan` | `TimeSpan` | [From an amount](dates-and-times.md#making-a-timespan-from-an-amount) |
-| `HasValue()` | `T?` | `boolean` | [Members](optionals.md#members) |
 | `Hour` | `DateTime` · `Time` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
 | `Hours` | `TimeSpan` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
-| `IndexOf(what)` | `string` · `T[]` | `integer` | [Text](text.md#asking-about-it) · [Sets](sets.md#asking-about-it) |
-| `Infinity` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
-| `Insert(what)` | `string` · `T[]` | `string` · nothing | [Text](text.md#building-a-new-one) · [Sets](sets.md#changing-it) |
-| `InsertAt(where, what)` | `string` · `T[]` | `string` · nothing | [Text](text.md#building-a-new-one) · [Sets](sets.md#changing-it) |
-| `Intersect(other)` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
-| `Join(separator)` | `T[]` | `string` | [Joining](sets.md#joining) |
-| `Log(x)` · `Log(x, base)` | `Math` | `real` | [Logarithms](math.md#logarithms) |
-| `Log10(x)` | `Math` | `real` | [Logarithms](math.md#logarithms) |
-| `Log2(x)` | `Math` | `real` | [Logarithms](math.md#logarithms) |
-| `Max(a, b)` | `Math` | the type given | [Comparing and sizing](math.md#comparing-and-sizing) |
-| `MaxValue` | `Integer` · `Real` · `Float` | that type | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
-| `Message()` | every exception | `string` | [The member every exception carries](exceptions.md#the-member-every-exception-carries) |
-| `Min(a, b)` | `Math` | the type given | [Comparing and sizing](math.md#comparing-and-sizing) |
-| `MinValue` | `Integer` · `Real` · `Float` | that type | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
 | `Minute` | `DateTime` · `Time` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
 | `Minutes` | `TimeSpan` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
 | `Month` | `DateTime` · `Date` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
-| `Move(from, to)` | `File` | nothing | [Managing](input-output.md#managing) |
 | `Negate()` | `TimeSpan` | `TimeSpan` | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
-| `NegativeInfinity` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
-| `Next(...)` | `Random` | `integer` | [Asking for a number](random.md#asking-for-a-number) |
-| `NextDouble()` | `Random` | `real` | [Asking for a number](random.md#asking-for-a-number) |
-| `NotANumber` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
 | `Now` | `DateTime` · `Time` | that type | [Reading the clock](dates-and-times.md#reading-the-clock) |
-| `Or(fallback)` | `T?` | `T` · `T?` | [Or supplies a fallback](optionals.md#or-supplies-a-fallback) |
-| `Parse(text)` | `Integer` · `Real` · `Float` · `Boolean` · `Character` · `Fraction` · `DateTime` · `Date` · `Time` · `TimeSpan` | that type, optional | [Reading a value back out](text.md#reading-a-value-back-out) · [Reading one back](dates-and-times.md#writing-one-out-and-reading-one-back) |
-| `Pi` | `Math` | `real` | [Constants](math.md#constants) |
-| `Pow(x, by)` | `Math` | `real` | [Roots and powers](math.md#roots-and-powers) |
-| `new Random()` · `new Random(seed)` | `Random` | `Random` | [Making one](random.md#making-one) |
-| `Read()` · `Read(path)` | `Console` · `File` | `string?` | [Console](input-output.md#console) · [Reading](input-output.md#reading) |
-| `ReadLines(path)` | `File` | `string[]?` | [Reading](input-output.md#reading) |
-| `Reciprocal()` | `fraction` | `fraction` | [On a number](numbers.md#members-on-a-number) |
-| `Remove(what)` | `string` · `T[]` | `string` · `boolean` | [Text](text.md#building-a-new-one) · [Sets](sets.md#changing-it) |
-| `RemoveAt(where)` | `string` · `T[]` | `string` · nothing | [Text](text.md#building-a-new-one) · [Sets](sets.md#changing-it) |
-| `Replace(what, with)` | `string` | `string` | [Building a new one](text.md#building-a-new-one) |
-| `Root(x, degree)` | `Math` | `real` | [Roots and powers](math.md#roots-and-powers) |
-| `Round(x)` · `Round(x, places)` | `Math` | `integer` · the type given | [Rounding](math.md#rounding) |
+| `Parse(text)` | `DateTime` · `Date` · `Time` · `TimeSpan` | that type, optional | [Reading one back](dates-and-times.md#writing-one-out-and-reading-one-back) |
 | `Second` | `DateTime` · `Time` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
 | `Seconds` | `TimeSpan` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
-| `Size(path)` | `File` | `integer?` | [Managing](input-output.md#managing) |
-| `Sin(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Sinh(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Split(separator)` | `string` | `string[]` | [Splitting and joining](text.md#splitting-and-joining) |
-| `Sqrt(real)` | `Math` | `real` | [Roots and powers](math.md#roots-and-powers) |
-| `Subset(start)` · `Subset(start, end)` | `string` · `T[]` | `string` · `T[]` | [Text](text.md#taking-a-piece) · [Sets](sets.md#taking-a-run) |
-| `Substring(start, length)` | `string` | `string` | [Taking a piece](text.md#taking-a-piece) |
 | `Subtract(...)` | `DateTime` · `TimeSpan` | `DateTime` · `TimeSpan` | [Moving forward and back](dates-and-times.md#moving-forward-and-back) |
-| `Tan(real)` | `Math` | `real` | [Angles](math.md#angles) |
-| `Tanh(real)` | `Math` | `real` | [Angles](math.md#angles) |
 | `Time` | `DateTime` | `Time` | [Moving between the four](dates-and-times.md#moving-between-the-four) |
 | `new Time(h, m)` · `new Time(h, m, s)` | `Time` | `Time` | [Making one](dates-and-times.md#making-one) |
 | `new TimeSpan(...)` | `TimeSpan` | `TimeSpan` | [Making one](dates-and-times.md#making-one) |
-| `ToBoolean()` | `string` | `boolean?` | [Reading a value back out](text.md#reading-a-value-back-out) |
-| `ToCharacter()` | `string` | `character?` | [Reading a value back out](text.md#reading-a-value-back-out) |
-| `ToCharacters()` | `string` | `character[]` | [Splitting and joining](text.md#splitting-and-joining) |
 | `ToDateTime(Time)` | `Date` | `DateTime` | [Moving between the four](dates-and-times.md#moving-between-the-four) |
-| `ToFloat()` | `integer` · `real` · `fraction` · `string` | `float` · `float?` | [On a number](numbers.md#members-on-a-number) · [Reading a value back out](text.md#reading-a-value-back-out) |
-| `ToFraction()` | `float` · `string` | `fraction` · `fraction?` | [On a number](numbers.md#members-on-a-number) · [Reading a value back out](text.md#reading-a-value-back-out) |
-| `ToInteger()` | `string` · an enumeration | `integer?` · `integer` | [Reading a value back out](text.md#reading-a-value-back-out) · [Enumerations](every-value.md#enumerations) |
-| `ToLower()` | `string` | `string` | [Case](text.md#case) |
-| `ToReal()` | `float` · `fraction` · `string` | `real` · `real?` | [On a number](numbers.md#members-on-a-number) · [Reading a value back out](text.md#reading-a-value-back-out) |
-| `ToString()` | every value | `string` | [Members](every-value.md#members) |
 | `ToTimeSpan()` | `Time` | `TimeSpan` | [Moving between the four](dates-and-times.md#moving-between-the-four) |
-| `ToUpper()` | `string` | `string` | [Case](text.md#case) |
 | `Today` | `DateTime` · `Date` | that type | [Reading the clock](dates-and-times.md#reading-the-clock) |
 | `TotalDays` · `TotalHours` · `TotalMinutes` · `TotalSeconds` | `TimeSpan` | `real` | [Reading the parts](dates-and-times.md#reading-the-parts) |
-| `Trim(...)` | `string` · `T?[]` | `string` · `T?[]` | [Trimming](text.md#trimming) · [Dropping the empties](sets.md#dropping-the-empties) |
-| `TrimAll()` | `T?[]` | `T[]` | [Dropping the empties](sets.md#dropping-the-empties) |
-| `TrimEnd(...)` | `string` · `T?[]` | `string` · `T?[]` | [Trimming](text.md#trimming) · [Dropping the empties](sets.md#dropping-the-empties) |
-| `TrimStart(...)` | `string` · `T?[]` | `string` · `T?[]` | [Trimming](text.md#trimming) · [Dropping the empties](sets.md#dropping-the-empties) |
-| `Union(other)` | `T[]` | `T[]` | [Two sets read together](sets.md#two-sets-read-together) |
-| `Value()` | `T?` | `T` | [Members](optionals.md#members) |
+| `Year` | `DateTime` · `Date` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
+| `Zero` | `TimeSpan` | `TimeSpan` | [Reading the clock](dates-and-times.md#reading-the-clock) |
+
+### Input and output
+
+Everything that can fail to find what it was given yields an optional, which is most of the file
+members: a path is somebody's text and may name nothing.
+
+| Member | On | Yields | Where |
+|---|---|---|---|
+| `Append(path, text)` | `File` | nothing | [Writing](input-output.md#writing) |
+| `Changed(path)` | `File` | `DateTime?` | [Managing](input-output.md#managing) |
+| `Copy(from, to)` | `File` | nothing | [Managing](input-output.md#managing) |
+| `Current` | `Directory` | `string` | [Directory](input-output.md#directory) |
+| `Delete(path)` | `File` · `Directory` | `boolean` | [Managing](input-output.md#managing) · [Directory](input-output.md#directory) |
+| `Exists(path)` | `File` · `Directory` | `boolean` | [Managing](input-output.md#managing) · [Directory](input-output.md#directory) |
+| `Files(path)` | `Directory` | `string[]?` | [Directory](input-output.md#directory) |
+| `Folders(path)` | `Directory` | `string[]?` | [Directory](input-output.md#directory) |
+| `Move(from, to)` | `File` | nothing | [Managing](input-output.md#managing) |
+| `Read()` · `Read(path)` | `Console` · `File` | `string?` | [Console](input-output.md#console) · [Reading](input-output.md#reading) |
+| `ReadLines(path)` | `File` | `string[]?` | [Reading](input-output.md#reading) |
+| `Size(path)` | `File` | `integer?` | [Managing](input-output.md#managing) |
 | `Write(anything)` · `Write(path, text)` | `Console` · `File` | nothing | [Console](input-output.md#console) · [Writing](input-output.md#writing) |
 | `WriteLine(anything)` | `Console` | nothing | [Console](input-output.md#console) |
 | `WriteLines(path, lines)` | `File` | nothing | [Writing](input-output.md#writing) |
-| `Year` | `DateTime` · `Date` | `integer` | [Reading the parts](dates-and-times.md#reading-the-parts) |
-| `Zero` | `TimeSpan` | `TimeSpan` | [Reading the clock](dates-and-times.md#reading-the-clock) |
+
+### On an exception
+
+One, and every exception carries it. The list of exceptions is [above](#names-for-what-went-wrong).
+
+| Member | Yields | Where |
+|---|---|---|
+| `Message()` | `string` | [The member every exception carries](exceptions.md#the-member-every-exception-carries) |
 
 ## The pages
 

@@ -39,7 +39,7 @@ shared model Program
         # claimed. Where an exact answer exists it is given exactly, so every line below that
         # prints a whole number really does print one everywhere.
         Console.WriteLine("  a circle of radius 2 has area "
-                              + Math.Round(Math.Pi * 2.0 * 2.0, 4));
+                            + Math.Round(Math.Pi * 2.0 * 2.0, 4));
         Console.WriteLine();
     end function
 

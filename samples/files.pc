@@ -173,10 +173,10 @@ shared model Program
         # A folder that is not there lists nothing, for the same reason a file that is not
         # there reads as nothing.
         Console.WriteLine("  a folder with no name here: "
-                              + Directory.Files(Program.In("nowhere")).HasValue());
+                            + Directory.Files(Program.In("nowhere")).HasValue());
 
         Console.WriteLine("  where we are is a folder:   "
-                              + Directory.Exists(Directory.Current));
+                            + Directory.Exists(Directory.Current));
     end function
 
     # ---- When something really is wrong ---------------------------------------------------------

@@ -89,7 +89,7 @@ shared model Program
 
         Console.WriteLine("  'the fifteenth' read: " + nonsense.HasValue());
         Console.WriteLine("  falling back to today's year: "
-                              + nonsense.Or(new Date(2026, 1, 1)));
+                            + nonsense.Or(new Date(2026, 1, 1)));
 
         # Out by a pattern and back by the same one.
         let written = new Date(2026, 12, 25).Format("dd/MM/yyyy");
@@ -192,7 +192,7 @@ shared model Program
 
         # Adding a span to a moment is the same idea, said with a span.
         Console.WriteLine("  and with a span                   "
-                              + lateMoment.Add(TimeSpan.FromMinutes(45.0)));
+                            + lateMoment.Add(TimeSpan.FromMinutes(45.0)));
     end function
 
     # ---- Ordering, which is spelled with a word rather than an operator ------------------
@@ -244,13 +244,13 @@ shared model Program
         Time clock = Time.Now;
 
         Console.WriteLine("  Today is midnight, having no time of day  "
-                              + (DateTime.Today.Hour == 0));
+                            + (DateTime.Today.Hour == 0));
         Console.WriteLine("  Now has one                               "
-                              + (moment.Year > 2000));
+                            + (moment.Year > 2000));
         Console.WriteLine("  today's date agrees with now's            "
-                              + (day == Date.FromDateTime(moment)));
+                            + (day == Date.FromDateTime(moment)));
         Console.WriteLine("  the clock is somewhere in the day         "
-                              + (clock.Hour >= 0 and clock.Hour <= 23));
+                            + (clock.Hour >= 0 and clock.Hour <= 23));
     end function
 
 end model

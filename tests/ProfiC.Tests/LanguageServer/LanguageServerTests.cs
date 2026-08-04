@@ -385,6 +385,68 @@ public sealed class LanguageServerTests
     }
 
     /// <summary>
+    /// <para>A new line inside a bracket is placed as it is begun.</para>
+    /// <para><b>The half of the layout rule an editor cannot work out for itself.</b> Left alone
+    /// it copies the indent of the line above, which is right everywhere except inside an open
+    /// bracket — and inside one it is wrong on every line, so a reader is shown where their line
+    /// belongs only after they have finished typing it and run the formatter. Answering here is
+    /// what makes the two the same rule rather than two rules that agree afterwards.</para>
+    /// <para>The caret sits on an empty line, which is the case worth pinning: formatting a file
+    /// writes an empty line empty, so an answer taken from that would send the reader to the left
+    /// margin — further from where they belong than the editor's own guess.</para>
+    /// </summary>
+    [Test]
+    public void ANewLineInsideABracketIsPlacedAsItIsTyped()
+    {
+        using Workspace workspace = new();
+
+        // Enter pressed after the opening line of a call, so line 3 is empty and the caret is on
+        // it. The bracket sits at column 25, so the line carrying it on belongs at 28.
+        string answered = Answering(
+            Framed(
+                Open(
+                    workspace.UriOf("Program.pc"),
+                    "shared model Program\n"
+                    + "    function Main()\n"
+                    + "        Console.WriteLine(\"text \"\n"
+                    + "\n"
+                    + "    end function\n"
+                    + "end model"),
+                new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = 11,
+                    ["method"] = "textDocument/onTypeFormatting",
+                    ["params"] = new JsonObject
+                    {
+                        ["textDocument"] = new JsonObject
+                        {
+                            ["uri"] = workspace.UriOf("Program.pc"),
+                        },
+                        ["position"] = new JsonObject { ["line"] = 3, ["character"] = 0 },
+                        ["ch"] = "\n",
+                        ["options"] = new JsonObject(),
+                    },
+                }),
+            text => text.Contains("\"id\":11", StringComparison.Ordinal));
+
+        JsonArray edits = (JsonArray)Answered(answered, id: 11)!["result"]!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(edits, Has.Count.EqualTo(1), "the line the caret is on, and no other");
+
+            Assert.That((int?)edits[0]!["range"]!["start"]!["line"], Is.EqualTo(3));
+            Assert.That((int?)edits[0]!["range"]!["end"]!["line"], Is.EqualTo(3));
+
+            Assert.That(
+                (string?)edits[0]!["newText"],
+                Is.EqualTo(new string(' ', 28)),
+                "a line carrying another on takes the first tab stop past its bracket");
+        });
+    }
+
+    /// <summary>
     /// <para>The questions about a place answer, asked the way an editor asks them.</para>
     /// <para><b>Every other test here builds its URI with <c>Conversions.UriOf</c>, which is this
     /// codebase talking to itself.</b> VS Code escapes the colon after a drive letter; nothing

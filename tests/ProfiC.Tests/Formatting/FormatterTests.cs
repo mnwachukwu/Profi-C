@@ -323,8 +323,10 @@ public sealed class FormatterTests : LexerTestBase
     /// ended on says how.</para>
     /// <para>A comma — or the bracket itself — means something new begins, and it lines up with
     /// the first thing in the bracket: the rows of a matrix line up with the first row.
-    /// Anything else carries the line above on, and takes one indent past that column, so it
+    /// Anything else carries the line above on, and takes one indent from the bracket, so it
     /// does not read as another item when it is the rest of one.</para>
+    /// <para>An item is placed by alignment and a continuation by a tab stop, which is what
+    /// keeps them apart even where a bracket happens to sit on one.</para>
     /// </summary>
     [Test]
     public void AWrappedLineIsPlacedAgainstItsBracket() =>
@@ -351,7 +353,7 @@ public sealed class FormatterTests : LexerTestBase
                                               {4, 5, 6}};
 
                         Console.WriteLine("a long piece of text "
-                                              + square.Count);
+                                            + square.Count);
 
                         Console.WriteLine(
                             "the bracket ended the line",
@@ -359,6 +361,46 @@ public sealed class FormatterTests : LexerTestBase
                     end function
                 end model
                 """));
+
+    /// <summary>
+    /// <para>A line carrying another one on lands on a tab stop, whatever column its bracket
+    /// fell at.</para>
+    /// <para>The property behind the rule, rather than one arrangement of it. An editor indents
+    /// a wrapped line to a whole number of units, so a continuation placed anywhere else is one
+    /// the editor argues with on every newline typed inside a call — which is how this was found
+    /// in the first place, a space or two adrift and impossible to leave alone.</para>
+    /// <para>Every prefix length is tried, so a bracket landing on a stop, one short of it, and
+    /// one past it are all covered — the three cases a formula off by one gets wrong.</para>
+    /// </summary>
+    [TestCase("Ab")]
+    [TestCase("Abc")]
+    [TestCase("Abcd")]
+    [TestCase("Abcde")]
+    [TestCase("Abcdef")]
+    public void ACarriedOnLineLandsOnATabStop(string name)
+    {
+        string formatted = Formatted($$"""
+            shared model Program
+                function Main()
+                    Program.{{name}}("text "
+                    + "carried on");
+                end function
+
+                function {{name}}(string given)
+                    Console.WriteLine(given);
+                end function
+            end model
+            """);
+
+        string carried = formatted.ReplaceLineEndings("\n")
+                                  .Split('\n')
+                                  .Single(line => line.TrimStart().StartsWith('+'));
+
+        int indent = carried.Length - carried.TrimStart(' ').Length;
+
+        Assert.That(indent % Formatter.IndentWidth, Is.Zero,
+                    $"'{carried.Trim()}' sits at {indent}, which no editor would indent to");
+    }
 
     /// <summary>
     /// <para>A lambda's body is a body, and nests like one.</para>

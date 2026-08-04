@@ -202,6 +202,10 @@ public sealed class LanguageServer : IDisposable
                 _wire.Respond(id, LinedUp(parameters, whole: false));
                 break;
 
+            case "textDocument/onTypeFormatting":
+                _wire.Respond(id, PlacedAsItIsTyped(parameters));
+                break;
+
             default:
                 // Only a request is owed an answer. A notification this server does not know is
                 // ignored in silence, which the protocol requires — an editor sends several that
@@ -245,6 +249,16 @@ public sealed class LanguageServer : IDisposable
             ["inlayHintProvider"] = true,
             ["documentFormattingProvider"] = true,
             ["documentRangeFormattingProvider"] = true,
+
+            // The newline, so a line is placed as it is begun rather than only when the whole
+            // file is lined up. An editor left to itself copies the indent of the line above,
+            // which is right until a bracket is open and wrong for every line inside one — and
+            // wrong in a way the reader has to correct by hand, every time, having just been
+            // shown by the formatter where the line was supposed to go.
+            ["documentOnTypeFormattingProvider"] = new JsonObject
+            {
+                ["firstTriggerCharacter"] = "\n",
+            },
 
             // The dot is what makes the editor ask without being prompted. It asks again on each
             // letter after it on its own, which is why nothing else needs to be named here.
@@ -560,6 +574,55 @@ public sealed class LanguageServer : IDisposable
         }
 
         return edits;
+    }
+
+    /// <summary>
+    /// <para>The line the reader has just begun, put where it belongs.</para>
+    /// <para>The same placement <c>pc format</c> would give it, from the same code, which is the
+    /// point: a rule the formatter enforces and the editor does not is a rule somebody meets by
+    /// having their line moved after they typed it.</para>
+    /// <para><b>Only the whitespace in front is replaced, and only on the line the caret is on.
+    /// </b> Replacing the line would move the caret to the end of it, and there is usually
+    /// nothing on the line yet anyway — what is being answered is where to start typing.</para>
+    /// </summary>
+    private JsonArray? PlacedAsItIsTyped(JsonObject? parameters)
+    {
+        if (Document(parameters) is not { } document)
+        {
+            return null;
+        }
+
+        SourceText source = _documents.Reader(document.Path);
+        int line = ((int?)parameters?["position"]?["line"] ?? 0) + 1;
+
+        if (Formatter.IndentOf(source, line) is not { } belongs)
+        {
+            return null;
+        }
+
+        string text = source.GetLine(line).ToString().TrimEnd('\r', '\n');
+        string found = text[..(text.Length - text.TrimStart(' ', '\t').Length)];
+
+        // Already where it belongs. Answering with an edit that changes nothing still counts as
+        // an edit, and an editor that applied one on every newline would fill an undo history
+        // with steps that undo nothing.
+        if (string.Equals(found, new string(' ', belongs), StringComparison.Ordinal))
+        {
+            return [];
+        }
+
+        return
+        [
+            new JsonObject
+            {
+                ["range"] = new JsonObject
+                {
+                    ["start"] = new JsonObject { ["line"] = line - 1, ["character"] = 0 },
+                    ["end"] = new JsonObject { ["line"] = line - 1, ["character"] = found.Length },
+                },
+                ["newText"] = new string(' ', belongs),
+            },
+        ];
     }
 
     /// <summary>The lines a range covers, counted as a reader counts them.</summary>
