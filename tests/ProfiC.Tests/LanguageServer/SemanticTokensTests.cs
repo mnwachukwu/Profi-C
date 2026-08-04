@@ -42,13 +42,18 @@ public sealed class SemanticTokensTests : LexerTestBase
 
     private sealed class Workspace : IDisposable
     {
-        public Workspace()
+        public Workspace(string? beside = null)
         {
             Folder = Path.Combine(Path.GetTempPath(), $"profi-c-colors-{Guid.NewGuid():N}");
             Directory.CreateDirectory(Folder);
 
             File.WriteAllText(Path.Combine(Folder, "Program.pc"), Program);
             File.WriteAllText(Path.Combine(Folder, "Greeting.pc"), Greeting);
+
+            if (beside is not null)
+            {
+                File.WriteAllText(Path.Combine(Folder, "Beside.pc"), beside);
+            }
         }
 
         public string Folder { get; }
@@ -101,9 +106,10 @@ public sealed class SemanticTokensTests : LexerTestBase
         return read;
     }
 
-    private static (IReadOnlyList<Colored> Read, SourceText Source) Colors(string file)
+    private static (IReadOnlyList<Colored> Read, SourceText Source) Colors(
+        string file, string? beside = null)
     {
-        using Workspace workspace = new();
+        using Workspace workspace = new(beside);
 
         DiagnosticBag diagnostics = new();
 
@@ -554,6 +560,44 @@ public sealed class SemanticTokensTests : LexerTestBase
                         $"{name}: '{read[at].Text}' comes after '{read[at - 1].Text}'");
                 }
             }
+        });
+    }
+
+    /// <summary>
+    /// <para>A constructor is colored as the type it builds, in all three places the word
+    /// appears.</para>
+    /// <para><b>It is the one member that does not read as a member.</b> A constructor is written
+    /// with the type's own name, so the declaration, the type beside it, and the <c>new</c> below
+    /// are the same word — and a reader looking at any of them is looking at the type. Colored as
+    /// a method, the one that builds it reads as something other than the other two.</para>
+    /// </summary>
+    [Test]
+    public void AConstructorIsColoredAsTheTypeItBuilds()
+    {
+        const string Shapes = """
+            model Circle
+                real radius;
+
+                public function Circle(real r)
+                    this.radius = r;
+                end function
+            end model
+
+            shared model Drawing
+                function Draw()
+                    let here = new Circle(2.0);
+                    Console.WriteLine(here);
+                end function
+            end model
+            """;
+
+        (IReadOnlyList<Colored> read, _) = Colors("Beside.pc", Shapes);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(The(read, "Circle", 1).Kind, Is.EqualTo("class"), "the model");
+            Assert.That(The(read, "Circle", 4).Kind, Is.EqualTo("class"), "the constructor");
+            Assert.That(The(read, "Circle", 11).Kind, Is.EqualTo("class"), "and the new");
         });
     }
 

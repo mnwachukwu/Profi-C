@@ -11,8 +11,10 @@ namespace ProfiC.Cli.LanguageServer;
 /// something. Which is why it answers for names rename refuses — putting the cursor on
 /// <c>Count</c> marks every use of <c>Count</c>, and marking a name the language owns writes
 /// nothing anywhere.</para>
-/// <para>One file, not the compilation. This marks what is on screen, and a use in a file nobody
-/// has open cannot be marked in it — go to definition is the question that crosses files.</para>
+/// <para>Two scales, one rule. <see cref="In"/> marks what is on screen, since a use in a file
+/// nobody has open cannot be marked in it. <see cref="Across"/> lists every use in the whole
+/// compilation, which is what somebody means when they ask where a name is used — the answer they
+/// want is a list to walk, and it does not stop at the file they happen to be looking at.</para>
 /// </summary>
 public static class Occurrences
 {
@@ -72,6 +74,62 @@ public static class Occurrences
     }
 
     /// <summary>
+    /// <para>Every place the whole compilation writes this name, or null where the cursor is not
+    /// in one.</para>
+    /// <para><b>Rename's list without the rename</b>, and it reaches further than rename does for
+    /// the same reason marking does: nothing is written, so a name the language owns can be
+    /// answered for. Asking where <c>WriteLine</c> is called is a fair question with a useful
+    /// answer, and renaming it is not a thing to offer.</para>
+    /// <para>The declaration is one of them unless the editor said to leave it out. Editors ask
+    /// both ways and mean different things by it — a list of callers is not the same list as
+    /// everywhere the name appears — so this is the caller's choice rather than a rule here.</para>
+    /// </summary>
+    public static JsonArray? Across(
+        IReadOnlyList<CompilationUnit> units,
+        SemanticModel model,
+        CompilationUnit asking,
+        int offset,
+        bool includingDeclaration)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(asking);
+
+        if (Wanted(asking, model, offset) is not { } wanted)
+        {
+            return null;
+        }
+
+        JsonArray found = [];
+
+        foreach (CompilationUnit unit in units)
+        {
+            foreach (SyntaxNode node in Everything(unit))
+            {
+                // A name is written here, rather than a call or a statement that happens to be
+                // bound to the same thing — the same guard renaming needs, for the same reason.
+                if (!node.HasName || !wanted.Matches(node, model))
+                {
+                    continue;
+                }
+
+                if (!includingDeclaration && wanted.IsDeclarationAt(node))
+                {
+                    continue;
+                }
+
+                found.Add(new JsonObject
+                {
+                    ["uri"] = Conversions.UriOf(unit.Source.FileName),
+                    ["range"] = Conversions.RangeOf(node.NameSpan, unit.Source),
+                });
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
     /// <para>The thing the cursor is on, which is one of two kinds.</para>
     /// <para>A name a program declared is a symbol, and two uses are the same name when the
     /// resolver bound them to the same one. A member the language provides is not a symbol at
@@ -86,6 +144,9 @@ public static class Occurrences
         public abstract bool Matches(SyntaxNode node, SemanticModel model);
 
         public abstract bool IsWrittenAt(SyntaxNode node, HashSet<SyntaxNode> assigned);
+
+        /// <summary>Whether this is the place the name was declared, rather than a use of it.</summary>
+        public abstract bool IsDeclarationAt(SyntaxNode node);
     }
 
     private sealed record Declared(Symbol Symbol) : Match
@@ -94,8 +155,10 @@ public static class Occurrences
             ReferenceEquals(model.GetSymbol(node), Symbol);
 
         public override bool IsWrittenAt(SyntaxNode node, HashSet<SyntaxNode> assigned) =>
-            assigned.Contains(node)
-            || (Symbol.Declaration is { } declared && ReferenceEquals(declared, node));
+            assigned.Contains(node) || IsDeclarationAt(node);
+
+        public override bool IsDeclarationAt(SyntaxNode node) =>
+            Symbol.Declaration is { } declared && ReferenceEquals(declared, node);
     }
 
     private sealed record Provided(BuiltInId Id) : Match
@@ -106,6 +169,8 @@ public static class Occurrences
         // Nothing in a program declares one, and none of them can be assigned to, so every place
         // one appears is a use.
         public override bool IsWrittenAt(SyntaxNode node, HashSet<SyntaxNode> assigned) => false;
+
+        public override bool IsDeclarationAt(SyntaxNode node) => false;
     }
 
     /// <summary>

@@ -321,7 +321,7 @@ public sealed class BuildCommandTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(code, Is.EqualTo(1));
+            Assert.That(code, Is.EqualTo(2));
             Assert.That(said, Does.Contain("sinclair-z80"));
             Assert.That(said, Does.Contain(AppHost.ThisPlatform), "the ones on hand are listed");
             Assert.That(said, Does.Contain("dotnet publish"), "and how to get another");
@@ -419,7 +419,7 @@ public sealed class BuildCommandTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(code, Is.EqualTo(1));
+            Assert.That(code, Is.EqualTo(2));
             Assert.That(said, Does.Contain("--runtime"));
         });
     }
@@ -433,7 +433,7 @@ public sealed class BuildCommandTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(code, Is.EqualTo(1));
+            Assert.That(code, Is.EqualTo(2));
             Assert.That(said, Does.Contain("--out"));
             Assert.That(Directory.Exists(Path.Combine(workspace.Folder, "bin")), Is.False);
         });
@@ -453,7 +453,7 @@ public sealed class BuildCommandTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(code, Is.EqualTo(1));
+            Assert.That(code, Is.EqualTo(2));
             Assert.That(said, Does.Contain("--outt"));
             Assert.That(Directory.Exists(Path.Combine(workspace.Folder, "bin")), Is.False);
         });

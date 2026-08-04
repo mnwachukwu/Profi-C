@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using ProfiC.Cli;
 using ProfiC.Cli.LanguageServer;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
@@ -78,6 +79,158 @@ public sealed class OccurrencesTests
                 (4, 17, "read"),
                 (5, 27, "read"),
             }));
+    }
+
+    // ---- Across the whole program ------------------------------------------------------------
+
+    /// <summary>Two files that compile together, so a use can be in the other one.</summary>
+    private sealed class Workspace : IDisposable
+    {
+        public Workspace(string program, string beside)
+        {
+            Folder = Path.Combine(Path.GetTempPath(), $"profi-c-uses-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Folder);
+
+            File.WriteAllText(Path.Combine(Folder, "Program.pc"), program);
+            File.WriteAllText(Path.Combine(Folder, "Greeting.pc"), beside);
+        }
+
+        public string Folder { get; }
+
+        public string At(string name) => Path.Combine(Folder, name);
+
+        public void Dispose() => Directory.Delete(Folder, recursive: true);
+    }
+
+    private const string Caller = """
+        shared model Program
+            function Main()
+                Console.WriteLine(Greeting.Length("hello"));
+                Console.WriteLine(Greeting.Length("goodbye"));
+            end function
+        end model
+        """;
+
+    private const string Callee = """
+        shared model Greeting
+            public shared integer function Length(string word)
+                yield word.Count;
+            end function
+        end model
+        """;
+
+    /// <summary>Every use, as the file it is in and the line, so a list reads as one.</summary>
+    private static IReadOnlyList<(string File, int Line)> Uses(
+        Workspace workspace, string asking, int line, int column, bool includingDeclaration = true)
+    {
+        DiagnosticBag diagnostics = new();
+
+        SourceDiscovery.Compilation gathered =
+            SourceDiscovery.Gather(workspace.At("Program.pc"), diagnostics)!;
+
+        SemanticModel model = Resolver.Resolve(gathered.Units, diagnostics);
+        TypeChecker.Check(gathered.Units, model, diagnostics);
+
+        CompilationUnit unit = gathered.Units.Single(
+            u => Path.GetFileName(u.Source.FileName) == asking);
+
+        JsonArray? found = Occurrences.Across(
+            gathered.Units,
+            model,
+            unit,
+            OffsetOf(unit.Source, line, column),
+            includingDeclaration);
+
+        return
+        [
+            .. (found ?? []).Select(use => (
+                Path.GetFileName(new Uri((string)use!["uri"]!).LocalPath),
+                (int)use["range"]!["start"]!["line"]! + 1)),
+        ];
+    }
+
+    /// <summary>
+    /// <para>A name declared in one file and used in another is found in both.</para>
+    /// <para>Which is the whole reason this is not document highlight asked twice: a reader
+    /// wanting to know where a function is called does not mean "in the file I am looking at",
+    /// and the answer that stops there is the one that reads as though there were no callers.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void EveryUseIsFoundAcrossEveryFile()
+    {
+        using Workspace workspace = new(Caller, Callee);
+
+        // Line 2, column 40: on 'Length' where it is declared.
+        Assert.That(
+            Uses(workspace, "Greeting.pc", 2, 40),
+            Is.EquivalentTo(new[]
+            {
+                ("Greeting.pc", 2),
+                ("Program.pc", 3),
+                ("Program.pc", 4),
+            }));
+    }
+
+    /// <summary>
+    /// Asked for the callers rather than for every appearance, which is a different question and
+    /// the one an editor asks when it is filling a "find usages" list.
+    /// </summary>
+    [Test]
+    public void TheDeclarationIsLeftOutWhenItWasNotAskedFor()
+    {
+        using Workspace workspace = new(Caller, Callee);
+
+        Assert.That(
+            Uses(workspace, "Greeting.pc", 2, 40, includingDeclaration: false),
+            Is.EquivalentTo(new[] { ("Program.pc", 3), ("Program.pc", 4) }));
+    }
+
+    /// <summary>
+    /// <para>A name the language owns is answered for, which renaming refuses.</para>
+    /// <para>The difference is what each one does afterwards. Renaming <c>WriteLine</c> would edit
+    /// the uses and leave the declaration where it is, since there is not one; listing them writes
+    /// nothing anywhere, and "where is this called" is a fair question about it.</para>
+    /// </summary>
+    [Test]
+    public void ANameTheLanguageOwnsIsAnsweredFor()
+    {
+        using Workspace workspace = new(Caller, Callee);
+
+        // Line 3, column 17: on 'WriteLine'.
+        Assert.That(
+            Uses(workspace, "Program.pc", 3, 17),
+            Is.EquivalentTo(new[] { ("Program.pc", 3), ("Program.pc", 4) }));
+    }
+
+    /// <summary>
+    /// <para>Building a model is a use of it.</para>
+    /// <para>Marked because the name in a <c>new</c> is recorded as a name. Where it is not, this
+    /// walks past it — and a reader asking where a model is used is shown the declaration and the
+    /// type beside it while the line that actually makes one goes unmarked.</para>
+    /// </summary>
+    [Test]
+    public void ConstructingAModelIsAUseOfIt()
+    {
+        const string Building = """
+            model Circle
+            end model
+
+            shared model Program
+                function Main()
+                    Circle drawn = new Circle();
+                    Console.WriteLine(drawn);
+                end function
+            end model
+            """;
+
+        (CompilationUnit unit, SemanticModel model, SourceText source) = Compile(Building);
+
+        // Line 1, column 7: on 'Circle' where the model is declared.
+        Assert.That(
+            Marks(Occurrences.In(unit, model, OffsetOf(source, 1, 7)))
+                .Select(mark => (mark.Line, mark.Column)),
+            Is.EqualTo(new[] { (1, 7), (6, 9), (6, 28) }));
     }
 
     /// <summary>

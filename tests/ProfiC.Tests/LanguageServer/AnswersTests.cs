@@ -766,4 +766,174 @@ public sealed class AnswersTests
             Answers.Definition(units, model, unit, unit.Source.Text.Length + 50),
             Is.Empty);
     }
+
+    /// <summary>
+    /// <para>What a hover says, in the order it says it.</para>
+    /// <para>The order is a decision rather than an accident of how the string was built, so it is
+    /// held here: the shape first, because that is what a reader hovered for; the prose under it;
+    /// and where the thing came from last, under a rule, because it answers the question they turn
+    /// to second and only when two names collide.</para>
+    /// </summary>
+    [Test]
+    public void AHoverSaysTheShapeFirstAndWhereItCameFromLast()
+    {
+        using Workspace workspace = new();
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        // Line 3, column 36: inside 'Length'.
+        string said = (string?)Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, 3, 36))
+            ?["contents"]?["value"] ?? string.Empty;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.StartWith("```profi-c"), "the shape, first");
+            Assert.That(said.TrimEnd(), Does.EndWith("Greeting"), "and where it came from, last");
+            Assert.That(
+                said,
+                Does.Not.Contain("*Greeting*"),
+                "in plain text — a hover is markdown, and markdown has no smaller");
+        });
+    }
+
+    // ---- Which parameter is being written ----------------------------------------------------
+
+    /// <summary>
+    /// <para>A call whose parameters are documented, and a second function reusing one of the
+    /// names.</para>
+    /// <para>The reuse is the point of the second one: a parameter is documented on the function
+    /// that takes it, and two functions taking a <c>label</c> is the ordinary case rather than a
+    /// contrived one.</para>
+    /// </summary>
+    private const string Writing = """
+        shared model Program
+            function Main()
+                integer count = 3;
+
+                Program.Show("counted", count);
+            end function
+
+            ##
+                @summary: Writes a line, some number of times.
+                @label: what to write out
+                @times: how many times to write it
+            ##
+            function Show(string label, integer times)
+                loop for i = 1 to times
+                    Console.WriteLine(label);
+                end loop
+            end function
+
+            ##
+                @summary: Writes a line once.
+                @label: something else entirely
+            ##
+            function Once(string label)
+                string copy = label;
+                Console.WriteLine(copy);
+            end function
+        end model
+        """;
+
+    private static string Said(Workspace workspace, int line, int column)
+    {
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, CompilationUnit unit) =
+            Compile(workspace, "Program.pc");
+
+        return (string?)Answers.Hover(
+            units, unit, model, unit.Source, OffsetOf(unit.Source, line, column))
+            ?["contents"]?["value"] ?? string.Empty;
+    }
+
+    /// <summary>
+    /// <para>Hovering an argument says what it is and what it is being written into.</para>
+    /// <para><b>Signature help says the second half and then goes away.</b> It shows while the
+    /// arguments are being typed and dismisses on the first thing that is not typing, so a reader
+    /// who stops to look at what they wrote has to delete a character to bring it back — or go up
+    /// to the call and hover the name. Saying it here puts the answer where they are looking, and
+    /// the two halves together are what catches an argument in the wrong place.</para>
+    /// </summary>
+    [Test]
+    public void HoveringAnArgumentSaysWhichParameterItIsWriting()
+    {
+        using Workspace workspace = new();
+        workspace.Write("Program.pc", Writing);
+
+        // Line 5, column 34: inside 'count', the second argument.
+        string said = Said(workspace, 5, 34);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.Contain("integer count"), "what the name is");
+            Assert.That(said, Does.Contain("integer times"), "and what it is being written into");
+            Assert.That(said, Does.Contain("2 of 2"), "which one of them, without counting commas");
+            Assert.That(said, Does.Contain("how many times to write it"), "what it is for");
+        });
+    }
+
+    /// <summary>
+    /// The argument nobody has typed yet, which is the state a reader is in for as long as it
+    /// takes them to decide what goes there.
+    /// </summary>
+    [Test]
+    public void AnArgumentNotYetWrittenStillNamesItsParameter()
+    {
+        const string Halfway = """
+            shared model Program
+                function Main()
+                    Program.Show("counted", );
+                end function
+
+                function Show(string label, integer times)
+                    Console.WriteLine(label);
+                end function
+            end model
+            """;
+
+        using Workspace workspace = new();
+        workspace.Write("Program.pc", Halfway);
+
+        // Line 3, column 32: after the comma, where nothing has been written.
+        Assert.That(Said(workspace, 3, 32), Does.Contain("integer times"));
+    }
+
+    /// <summary>
+    /// The cursor on the name being called is asking about the function, which the rest of the
+    /// hover already answers. Saying which parameter as well would name the first one wherever a
+    /// reader pointed.
+    /// </summary>
+    [Test]
+    public void HoveringTheNameBeingCalledSaysNothingAboutParameters()
+    {
+        using Workspace workspace = new();
+        workspace.Write("Program.pc", Writing);
+
+        // Line 5, column 18: inside 'Show'.
+        Assert.That(Said(workspace, 5, 18), Does.Not.Contain("Writing"));
+    }
+
+    /// <summary>
+    /// <para>A parameter is documented by the function that takes it, and not by another one that
+    /// happens to use the same name.</para>
+    /// <para>Taken by name from every documentation comment in the file, the answer is whichever
+    /// function was written highest — so the second <c>label</c> in a file documents itself with
+    /// the first one's sentence, and does it silently.</para>
+    /// </summary>
+    [Test]
+    public void AParameterIsDocumentedByItsOwnFunction()
+    {
+        using Workspace workspace = new();
+        workspace.Write("Program.pc", Writing);
+
+        // Line 24, column 24: on 'label' inside Once, which is the second function taking one.
+        string said = Said(workspace, 24, 24);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(said, Does.Contain("something else entirely"));
+            Assert.That(said, Does.Not.Contain("what to write out"));
+        });
+    }
 }

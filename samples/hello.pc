@@ -1,4 +1,4 @@
-# The smallest legal Profi-C program.
+# The smallest Profi-C program that does something.
 
 shared model Program
     function Main()

@@ -43,6 +43,118 @@ public static class Program
         }
     }
 
+    /// <summary>
+    /// <para>What the process leaves behind, so that whatever ran it can tell apart the ways
+    /// this ends.</para>
+    /// <para><b>One failure code answers "did it work", which is all a person at a terminal
+    /// wants.</b> Anything scripting this wants more: a program with a mistake in it is the
+    /// ordinary result of checking one, a command line that could not be read is the caller's own
+    /// bug, and a compiler that asserted something impossible is nobody's program at all. Told
+    /// apart, a build step can pass the first back to whoever wrote the code and shout about the
+    /// last.</para>
+    /// <para>Settled now rather than later because these are the half of an interface that
+    /// nothing declares: the day somebody writes a script against them is the day changing them
+    /// breaks it silently.</para>
+    /// </summary>
+    private const int Ok = 0;
+
+    /// <summary>Something is wrong with the program, and it was said with a position.</summary>
+    private const int Reported = 1;
+
+    /// <summary>Something is wrong with the command line, so no program was read.</summary>
+    private const int Misused = 2;
+
+    /// <summary>The compiler asserted something it says cannot happen.</summary>
+    private const int Broken = 3;
+
+    /// <summary>
+    /// <para>One command, as both the dispatch and the help read it.</para>
+    /// <para><b>One table rather than a switch beside a list of lines.</b> Kept apart, the two
+    /// drift in the direction that is hardest to notice: a command that works and is documented
+    /// nowhere, which is exactly what happened to <c>format</c>.</para>
+    /// </summary>
+    /// <param name="Name">The word that selects it.</param>
+    /// <param name="Takes">What follows the name in the usage line, empty for a command that
+    /// takes nothing.</param>
+    /// <param name="Says">The one line beside it in the list.</param>
+    /// <param name="Run">What it does, given the whole command line.</param>
+    /// <param name="Detail">Shown only when this command is the one being asked about.</param>
+    private sealed record Command(
+        string Name, string Takes, string Says, Func<string[], int> Run, string[] Detail);
+
+    private static readonly Command[] Commands =
+    [
+        new("run", "<file>", "Run a .pc program or a .pcp project", RunProgram,
+        [
+            "Checks the program and then executes it on the interpreter. Nothing runs",
+            "until everything checks. No file is produced; 'build' is what writes one.",
+        ]),
+        new("build", "<file>", "Compile one to a .NET assembly, into bin", RunBuild,
+        [
+            "Writes four files into a 'bin' beside the program: the assembly, its runtime",
+            "configuration, the Profi-C runtime, and a launcher you can start without",
+            "naming dotnet. The machine it runs on still needs .NET installed.",
+            "",
+            "  --out <folder>       Write them somewhere else",
+            "  --runtime <platform> Build for a machine that is not this one",
+            "",
+            "'platforms' prints what --runtime accepts here.",
+        ]),
+        new("check", "<file>", "Check a .pc program or a .pcp project", RunCheck, []),
+        new("new", "<name>", "Start an empty program, ready to be written", RunNew,
+        [
+            "  --project            Write a folder with a .pcp and a program in it",
+            "",
+            "What it writes is the smallest legal program and nothing else: every line",
+            "already in a new file is a line somebody has to read and then delete.",
+            "'sample' writes one that does something, for a first look at the language.",
+            "",
+            "Refuses to write over anything that is already there.",
+        ]),
+        new("sample", "<name>", "Write a program that does something, to read and change",
+            RunSample,
+        [
+            "  --project            Write a folder with a .pcp and a program in it",
+            "",
+            "It prints, and then it loops, because the first thing anybody does with one",
+            "is change one of those and run it again. 'new' writes an empty one instead.",
+            "",
+            "Refuses to write over anything that is already there.",
+        ]),
+        new("lower", "<file>", "Print the simplified tree the back end sees", RunLower, []),
+        new("tokens", "<file>", "Scan one .pc file and print its token stream", RunTokens, []),
+        new("ast", "<file>", "Parse one .pc file and print its syntax tree", RunAst,
+        [
+            "  --positions          Write each node's span beside it",
+        ]),
+        new("format", "<file>", "Line one .pc file up and print it", RunFormat,
+        [
+            "  --write              Save it back instead of printing it",
+            "  --check              Print nothing, and fail if it is not already formatted",
+            "",
+            "Indentation and spacing only, so a comment cannot be lost — and a file that",
+            "does not parse is formatted anyway.",
+        ]),
+        new("outline", "<file>", "Print what one .pc file declares, as JSON", RunOutline, []),
+        new("project", "<file>", "Print the .pcp that builds a file, as JSON", RunProject, []),
+        new("vocabulary", "", "Print every word the language reserves, as JSON",
+            _ => RunVocabulary(), []),
+        new("platforms", "", "Print the platforms --runtime accepts, as JSON",
+            _ => RunPlatforms(), []),
+        new("debug", "", "Debug a program, spoken to by an editor", _ => RunDebug(),
+        [
+            "Speaks the Debug Adapter Protocol on its own standard input and output, and",
+            "is meant to be started by an editor rather than typed. Run by hand it waits",
+            "for a request that never comes, which is correct and looks like a hang.",
+        ]),
+        new("lsp", "", "Answer an editor's questions while it is open", _ => RunLanguageServer(),
+        [
+            "Speaks the Language Server Protocol on its own standard input and output,",
+            "and is the only one of these that stays open. Meant to be started by an",
+            "editor rather than typed.",
+        ]),
+    ];
+
     private static int Main(string[] args) => Run(args);
 
     /// <summary>Runs the command. Public so that the <c>pc</c> alias can forward to it.</summary>
@@ -53,29 +165,30 @@ public static class Program
         if (args.Length == 0 || args[0] is "--help" or "-h" or "help")
         {
             WriteUsage();
-            return 0;
+            return Ok;
+        }
+
+        if (args[0] is "--version" or "-v")
+        {
+            return WriteVersion();
+        }
+
+        if (Commands.FirstOrDefault(c => c.Name == args[0]) is not { } command)
+        {
+            return UnknownCommand(args[0]);
+        }
+
+        // Asked about rather than run. Answered before anything reads the rest of the line,
+        // since somebody asking what a command takes is somebody who does not know yet.
+        if (args.Skip(1).Any(argument => argument is "--help" or "-h"))
+        {
+            WriteUsage(command);
+            return Ok;
         }
 
         try
         {
-            return args[0] switch
-            {
-                "--version" or "-v" => WriteVersion(),
-                "tokens" => RunTokens(args),
-                "ast" => RunAst(args),
-                "check" => RunCheck(args),
-                "lower" => RunLower(args),
-                "run" => RunProgram(args),
-                "build" => RunBuild(args),
-                "vocabulary" => RunVocabulary(),
-                "platforms" => RunPlatforms(),
-                "outline" => RunOutline(args),
-                "format" => RunFormat(args),
-                "project" => RunProject(args),
-                "debug" => RunDebug(),
-                "lsp" => RunLanguageServer(),
-                _ => UnknownCommand(args[0]),
-            };
+            return command.Run(args);
         }
         catch (InvalidOperationException assertion)
         {
@@ -108,28 +221,32 @@ public static class Program
 
         Console.Error.WriteLine();
         Console.Error.WriteLine(assertion);
-        return 1;
+        return Broken;
     }
 
+    /// <summary>
+    /// Every command in one list, laid out from the table that dispatches them — so a command
+    /// that runs is a command that is written down.
+    /// </summary>
     private static void WriteUsage()
     {
+        int width = Commands.Max(c => c.Name.Length + c.Takes.Length) + 2;
+
         Console.WriteLine($"{ToolName} - the Profi-C compiler");
         Console.WriteLine();
         Console.WriteLine("Usage:");
-        Console.WriteLine($"  {ToolName} run <file>       Run a .pc program or a .pcp project");
-        Console.WriteLine($"  {ToolName} build <file>     Compile one to a .NET assembly, into bin");
-        Console.WriteLine($"  {ToolName} check <file>     Check a .pc program or a .pcp project");
-        Console.WriteLine($"  {ToolName} lower <file>     Print the simplified tree the back end sees");
-        Console.WriteLine($"  {ToolName} tokens <file>    Scan one .pc file and print its token stream");
-        Console.WriteLine($"  {ToolName} ast <file>       Parse one .pc file and print its syntax tree");
-        Console.WriteLine($"  {ToolName} outline <file>   Print what one .pc file declares, as JSON");
-        Console.WriteLine($"  {ToolName} project <file>   Print the .pcp that builds a file, as JSON");
-        Console.WriteLine($"  {ToolName} vocabulary       Print every word the language reserves, as JSON");
-        Console.WriteLine($"  {ToolName} platforms        Print the platforms --runtime accepts, as JSON");
-        Console.WriteLine($"  {ToolName} debug            Debug a program, spoken to by an editor");
-        Console.WriteLine($"  {ToolName} lsp              Answer an editor's questions while it is open");
-        Console.WriteLine($"  {ToolName} --version        Print the compiler version");
-        Console.WriteLine($"  {ToolName} --help           Print this message");
+
+        foreach (Command command in Commands)
+        {
+            string written = $"{command.Name} {command.Takes}".TrimEnd();
+
+            Console.WriteLine($"  {ToolName} {written.PadRight(width)}{command.Says}");
+        }
+
+        Console.WriteLine($"  {ToolName} {"--version".PadRight(width)}Print the compiler version");
+        Console.WriteLine($"  {ToolName} {"--help".PadRight(width)}Print this message");
+        Console.WriteLine();
+        Console.WriteLine($"'{ToolName} <command> --help' says more about one of them.");
         Console.WriteLine();
         Console.WriteLine("Naming a .pc file compiles it together with the shared code beside");
         Console.WriteLine("it: every other .pc in the same folder that declares no Program.");
@@ -137,13 +254,24 @@ public static class Program
         Console.WriteLine();
         Console.WriteLine("The extension may be left off: 'run Program' finds Program.pc or");
         Console.WriteLine("Program.pcp. Write it when both are there and you mean one.");
+    }
+
+    /// <summary>What one command takes and what it is for, for somebody who asked about it.</summary>
+    private static void WriteUsage(Command command)
+    {
+        Console.WriteLine($"Usage: {ToolName} {command.Name} {command.Takes}".TrimEnd());
         Console.WriteLine();
-        Console.WriteLine("'build' writes into a 'bin' beside the program, with a launcher you");
-        Console.WriteLine("can run without naming dotnet. Two options change what it makes:");
-        Console.WriteLine($"  {ToolName} build hello.pc --out dist");
-        Console.WriteLine($"  {ToolName} build hello.pc --runtime linux-x64");
-        Console.WriteLine();
-        Console.WriteLine("The machine it runs on still needs .NET installed.");
+        Console.WriteLine(command.Says);
+
+        if (command.Detail.Length > 0)
+        {
+            Console.WriteLine();
+
+            foreach (string line in command.Detail)
+            {
+                Console.WriteLine(line);
+            }
+        }
     }
 
     /// <summary>
@@ -152,19 +280,45 @@ public static class Program
     /// </summary>
     private static SourceDiscovery.FileTarget? Target(string[] args, string command)
     {
-        if (args.Length < 2)
+        if (Named(args, command) is not { } named)
         {
-            Console.Error.WriteLine($"{ToolName}: '{command}' requires a file path.");
             return null;
         }
 
-        if (SourceDiscovery.Locate(args[1], out string problem) is not { } target)
+        if (SourceDiscovery.Locate(named, out string problem) is not { } target)
         {
             Console.Error.WriteLine($"{ToolName}: {problem}");
             return null;
         }
 
         return target;
+    }
+
+    /// <summary>
+    /// <para>The thing a command was pointed at, or null where the line does not name one.</para>
+    /// <para><b>A word beginning with a dash is a flag and not a path.</b> Read as one,
+    /// <c>build --help</c> answers "file not found: --help.pc" — which names a file nobody meant,
+    /// about a question nobody asked, and reads as though the tool were broken rather than as
+    /// though the line were.</para>
+    /// </summary>
+    private static string? Named(string[] args, string command)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine($"{ToolName}: '{command}' requires a file path.");
+            return null;
+        }
+
+        if (args[1].StartsWith('-'))
+        {
+            Console.Error.WriteLine(
+                $"{ToolName}: '{command}' takes a file first, and '{args[1]}' is not one. "
+                + $"Try '{ToolName} {command} --help'.");
+
+            return null;
+        }
+
+        return args[1];
     }
 
     /// <summary>
@@ -193,14 +347,14 @@ public static class Program
     private static int WriteVersion()
     {
         Console.WriteLine(Version);
-        return 0;
+        return Ok;
     }
 
     private static int UnknownCommand(string command)
     {
         Console.Error.WriteLine(
             $"{ToolName}: unknown command '{command}'. Try '{ToolName} --help'.");
-        return 1;
+        return Misused;
     }
 
     /// <summary>
@@ -239,7 +393,7 @@ public static class Program
 
         adapter.Run();
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -274,7 +428,7 @@ public static class Program
     {
         Console.WriteLine(Vocabulary.AsJson());
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -300,7 +454,7 @@ public static class Program
         Console.WriteLine("  ]");
         Console.WriteLine("}");
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -315,7 +469,7 @@ public static class Program
     {
         if (SourceArgument(args, "outline") is not { } path)
         {
-            return 1;
+            return Misused;
         }
 
         SourceText source = SourceText.FromFile(path);
@@ -323,7 +477,7 @@ public static class Program
 
         Console.WriteLine(Outline.AsJson(Parser.Parse(source, aside), source));
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -336,7 +490,7 @@ public static class Program
     {
         if (SourceArgument(args, "format") is not { } path)
         {
-            return 1;
+            return Misused;
         }
 
         SourceText source = SourceText.FromFile(path);
@@ -346,11 +500,11 @@ public static class Program
         {
             if (string.Equals(formatted, source.Text, StringComparison.Ordinal))
             {
-                return 0;
+                return Ok;
             }
 
             Console.Error.WriteLine($"{path}: not formatted.");
-            return 1;
+            return Reported;
         }
 
         if (args.Contains("--write"))
@@ -362,11 +516,11 @@ public static class Program
                 File.WriteAllText(path, formatted);
             }
 
-            return 0;
+            return Ok;
         }
 
         Console.Out.Write(formatted);
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -380,18 +534,11 @@ public static class Program
     /// </summary>
     private static int RunProject(string[] args)
     {
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine($"{ToolName}: 'project' requires a file path.");
-            return 1;
-        }
-
         // Located rather than taken as written, so that 'project Program' answers about the same
         // file 'run Program' would compile.
-        if (SourceDiscovery.Locate(args[1], out string problem) is not { } target)
+        if (Target(args, "project") is not { } target)
         {
-            Console.Error.WriteLine($"{ToolName}: {problem}");
-            return 1;
+            return Misused;
         }
 
         ProjectSearch.Claim claim = ProjectSearch.For(target.Path);
@@ -405,14 +552,141 @@ public static class Program
             },
             new JsonSerializerOptions { WriteIndented = true }));
 
-        return 0;
+        return Ok;
+    }
+
+    /// <summary>
+    /// <para>What <c>new</c> writes: the smallest legal program, and nothing else.</para>
+    /// <para><b>A new thing is empty.</b> Somebody who asked for a new program is about to write
+    /// one, and every line already in the file is a line they have to read and then delete. What
+    /// a first program can look like is a different question, asked by <c>sample</c>.</para>
+    /// </summary>
+    private const string Blank = """
+        shared model Program
+            function Main()
+            end function
+        end model
+
+        """;
+
+    /// <summary>
+    /// <para>What <c>sample</c> writes: a program that does something when it is run.</para>
+    /// <para>It prints, and then it loops, because the first thing anybody does with one of these
+    /// is change one of those and run it again. The same program the README walks through,
+    /// deliberately — two starting points that differ in small ways is two things to keep
+    /// true.</para>
+    /// </summary>
+    private const string Sample = """
+        shared model Program
+            function Main()
+                Console.WriteLine("Hello, World!");
+
+                loop for i = 1 to 5
+                    Console.WriteLine(i + " squared is " + (i * i));
+                end loop
+            end function
+        end model
+
+        """;
+
+    private static int RunNew(string[] args) => Writing(args, "new", Blank);
+
+    private static int RunSample(string[] args) => Writing(args, "sample", Sample);
+
+    /// <summary>
+    /// <para>Writes a program somebody can run, which is the only kind of command a beginner
+    /// meets first.</para>
+    /// <para><b>Nothing is written over.</b> A tool that scaffolds is a tool somebody will point
+    /// at a folder they are already working in, and losing a file to a mistyped name is not
+    /// something an undo can reach.</para>
+    /// </summary>
+    private static int Writing(string[] args, string command, string program)
+    {
+        if (Named(args, command) is not { } asked)
+        {
+            return Misused;
+        }
+
+        string name = Path.GetFileNameWithoutExtension(asked);
+
+        if (name.Length == 0 || !name.All(c => char.IsLetterOrDigit(c) || c == '_'))
+        {
+            Console.Error.WriteLine(
+                $"{ToolName}: '{asked}' is not a name a project or a file can take. "
+                + "Letters, digits and underscores.");
+
+            return Misused;
+        }
+
+        return args.Contains("--project")
+            ? NewProject(asked, name, program)
+            : NewProgram(asked + SourceDiscovery.SourceExtension, program);
+    }
+
+    /// <summary>One file, written where it was named.</summary>
+    private static int NewProgram(string path, string program)
+    {
+        if (File.Exists(path))
+        {
+            Console.Error.WriteLine($"{ToolName}: {path} is already there.");
+            return Misused;
+        }
+
+        if (Path.GetDirectoryName(Path.GetFullPath(path)) is { Length: > 0 } folder)
+        {
+            Directory.CreateDirectory(folder);
+        }
+
+        File.WriteAllText(path, program);
+
+        Console.WriteLine($"Wrote {path}");
+        Console.WriteLine($"Run it with: {ToolName} run {path}");
+
+        return Ok;
+    }
+
+    /// <summary>
+    /// <para>A folder holding a project and the program it builds.</para>
+    /// <para>A folder rather than a project file beside whatever else is there, because a project
+    /// names what it builds by path — so one written into an occupied folder either lists nothing
+    /// or lists files somebody else's project already lists.</para>
+    /// </summary>
+    private static int NewProject(string path, string name, string program)
+    {
+        if (Directory.Exists(path) || File.Exists(path))
+        {
+            Console.Error.WriteLine($"{ToolName}: {path} is already there.");
+            return Misused;
+        }
+
+        string project = Path.Combine(path, name + SourceDiscovery.ProjectExtension);
+        string main = Path.Combine(path, "Program" + SourceDiscovery.SourceExtension);
+
+        Directory.CreateDirectory(path);
+
+        File.WriteAllText(
+            project,
+            $"""
+             project {name}
+                 source Program{SourceDiscovery.SourceExtension}
+             end project
+
+             """);
+
+        File.WriteAllText(main, program);
+
+        Console.WriteLine($"Wrote {project}");
+        Console.WriteLine($"Wrote {main}");
+        Console.WriteLine($"Run it with: {ToolName} run {project}");
+
+        return Ok;
     }
 
     private static int RunTokens(string[] args)
     {
         if (SourceArgument(args, "tokens") is not { } path)
         {
-            return 1;
+            return Misused;
         }
 
         SourceText source = SourceText.FromFile(path);
@@ -433,7 +707,7 @@ public static class Program
     {
         if (SourceArgument(args, "ast") is not { } path)
         {
-            return 1;
+            return Misused;
         }
 
         DiagnosticBag diagnostics = new();
@@ -453,7 +727,7 @@ public static class Program
     {
         if (Target(args, "check") is not { } target)
         {
-            return 1;
+            return Misused;
         }
 
         DiagnosticBag diagnostics = new();
@@ -461,14 +735,14 @@ public static class Program
         if (Compile(target.Path, diagnostics, requireEntryPoint: false) is not var (compilation, model))
         {
             DiagnosticRenderer.WriteAll(diagnostics);
-            return 1;
+            return Reported;
         }
 
         DiagnosticRenderer.WriteAll(diagnostics);
 
         if (diagnostics.HasErrors)
         {
-            return 1;
+            return Reported;
         }
 
         string entry = model.EntryPoint is null ? "none" : "Program.Main";
@@ -477,7 +751,7 @@ public static class Program
 
         Console.WriteLine($"{compilation.Label}: ok, {files}, {types}, entry point {entry}.");
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -525,7 +799,7 @@ public static class Program
     {
         if (Target(args, "lower") is not { } target)
         {
-            return 1;
+            return Misused;
         }
 
         DiagnosticBag diagnostics = new();
@@ -534,7 +808,7 @@ public static class Program
             || diagnostics.HasErrors)
         {
             DiagnosticRenderer.WriteAll(diagnostics);
-            return 1;
+            return Reported;
         }
 
         // One tree per file, each headed by the file it came from, since a compilation of
@@ -551,7 +825,7 @@ public static class Program
             Console.Out.Write(AstPrinter.Print(lowered[index]));
         }
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>
@@ -566,7 +840,15 @@ public static class Program
     {
         if (Target(args, "build") is not { } target)
         {
-            return 1;
+            return Misused;
+        }
+
+        // Read before anything is compiled. A line that could not be read is not a line to act
+        // on, and finding that out after the work is done reports the program's mistakes to
+        // somebody whose actual mistake was the option they misspelled.
+        if (BuildOptions(args, target) is not { } options)
+        {
+            return Misused;
         }
 
         DiagnosticBag diagnostics = new();
@@ -574,18 +856,13 @@ public static class Program
         if (Compile(target.Path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
         {
             DiagnosticRenderer.WriteAll(diagnostics);
-            return 1;
+            return Reported;
         }
 
         if (diagnostics.HasErrors)
         {
             DiagnosticRenderer.WriteAll(diagnostics);
-            return 1;
-        }
-
-        if (BuildOptions(args, target) is not { } options)
-        {
-            return 1;
+            return Reported;
         }
 
         string name = Path.GetFileNameWithoutExtension(compilation.Label);
@@ -609,7 +886,7 @@ public static class Program
             // Written as a path from where the reader is standing, so the line can be pasted.
             Console.WriteLine($"Run it with: dotnet {Path.GetRelativePath(".", output)}");
 
-            return 0;
+            return Ok;
         }
 
         Console.WriteLine($"Run it with: {Path.GetRelativePath(".", launcher)}");
@@ -622,7 +899,7 @@ public static class Program
                 $"On {options.Runtime}, mark it runnable first: chmod +x {Path.GetFileName(launcher)}");
         }
 
-        return 0;
+        return Ok;
     }
 
     /// <summary>What a build was asked for beyond the program itself.</summary>
@@ -706,7 +983,7 @@ public static class Program
     {
         if (Target(args, "run") is not { } target)
         {
-            return 1;
+            return Misused;
         }
 
         DiagnosticBag diagnostics = new();
@@ -714,14 +991,14 @@ public static class Program
         if (Compile(target.Path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
         {
             DiagnosticRenderer.WriteAll(diagnostics);
-            return 1;
+            return Reported;
         }
 
         DiagnosticRenderer.WriteAll(diagnostics);
 
         if (diagnostics.HasErrors)
         {
-            return 1;
+            return Reported;
         }
 
         try
@@ -735,7 +1012,7 @@ public static class Program
         {
             // Something the program did. A fault in the compiler is not described, and travels.
             Console.Error.WriteLine(description);
-            return 1;
+            return Reported;
         }
     }
 }

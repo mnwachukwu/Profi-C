@@ -368,13 +368,15 @@ public sealed partial class Parser
     private Expression ParseNew()
     {
         Token start = Advance();
-        List<string> parts = [ExpectIdentifier()];
+        List<string> parts = [ExpectIdentifier(out SourceSpan named)];
 
-        // Qualified the same way a type written anywhere else is, since this is one.
+        // Qualified the same way a type written anywhere else is, since this is one — and named
+        // the same way too: the last part is the type, and everything ahead of it says where to
+        // look.
         while (Check(TokenType.Dot))
         {
             Advance();
-            parts.Add(ExpectIdentifier());
+            parts.Add(ExpectIdentifier(out named));
         }
 
         string typeName = string.Join('.', parts);
@@ -383,7 +385,7 @@ public sealed partial class Parser
         List<Expression> arguments = ParseArguments();
         Expect(TokenType.RightParen);
 
-        return new NewExpr(SpanFrom(start), typeName, arguments);
+        return new NewExpr(SpanFrom(start), typeName, arguments) { NameSpan = named };
     }
 
     private Expression ParseCollection()

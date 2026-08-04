@@ -39,13 +39,18 @@ public sealed class RenameTests
 
     private sealed class Workspace : IDisposable
     {
-        public Workspace()
+        public Workspace(string? beside = null)
         {
             Folder = Path.Combine(Path.GetTempPath(), $"profi-c-rename-{Guid.NewGuid():N}");
             Directory.CreateDirectory(Folder);
 
             File.WriteAllText(Path.Combine(Folder, "Program.pc"), Program);
             File.WriteAllText(Path.Combine(Folder, "Greeting.pc"), Greeting);
+
+            if (beside is not null)
+            {
+                File.WriteAllText(Path.Combine(Folder, "Beside.pc"), beside);
+            }
         }
 
         public string Folder { get; }
@@ -142,6 +147,62 @@ public sealed class RenameTests
                         function Main()
                             integer total = Greeting.Length("hello");
                             Console.WriteLine(total + total);
+                        end function
+                    end model
+                    """));
+        });
+    }
+
+    /// <summary>
+    /// <para>Renaming a model rewrites every <c>new</c> that builds one.</para>
+    /// <para><b>The name in a <c>new</c> is a name, and for a long time nothing recorded that it
+    /// was.</b> A node whose name was never written down is one rename walks past, so the
+    /// declaration and the written type changed and the construction did not — leaving a program
+    /// that says <c>Ring here = new Circle();</c> and does not compile, from an edit a reader
+    /// accepted because they had no way to see what it would do.</para>
+    /// </summary>
+    [Test]
+    public void AModelIsRenamedWhereItIsConstructed()
+    {
+        const string Shapes = """
+            model Circle
+            end model
+
+            shared model Drawing
+                function Draw()
+                    Circle here = new Circle();
+                    Console.WriteLine(here);
+                end function
+            end model
+            """;
+
+        using Workspace workspace = new(Shapes);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, _) = Compile(workspace);
+
+        CompilationUnit beside =
+            units.Single(u => Path.GetFileName(u.Source.FileName) == "Beside.pc");
+
+        // Line 1, column 7: on 'Circle' where the model is declared.
+        JsonObject? change = Rename.Edits(
+            units, model, beside, OffsetOf(beside.Source, 1, 7), "Ring");
+
+        JsonArray edits = EditsIn(change, workspace.At("Beside.pc"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(edits, Has.Count.EqualTo(3), "declared, written as a type, and constructed");
+
+            Assert.That(
+                Applied(Shapes, edits),
+                Is.EqualTo("""
+                    model Ring
+                    end model
+
+                    shared model Drawing
+                        function Draw()
+                            Ring here = new Ring();
+                            Console.WriteLine(here);
                         end function
                     end model
                     """));

@@ -228,6 +228,13 @@ public static class SemanticTokens
         EnumerationSymbol => 3,
         EnumMemberSymbol => 4,
         TypeSymbol => 5,
+
+        // A constructor is the one member that does not read as a member. It is written with the
+        // type's own name, and 'new Circle()' and 'function Circle(...)' are the same word — so a
+        // reader looking at either is looking at the type, and coloring the two differently says
+        // they are different things.
+        FunctionSymbol { IsConstructor: true, DeclaringType: { } owner } => KindOf(owner),
+
         FunctionSymbol function => function.DeclaringType is null ? Function : Method,
         FieldSymbol => Property,
         ParameterSymbol => Parameter,

@@ -101,20 +101,18 @@ public static class Answers
             return null;
         }
 
+        string? writing = Writing(units, unit, model, offset);
+
         if (Describe(model, node) is not { } said)
         {
-            return null;
+            // Nothing under the cursor to say anything about, but the place says what belongs in
+            // it — which is the whole of an argument nobody has typed yet.
+            return writing is null
+                ? null
+                : Reply(writing, Conversions.RangeOf(node.NameSpan, source));
         }
 
         string written = $"```profi-c\n{said}\n```";
-
-        // Where it came from, which a bare name cannot say. Two models called Circle are told
-        // apart by where they were declared and by nothing else, and the reader is looking at the
-        // half of that which is not written down.
-        if (Whence(model, node) is { Length: > 0 } from)
-        {
-            written += $"\n\n*{from}*";
-        }
 
         // Under the signature rather than beside it, so the shape a reader came for is the first
         // thing on screen and the prose is there for whoever reads on.
@@ -123,18 +121,90 @@ public static class Answers
             written += $"\n\n{summary}";
         }
 
-        return new JsonObject
+        // What the reader is looking at is the value; where it is going is the next question, not
+        // the first one. Opens with a bold word, which is what separates it from the prose above
+        // without spending a rule on it.
+        if (writing is not null)
         {
-            ["contents"] = new JsonObject
+            written += $"\n\n{writing}";
+        }
+
+        // Where it came from, which a bare name cannot say: two models called Circle are told
+        // apart by where they were declared and by nothing else, and the reader is looking at the
+        // half of that which is not written down.
+        //
+        // Last, under a rule, because it answers a question nobody asked first. A reader who
+        // hovered a name wanted to know what it is; which namespace it sits in is what they turn
+        // to next, on the rare occasion two things share a name. The rule is the whole of what
+        // marks it as a footer — a hover is markdown, and markdown has no smaller.
+        if (Whence(model, node) is { Length: > 0 } from)
+        {
+            written += $"\n\n---\n\n{from}";
+        }
+
+        // The name rather than the whole node, so hovering a local underlines the local and not
+        // the declaration it sits in. A node with no name in it answers with itself, which is what
+        // an expression wants.
+        return Reply(written, Conversions.RangeOf(node.NameSpan, source));
+    }
+
+    private static JsonObject Reply(string written, JsonNode range) => new()
+    {
+        ["contents"] = new JsonObject
+        {
+            ["kind"] = "markdown",
+            ["value"] = written,
+        },
+        ["range"] = range,
+    };
+
+    /// <summary>
+    /// <para>Which parameter the cursor is writing, where it is inside an argument list.</para>
+    /// <para><b>Signature help says this and then goes away.</b> It shows while the arguments are
+    /// being typed and dismisses on the first thing that is not typing, so a reader who stops to
+    /// look at what they wrote has to delete a character to bring it back — or go up to the call
+    /// and hover the name, which is the trip this exists to save.</para>
+    /// <para>Only among the arguments. A cursor on the name being called is asking about the
+    /// function, and the rest of the hover already answers that.</para>
+    /// <para>Walked outward and stopped at the first call, so an argument written inside a nested
+    /// call belongs to the nested one. A lambda in between claims nothing here — what the reader
+    /// is writing is still an argument of something, even if it is several lines above.</para>
+    /// </summary>
+    private static string? Writing(
+        IReadOnlyList<CompilationUnit> units, CompilationUnit unit, SemanticModel model, int offset)
+    {
+        foreach (SyntaxNode node in NodeAt.Enclosing(unit, offset))
+        {
+            if (Called.Of(node, model, offset) is not { } call)
             {
-                ["kind"] = "markdown",
-                ["value"] = written,
-            },
-            // The name rather than the whole node, so hovering a local underlines the local and
-            // not the declaration it sits in. A node with no name in it answers with itself,
-            // which is what an expression wants.
-            ["range"] = Conversions.RangeOf(node.NameSpan, source),
-        };
+                continue;
+            }
+
+            string? shape = call.Parameter is { } parameter
+                ? $"{parameter.Type} {parameter.Name}"
+                : call.Type?.ToString();
+
+            if (shape is null)
+            {
+                // The cursor is in an argument list the compiler could not work out — a name
+                // nothing declares, most often. Naming a position in a call nobody found would be
+                // an answer about nothing.
+                return null;
+            }
+
+            string where = call.Count is { } total
+                ? $" ({call.At + 1} of {total})"
+                : string.Empty;
+
+            string said = $"**Writing** `{shape}`{where}";
+
+            return call.Parameter is { } named
+                   && Documented(units, named) is { Length: > 0 } about
+                ? $"{said}\n\n{about}"
+                : said;
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -290,18 +360,9 @@ public static class Answers
 
         _ = scanner.Scan();
 
-        // A parameter is documented on the function that takes it, not above itself — so what is
-        // looked for is the comment on the enclosing declaration, and the label naming this
-        // parameter within it. Read as a declaration of its own it finds the function's comment
-        // and answers with what the whole function is for, which is true of the function and
-        // says nothing about the parameter.
-        if (symbol is ParameterSymbol)
+        if (symbol is ParameterSymbol parameter)
         {
-            return scanner.Documentation
-                .SelectMany(d => d.Parameters)
-                .FirstOrDefault(label => string.Equals(
-                    label.Name, symbol.Name, StringComparison.Ordinal))
-                ?.Text;
+            return Documented(units, parameter);
         }
 
         if (scanner.Documentation.FirstOrDefault(d => d.Documents == declared.Span.Start.Line)
@@ -324,6 +385,45 @@ public static class Answers
         }
 
         return said;
+    }
+
+    /// <summary>
+    /// <para>What a function's documentation says about one of its parameters.</para>
+    /// <para><b>A parameter is documented on the function that takes it, not above itself.</b> So
+    /// what is looked for is the comment on the function, and the label naming this parameter
+    /// within it — read as a declaration of its own it would find the function's comment and
+    /// answer with what the whole function is for, which is true of the function and says nothing
+    /// about the parameter.</para>
+    /// <para>The function has to be found first, and cannot be skipped. Taking the label by name
+    /// from every comment in the file answers with whichever function was written highest, so two
+    /// functions each taking a <c>word</c> would document each other's.</para>
+    /// </summary>
+    private static string? Documented(
+        IReadOnlyList<CompilationUnit> units, ParameterSymbol parameter)
+    {
+        if (parameter.Declaration is not { } declared || Holding(units, declared) is not { } where)
+        {
+            return null;
+        }
+
+        if (Everything(where).OfType<FunctionDecl>().FirstOrDefault(
+                function => function.Parameters.Any(p => ReferenceEquals(p, declared)))
+            is not { } owner)
+        {
+            return null;
+        }
+
+        DiagnosticBag aside = new();
+        Lexer scanner = new(where.Source, aside);
+
+        _ = scanner.Scan();
+
+        return scanner.Documentation
+            .FirstOrDefault(comment => comment.Documents == owner.Span.Start.Line)
+            ?.Parameters
+            .FirstOrDefault(label => string.Equals(
+                label.Name, parameter.Name, StringComparison.Ordinal))
+            ?.Text;
     }
 
     private static string Capitalized(string word) =>
@@ -447,30 +547,9 @@ public static class Answers
             }),
             ["activeSignature"] = 0,
             ["activeParameter"] = Math.Min(
-                At(call, offset), Math.Max(0, function.Parameters.Count - 1)),
+                NodeAt.ArgumentAt(call.Arguments, offset),
+                Math.Max(0, function.Parameters.Count - 1)),
         };
-    }
-
-    /// <summary>
-    /// <para>Which argument the cursor is in, counted by the arguments that begin before it.
-    /// </para>
-    /// <para>Counted from the arguments rather than by looking for commas, because a comma inside
-    /// a nested call or a string belongs to something else, and counting those would highlight
-    /// the wrong parameter exactly where the code is hardest to read.</para>
-    /// </summary>
-    private static int At(CallExpr call, int offset)
-    {
-        int at = 0;
-
-        foreach (Expression argument in call.Arguments)
-        {
-            if (offset > argument.Span.EndOffset)
-            {
-                at++;
-            }
-        }
-
-        return at;
     }
 
     /// <summary>The file a piece of syntax came from, or null where none of these holds it.</summary>

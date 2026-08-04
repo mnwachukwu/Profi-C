@@ -44,6 +44,13 @@ public sealed class LanguageServer : IDisposable
 
     private bool _shuttingDown;
 
+    /// <summary>
+    /// Which hints the reader asked for, read from the editor's settings and replaced whenever
+    /// they change. Set before anything can be asked, so the defaults stand for a client that
+    /// sends none.
+    /// </summary>
+    private Hints.Wants _hints = Hints.Wants.Default;
+
     public LanguageServer(Stream input, Stream output, TimeSpan? quiet = null)
     {
         _wire = new LspConnection(input, output);
@@ -96,7 +103,15 @@ public sealed class LanguageServer : IDisposable
         switch (method)
         {
             case "initialize":
+                _hints = Hints.Wanted(parameters?["initializationOptions"] as JsonObject);
                 _wire.Respond(id, Capabilities());
+                break;
+
+            // Settings changed while the editor was open. Read rather than ignored, so that
+            // turning a hint off takes effect where it was turned off rather than at the next
+            // restart — which is nowhere, for somebody trying the switch to see what it does.
+            case "workspace/didChangeConfiguration":
+                _hints = Hints.Wanted(parameters?["settings"] as JsonObject);
                 break;
 
             // Sent once the editor has finished starting. Nothing to do, and answering it as
@@ -171,6 +186,14 @@ public sealed class LanguageServer : IDisposable
                 _wire.Respond(id, OccurrencesAt(parameters));
                 break;
 
+            case "textDocument/references":
+                _wire.Respond(id, ReferencesTo(parameters));
+                break;
+
+            case "textDocument/inlayHint":
+                _wire.Respond(id, HintsIn(parameters));
+                break;
+
             case "textDocument/formatting":
                 _wire.Respond(id, LinedUp(parameters, whole: true));
                 break;
@@ -215,6 +238,11 @@ public sealed class LanguageServer : IDisposable
             ["hoverProvider"] = true,
             ["definitionProvider"] = true,
             ["documentHighlightProvider"] = true,
+            ["referencesProvider"] = true,
+
+            // Where the program says no type, which in this language is 'let' and the two loop
+            // bindings. Narrow enough that it is on rather than something to be configured.
+            ["inlayHintProvider"] = true,
             ["documentFormattingProvider"] = true,
             ["documentRangeFormattingProvider"] = true,
 
@@ -548,6 +576,54 @@ public sealed class LanguageServer : IDisposable
         Compiled(parameters) is var (_, model, unit, offset)
             ? Occurrences.In(unit, model, offset)
             : null;
+
+    /// <summary>
+    /// <para>Every use of the name under the cursor, across the whole program.</para>
+    /// <para>Whether the declaration counts is the editor's to say, and it says so in the request.
+    /// Missing, it counts — the protocol's own default, and the one that answers "where does this
+    /// name appear" rather than "who calls it".</para>
+    /// </summary>
+    private JsonArray? ReferencesTo(JsonObject? parameters)
+    {
+        if (Compiled(parameters) is not var (units, model, unit, offset))
+        {
+            return null;
+        }
+
+        bool includingDeclaration =
+            (bool?)parameters?["context"]?["includeDeclaration"] ?? true;
+
+        return Occurrences.Across(units, model, unit, offset, includingDeclaration);
+    }
+
+    /// <summary>
+    /// <para>The types a stretch of the file leaves unwritten.</para>
+    /// <para>Asked about a range rather than a position, since this is the one question about a
+    /// region of the file rather than about a point in it — an editor asks for what is on screen
+    /// and asks again as it scrolls.</para>
+    /// </summary>
+    private JsonArray? HintsIn(JsonObject? parameters)
+    {
+        if (_hints.Nothing)
+        {
+            return [];
+        }
+
+        if (Checked(parameters) is not var (_, model, unit))
+        {
+            return null;
+        }
+
+        if (Conversions.OffsetOf(parameters?["range"]?["start"] as JsonObject, unit.Source)
+                is not { } from
+            || Conversions.OffsetOf(parameters?["range"]?["end"] as JsonObject, unit.Source)
+                is not { } to)
+        {
+            return null;
+        }
+
+        return Hints.In(unit, model, unit.Source, from, to, _hints);
+    }
 
     /// <summary>
     /// <para>The whole program around the file being asked about, checked, and where in it the

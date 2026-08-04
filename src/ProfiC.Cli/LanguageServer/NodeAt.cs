@@ -124,6 +124,33 @@ public static class NodeAt
     }
 
     /// <summary>
+    /// <para>Which argument of a list the cursor is in, counted by the arguments that end before
+    /// it.</para>
+    /// <para>Counted from the arguments rather than by looking for commas, because a comma inside
+    /// a nested call or a string belongs to something else, and counting those would answer about
+    /// the wrong parameter exactly where the code is hardest to read.</para>
+    /// <para>An argument the parser stood in for is one that ends where the next token begins,
+    /// which is past the cursor rather than at it — so a cursor sitting in an argument nobody has
+    /// typed yet counts that argument as the one it is in, which it is.</para>
+    /// </summary>
+    public static int ArgumentAt(IReadOnlyList<Expression> arguments, int offset)
+    {
+        ArgumentNullException.ThrowIfNull(arguments);
+
+        int at = 0;
+
+        foreach (Expression argument in arguments)
+        {
+            if (offset > argument.Span.EndOffset)
+            {
+                at++;
+            }
+        }
+
+        return at;
+    }
+
+    /// <summary>
     /// The child covering the offset, or null where none does. The first is taken where several
     /// would do, which happens only for a node of no width.
     /// </summary>

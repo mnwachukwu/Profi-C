@@ -15,6 +15,33 @@ interpreter to walk that tree.
 
 This language is heavily influenced by and implemented in C#.
 
+**There is a VS Code extension, and it lives in its own repository:**
+**[Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors).** It gives a `.pc` file
+diagnostics as you type, hover, go to definition, completion, renaming, formatting, an outline,
+coloring by what each name means, and breakpoints and stepping. Installing it is covered there;
+[what it does in full](#the-vs-code-extension) is below.
+
+## Contents
+
+- [What it is for](#what-it-is-for) — the six things the teaching goal decided
+- [Documentation](#documentation) — the specification, the standard library, and the C# comparison
+- [A taste](#a-taste) — the whole language in one screen
+- [More examples](#more-examples) — what each construct looks like written out
+  - [Hello, World!](#hello-world) · [Models and inheritance](#models-and-inheritance) ·
+    [Optionals instead of null](#optionals-instead-of-null) · [Loops](#loops)
+- [Status](#status) — how much of it works
+- [Writing and running a program](#writing-and-running-a-program) — everything needed to try it
+  - [1. Build the tool](#1-build-the-tool) · [2. Put `dist` on your PATH](#2-put-dist-on-your-path) ·
+    [3. Write a program](#3-write-a-program) · [4. Run it](#4-run-it) · [5. Build it](#5-build-it)
+  - [More than one file](#more-than-one-file) — folders, imports, and projects
+  - [Seeing the machinery](#seeing-the-machinery) — the commands that print each stage
+  - [One thing to remember](#one-thing-to-remember)
+- [The VS Code extension](#the-vs-code-extension) — what it does, and why it is elsewhere
+- [Building](#building) — building the compiler itself, and re-recording its tests
+- [Samples](#samples) — every program in `samples/`, and what each is there to show
+  - [Samples that fail on purpose](#samples-that-fail-on-purpose)
+- [Repository layout](#repository-layout) · [License](#license)
+
 ## What it is for
 
 Profi-C exists to make programming concepts legible to a beginner while staying faithful to
@@ -71,11 +98,6 @@ functions with closures, and compile-time definite assignment.
 The specification is written as each part of the language is implemented and covered by tests,
 so it never describes more than the compiler actually does. Where it and anything else here
 disagree, it is right.
-
-The rest of this file is the tour: what the language looks like in [a taste](#a-taste) and
-[more examples](#more-examples), how far along it is in [Status](#status), how to get it going
-in [Writing and running a program](#writing-and-running-a-program), and what is worth reading
-next in [Samples](#samples).
 
 ## A taste
 
@@ -234,9 +256,10 @@ read-only inside the body, which removes the classic closure-capture trap.
 
 ## Status
 
-**Profi-C runs, and it debugs.** Programs execute on a tree-walking interpreter, breakpoints and
-stepping work in VS Code, and `pc build` writes a real .NET assembly for as much of the language
-as the emitter has reached.
+**Profi-C runs, it compiles, and it is a language you can work in.** Programs execute on a
+tree-walking interpreter, `pc build` writes a real .NET assembly for every program that checks,
+breakpoints and stepping work in VS Code, and a language server answers an editor about the file
+being typed into rather than the one last saved.
 
 | Stage | State |
 |---|---|
@@ -253,7 +276,7 @@ as the emitter has reached.
 | Standard library | Complete |
 | Debugger | Complete |
 | CIL emitter | Complete |
-| Language server | Not started |
+| Language server | Complete |
 
 Source becomes a syntax tree, every name resolves, every expression has a type, nothing can be
 read before it holds a value, and an optional cannot be read at all until presence is proven.
@@ -322,7 +345,19 @@ Prefer to skip PATH entirely? Every command below also works as
 
 ### 3. Write a program
 
-This is the smallest legal Profi-C program. It compiles, runs, and does nothing:
+One command starts you an empty one:
+
+```bash
+pc new hello
+```
+
+```
+Wrote hello.pc
+Run it with: pc run hello.pc
+```
+
+This is what it wrote. It is the smallest legal Profi-C program — it compiles, runs, and does
+nothing:
 
 ```
 shared model Program
@@ -335,7 +370,17 @@ Every rule it follows is the one described under [Hello, World!](#hello-world) a
 declarations and nothing else, no top-level code, and `Main` inside a `shared model` named
 `Program`.
 
-Save something worth watching as `hello.pc`, anywhere you like:
+**`pc sample hello` writes one that does something instead**, for a first look at what the
+language reads like. The two are deliberately different commands: a new program should be empty,
+because every line already in it is a line you have to read and then delete.
+
+```bash
+pc sample hello
+```
+
+Either form takes `--project`, which writes a folder holding a `.pcp` and the program it builds,
+and neither writes over anything already there. This is what `sample` leaves you — the same rules
+as above, doing something worth watching:
 
 ```
 shared model Program
@@ -380,6 +425,19 @@ scratch.pc(10,27): error PC0303: '+' is not defined for an integer? and an integ
 ```
 
 Three mistakes, three messages, one run — and each caught by a different part of the compiler.
+
+**Every command says how it went in its exit code**, which is the only part a build step reads.
+There are four, because the three ways this can go wrong are three different people's problem:
+
+| Code | What happened | Whose problem |
+|---|---|---|
+| 0 | It worked | — |
+| 1 | Something is wrong with the program, reported with a position | Whoever wrote the code |
+| 2 | Something is wrong with the command line, so no program was read | Whoever wrote the command |
+| 3 | The compiler asserted something it says cannot happen | This repository |
+
+`pc run` is the exception, and deliberately: it hands back whatever the program itself
+returned, so a Profi-C program can say how it went too.
 
 ### 5. Build it
 
@@ -577,14 +635,16 @@ compiler itself, `dotnet run --project src/ProfiC.Cli -- run <file>` cannot go s
 Windows will not let a running program be overwritten. Run `Profi-C: Stop the language server`
 from the command palette first, then publish, then `Profi-C: Restart the language server`.
 
-## Syntax highlighting in VS Code
+## The VS Code extension
 
 **Editor support lives in its own repository**, [Profi-C.Editors](https://github.com/mnwachukwu/Profi-C.Editors).
 The VS Code extension there gives a `.pc` file syntax highlighting, **breakpoints and stepping**,
-breadcrumbs and an Outline, **diagnostics as you type**, hover types, go to definition, completion
-both after a dot and for a bare name, signature help, quick fixes, **renaming a name everywhere it
-is written**, **coloring every name for what the compiler worked out it is**, marking every use of
-the name under the caret, **formatting**, and buttons to run or build what you are looking at.
+breadcrumbs and an Outline, **diagnostics as you type**, hover types, go to definition,
+**completion that knows what the place it is in will take** — after a dot, for a bare name, and
+ordered by what would fit where the caret is — signature help, quick fixes, **renaming a name
+everywhere it is written**, **coloring every name for what the compiler worked out it is**, marking
+every use of the name under the caret, **finding every use of it across the whole program**,
+**formatting**, and buttons to run or build what you are looking at.
 Project management is what remains. Installing it, and the rest of what it does, is covered there.
 
 **Almost none of the debugger is over there**, which is the point. `pc debug` is the whole of it;
@@ -640,7 +700,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 
 | Sample | What it is for |
 |---|---|
-| [hello.pc](samples/hello.pc) | The smallest legal program |
+| [hello.pc](samples/hello.pc) | The smallest Profi-C program that does something |
 | [fizzbuzz.pc](samples/fizzbuzz.pc) | Range loops and an if/else-if chain |
 | [fibonacci.pc](samples/fibonacci.pc) | The same sequence written recursively and iteratively, side by side |
 | [primes.pc](samples/primes.pc) | The Sieve of Eratosthenes; sets used as a workspace |

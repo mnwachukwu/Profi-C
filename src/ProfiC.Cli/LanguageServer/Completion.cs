@@ -27,6 +27,13 @@ namespace ProfiC.Cli.LanguageServer;
 /// <para>What is offered is what would resolve — the same catalog the checker reads, and the
 /// members a type actually declares, with the ones a caller could not reach left out. A list
 /// that suggests something the next keystroke would reject is worse than a shorter list.</para>
+/// <para><b>And what would resolve <em>here</em> comes first.</b> Where the position says what it
+/// will accept — an initializer, an argument, a condition — <see cref="Wanted"/> reads that off
+/// the tree and the few names that fit sort above the rest. The order is all it changes: being
+/// sure enough to rank is a long way from being sure enough to hide, and a list missing the name
+/// somebody wanted is the one failure they cannot work around.</para>
+/// <para>One place is different, because the language leaves no room there: after <c>new</c> only
+/// a type may be written, and only one that can be constructed.</para>
 /// </summary>
 public static class Completion
 {
@@ -45,6 +52,9 @@ public static class Completion
     /// <para>Null rather than an empty list, so a caller can tell "nothing goes here" from "this
     /// is not a place where members go" — an editor shows an empty list as "no suggestions" and
     /// says nothing at all for the second.</para>
+    /// <para>Ordered by what the place the whole access sits in would take, which is where the
+    /// ordering earns the most: a type answers every member it has whether or not one of them
+    /// could stand here, and a string has more than thirty.</para>
     /// </summary>
     public static JsonArray? After(
         string path,
@@ -63,22 +73,24 @@ public static class Completion
         // A receiver whose type is in error is one the compiler could not work out — a name
         // nothing declares, most often. Every type answers ToString and Equals, so offering what
         // is known about it would offer those two and imply the name is fine.
-        if (ReceiverType(path, source, offset, read, cancellation) is not var (found, within)
+        if (ReceiverType(path, source, offset, read, cancellation)
+                is not var (found, within, unit, model)
             || found is not { IsError: false } receiver)
         {
             return null;
         }
 
+        // The same question the bare list asks, and the answer matters more here: a reader who
+        // has typed a dot inside an 'if' wants the handful of members that answer yes or no, and
+        // a string has thirty.
+        Wanted? wanted = Wanted.At(unit, model, offset);
+
         JsonArray offered = [];
 
-        foreach ((string name, string detail, int kind, string said) in MembersOf(receiver, within))
+        foreach ((string name, string detail, int kind, string said, TypeSymbol? produces)
+            in MembersOf(receiver, within))
         {
-            JsonObject item = new()
-            {
-                ["label"] = name,
-                ["detail"] = detail,
-                ["kind"] = kind,
-            };
+            JsonObject item = Row(name, detail, kind, wanted, produces);
 
             // What it is for, shown in the panel beside the list rather than in the row. The row
             // has the signature on it already, and a second line of prose per row would make a
@@ -109,6 +121,7 @@ public static class Completion
     /// so a reader reaching for a field types <c>t</c> first.</para>
     /// <para>Null where the cursor is somewhere no name can be written — between declarations,
     /// or in a file with nothing in it yet.</para>
+    /// <para>Ordered by what the place would accept, and after <c>new</c> narrowed to it.</para>
     /// </summary>
     public static JsonArray? Bare(
         string path,
@@ -124,10 +137,18 @@ public static class Completion
             return null;
         }
 
-        if (Compiled(path, source, read, cancellation) is not var (model, unit))
+        bool after = FollowsNew(source.Text, offset);
+
+        SourceText reading = after
+            ? new SourceText(Repaired(source.Text, offset), source.FileName)
+            : source;
+
+        if (Compiled(path, reading, read, cancellation) is not var (model, unit))
         {
             return null;
         }
+
+        bool constructing = after && Constructing(unit, offset);
 
         // Counted against the file that was compiled, whose text is this one's. The offset the
         // editor gave is an offset into it, unshifted, since nothing was inserted.
@@ -135,6 +156,8 @@ public static class Completion
         {
             return null;
         }
+
+        Wanted? wanted = Wanted.At(unit, model, offset);
 
         JsonArray offered = [];
 
@@ -158,26 +181,92 @@ public static class Completion
                 continue;
             }
 
-            offered.Add(new JsonObject
+            // Nothing but a type follows 'new', and only one a program is allowed to construct.
+            // This is the one narrowing here, and it is safe because it is the language saying so
+            // rather than a reading of what somebody probably meant.
+            if (constructing && !MayBeConstructed(symbol))
             {
-                ["label"] = symbol.Name,
-                ["detail"] = Describe(symbol),
-                ["kind"] = KindOf(symbol),
-            });
+                continue;
+            }
+
+            offered.Add(Row(symbol.Name, Describe(symbol), KindOf(symbol), wanted, Produced(symbol)));
+        }
+
+        // A receiver is not a type, so 'new this' is not a thing anybody writes.
+        if (constructing)
+        {
+            return offered;
         }
 
         foreach (string keyword in Receivers(names))
         {
-            offered.Add(new JsonObject
-            {
-                ["label"] = keyword,
-                ["detail"] = names.EnclosingType?.Name ?? string.Empty,
-                ["kind"] = Keyword,
-            });
+            offered.Add(Row(
+                keyword,
+                names.EnclosingType?.Name ?? string.Empty,
+                Keyword,
+                wanted,
+                names.EnclosingType));
         }
 
         return offered;
     }
+
+    /// <summary>
+    /// <para>One row of the list, sorted by whether it fits where the cursor is.</para>
+    /// <para>The sort key is written only where something is known about the position, so that a
+    /// place with no expectation is left in the order the editor would have chosen — which is the
+    /// order it had before there was anything to say.</para>
+    /// </summary>
+    private static JsonObject Row(
+        string label, string detail, int kind, Wanted? wanted, TypeSymbol? produces)
+    {
+        JsonObject item = new()
+        {
+            ["label"] = label,
+            ["detail"] = detail,
+            ["kind"] = kind,
+        };
+
+        if (wanted is not null)
+        {
+            item["sortText"] = (wanted.Fits(produces) ? "0" : "1") + label;
+        }
+
+        return item;
+    }
+
+    /// <summary>
+    /// <para>What writing this name here would put in the place, which is not always the type the
+    /// name stands for.</para>
+    /// <para>A function is about to be called, so what it would leave behind is what it yields. A
+    /// member of an enumeration is a value of that enumeration. Everything else is what it holds.
+    /// </para>
+    /// </summary>
+    private static TypeSymbol? Produced(Symbol symbol) => symbol switch
+    {
+        FunctionSymbol function => function.ReturnType,
+        EnumMemberSymbol member => member.Owner,
+        _ => Held(symbol),
+    };
+
+    /// <summary>
+    /// <para>Whether <c>new</c> may name this.</para>
+    /// <para>An abstract model has something left unwritten and a shared one has no instances at
+    /// all, so both are refused where the word appears rather than offered and then reported. A
+    /// type the language owns is constructible only if the catalog lists a form of <c>new</c> for
+    /// it, which is what keeps <c>Math</c> and <c>Console</c> out — they are names to reach members
+    /// through. An exception lists none and is constructible all the same: they all take the
+    /// message they all carry.</para>
+    /// </summary>
+    private static bool MayBeConstructed(Symbol symbol) => symbol switch
+    {
+        ModelSymbol model =>
+            !model.IsAbstract
+            && !model.IsShared
+            && (BuiltIns.FindModel(model.Name) is not { } known || known.MayBeConstructed),
+        StructureSymbol => true,
+        _ => false,
+    };
 
     /// <summary>
     /// The receivers a bare name can be written as here: <c>this</c> inside an instance member,
@@ -242,7 +331,11 @@ public static class Completion
     /// <para>Compiled as the whole program rather than the file alone: the receiver may be a type
     /// declared next door, and a compilation of one file would type it as nothing.</para>
     /// </summary>
-    private static (TypeSymbol Receiver, DeclaredTypeSymbol? Within)? ReceiverType(
+    private static (
+        TypeSymbol Receiver,
+        DeclaredTypeSymbol? Within,
+        CompilationUnit Unit,
+        SemanticModel Model)? ReceiverType(
         string path,
         SourceText source,
         int offset,
@@ -280,8 +373,11 @@ public static class Completion
             // about the one above. A name half typed on the line before is a parse error, and
             // recovery does not always reach past it — and that line is where the caret just was,
             // so this is the ordinary case rather than a rare one.
+            // Answered from the compilation that was made here even so. Its tree is the one that
+            // did not parse around the cursor, so it says nothing about what the place would take
+            // — which is the honest answer where the line it is on is not a statement.
             return NamedBefore(path, source, offset, read, cancellation) is { } fallback
-                ? (fallback, within)
+                ? (fallback, within, unit, model)
                 : null;
         }
 
@@ -292,7 +388,7 @@ public static class Completion
         TypeSymbol? receiver =
             model.GetSymbol(access.Receiver) as TypeSymbol ?? model.GetType(access.Receiver);
 
-        return receiver is null ? null : (receiver, within);
+        return receiver is null ? null : (receiver, within, unit, model);
     }
 
     /// <summary>
@@ -365,6 +461,96 @@ public static class Completion
     };
 
     private static bool IsNamePart(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+    /// <summary>
+    /// <para>Whether the cursor sits where a type name follows <c>new</c>.</para>
+    /// <para><b>Read from the text, and this is the one question here that has to be.</b> A
+    /// <c>new</c> with no type after it does not merely fail to parse: the parser takes the next
+    /// word for the type name whatever that word is, so one written at the end of a line swallows
+    /// the <c>end</c> closing the function and everything below goes with it. There is no tree
+    /// left to ask.</para>
+    /// <para>The space is required. With the caret against the word, the word is what is being
+    /// typed, and <c>ne</c> is a name somebody may be halfway through.</para>
+    /// </summary>
+    private static bool FollowsNew(string text, int offset)
+    {
+        const string Word = "new";
+
+        if (offset < 0 || offset > text.Length)
+        {
+            return false;
+        }
+
+        int at = offset;
+
+        while (at > 0 && IsNamePart(text[at - 1]))
+        {
+            at--;
+        }
+
+        int gap = at;
+
+        while (gap > 0 && text[gap - 1] is ' ' or '\t')
+        {
+            gap--;
+        }
+
+        if (gap == at || gap < Word.Length)
+        {
+            return false;
+        }
+
+        return string.CompareOrdinal(text, gap - Word.Length, Word, 0, Word.Length) == 0
+            && (gap == Word.Length || !IsNamePart(text[gap - Word.Length - 1]));
+    }
+
+    /// <summary>
+    /// <para>Whether the repaired file really does hold a <c>new</c> at the cursor.</para>
+    /// <para><b>The word was read from the text, and text has places where a word is not a
+    /// word.</b> <c>"a new idea"</c> inside a string reads the same backwards as the keyword does,
+    /// and so does a comment. Asking the tree afterwards settles it for the cost of one walk: a
+    /// name put inside a string stays inside the string, and nothing there is a construction.
+    /// </para>
+    /// </summary>
+    private static bool Constructing(CompilationUnit unit, int offset) =>
+        NodeAt.Innermost<NewExpr>(unit, offset) is { } construction
+        && offset >= construction.NameSpan.Start.Offset
+        && offset <= construction.NameSpan.EndOffset;
+
+    /// <summary>
+    /// <para>The file with a name and an empty argument list put where the type will go, so that
+    /// the line parses and what encloses it can be asked what it was after.</para>
+    /// <para><b>The parentheses are the point.</b> <c>new</c> takes them whether or not the
+    /// constructor takes anything, so a name on its own leaves the parser still looking for one —
+    /// which is the failure being repaired, not a lesser version of it.</para>
+    /// </summary>
+    private static string Repaired(string text, int offset) =>
+        text[..offset]
+        + Placeholder
+        + (Opens(text, offset) ? string.Empty : "()")
+        + text[offset..];
+
+    /// <summary>
+    /// Whether an argument list is already written after the cursor, which is what somebody
+    /// editing the type in a <c>new</c> they finished earlier has in front of them.
+    /// </summary>
+    private static bool Opens(string text, int offset)
+    {
+        for (int at = offset; at < text.Length && text[at] is not ('\n' or '\r'); at++)
+        {
+            if (text[at] == '(')
+            {
+                return true;
+            }
+
+            if (!char.IsWhiteSpace(text[at]) && !IsNamePart(text[at]))
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// <para>The name to put where the member will go, and a semicolon after it where the line
@@ -452,8 +638,12 @@ public static class Completion
     /// program declares, and the members a program declared — including the ones it inherited,
     /// since a reader calling <c>shape.Area()</c> does not care which model wrote it.</para>
     /// </summary>
-    private static IEnumerable<(string Name, string Detail, int Kind, string Summary)> MembersOf(
-        TypeSymbol receiver, DeclaredTypeSymbol? within)
+    private static IEnumerable<(
+        string Name,
+        string Detail,
+        int Kind,
+        string Summary,
+        TypeSymbol? Produces)> MembersOf(TypeSymbol receiver, DeclaredTypeSymbol? within)
     {
         HashSet<string> already = new(StringComparer.Ordinal);
 
@@ -465,7 +655,8 @@ public static class Completion
                     member.Name,
                     Describe(member),
                     member.IsValue ? Property : Method,
-                    member.Id is { } id ? BuiltInDocs.Summary(id) : string.Empty);
+                    member.Id is { } id ? BuiltInDocs.Summary(id) : string.Empty,
+                    member.ReturnType);
             }
         }
 
@@ -491,7 +682,12 @@ public static class Completion
 
                 if (already.Add(member.Name))
                 {
-                    yield return (member.Name, Describe(member), KindOf(member), string.Empty);
+                    yield return (
+                        member.Name,
+                        Describe(member),
+                        KindOf(member),
+                        string.Empty,
+                        Produced(member));
                 }
             }
         }

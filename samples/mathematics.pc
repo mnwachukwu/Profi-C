@@ -31,8 +31,15 @@ shared model Program
         Console.WriteLine("  E  = " + Math.E);
 
         # Neither is a function, so neither is called. Writing Math.Pi() is reported.
+        #
+        # Rounded because a root, a logarithm and an angle are worked out by the machine's own
+        # arithmetic library, and those are allowed to differ in the last bit from one computer
+        # to the next. The answer is right either way, but the final digit is not something a
+        # program should be written to depend on, and rounding says which digits are being
+        # claimed. Where an exact answer exists it is given exactly, so every line below that
+        # prints a whole number really does print one everywhere.
         Console.WriteLine("  a circle of radius 2 has area "
-                              + Program.ToFourPlaces(Math.Pi * 2.0 * 2.0));
+                              + Math.Round(Math.Pi * 2.0 * 2.0, 4));
         Console.WriteLine();
     end function
 
@@ -72,30 +79,11 @@ shared model Program
     function Logarithms()
         Console.WriteLine("== logarithms ==");
         Console.WriteLine("  Log(E)        = " + Math.Log(Math.E));
-        Console.WriteLine("  Log(100)      = " + Program.ToFourPlaces(Math.Log(100.0)));
+        Console.WriteLine("  Log(100)      = " + Math.Round(Math.Log(100.0), 4));
         Console.WriteLine("  Log10(100)    = " + Math.Log10(100.0));
         Console.WriteLine("  Log(100, 10)  = " + Math.Log(100.0, 10.0));
         Console.WriteLine("  Log2(1024)    = " + Math.Log2(1024.0));
         Console.WriteLine();
-    end function
-
-    ##
-        @summary: Shown to four places rather than in full.
-
-        @remarks: A root, a logarithm and an angle are worked out by the machine's own
-        arithmetic library, and those are allowed to differ in the last bit from one computer
-        to the next. The answer is right either way, but the final digit is not something a
-        program should be written to depend on, and rounding first says which digits are being
-        claimed.
-
-        Where an exact answer exists it is given exactly, so the lines above that print a whole
-        number really do print one everywhere.
-
-        @value: the number to shorten.
-        @yields: the same number, rounded to four decimal places.
-    ##
-    real function ToFourPlaces(real value)
-        yield Math.Round(value * 10000.0) / 10000.0;
     end function
 
     # ---- Angles ---------------------------------------------------------------------
@@ -117,13 +105,13 @@ shared model Program
         Console.WriteLine("  Sin(Pi/2)     = " + Math.Sin(quarterTurn));
 
         # The inverses, each undoing its own. Asin(1) is a quarter turn, so it is Pi/2.
-        Console.WriteLine("  Asin(1)       = " + Program.ToFourPlaces(Math.Asin(1.0)));
+        Console.WriteLine("  Asin(1)       = " + Math.Round(Math.Asin(1.0), 4));
         Console.WriteLine("  Acos(1)       = " + Math.Acos(1.0));
-        Console.WriteLine("  Atan(1)       = " + Program.ToFourPlaces(Math.Atan(1.0)));
+        Console.WriteLine("  Atan(1)       = " + Math.Round(Math.Atan(1.0), 4));
 
         # Atan2 takes the two sides rather than their ratio, so it knows the quadrant.
-        Console.WriteLine("  Atan2(1, 1)   = " + Program.ToFourPlaces(Math.Atan2(1.0, 1.0)));
-        Console.WriteLine("  Atan2(1, -1)  = " + Program.ToFourPlaces(Math.Atan2(1.0, -1.0)));
+        Console.WriteLine("  Atan2(1, 1)   = " + Math.Round(Math.Atan2(1.0, 1.0), 4));
+        Console.WriteLine("  Atan2(1, -1)  = " + Math.Round(Math.Atan2(1.0, -1.0), 4));
         Console.WriteLine();
     end function
 
