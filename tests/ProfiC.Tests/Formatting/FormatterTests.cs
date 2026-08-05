@@ -404,10 +404,10 @@ public sealed class FormatterTests : LexerTestBase
 
     /// <summary>
     /// <para>A lambda's body is a body, and nests like one.</para>
-    /// <para>The case where aligning is plainly wrong. Its statements are placed from the
-    /// statement that holds the call, not from wherever that call's bracket happened to fall —
-    /// otherwise a whole function is pushed off to column sixty for no reason a reader could
-    /// name, and the nesting inside it flattens on the way.</para>
+    /// <para>The case where aligning is plainly wrong. Its statements are placed from the line
+    /// that opened the lambda, not from wherever the call's bracket happened to fall — otherwise
+    /// a whole function is pushed off to column sixty for no reason a reader could name, and the
+    /// nesting inside it flattens on the way.</para>
     /// </summary>
     [Test]
     public void ALambdaBodyNestsRatherThanAligns() =>
@@ -435,6 +435,43 @@ public sealed class FormatterTests : LexerTestBase
 
                             yield n;
                         end function));
+                    end function
+                end model
+                """));
+
+    /// <summary>
+    /// <para>A lambda that begins a line of its own nests from there, not from the statement.
+    /// </para>
+    /// <para>The other half of the rule above, and the half that says which line a body answers
+    /// to. Written as one item of a collection, the lambda begins where the items begin — several
+    /// columns in from the statement — so a body measured from the statement would sit level with
+    /// its own <c>function</c>, and the <c>end function</c> a whole level out from it. The one
+    /// answer that holds for both is the line that opened the body.</para>
+    /// </summary>
+    [Test]
+    public void ALambdaOpeningItsOwnLineNestsFromThatLine() =>
+        Assert.That(
+            Formatted("""
+                shared model Program
+                    function Main()
+                        real delegate(real)[] functions = {
+                        (n) yield Math.Log(n),
+                        function(n)
+                        yield 100.0;
+                        end function
+                        };
+                    end function
+                end model
+                """),
+            Is.EqualTo("""
+                shared model Program
+                    function Main()
+                        real delegate(real)[] functions = {
+                            (n) yield Math.Log(n),
+                            function(n)
+                                yield 100.0;
+                            end function
+                        };
                     end function
                 end model
                 """));
@@ -528,4 +565,101 @@ public sealed class FormatterTests : LexerTestBase
             Assert.That(Formatted("shared model Program\nend model\n"), Does.EndWith("\n"));
             Assert.That(Formatted("shared model Program\nend model"), Does.Not.EndWith("\n"));
         });
+
+    /// <summary>
+    /// <para>Every construct closed one way says how, indented to sit under the word it closes.
+    /// </para>
+    /// <para>A <c>begin</c> is the odd one: it opened with a word of its own and closes with a
+    /// bare <c>end</c>, so repeating the word the way every other construct does would write
+    /// something the language does not have.</para>
+    /// </summary>
+    [TestCase("if 1 > 0", "        end if")]
+    [TestCase("switch 1", "        end switch")]
+    [TestCase("try", "        end try")]
+    [TestCase("begin", "        end")]
+    [TestCase("loop while 1 > 0", "        end loop")]
+    [TestCase("loop for integer i = 1 to 3", "        end loop")]
+    [TestCase("loop each integer n in numbers", "        end loop")]
+    public void AConstructWithOneEndingSaysHowItCloses(string opener, string expected) =>
+        Assert.That(
+            Closing($"""
+                shared model Program
+                    function Main()
+                        {opener}
+
+                    end function
+                end model
+                """, 4),
+            Is.EqualTo(expected));
+
+    /// <summary>
+    /// <para>The two nothing writes an ending for.</para>
+    /// <para>A bare <c>loop</c> is waiting to find out which it is: an <c>end loop</c>, or the
+    /// <c>until</c> carrying the condition that a loop written this way is asked for at the
+    /// bottom. Writing either one in guesses at what the reader has not typed yet. A run of
+    /// statements under a <c>case</c> label has no ending at all — the next label is what ends
+    /// it.</para>
+    /// </summary>
+    [TestCase("loop")]
+    [TestCase("case 1:")]
+    public void AConstructWithMoreThanOneEndingIsLeftToTheWriter(string opener) =>
+        Assert.That(
+            Closing($"""
+                shared model Program
+                    function Main()
+                        {opener}
+
+                    end function
+                end model
+                """, 4),
+            Is.Null);
+
+    /// <summary>
+    /// <para>Nothing is written where nothing is owed.</para>
+    /// <para>The case that matters most, because it is the one somebody would have to undo. A
+    /// file that already balances is not short a closer, so pressing Enter inside a finished
+    /// <c>if</c> writes nothing — and neither does pressing it on a line that opened nothing, or
+    /// on a line whose construct began and ended on it.</para>
+    /// </summary>
+    [TestCase(4, TestName = "AClosedConstructIsOwedNothing_InsideAFinishedIf")]
+    [TestCase(6, TestName = "AClosedConstructIsOwedNothing_AfterAnOrdinaryStatement")]
+    public void AClosedConstructIsOwedNothing(int line) =>
+        Assert.That(
+            Closing("""
+                shared model Program
+                    function Main()
+                        if 1 > 0
+
+                        end if
+                        Console.WriteLine(1);
+
+                    end function
+                end model
+                """, line),
+            Is.Null);
+
+    /// <summary>
+    /// <para>The construct just begun is the one that is owed, however deep it sits.</para>
+    /// <para>What makes this worth pinning is that the file cannot be read for it: a token walk
+    /// pops whatever is innermost, so the <c>end function</c> below takes the unclosed
+    /// <c>if</c> off the stack and leaves the <c>model</c> looking like the open one. The count
+    /// is what survives that, and the count is what this answers from.</para>
+    /// </summary>
+    [Test]
+    public void TheConstructJustBegunIsTheOneClosed() =>
+        Assert.That(
+            Closing("""
+                shared model Program
+                    function Main()
+                        loop each integer n in numbers
+                            if n > 1
+
+                        end loop
+                    end function
+                end model
+                """, 5),
+            Is.EqualTo("            end if"));
+
+    private static string? Closing(string text, int line) =>
+        Formatter.ClosingFor(new SourceText(text.ReplaceLineEndings("\n"), "<test>"), line);
 }

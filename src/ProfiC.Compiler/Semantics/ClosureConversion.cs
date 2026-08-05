@@ -174,9 +174,45 @@ public sealed class ClosureConversion
             case FunctionDecl function:
                 return ConvertMember(function);
 
+            case FieldDecl { Initializer: not null } field:
+                return ConvertInitializer(field);
+
             default:
                 return declaration;
         }
+    }
+
+    /// <summary>
+    /// <para>Rewrites a field's initializer, if there is a function value in it.</para>
+    /// <para><b>An initializer is a body too, and was the one this pass did not walk.</b> It
+    /// declares no names and sits among no statements, so nothing written there can capture
+    /// anything — but a lambda written there is still a lambda, and the promise this pass makes
+    /// is that none are left. Skipped, the initializer reaches the emitter with one in it and a
+    /// program that runs on the interpreter refuses to build.</para>
+    /// <para>Because nothing can be captured, the function always lands where a value capturing
+    /// nothing lands: shared, on the holder beside the program, named through its type.</para>
+    /// </summary>
+    private Declaration ConvertInitializer(FieldDecl field)
+    {
+        _captures = CaptureAnalysis.Analyze(field.Initializer!, _model);
+
+        if (_captures.Count == 0)
+        {
+            return field;
+        }
+
+        _movedTo.Clear();
+        _open.Clear();
+        _lifted.Clear();
+        _inside = null;
+        _needsSelf = false;
+
+        return Carry(field, new FieldDecl(
+            field.Span,
+            field.Modifiers,
+            field.Type,
+            field.Name,
+            ConvertExpression(field.Initializer!)));
     }
 
     /// <summary>

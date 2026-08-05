@@ -1,4 +1,6 @@
-definite-assignment.pc(13,27): error PC0400: 'total' is used here before it has been given a value.
-definite-assignment.pc(22,27): error PC0401: 'chosen' is not given a value on every path that reaches this point.
-definite-assignment.pc(30,31): error PC0400: 'attempted' is used here before it has been given a value.
-definite-assignment.pc(34,9): error PC0320: 'Limit' is a constant, so it must be given a value where it is declared.
+definite-assignment.pc(21,5): error PC0408: 'announce' is shared, so no constructor runs that could give it a value. Give it one where it is declared, or make it optional.
+definite-assignment.pc(22,5): error PC0408: 'gathered' is shared, so no constructor runs that could give it a value. Give it one where it is declared, or make it optional.
+definite-assignment.pc(28,27): error PC0400: 'total' is used here before it has been given a value. Give it one above this line.
+definite-assignment.pc(37,27): error PC0401: 'chosen' is not given a value on every path that reaches this point. Give it one on every branch, or where it is declared.
+definite-assignment.pc(45,31): error PC0400: 'attempted' is used here before it has been given a value. Give it one above this line.
+definite-assignment.pc(49,9): error PC0320: 'Limit' is a constant, so it must be given a value where it is declared. Write one, or drop 'constant'.

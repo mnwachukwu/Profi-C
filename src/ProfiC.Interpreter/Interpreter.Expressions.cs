@@ -625,7 +625,7 @@ public sealed partial class Interpreter
             // checker settled says only which one was written; binding that one would make
             // 'pet.Speaks' and 'pet.Speaks()' answer differently about the same pet.
             if (_model.GetSymbol(member) is FunctionSymbol method
-                && FindMethod(instance.Type, member.MemberName, method.Parameters.Count) is { } found
+                && FindMethod(instance.Type, method, member.MemberName, method.Parameters.Count) is { } found
                 && BodyOf(found) is { } body)
             {
                 return new FunctionValue(

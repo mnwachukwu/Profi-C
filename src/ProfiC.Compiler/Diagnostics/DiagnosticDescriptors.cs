@@ -57,22 +57,23 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor UnrecognizedCharacter = Error(
         "PC0001",
         "Unrecognized character",
-        "Unrecognized character '{0}'.");
+        "Unrecognized character '{0}'. Nothing in the language uses it; remove it.");
 
     public static readonly DiagnosticDescriptor UnterminatedString = Error(
         "PC0002",
         "Unterminated string literal",
-        "Unterminated string literal.");
+        "Unterminated string literal. Add a closing '\"'.");
 
     public static readonly DiagnosticDescriptor UnterminatedCharacter = Error(
         "PC0003",
         "Unterminated character literal",
-        "Unterminated character literal.");
+        "Unterminated character literal. Add a closing quote mark.");
 
     public static readonly DiagnosticDescriptor MalformedCharacterLiteral = Error(
         "PC0004",
         "Malformed character literal",
-        "A character literal must contain exactly one character.");
+        "A character literal must contain exactly one character. For more than one, write a "
+        + "string with '\"'.");
 
     public static readonly DiagnosticDescriptor UnterminatedBlockComment = Error(
         "PC0005",
@@ -92,7 +93,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor UnrecognizedEscape = Error(
         "PC0007",
         "Unrecognized escape sequence",
-        "Unrecognized escape sequence '\\{0}'.");
+        "Unrecognized escape sequence '\\{0}'. The escapes are \\n, \\t, \\\\, \\\", \\', \\0 "
+        + "and \\uFFFF.");
 
     public static readonly DiagnosticDescriptor MalformedUnicodeEscape = Error(
         "PC0008",
@@ -409,9 +411,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor FunctionTypeIsLowercase = Error(
         "PC0116",
         "A function's type is written with 'delegate'",
-        "'Function' is the type every function descends from and takes no parentheses. For a "
-        + "function of a particular shape write 'delegate(...)', with a result before it if it "
-        + "has one, as in 'integer delegate(string)'.");
+        "'Function' takes no parentheses. For a particular shape write 'delegate(...)', with a "
+        + "result before it if it has one, as in 'integer delegate(string)'.");
 
     /// <summary>
     /// <para><c>function</c> written where a type belongs.</para>
@@ -534,17 +535,17 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NameNotFound = Error(
         "PC0200",
         "Name not found",
-        "'{0}' is not defined here.");
+        "'{0}' is not defined here. Check the spelling, or declare it above this line.");
 
     public static readonly DiagnosticDescriptor TypeNotFound = Error(
         "PC0201",
         "Type not found",
-        "There is no type named '{0}'.");
+        "There is no type named '{0}'. Check the spelling, or the 'using' that would reach it.");
 
     public static readonly DiagnosticDescriptor DuplicateDeclaration = Error(
         "PC0202",
         "Name already declared",
-        "'{0}' is already declared in this scope.");
+        "'{0}' is already declared in this scope. Rename one of them.");
 
     /// <summary>
     /// <para>A type declared with the name of one the language provides.</para>
@@ -594,7 +595,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor DirectiveInsideNamespace = Error(
         "PC0231",
         "This belongs above any namespace",
-        "'{0}' is a statement about the whole file, so it goes above every namespace in it.");
+        "'{0}' is a statement about the whole file, so it goes above every namespace in it. "
+        + "Move it to the top.");
 
     /// <summary>
     /// <para>A namespace whose name repeats one it sits inside.</para>
@@ -637,7 +639,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor CannotAssignToConstant = Error(
         "PC0205",
         "Cannot assign to a constant",
-        "'{0}' is a constant and cannot be assigned to.");
+        "'{0}' is a constant and cannot be assigned to. Drop 'constant' from its declaration, "
+        + "or assign a different name.");
 
     public static readonly DiagnosticDescriptor CannotAssignToLoopVariable = Error(
         "PC0206",
@@ -648,17 +651,18 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor CircularInheritance = Error(
         "PC0207",
         "Circular inheritance",
-        "'{0}' cannot extend itself, directly or through its ancestors.");
+        "'{0}' cannot extend itself, directly or through its ancestors. Break the circle.");
 
     public static readonly DiagnosticDescriptor CannotExtendSealed = Error(
         "PC0208",
         "Cannot extend a sealed model",
-        "'{0}' is sealed and cannot be extended.");
+        "'{0}' is sealed and cannot be extended. Drop 'sealed' from it, or extend what it "
+        + "extends.");
 
     public static readonly DiagnosticDescriptor CannotExtendNonModel = Error(
         "PC0209",
         "Cannot extend this type",
-        "'{0}' is a {1}, and only a model can be extended.");
+        "'{0}' is a {1}, and only a model can be extended. Hold one as a field instead.");
 
     public static readonly DiagnosticDescriptor SealedAndAbstract = Error(
         "PC0210",
@@ -669,7 +673,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SharedModelMemberNotShared = Error(
         "PC0211",
         "Instance member on a shared model",
-        "'{0}' cannot have instance members, because a shared model is never instantiated.");
+        "'{0}' is a shared model, which is never instantiated. Mark the member 'shared', or "
+        + "drop 'shared' from '{0}'.");
 
     public static readonly DiagnosticDescriptor EntryPointMissing = Error(
         "PC0212",
@@ -685,12 +690,14 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ThisOutsideModel = Error(
         "PC0214",
         "'{0}' used outside a model",
-        "'{0}' can only be used inside a model's instance member.");
+        "'{0}' can only be used inside a model's instance member. Drop 'shared' from this "
+        + "member, or reach what you want through its type name.");
 
     public static readonly DiagnosticDescriptor BaseWithoutParent = Error(
         "PC0215",
         "No parent to reach",
-        "'base' needs a parent model, and '{0}' extends nothing.");
+        "'base' needs a parent model, and '{0}' extends nothing. Give it one with 'extends', or "
+        + "write 'this' instead.");
 
     /// <summary>
     /// <para>Separate from <see cref="CannotExtendNonModel"/>, which names the kind the base
@@ -749,8 +756,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor TypeCannotBeProtected = Error(
         "PC0220",
         "A type cannot be protected",
-        "'protected' says a member is reachable from anything extending the type that declares "
-        + "it, and '{0}' is a type. Write 'internal' for its project, or 'public' for anywhere.");
+        "'{0}' is a type, and 'protected' is for members. Write 'internal' for its project, or "
+        + "'public' for anywhere.");
 
     /// <summary>
     /// <para>A type named from outside the project that declares it.</para>
@@ -823,7 +830,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NamespaceNotFound = Error(
         "PC0227",
         "No such namespace",
-        "No namespace named '{0}' is declared in this compilation.");
+        "No namespace named '{0}' is declared in this compilation. Check the spelling, or that "
+        + "the file declaring it is being compiled.");
 
     /// <summary>
     /// A namespace used twice in one file. The second brings nothing the first did not, so it
@@ -832,7 +840,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NamespaceUsedTwice = Error(
         "PC0228",
         "This namespace is already used here",
-        "'{0}' is already used in this file.");
+        "'{0}' is already used in this file. Remove this line.");
 
     public static readonly DiagnosticDescriptor OverrideResultDiffers = Error(
         "PC0225",
@@ -845,6 +853,18 @@ public static class DiagnosticDescriptors
         "Type already declared",
         "'{0}' is already declared {1}. Two types cannot share a name, whether they are "
         + "written in one file or across several. Rename one of them.");
+
+    /// <summary>
+    /// <para>Two members of one type answering to one name.</para>
+    /// <para>Reported where the second is written and naming the line of the first, since the
+    /// two may be pages apart and the one the reader is looking at is the one they can fix.
+    /// </para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor MemberNameTaken = Error(
+        "PC0253",
+        "Member name already taken",
+        "{0} already has a member named '{1}', declared on line {2}. Rename one, unless they "
+        + "are versions of one function taking different types.");
 
     /// <summary>
     /// <para>Several <c>Program</c>s and nothing saying which one begins.</para>
@@ -922,15 +942,12 @@ public static class DiagnosticDescriptors
         "PC0120",
         "A loop begins with 'loop'",
         "Every loop opens with 'loop', so this is written 'loop {0}'. The word after 'loop' "
-        + "says which kind: 'for' counts, 'each' walks a set, 'while' asks before each turn, "
-        + "and nothing at all asks after.");
+        + "says which kind: 'for', 'each', 'while', or nothing at all.");
 
     public static readonly DiagnosticDescriptor ExceptionCannotBeCaught = Warning(
         "PC0344",
         "This exception cannot be caught",
-        "Nothing catches {0}. It has a name so that a reader can be told what stopped the "
-        + "program, and it stops the program because there is nothing useful to do about it. "
-        + "This clause would never run.");
+        "Nothing catches {0}, so this clause would never run. Remove it.");
 
     /// <summary>
     /// <para>A local, parameter, or loop binding reusing a name already visible from a scope
@@ -990,9 +1007,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor AbstractIsNotOverridden = Error(
         "PC0241",
         "An inherited function is still open",
-        "'{0}' can be constructed, so every function left open above it has to be written "
-        + "here. Still open: {1}. Write an override for each, or mark '{0}' abstract and leave "
-        + "them to whatever extends it.");
+        "'{0}' can be constructed, so it must write every function left open above it. Still "
+        + "open: {1}. Override each, or mark '{0}' abstract.");
 
     /// <summary>
     /// <c>virtual</c> beside <c>abstract</c>. A warning: abstract already offers the function
@@ -1017,9 +1033,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SequenceChangedWhileWalked = Error(
         "PC0243",
         "This changes the sequence being walked",
-        "'{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Its length was "
-        + "read when the loop began, so the walk would not follow. Collect what you want into "
-        + "another set and change that, or count with a range loop instead.");
+        "'{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Collect the "
+        + "changes into another set, or count with a range loop.");
 
     // ---- Documentation, PC0244 to PC0247 --------------------------------------------------
     //
@@ -1036,10 +1051,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor DocumentsNothing = Warning(
         "PC0244",
         "This documentation has nothing to document",
-        "An '@summary:' comment goes directly above a namespace, a type, a member of one, or "
-        + "an enumeration's member, with nothing in between. Nothing like that follows this "
-        + "one, so nothing will show it. A heading about the whole file is an ordinary "
-        + "comment.");
+        "Nothing follows this that an '@summary:' can document, so nothing will show it. Move "
+        + "it directly above a declaration, or make it an ordinary comment.");
 
     /// <summary>
     /// A documented parameter the function does not take, which is where documentation and
@@ -1151,10 +1164,16 @@ public static class DiagnosticDescriptors
 
     // ---- Type checking, PC0300 to PC0399 -----------------------------------------------
 
+    /// <summary>
+    /// <para>The message a reader meets most often, so the one it costs most to leave bare.</para>
+    /// <para>The second sentence is supplied by the caller, which knows both types: most pairs
+    /// arriving here do have a way across and it only has to be written, and the few that have
+    /// none are worth saying so about plainly.</para>
+    /// </summary>
     public static readonly DiagnosticDescriptor CannotConvert = Error(
         "PC0300",
         "Cannot convert",
-        "Cannot use {0} where {1} is expected.");
+        "Cannot use {0} where {1} is expected. {2}");
 
     /// <summary>
     /// A conversion that exists but must be written. The message names the call, since
@@ -1174,17 +1193,17 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ConditionMustBeBoolean = Error(
         "PC0302",
         "Condition must be a boolean",
-        "{0} must be a boolean, and this is {1}.");
+        "{0} must be a boolean, and this is {1}. Write a comparison.");
 
     public static readonly DiagnosticDescriptor OperatorNotDefined = Error(
         "PC0303",
         "Operator not defined for these types",
-        "'{0}' is not defined for {1} and {2}.");
+        "'{0}' is not defined for {1} and {2}. Convert one side, or use a member.");
 
     public static readonly DiagnosticDescriptor UnaryOperatorNotDefined = Error(
         "PC0304",
         "Operator not defined for this type",
-        "'{0}' is not defined for {1}.");
+        "'{0}' is not defined for {1}. Convert it, or use a member.");
 
     /// <summary>
     /// Branch types must agree exactly rather than finding a common type, so that the type of
@@ -1194,17 +1213,24 @@ public static class DiagnosticDescriptors
         "PC0305",
         "Branches of an if expression have different types",
         "The branches of an if expression must have the same type, and these are "
-        + "{0} and {1}.");
+        + "{0} and {1}. Make them agree, or write an 'if' statement.");
 
     public static readonly DiagnosticDescriptor MemberNotFound = Error(
         "PC0306",
         "Member not found",
         "{0} has no member named '{1}'.");
 
+    /// <summary>
+    /// <para>Something written with parentheses after it that is not a function.</para>
+    /// <para>The second slot is what to do about it, and there is always something: the three
+    /// ways to arrive here are an optional holding a function, a type name where <c>new</c> was
+    /// meant, and a value that is simply not a function. Saying only that it cannot be called
+    /// leaves the reader with the one thing they already knew.</para>
+    /// </summary>
     public static readonly DiagnosticDescriptor NotCallable = Error(
         "PC0307",
         "Not something that can be called",
-        "{0} cannot be called.");
+        "{0} cannot be called. {1}");
 
     /// <summary>
     /// Phrased so the verb agrees with the function rather than with either number, which is
@@ -1218,12 +1244,17 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NoMatchingOverload = Error(
         "PC0309",
         "No overload matches",
-        "No version of '{0}' accepts these arguments.");
+        "No version of '{0}' accepts these arguments. Convert the ones that do not match.");
 
+    /// <summary>
+    /// The fix points at the call rather than the declarations, which is the smaller change and
+    /// the one that is always available.
+    /// </summary>
     public static readonly DiagnosticDescriptor AmbiguousOverload = Error(
         "PC0310",
         "Ambiguous call",
-        "Several versions of '{0}' match these arguments equally well.");
+        "Several versions of '{0}' match these arguments equally well. Give one argument the "
+        + "exact type a version takes.");
 
     public static readonly DiagnosticDescriptor NotIndexable = Error(
         "PC0311",
@@ -1233,7 +1264,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor IndexMustBeInteger = Error(
         "PC0312",
         "Index must be an integer",
-        "An index must be an integer, and this is {0}.");
+        "An index must be an integer, and this is {0}. Write a whole number.");
 
     public static readonly DiagnosticDescriptor CannotInferEmptyCollection = Error(
         "PC0313",
@@ -1250,9 +1281,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor CollectionElementsDiffer = Error(
         "PC0314",
         "Set elements have different types",
-        "With no type to measure them against, every element of a set must have the same "
-        + "type; found {0} and {1}. Write the type the set should have, as in "
-        + "'Shape[] values = {{...}};'.");
+        "The elements of a set must have one type, and these are {0} and {1}. Write the set's "
+        + "type, as in 'Shape[] values = {{...}};'.");
 
     public static readonly DiagnosticDescriptor NotSwitchable = Error(
         "PC0315",
@@ -1263,27 +1293,31 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ForEachNeedsSequence = Error(
         "PC0316",
         "Cannot iterate this type",
-        "'for each' needs a set or a string, and this is {0}.");
+        "'for each' needs a set or a string, and this is {0}. Ask it for one, or count with "
+        + "'loop for'.");
 
     public static readonly DiagnosticDescriptor RangeLoopNeedsInteger = Error(
         "PC0317",
         "Range loop needs integers",
-        "A range loop counts with integers, and this is {0}.");
+        "A range loop counts with integers, and this is {0}. Count with whole numbers, or walk "
+        + "it with 'loop each'.");
 
     public static readonly DiagnosticDescriptor YieldValueInVoidFunction = Error(
         "PC0318",
         "This function yields nothing",
-        "'{0}' declares no result, so 'yield' cannot carry a value.");
+        "'{0}' declares no result, so 'yield' cannot carry a value. Declare a result, or write "
+        + "'yield;'.");
 
     public static readonly DiagnosticDescriptor YieldMissingValue = Error(
         "PC0319",
         "Missing value to yield",
-        "'{0}' yields a {1}, so 'yield' needs a value.");
+        "'{0}' yields a {1}, so 'yield' needs a value. Give it one, or drop the result type.");
 
     public static readonly DiagnosticDescriptor ConstantNeedsInitializer = Error(
         "PC0320",
         "Constant needs a value",
-        "'{0}' is a constant, so it must be given a value where it is declared.");
+        "'{0}' is a constant, so it must be given a value where it is declared. Write one, or "
+        + "drop 'constant'.");
 
     public static readonly DiagnosticDescriptor ConstantNotFoldable = Error(
         "PC0321",
@@ -1304,7 +1338,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor InferredDeclarationNeedsInitializer = Error(
         "PC0323",
         "Nothing to infer from",
-        "'let' works out the type from the value, so it needs one.");
+        "'let' works out the type from the value, so it needs one. Give it a value, or write "
+        + "the type instead.");
 
     /// <summary>
     /// <para>A divisor the compiler can already see is zero.</para>
@@ -1413,9 +1448,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor OptionalIsReachableFromAClosure = Error(
         "PC0345",
         "Optional is changed by something that captured it",
-        "This is {0}, and checking it cannot prove otherwise, because '{1}' is assigned by a "
-        + "function that captured it and may be called at any point. Copy it into a local first "
-        + "and check that, or use 'Or(...)' or 'Value()' here.");
+        "This is {0}, and checking it proves nothing because a function that captured '{1}' may "
+        + "assign it at any point. Copy it into a local and check that, or use 'Or(...)'.");
 
     /// <summary>
     /// <para>A real written down where a fraction is wanted, too wide to become one.</para>
@@ -1432,10 +1466,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor RealIsTooWideForAFraction = Error(
         "PC0346",
         "This real has no fraction to become",
-        "{0} cannot be held as a fraction. A real becomes one exactly — a tenth is '1|10' — but "
-        + "the parts of a fraction are whole numbers, and this needs a numerator or a "
-        + "denominator larger than an integer holds. Up to eighteen places after the point will "
-        + "convert.");
+        "{0} needs a numerator or denominator larger than an integer holds. Up to eighteen "
+        + "places after the point will convert.");
 
     /// <summary>
     /// <para><c>Reference.Equals</c> asked about a value.</para>
@@ -1532,12 +1564,13 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor UseBeforeAssignment = Error(
         "PC0400",
         "Used before it is given a value",
-        "'{0}' is used here before it has been given a value.");
+        "'{0}' is used here before it has been given a value. Give it one above this line.");
 
     public static readonly DiagnosticDescriptor UseBeforeAssignmentOnSomePath = Error(
         "PC0401",
         "Not given a value on every path",
-        "'{0}' is not given a value on every path that reaches this point.");
+        "'{0}' is not given a value on every path that reaches this point. Give it one on every "
+        + "branch, or where it is declared.");
 
     /// <summary>
     /// A field has no default, so a constructor must supply one. An optional field escapes
@@ -1549,6 +1582,21 @@ public static class DiagnosticDescriptors
         "Field not given a value",
         "'{0}' must be given a value before this constructor ends. Give it one here, or an "
         + "initializer where it is declared, or make it optional.");
+
+    /// <summary>
+    /// <para>The same rule as <see cref="FieldNotAssignedInConstructor"/>, for the fields no
+    /// constructor can reach.</para>
+    /// <para>A shared field belongs to the type rather than to any instance, so nothing runs
+    /// that could fill it in and the initializer is the only place a value can come from.
+    /// Without this it holds nothing — which for an integer reads as zero and for a set, a
+    /// model or a function is the null this language does not have, found by a reader either
+    /// as a sentence about the wrong thing or as a crash from underneath the language.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor SharedFieldNotInitialized = Error(
+        "PC0408",
+        "Shared field not given a value",
+        "'{0}' is shared, so no constructor runs that could give it a value. Give it one where "
+        + "it is declared, or make it optional.");
 
     public static readonly DiagnosticDescriptor UnreachableCode = Warning(
         "PC0403",
@@ -1565,7 +1613,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NotEveryPathYields = Error(
         "PC0404",
         "Not every path yields a value",
-        "'{0}' yields {1}, but it can reach its end without yielding one.");
+        "'{0}' yields {1}, but it can reach its end without yielding one. Yield on every path "
+        + "out.");
 
     /// <summary>
     /// <para>A function declared among statements, reached before a name it uses has a value.
@@ -1593,9 +1642,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor LoopCannotBeLeft = Opinion(
         "PC0406",
         "Nothing here can end this loop",
-        "This loop has no condition, and nothing in it breaks, yields, or throws — so nothing "
-        + "written here will stop it. Add a 'break' where it should end, or write "
-        + "'loop while' or 'until' and say the condition.");
+        "Nothing here breaks, yields, or throws, so nothing will stop this loop. Add a 'break', "
+        + "or give it a condition with 'loop while' or 'until'.");
 
     /// <summary>
     /// <para>A <c>break</c> or a <c>continue</c> with no loop around it to act on.</para>
@@ -1667,7 +1715,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ProjectSourceListedTwice = Error(
         "PC0608",
         "Source listed more than once",
-        "'{0}' is already part of this project.");
+        "'{0}' is already part of this project. Remove this line.");
 
     public static readonly DiagnosticDescriptor ProjectFolderIsEmpty = Error(
         "PC0609",
@@ -1731,10 +1779,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor CircularImport = Warning(
         "PC0614",
         "Imports form a circle",
-        "This import closes a circle: {0}. It builds — a compilation reads every file it "
-        + "gathers together — but no file in the circle is the one to open first. Files beside "
-        + "one another need no import between them, and a project file spans folders without "
-        + "one file importing another.");
+        "This import closes a circle: {0}. Files beside one another need no import between "
+        + "them, and a project file spans folders without one.");
 
     // ---- Project references, PC0620 to PC0629 ---------------------------------------------
 
@@ -1756,7 +1802,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ProjectReferencedTwice = Error(
         "PC0623",
         "Project referenced more than once",
-        "'{0}' is already referenced by this project.");
+        "'{0}' is already referenced by this project. Remove this line.");
 
     /// <summary>
     /// <para>Projects referencing one another, however many projects apart.</para>
@@ -1769,9 +1815,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor CircularProjectReference = Error(
         "PC0624",
         "Projects reference each other",
-        "This reference closes a circle: {0}. Neither project can be built before the other, "
-        + "so neither can be built. Code both need belongs in a third project they both "
-        + "reference.");
+        "This reference closes a circle: {0}. Move what both need into a third project they "
+        + "both reference.");
 
     /// <summary>
     /// <para>One file listed by two projects in the same build.</para>

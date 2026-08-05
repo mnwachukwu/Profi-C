@@ -67,6 +67,27 @@ public sealed class CaptureAnalysis : SyntaxVisitor
         return analysis._captures;
     }
 
+    /// <summary>
+    /// <para>The same, for a field's initializer.</para>
+    /// <para>Nothing written there can capture a local, because a field is not declared among
+    /// statements and there are none around it to reach. What is wanted is the other half of
+    /// this pass's answer: <em>which nodes are function values at all</em>. A lambda that
+    /// captures nothing still has to stop being a lambda, and only a walk finds it.</para>
+    /// </summary>
+    public static IReadOnlyDictionary<SyntaxNode, CaptureSet> Analyze(
+        Expression initializer,
+        SemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(initializer);
+        ArgumentNullException.ThrowIfNull(model);
+
+        CaptureAnalysis analysis = new(model);
+
+        analysis.Visit(initializer);
+
+        return analysis._captures;
+    }
+
     // ---- Entering and leaving a function value ---------------------------------------------
 
     public override void VisitLambdaExpr(LambdaExpr node)
@@ -91,9 +112,9 @@ public sealed class CaptureAnalysis : SyntaxVisitor
     /// <summary>
     /// <para>A function declared among statements, which captures exactly as a lambda does.
     /// </para>
-    /// <para>Reached only from inside a body: <see cref="Analyze"/> walks a member's statements
-    /// rather than the member itself, so the only declaration this ever meets is a local one.
-    /// </para>
+    /// <para>Reached only from inside a body:
+    /// <see cref="Analyze(FunctionDecl, SemanticModel)"/> walks a member's statements rather than
+    /// the member itself, so the only declaration this ever meets is a local one.</para>
     /// </summary>
     public override void VisitFunctionDecl(FunctionDecl node)
     {

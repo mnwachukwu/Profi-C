@@ -27,6 +27,7 @@ shared model Program
         Program.RememberingAnInstance();
         Program.NamingOneThatAlreadyExists();
         Program.HoldingAnyFunctionAtAll();
+        Program.KeepingOneInAField();
     end function
 
     # ---- The two ways to write one ------------------------------------------------
@@ -311,6 +312,85 @@ shared model Program
         # Every reference type is a Model, and a Function is a reference type.
         Model asModel = assorted[0];
         Console.WriteLine("still the same one: " + Reference.Equals(asModel, assorted[0]));
+    end function
+
+    # ---- Keeping one in a field ---------------------------------------------------
+
+    ##
+        A field holds a function the way it holds anything else, and a field holding one is
+        called through its name like any other function. There is no second spelling to learn:
+        'Program.tally(2)' reads as a call because it is one.
+
+        The type is what says which, not the punctuation. A name after a dot is called when
+        what it names is a function — whether that is a function the model declares or a field
+        the model holds.
+    ##
+    function KeepingOneInAField()
+        Program.tally(2);
+        Program.tally(5);
+
+        Console.WriteLine("tallied: " + Program.running);
+        Console.WriteLine("halved:  " + Program.half(9));
+
+        # An instance's field, reached through the instance, and through 'this' from inside.
+        Greeter polite = new Greeter("please");
+
+        polite.say("now");
+        polite.Twice("again");
+    end function
+
+    # ---- Fields holding functions -------------------------------------------------
+
+    # @summary: What the counter below has added up so far.
+    integer running = 0;
+
+    ##
+        @summary: Adds to the running total.
+
+        @remarks: Written where the field is declared, which is the shape a reader reaches for
+        first — the value and what makes it in one place.
+    ##
+    delegate(integer) tally = function(by)
+        Program.running = Program.running + by;
+    end function;
+
+    # @summary: Half of what it is given, rounded down.
+    integer delegate(integer) half = function(n)
+        yield n / 2;
+    end function;
+
+end model
+
+##
+    @summary: Something that greets, to show a field holding a function on an instance.
+
+    @remarks: The field is set in the constructor rather than where it is declared, because
+    what it says is decided per greeter — which is the other reason to keep a function in a
+    field rather than declaring one.
+##
+model Greeter
+
+    # @summary: What this greeter says before the name.
+    string word;
+
+    # @summary: Says the greeting, and is a field rather than a function.
+    public delegate(string) say;
+
+    # @summary: A greeter using the given word.
+    # @word: what to say before the name.
+    public function Greeter(string word)
+        this.word = word;
+
+        this.say = function(who)
+            Console.WriteLine(this.word + ", " + who);
+        end function;
+    end function
+
+    # @summary: Says it twice, calling the field through 'this'.
+    # @who: who to say it to.
+    public function Twice(string who)
+        this.say(who);
+        this.say(who);
     end function
 
 end model

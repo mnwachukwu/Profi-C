@@ -1,0 +1,143 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FieldDecl 'counted'
+      NamedTypeSyntax 'integer'
+    FieldDecl 'measured'
+      NamedTypeSyntax 'real'
+    FieldDecl 'estimated'
+      NamedTypeSyntax 'float'
+    FieldDecl 'decided'
+      NamedTypeSyntax 'boolean'
+    FieldDecl 'marked'
+      NamedTypeSyntax 'character'
+    FieldDecl 'named'
+      NamedTypeSyntax 'string'
+    FieldDecl 'part'
+      NamedTypeSyntax 'fraction'
+    FieldDecl 'gathered'
+      OptionalTypeSyntax
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatAPrimitiveStartsAt'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatAnOptionalStartsAt'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WhatAnInstanceStartsAt'
+            IdentifierExpr 'Program'
+    FunctionDecl 'WhatAPrimitiveStartsAt'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "counted:   " [String]
+            MemberExpr 'counted'
+              IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "measured:  " [String]
+            MemberExpr 'measured'
+              IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "estimated: " [String]
+            MemberExpr 'estimated'
+              IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "decided:   " [String]
+            MemberExpr 'decided'
+              IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              LiteralExpr "named:     [" [String]
+              MemberExpr 'named'
+                IdentifierExpr 'Program'
+            LiteralExpr "]" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "part:      " [String]
+            MemberExpr 'part'
+              IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "marked:    " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                MemberExpr 'marked'
+                  IdentifierExpr 'Program'
+                LiteralExpr '\0' [Character]
+    FunctionDecl 'WhatAnOptionalStartsAt'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "gathered:  " [String]
+            CallExpr
+              MemberExpr 'HasValue'
+                MemberExpr 'gathered'
+                  IdentifierExpr 'Program'
+    FunctionDecl 'WhatAnInstanceStartsAt'
+      VarDeclStmt 'tally'
+        NamedTypeSyntax 'Tally'
+        NewExpr 'Tally'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "tally:     " [String]
+            CallExpr
+              MemberExpr 'Report'
+                IdentifierExpr 'tally'
+  ModelDecl 'Tally'
+    FieldDecl 'total'
+      NamedTypeSyntax 'integer'
+    FieldDecl 'seen'
+      SetTypeSyntax
+        NamedTypeSyntax 'integer'
+    FunctionDecl 'Tally' [public]
+      AssignmentStmt
+        MemberExpr 'seen'
+          ThisExpr
+        CollectionExpr
+    FunctionDecl 'Report' [public]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              MemberExpr 'total'
+                ThisExpr
+              LiteralExpr " counted, " [String]
+            MemberExpr 'Count'
+              MemberExpr 'seen'
+                ThisExpr
+          LiteralExpr " kept" [String]

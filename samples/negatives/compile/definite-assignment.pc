@@ -7,6 +7,21 @@
 ##
 
 shared model Program
+
+    ##
+        A shared field belongs to the type rather than to any instance, so no constructor runs
+        that could fill it in and the initializer is the only place a value can come from.
+
+        Only for a type that has no value of its own. A primitive starts at its own zero and is
+        left alone below on purpose — 'counted' is not a mistake. A set or a function has no
+        such zero, and one left alone would hold the null the language says it does not have,
+        reached by the reader as a sentence about the wrong thing or as a crash from underneath
+        the language.
+    ##
+    delegate() announce;
+    integer[] gathered;
+    integer counted;
+
     function Main(boolean flag)
         # Never assigned at all.
         integer total;

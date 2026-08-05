@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
+using ProfiC.Runtime;
 
 namespace ProfiC.Compiler.Emit;
 
@@ -249,6 +250,8 @@ public sealed partial class CilEmitter
     /// </summary>
     private void EmitFieldInitializers(DeclaredTypeSymbol owner)
     {
+        EmitFieldDefaults(owner, shared: false);
+
         foreach (FieldDecl declared in InitializersOf(owner, shared: false))
         {
             _il.Emit(OpCodes.Ldarg_0);
@@ -256,6 +259,56 @@ public sealed partial class CilEmitter
             _il.Emit(OpCodes.Stfld, _fields[(FieldSymbol)_model.GetSymbol(declared)!]);
         }
     }
+
+    /// <summary>
+    /// <para>Gives a field the value its type starts with, where the runtime's own zero is not
+    /// that value.</para>
+    /// <para>A field the program leaves alone holds what the language says its type begins with,
+    /// and for most primitives zeroed memory already means exactly that: nought, false, and the
+    /// zero character all fall out of it. <b>Two do not.</b> A string would be nothing rather
+    /// than empty — the null this language does without, arriving through the back door. And a
+    /// fraction would have a zero denominator, which is not a number at all and prints as
+    /// <c>0|0</c>.</para>
+    /// <para>Written out rather than left to the runtime because the interpreter is the oracle
+    /// and gives these two the same values it gives the rest. Left alone, the same program
+    /// printed <c>0|1</c> run one way and <c>0|0</c> the other.</para>
+    /// </summary>
+    private void EmitFieldDefaults(DeclaredTypeSymbol owner, bool shared)
+    {
+        foreach (FieldSymbol field in Unwritten(owner, shared))
+        {
+            if (!shared)
+            {
+                _il.Emit(OpCodes.Ldarg_0);
+            }
+
+            if (ReferenceEquals(field.Type, PrimitiveType.String))
+            {
+                _il.Emit(OpCodes.Ldstr, string.Empty);
+            }
+            else
+            {
+                _il.Emit(OpCodes.Ldsfld, typeof(Fraction).GetField(nameof(Fraction.Zero))!);
+            }
+
+            _il.Emit(shared ? OpCodes.Stsfld : OpCodes.Stfld, _fields[field]);
+        }
+    }
+
+    /// <summary>
+    /// The fields of one kind that were written with no value and whose type the runtime's own
+    /// zero would get wrong, in declaration order.
+    /// </summary>
+    private IEnumerable<FieldSymbol> Unwritten(DeclaredTypeSymbol owner, bool shared) =>
+        owner.Members.Values
+            .SelectMany(group => group)
+            .OfType<FieldSymbol>()
+            .Where(field =>
+                field.IsShared == shared
+                && _fields.ContainsKey(field)
+                && field.Declaration is FieldDecl { Initializer: null }
+                && (ReferenceEquals(field.Type, PrimitiveType.String)
+                    || ReferenceEquals(field.Type, PrimitiveType.Fraction)));
 
     /// <summary>
     /// <para>Runs the initializers of a model's shared fields, once.</para>
@@ -272,13 +325,16 @@ public sealed partial class CilEmitter
         }
 
         FieldDecl[] shared = [.. InitializersOf(owner, shared: true)];
+        FieldSymbol[] defaulted = [.. Unwritten(owner, shared: true)];
 
-        if (shared.Length == 0)
+        if (shared.Length == 0 && defaulted.Length == 0)
         {
             return;
         }
 
         Begin(type.DefineTypeInitializer().GetILGenerator(), function: null, hasReceiver: false);
+
+        EmitFieldDefaults(owner, shared: true);
 
         foreach (FieldDecl declared in shared)
         {

@@ -1,0 +1,105 @@
+##
+    Versions of a name that a call cannot choose between.
+
+    This program does not compile. Every mistake here is a call rather than a declaration: the
+    versions below are all perfectly good functions, and each of them would be reachable on its
+    own. What fails is asking for one of them in a way that does not settle which.
+
+    The working side of the same rules is in samples/overloads.pc.
+##
+
+model Animal
+    # @summary: What this animal says.
+    # @yields: nothing in particular.
+    public virtual string function Speaks()
+        yield "...";
+    end function
+end model
+
+shared model Program
+
+    function Main()
+        ##
+            Both versions accept an integer, and neither is nearer than the other: an integer
+            widens to a real and to a fraction, and nothing in the language says which of those
+            it would rather be. This is the tie the compiler refuses to break, because breaking
+            it would mean the answer depended on a rule nobody remembers — or worse, on which
+            version happened to be written first.
+        ##
+        Console.WriteLine(Program.Wide(1));
+
+        # No version takes a boolean, and neither string nor integer accepts one.
+        Console.WriteLine(Program.Only(true));
+
+        # The count is asked before anything else, so this is not even a near miss.
+        Console.WriteLine(Program.Only(1, 2));
+
+        ##
+            A fraction reaches a real only when asked, because thirds have no exact decimal
+            form. So the version taking a real does not accept one, and there is no other.
+        ##
+        Console.WriteLine(Program.Measure(1|3));
+
+        ##
+            The lambda fits both: it is a function of that shape, and every function is a
+            Function. Neither version is nearer, so this is a tie like the first one — and the
+            way out is to say which by naming the type, rather than to add a rule about roots.
+        ##
+        Console.WriteLine(Program.Held((n) yield n + 1));
+
+        ##
+            Boxing does not exist, so an integer is not a Model and no widening reaches one.
+            This is a plain mismatch rather than a tie: there is one version and it says no.
+        ##
+        Console.WriteLine(Program.Boxed(1));
+
+        # An Animal is not a Dog, and a version taking the child does not accept the parent.
+        Console.WriteLine(Program.Walk(new Animal()));
+    end function
+
+    string function Wide(real r)
+        yield "real";
+    end function
+
+    string function Wide(fraction f)
+        yield "fraction";
+    end function
+
+    string function Only(integer n)
+        yield "integer";
+    end function
+
+    string function Only(string s)
+        yield "string";
+    end function
+
+    string function Measure(real r)
+        yield "real";
+    end function
+
+    string function Held(integer delegate(integer) f)
+        yield "shaped";
+    end function
+
+    string function Held(Function f)
+        yield "any";
+    end function
+
+    string function Boxed(Model m)
+        yield "model";
+    end function
+
+    string function Walk(Dog d)
+        yield "dog";
+    end function
+
+end model
+
+# @summary: An animal that says something in particular.
+model Dog extends Animal
+    # @summary: What a dog says.
+    # @yields: "woof".
+    public override string function Speaks()
+        yield "woof";
+    end function
+end model

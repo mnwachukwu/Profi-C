@@ -194,9 +194,60 @@ public sealed class DefiniteAssignment
                 case StructureDecl nestedStructure:
                     AnalyzeType(nestedStructure, nestedStructure.Members);
                     break;
+
+                case FieldDecl field:
+                    RequireASharedFieldToStartWithAValue(field);
+                    break;
             }
         }
     }
+
+    /// <summary>
+    /// <para>A shared field must be given a value where it is declared.</para>
+    /// <para>The same obligation every other field is under, arriving in a different place
+    /// because there is nowhere else it could. An instance field may be filled in by a
+    /// constructor and is held to that; a shared field belongs to the type, so nothing runs that
+    /// could fill it and the initializer is the only opportunity there is.</para>
+    /// <para>Without it the field holds whatever nothing looks like — zero for an integer, and
+    /// for a set, a model or a function the null this language does without. That one is not
+    /// merely unset: it is unset in a way the type system has been telling the reader cannot
+    /// happen, and it surfaces either as a sentence about the wrong thing or as a crash from
+    /// underneath the language.</para>
+    /// </summary>
+    private void RequireASharedFieldToStartWithAValue(FieldDecl field)
+    {
+        // A name that failed to parse is empty, and saying a field with no name needs a value
+        // is a second complaint about something already reported once.
+        if (field.Initializer is not null
+            || _model.GetSymbol(field) is not FieldSymbol { IsShared: true } symbol
+            || symbol.Name.Length == 0
+            || symbol.Type.IsError
+            || StartsWithAValue(symbol.Type))
+        {
+            return;
+        }
+
+        _diagnostics.Report(
+            DiagnosticDescriptors.SharedFieldNotInitialized, field.Span, symbol.Name);
+    }
+
+    /// <summary>
+    /// <para>Whether a field of this type already holds something before anybody writes to it.
+    /// </para>
+    /// <para>Two do. A <b>primitive</b> has a zero of its own that means what a reader expects
+    /// it to mean — a counter starts at nought, a flag starts false, a string starts empty —
+    /// and demanding that each be spelled out buys nothing a reader could not already see. An
+    /// <b>optional</b> starts empty, which is a value like any other, and that is what makes a
+    /// self-referential model constructible at all.</para>
+    /// <para><b>Everything else has no such value, and the difference is not a matter of
+    /// taste.</b> A model, a set, a function, an enumeration or a structure left alone would
+    /// hold nothing — and "nothing" for those is the null this language does without, escaping
+    /// as a sentence about the wrong thing or as a crash from underneath the language. So they
+    /// are asked for, here or in a constructor, or written as an optional so that absence is in
+    /// the type and the reader is made to check.</para>
+    /// </summary>
+    private static bool StartsWithAValue(TypeSymbol type) =>
+        type is PrimitiveType or OptionalType;
 
     private void AnalyzeFunction(FunctionDecl function, DeclaredTypeSymbol? owner)
     {
@@ -262,9 +313,8 @@ public sealed class DefiniteAssignment
 
     /// <summary>
     /// <para>Checks that a constructor leaves no field without a value.</para>
-    /// <para>A field with an initializer is already covered, since initializers run first. An
-    /// optional field is exempt, because empty is a value — and that exemption is what makes a
-    /// self-referential model constructible at all.</para>
+    /// <para>A field with an initializer is already covered, since initializers run first.
+    /// <see cref="StartsWithAValue"/> says which types are exempt.</para>
     /// </summary>
     private void CheckConstructorAssignedEveryField(
         FunctionDecl function,
@@ -277,7 +327,7 @@ public sealed class DefiniteAssignment
             {
                 if (member is not FieldSymbol field
                     || field.IsShared
-                    || field.Type is OptionalType
+                    || StartsWithAValue(field.Type)
                     || field.Declaration is not FieldDecl { Initializer: null })
                 {
                     continue;

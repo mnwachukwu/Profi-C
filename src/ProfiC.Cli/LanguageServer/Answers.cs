@@ -166,8 +166,24 @@ public static class Answers
             return Said(symbol);
         }
 
-        return model.GetType(node)?.ToString();
+        return model.GetType(node) is { } type && WorthSaying(type) ? type.ToString() : null;
     }
+
+    /// <summary>
+    /// <para>Whether a type is one to show a reader on its own.</para>
+    /// <para><b>Two spell themselves out for a diagnostic to embed, and neither survives being
+    /// shown alone.</b> The type of a call that produces nothing is written "call that yields
+    /// nothing" so that a sentence can read "A call that yields nothing cannot be indexed" —
+    /// held up by itself over the parentheses of a call, it announces an absence nobody asked
+    /// about and reads as a remark that the call is pointless. The type the compiler could not
+    /// work out is written <c>?</c>, which in this language is the mark of an optional: a hover
+    /// saying <c>?</c> tells a reader their expression is an optional, which is not what
+    /// happened and not something they can act on.</para>
+    /// <para>Nothing is the honest answer to both. A hover that says nothing leaves the reader
+    /// where they were; one that says either of these moves them somewhere wrong.</para>
+    /// </summary>
+    private static bool WorthSaying(TypeSymbol type) =>
+        !type.IsError && !ReferenceEquals(type, PrimitiveType.Void);
 
     /// <summary>
     /// <para>The full name of what is under the cursor, or nothing for something that has no

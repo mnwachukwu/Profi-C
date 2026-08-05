@@ -37,6 +37,10 @@ CompilationUnit
         CallExpr
           MemberExpr 'HoldingAnyFunctionAtAll'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'KeepingOneInAField'
+            IdentifierExpr 'Program'
     FunctionDecl 'WritingThemDown'
       VarDeclStmt 'increment'
         FunctionTypeSyntax
@@ -660,6 +664,115 @@ CompilationUnit
               IndexExpr
                 IdentifierExpr 'assorted'
                 LiteralExpr 0 [Integer]
+    FunctionDecl 'KeepingOneInAField'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'tally'
+            IdentifierExpr 'Program'
+          LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'tally'
+            IdentifierExpr 'Program'
+          LiteralExpr 5 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "tallied: " [String]
+            MemberExpr 'running'
+              IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "halved:  " [String]
+            CallExpr
+              MemberExpr 'half'
+                IdentifierExpr 'Program'
+              LiteralExpr 9 [Integer]
+      VarDeclStmt 'polite'
+        NamedTypeSyntax 'Greeter'
+        NewExpr 'Greeter'
+          LiteralExpr "please" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'say'
+            IdentifierExpr 'polite'
+          LiteralExpr "now" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Twice'
+            IdentifierExpr 'polite'
+          LiteralExpr "again" [String]
+    FieldDecl 'running'
+      NamedTypeSyntax 'integer'
+      LiteralExpr 0 [Integer]
+    FieldDecl 'tally'
+      FunctionTypeSyntax
+        NamedTypeSyntax 'integer'
+      LambdaExpr block
+        ParameterDecl 'by'
+        AssignmentStmt
+          MemberExpr 'running'
+            IdentifierExpr 'Program'
+          BinaryExpr '+'
+            MemberExpr 'running'
+              IdentifierExpr 'Program'
+            IdentifierExpr 'by'
+    FieldDecl 'half'
+      FunctionTypeSyntax
+        NamedTypeSyntax 'integer'
+        NamedTypeSyntax 'integer'
+      LambdaExpr block
+        ParameterDecl 'n'
+        YieldStmt
+          BinaryExpr '/'
+            IdentifierExpr 'n'
+            LiteralExpr 2 [Integer]
+  ModelDecl 'Greeter'
+    FieldDecl 'word'
+      NamedTypeSyntax 'string'
+    FieldDecl 'say' [public]
+      FunctionTypeSyntax
+        NamedTypeSyntax 'string'
+    FunctionDecl 'Greeter' [public]
+      ParameterDecl 'word'
+        NamedTypeSyntax 'string'
+      AssignmentStmt
+        MemberExpr 'word'
+          ThisExpr
+        IdentifierExpr 'word'
+      AssignmentStmt
+        MemberExpr 'say'
+          ThisExpr
+        LambdaExpr block
+          ParameterDecl 'who'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              BinaryExpr '+'
+                BinaryExpr '+'
+                  MemberExpr 'word'
+                    ThisExpr
+                  LiteralExpr ", " [String]
+                IdentifierExpr 'who'
+    FunctionDecl 'Twice' [public]
+      ParameterDecl 'who'
+        NamedTypeSyntax 'string'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'say'
+            ThisExpr
+          IdentifierExpr 'who'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'say'
+            ThisExpr
+          IdentifierExpr 'who'
   ModelDecl 'Counter'
     FieldDecl 'count'
       NamedTypeSyntax 'integer'

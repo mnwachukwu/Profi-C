@@ -1,0 +1,238 @@
+##
+    One name, several versions.
+
+    Functions sharing a name are told apart by what they take. Which version a call means is
+    settled while it is checked, from the types of the arguments written — never at the moment
+    it runs, and never from what a value happens to hold.
+
+    The order is: how many arguments, then an exact match, then what the arguments can widen to.
+    Anything that gets as far as two versions fitting equally well is reported rather than
+    guessed at, and samples/negatives/compile/overloads.pc holds those.
+##
+
+shared model Program
+
+    function Main()
+        Program.CountingFirst();
+        Program.ExactBeatsWidening();
+        Program.WideningWhenNothingIsExact();
+        Program.TheNearestModelWins();
+        Program.AnOptionalIsItsOwnType();
+        Program.AcrossAParentAndItsChild();
+        Program.AnOverrideIsNotASecondVersion();
+    end function
+
+    # ---- How many, before what kind -----------------------------------------------
+
+    ##
+        The count is asked first, so two versions taking different numbers of arguments never
+        compete. This is what makes an overload set easy to read: most of the time the count
+        alone says which one is meant.
+    ##
+    function CountingFirst()
+        Console.WriteLine("one:  " + Program.Join("a"));
+        Console.WriteLine("two:  " + Program.Join("a", "b"));
+        Console.WriteLine("three:" + Program.Join("a", "b", "c"));
+    end function
+
+    string function Join(string a)
+        yield a;
+    end function
+
+    string function Join(string a, string b)
+        yield a + b;
+    end function
+
+    string function Join(string a, string b, string c)
+        yield a + b + c;
+    end function
+
+    # ---- Exact before widening ----------------------------------------------------
+
+    ##
+        An integer widens to a real and to a fraction, so all three versions below could accept
+        one. The exact version wins outright: a value keeps the type it was written as rather
+        than the first type it fits.
+
+        This is the rule worth knowing, because it is what stops adding a version taking a real
+        from quietly changing what every existing call to the integer one does.
+    ##
+    function ExactBeatsWidening()
+        Console.WriteLine("integer:  " + Program.Describe(3));
+        Console.WriteLine("real:     " + Program.Describe(3.5));
+        Console.WriteLine("fraction: " + Program.Describe(1|2));
+    end function
+
+    string function Describe(integer n)
+        yield "an integer, " + n;
+    end function
+
+    string function Describe(real r)
+        yield "a real, " + r;
+    end function
+
+    string function Describe(fraction f)
+        yield "a fraction, " + f;
+    end function
+
+    # ---- Widening, where nothing is exact -----------------------------------------
+
+    ##
+        With no version taking an integer, the one taking a real accepts it — an integer is a
+        real. Nothing is lost on the way, which is why it happens without being asked for.
+
+        A character is not a small integer, so it reaches the version taking a string only if
+        one is written; here it reaches its own.
+    ##
+    function WideningWhenNothingIsExact()
+        Console.WriteLine("widened: " + Program.Measure(4));
+        Console.WriteLine("exact:   " + Program.Measure(4.0));
+        Console.WriteLine("letter:  " + Program.Spell('q'));
+        Console.WriteLine("word:    " + Program.Spell("quiet"));
+    end function
+
+    string function Measure(real r)
+        yield "read as a real, " + r;
+    end function
+
+    string function Spell(character c)
+        yield "one character, " + c;
+    end function
+
+    string function Spell(string s)
+        yield "a string of " + s.Count;
+    end function
+
+    # ---- The nearest model wins ---------------------------------------------------
+
+    ##
+        A version taking the exact model beats one taking a model it descends from. What decides
+        is the type the argument was written as, not what the value turned out to be — so an
+        Animal holding a Dog reaches the Animal version, and the Dog reaches the Dog version.
+
+        That is the opposite of how an override behaves, and the difference is worth holding on
+        to: an override is chosen by the value, an overload by the type.
+    ##
+    function TheNearestModelWins()
+        Dog rex = new Dog();
+        Animal asAnimal = rex;
+
+        Console.WriteLine("as a dog:    " + Program.Feed(rex));
+        Console.WriteLine("as an animal:" + Program.Feed(asAnimal));
+    end function
+
+    string function Feed(Animal a)
+        yield "something an animal eats";
+    end function
+
+    string function Feed(Dog d)
+        yield "something a dog eats";
+    end function
+
+    # ---- An optional is its own type ----------------------------------------------
+
+    ##
+        'integer' and 'integer?' are different types, so a version taking each is two versions
+        and neither is a widening of the other. A value that might be absent reaches the one
+        that says so.
+    ##
+    function AnOptionalIsItsOwnType()
+        integer? missing = Program.Nothing();
+
+        Console.WriteLine("present: " + Program.Count(7));
+        Console.WriteLine("absent:  " + Program.Count(missing));
+    end function
+
+    string function Count(integer n)
+        yield "a number, " + n;
+    end function
+
+    string function Count(integer? n)
+        yield "maybe a number, " + if n.HasValue() then "yes" else "no";
+    end function
+
+    integer? function Nothing()
+        integer? none;
+        yield none;
+    end function
+
+    # ---- Across a parent and its child ---------------------------------------------
+
+    ##
+        A child adding a version does not take away the ones its parent wrote. Both are versions
+        of the same name, and a call reaches whichever fits — so 'Which(1)' below runs the
+        parent's and 'Which("x")' runs the child's, through the same variable.
+
+        Written the other way round it would mean that adding a function to a child could stop
+        code compiling that has nothing to do with it.
+    ##
+    function AcrossAParentAndItsChild()
+        Ledger ledger = new Ledger();
+
+        Console.WriteLine("parent's: " + ledger.Which(1));
+        Console.WriteLine("child's:  " + ledger.Which("x"));
+    end function
+
+    # ---- An override is not a second version ---------------------------------------
+
+    ##
+        An override and the function it overrides take the same things, so they are one version
+        rather than two — otherwise every call to an overridden function would be a tie between
+        the two of them. Which body runs is then decided by what the value turned out to be,
+        which is what 'virtual' is for.
+    ##
+    function AnOverrideIsNotASecondVersion()
+        Animal pet = new Dog();
+
+        Console.WriteLine("said:  " + pet.Speaks());
+
+        # Named rather than called, and bound to the same body a call would have reached.
+        string delegate() heard = pet.Speaks;
+
+        Console.WriteLine("heard: " + heard());
+    end function
+
+end model
+
+# @summary: An animal, for showing an overload chosen by the type a value is held under.
+model Animal
+    # @summary: What this animal says.
+    # @yields: nothing in particular, for an animal of no particular kind.
+    public virtual string function Speaks()
+        yield "...";
+    end function
+end model
+
+# @summary: An animal that says something in particular.
+model Dog extends Animal
+    # @summary: What a dog says.
+    # @yields: "woof".
+    public override string function Speaks()
+        yield "woof";
+    end function
+end model
+
+# @summary: A parent holding one version of a name.
+model Record
+    # @summary: Answers to a number.
+    # @n: the number.
+    # @yields: which version ran.
+    public string function Which(integer n)
+        yield "the parent's, given " + n;
+    end function
+end model
+
+##
+    @summary: A child adding a version of the same name.
+
+    @remarks: The parent's version is still reachable through a Ledger, which is the whole point
+    of the section that uses this.
+##
+model Ledger extends Record
+    # @summary: Answers to a word.
+    # @s: the word.
+    # @yields: which version ran.
+    public string function Which(string s)
+        yield "the child's, given " + s;
+    end function
+end model

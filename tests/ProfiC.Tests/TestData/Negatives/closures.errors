@@ -1,4 +1,4 @@
 closures.pc(29,13): error PC0206: 'i' is a loop variable and is read-only inside the loop. Each iteration binds a fresh one, so assigning to it would change nothing.
 closures.pc(44,13): error PC0237: 'total' is already the name of something in an enclosing scope, so this one would hide it. Give it a name of its own.
-closures.pc(59,46): error PC0214: 'this' can only be used inside a model's instance member.
+closures.pc(59,46): error PC0214: 'this' can only be used inside a model's instance member. Drop 'shared' from this member, or reach what you want through its type name.
 closures.pc(73,27): error PC0405: 'Doubled' uses 'total', which has not been given a value yet. Call it after 'total' is set, or move what it needs above this line.

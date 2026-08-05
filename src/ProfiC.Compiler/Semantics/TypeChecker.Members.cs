@@ -308,9 +308,36 @@ public sealed partial class TypeChecker
             return functionType.ReturnType ?? PrimitiveType.Void;
         }
 
-        // Calling a type name constructs nothing; "new" does that.
-        Report(DiagnosticDescriptors.NotCallable, call, callee.WithArticleCapitalized());
+        Report(
+            DiagnosticDescriptors.NotCallable,
+            call,
+            callee.WithArticleCapitalized(),
+            WhatToDoInstead(callee, TypeNamedBy(call.Callee)));
+
         return ErrorType.Instance;
+    }
+
+    /// <summary>
+    /// <para>What to do about something written with parentheses after it that is not a
+    /// function.</para>
+    /// <para>There are three ways to arrive here and each has its own answer, so each gets it.
+    /// An <b>optional holding a function</b> is the near miss: the function is right there, one
+    /// check away, and the check is the same one the language asks for before reading anything
+    /// out of an optional. A <b>type name</b> is almost always <c>new</c> written without the
+    /// word — the reader has said which type they want and how to build it, and left out only
+    /// the part that says build it. Anything else is a value that is not a function and never
+    /// was, where the useful thing to say is what a call needs rather than what this is.</para>
+    /// </summary>
+    private static string WhatToDoInstead(TypeSymbol callee, DeclaredTypeSymbol? named)
+    {
+        if (callee is OptionalType { UnderlyingType: FunctionType })
+        {
+            return "Check it with 'HasValue()' first, or unwrap it with 'Value()'.";
+        }
+
+        return named is not null
+            ? $"Write 'new {named.Name}(...)' to build one."
+            : "Only a function can be called.";
     }
 
     /// <summary>
@@ -466,12 +493,14 @@ public sealed partial class TypeChecker
             ? model.LookupIncludingBase(member.MemberName)
             : declared.Lookup(member.MemberName);
 
-        List<FunctionSymbol> functions = [.. candidates.OfType<FunctionSymbol>()];
+        List<FunctionSymbol> functions = [.. VersionsOf(declared, member.MemberName)];
 
+        // A member holding a function is called through, once no function of that name answers.
+        // Second rather than first only for tidiness: a type's members have distinct names, so
+        // the two cannot both be there to choose between.
         if (functions.Count == 0)
         {
-            Report(DiagnosticDescriptors.MemberNotFound, member, receiver.WithArticleCapitalized(), member.MemberName);
-            return ErrorType.Instance;
+            return CheckCallThroughMember(call, member, declared, onType, candidates, arguments);
         }
 
         FunctionSymbol? chosen = ResolveOverload(call, member.MemberName, functions, arguments);
@@ -492,6 +521,101 @@ public sealed partial class TypeChecker
         _model.Bind(call, chosen);
 
         return chosen.ReturnType ?? PrimitiveType.Void;
+    }
+
+    /// <summary>
+    /// <para>Every version of a name a type answers to, its ancestors included.</para>
+    /// <para><b>Collected down the whole chain rather than stopped at the nearest model that
+    /// declares the name.</b> Stopping there hides every version a parent wrote: adding
+    /// <c>Which(string)</c> to a child took <c>Which(integer)</c> away from it, so a call that
+    /// compiled before the child existed stopped compiling because of a function that has
+    /// nothing to do with it.</para>
+    /// <para>A version already found wins over one further up taking the same types, which is one
+    /// rule doing two jobs. An override replaces what it overrides — and without that, an
+    /// override and the virtual behind it would be two candidates fitting equally well, so every
+    /// call to an overridden function would be reported as a tie.</para>
+    /// </summary>
+    private static IEnumerable<FunctionSymbol> VersionsOf(DeclaredTypeSymbol type, string name)
+    {
+        IEnumerable<DeclaredTypeSymbol> chain = type is ModelSymbol model
+            ? model.SelfAndAncestors()
+            : [type];
+
+        List<FunctionSymbol> found = [];
+
+        foreach (DeclaredTypeSymbol current in chain)
+        {
+            foreach (FunctionSymbol version in current.Lookup(name).OfType<FunctionSymbol>())
+            {
+                if (!found.Any(nearer => Conversions.SameParameters(nearer, version)))
+                {
+                    found.Add(version);
+                }
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// <para>Calls what a member holds, where the member is a value of function type rather than
+    /// a function.</para>
+    /// <para><b>A function kept in a field is called like any other function.</b> Without this a
+    /// name after a dot could only be called where it was declared with <c>function</c>, and the
+    /// way round it was to copy the field into a local and call that — one extra line producing
+    /// exactly the same call, so the rule charged for itself and protected nothing.</para>
+    /// <para>The member's type is written down, which is what tells the back ends apart from an
+    /// ordinary call: both reach the value through the member and invoke what they find, rather
+    /// than choosing a body from the name.</para>
+    /// <para>A member that is not a function value says so, rather than being reported missing.
+    /// It is not missing — it can be read, assigned, and handed around — and saying otherwise
+    /// sends a reader looking for a declaration that is right there.</para>
+    /// </summary>
+    private TypeSymbol CheckCallThroughMember(
+        CallExpr call,
+        MemberExpr member,
+        DeclaredTypeSymbol declared,
+        bool onType,
+        IReadOnlyList<Symbol> candidates,
+        List<TypeSymbol> arguments)
+    {
+        if (candidates.Count == 0)
+        {
+            Report(
+                DiagnosticDescriptors.MemberNotFound,
+                member,
+                declared.WithArticleCapitalized(),
+                member.MemberName);
+
+            return ErrorType.Instance;
+        }
+
+        if (candidates[0] is not FieldSymbol { Type: FunctionType held } field)
+        {
+            TypeSymbol reached = BindMember(member, candidates);
+
+            Report(
+                DiagnosticDescriptors.NotCallable,
+                call,
+                reached.WithArticleCapitalized(),
+                WhatToDoInstead(reached, named: null));
+
+            return ErrorType.Instance;
+        }
+
+        if (onType)
+        {
+            RequireShared(member, declared, field);
+        }
+
+        RequireVisible(member, field, member.MemberName);
+
+        _model.Bind(member, field);
+        _model.BindType(member, held);
+
+        CheckArgumentsAgainst(call, member.MemberName, held.ParameterTypes, arguments);
+
+        return held.ReturnType ?? PrimitiveType.Void;
     }
 
     private FunctionSymbol? ResolveOverload(

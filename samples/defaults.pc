@@ -1,0 +1,97 @@
+##
+    What a field holds before anybody writes to it.
+
+    A field of a primitive type starts at a zero of its own, and one of an optional type starts
+    empty. Those are the only two: everything else has no such value, so the compiler asks for
+    one where the field is declared or in a constructor, and says so if it does not get it —
+    samples/negatives/compile/definite-assignment.pc holds that side.
+
+    The line is not a matter of taste. A number that starts at nought and a string that starts
+    empty mean what a reader expects them to mean. A set or a function that started at "nothing"
+    would be the null this language does without, arriving through a door the type system was
+    supposed to have closed.
+##
+
+shared model Program
+
+    # ---- Every primitive, left alone --------------------------------------------------
+
+    integer counted;
+    real measured;
+    float estimated;
+    boolean decided;
+    character marked;
+    string named;
+    fraction part;
+
+    # ---- An optional, left alone ------------------------------------------------------
+
+    integer[]? gathered;
+
+    function Main()
+        Program.WhatAPrimitiveStartsAt();
+        Program.WhatAnOptionalStartsAt();
+        Program.WhatAnInstanceStartsAt();
+    end function
+
+    ##
+        Each of these is the zero of its own type rather than a stand-in for one. A fraction is
+        the one worth looking at twice: zero written as a fraction is '0|1', not '0|0', because
+        a denominator of zero is not a number at all.
+    ##
+    function WhatAPrimitiveStartsAt()
+        Console.WriteLine("counted:   " + Program.counted);
+        Console.WriteLine("measured:  " + Program.measured);
+        Console.WriteLine("estimated: " + Program.estimated);
+        Console.WriteLine("decided:   " + Program.decided);
+        Console.WriteLine("named:     [" + Program.named + "]");
+        Console.WriteLine("part:      " + Program.part);
+        Console.WriteLine("marked:    " + (Program.marked == '\0'));
+    end function
+
+    ##
+        Empty is a value an optional holds, so an optional field needs nothing said about it —
+        and the reader is made to prove it holds something before reading what is inside.
+    ##
+    function WhatAnOptionalStartsAt()
+        Console.WriteLine("gathered:  " + Program.gathered.HasValue());
+    end function
+
+    ##
+        An instance field answers to a constructor rather than to an initializer, and the same
+        two exemptions apply: the primitive is left alone, and the set is asked for.
+    ##
+    function WhatAnInstanceStartsAt()
+        Tally tally = new Tally();
+
+        Console.WriteLine("tally:     " + tally.Report());
+    end function
+
+end model
+
+##
+    @summary: A count and the things counted, for showing what a constructor must settle.
+
+    @remarks: 'seen' is a set and has no value of its own, so the constructor gives it one.
+    'total' is a number and starts at nought, which is what a tally starting at nought means.
+##
+model Tally
+
+    # @summary: How many have been counted.
+    integer total;
+
+    # @summary: The things counted so far.
+    integer[] seen;
+
+    # @summary: A tally of nothing yet.
+    public function Tally()
+        this.seen = {};
+    end function
+
+    # @summary: The tally as a line of text.
+    # @yields: the total and how many were kept.
+    public string function Report()
+        yield this.total + " counted, " + this.seen.Count + " kept";
+    end function
+
+end model

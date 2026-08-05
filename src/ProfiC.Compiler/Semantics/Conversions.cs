@@ -199,6 +199,24 @@ public static class Conversions
         };
     }
 
+    /// <summary>
+    /// <para>Whether two functions take the same things, which is what makes them one function
+    /// rather than two versions of a name.</para>
+    /// <para>Asked by the resolver, to refuse a second declaration of a signature already
+    /// written, and by the type checker, to know that a function further up a chain of models
+    /// has been replaced by the one below it. The same question either way.</para>
+    /// </summary>
+    public static bool SameParameters(FunctionSymbol left, FunctionSymbol right)
+    {
+        ArgumentNullException.ThrowIfNull(left);
+        ArgumentNullException.ThrowIfNull(right);
+
+        return left.Parameters.Count == right.Parameters.Count
+            && left.Parameters
+                .Zip(right.Parameters)
+                .All(both => SameType(both.First.Type, both.Second.Type));
+    }
+
     private static bool SameFunction(FunctionType left, FunctionType right)
     {
         if (left.ParameterTypes.Count != right.ParameterTypes.Count)

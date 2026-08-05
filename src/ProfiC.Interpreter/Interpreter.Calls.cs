@@ -71,6 +71,14 @@ public sealed partial class Interpreter
                     arguments);
             }
 
+            // A shared field holding a function value is called through, rather than dispatched
+            // to, exactly as one reached through an instance is.
+            if (_model.GetSymbol(member) is FieldSymbol onTypeField
+                && _shared.Lookup(onTypeField)?.Value is FunctionValue heldOnType)
+            {
+                return Invoke(heldOnType, call.Arguments, arguments);
+            }
+
             return null;
         }
 
@@ -101,7 +109,7 @@ public sealed partial class Interpreter
         {
             // Dispatch on the runtime type, so an override wins over the version the
             // declaring type wrote.
-            if (FindMethod(instance.Type, member.MemberName, arguments.Count) is { } found
+            if (FindMethod(instance.Type, _model.GetSymbol(member) as FunctionSymbol, member.MemberName, arguments.Count) is { } found
                 && BodyOf(found) is { } method)
             {
                 return Invoke(
@@ -124,10 +132,17 @@ public sealed partial class Interpreter
     }
 
     /// <summary>
-    /// Finds a method by name and arity, nearest ancestor first. Starting at the runtime type
-    /// is what makes an override take effect.
+    /// <para>Finds the version to run, nearest ancestor first. Starting at the runtime type is
+    /// what makes an override take effect.</para>
+    /// <para><b>Matched against the version the type checker chose, where it chose one.</b> Name
+    /// and count alone is not enough once a model may declare a version its parent did not: a
+    /// child's <c>Which(string)</c> has the same name and the same count as its parent's
+    /// <c>Which(integer)</c>, and the nearest one is not the one the call was checked against.
+    /// Which version a call means was settled while checking, weighing what the arguments
+    /// actually are; this looks only for that version's override.</para>
     /// </summary>
-    private static FunctionSymbol? FindMethod(DeclaredTypeSymbol type, string name, int arity)
+    private static FunctionSymbol? FindMethod(
+        DeclaredTypeSymbol type, FunctionSymbol? chosen, string name, int arity)
     {
         IEnumerable<DeclaredTypeSymbol> chain = type is ModelSymbol model
             ? model.SelfAndAncestors()
@@ -135,9 +150,12 @@ public sealed partial class Interpreter
 
         foreach (DeclaredTypeSymbol current in chain)
         {
-            if (current.Lookup(name)
-                    .OfType<FunctionSymbol>()
-                    .FirstOrDefault(f => f.Parameters.Count == arity) is { } found)
+            IEnumerable<FunctionSymbol> versions = current.Lookup(name).OfType<FunctionSymbol>();
+
+            if (versions.FirstOrDefault(
+                    version => chosen is null
+                        ? version.Parameters.Count == arity
+                        : Conversions.SameParameters(version, chosen)) is { } found)
             {
                 return found;
             }

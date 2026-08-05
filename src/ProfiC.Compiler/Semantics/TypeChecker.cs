@@ -314,9 +314,45 @@ public sealed partial class TypeChecker
                     return false;
                 }
 
-                Report(DiagnosticDescriptors.CannotConvert, node, from.WithArticle(), to.WithArticle());
+                Report(
+                    DiagnosticDescriptors.CannotConvert,
+                    node,
+                    from.WithArticle(),
+                    to.WithArticle(),
+                    HowToGetThere(from, to));
+
                 return false;
         }
+    }
+
+    /// <summary>
+    /// <para>How to reach the type that was wanted, for the pairs that have an answer.</para>
+    /// <para>This is the message a reader meets most often, so it is the one it costs most to
+    /// leave bare. Naming the call is the whole of what is owed; why it works belongs in the
+    /// reference.</para>
+    /// </summary>
+    private static string HowToGetThere(TypeSymbol from, TypeSymbol to)
+    {
+        if (ReferenceEquals(to, PrimitiveType.String))
+        {
+            return "Write 'ToString()'.";
+        }
+
+        if (ReferenceEquals(from, PrimitiveType.String) && to is PrimitiveType wanted)
+        {
+            string named = char.ToUpperInvariant(wanted.Name[0]) + wanted.Name[1..];
+
+            return $"Write 'To{named}()', or '{named}.Parse(...)'.";
+        }
+
+        if (from is EnumerationSymbol)
+        {
+            return "Write 'ToInteger()' for its ordinal.";
+        }
+
+        return to is ModelSymbol { Name: "Model" } && from.IsValueType
+            ? "A value is not a Model; there is no boxing here."
+            : "Nothing converts one to the other.";
     }
 
     /// <summary>

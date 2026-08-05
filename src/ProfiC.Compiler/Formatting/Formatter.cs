@@ -71,6 +71,23 @@ public static class Formatter
     }
 
     /// <summary>
+    /// <para>The line that closes what the line above this one opened, indent and all, for an
+    /// editor writing it in while the reader carries on inside — or null where the line above
+    /// opened nothing, closed what it opened, or opened the one construct with two endings.
+    /// </para>
+    /// <para><b>Only where the file is short a closer.</b> Somebody typing <c>if</c> into a
+    /// finished function is owed an <c>end if</c>; somebody pressing Enter inside an <c>if</c>
+    /// that already has one is owed nothing, and would have to delete whatever was written for
+    /// them.</para>
+    /// </summary>
+    public static string? ClosingFor(SourceText source, int line)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return line >= 2 && line <= source.LineCount ? new Layout(source).Closing(line) : null;
+    }
+
+    /// <summary>
     /// <para>Where each line's content should begin, in spaces.</para>
     /// <para>Worked out in one walk down the file, because a wrapped line is placed against the
     /// bracket it is inside and that bracket's own line may have been wrapped too. Reading the
@@ -82,6 +99,8 @@ public static class Formatter
         private readonly int[] _indent;
         private readonly bool[] _asWritten;
         private readonly bool[] _inAValue;
+        private readonly Construct?[] _opened;
+        private int _short;
 
         public Layout(SourceText source)
         {
@@ -95,6 +114,7 @@ public static class Formatter
             _indent = new int[source.LineCount + 2];
             _asWritten = new bool[source.LineCount + 2];
             _inAValue = new bool[source.LineCount + 2];
+            _opened = new Construct?[source.LineCount + 2];
 
             MarkWhatIsNotLayout(tokens, lexer.Comments);
             Walk(tokens);
@@ -158,6 +178,48 @@ public static class Formatter
         public int? Placing(int line) =>
             _asWritten[line] ? null : Math.Max(0, _indent[line]);
 
+        /// <summary>
+        /// <para>The line closing what the line above began, or nothing where nothing is owed.
+        /// </para>
+        /// <para>Owed is measured over the whole file rather than by looking for a matching
+        /// <c>end</c> below, which a token walk cannot do: a stack pops whatever is innermost, so
+        /// an <c>end function</c> under an unclosed <c>if</c> takes the <c>if</c> off and the
+        /// count is what survives. That count is the reliable part — a file with one more opener
+        /// than closer is a file one closer short, and the construct just begun is the one that
+        /// wants it. Where the file already balances, nothing is owed and nothing is written.
+        /// </para>
+        /// </summary>
+        public string? Closing(int line)
+        {
+            if (_short == 0 || _asWritten[line] || _opened[line - 1] is not { } begun)
+            {
+                return null;
+            }
+
+            return Closer(begun) is { } closer
+                ? new string(' ', Math.Max(0, _indent[line - 1])) + closer
+                : null;
+        }
+
+        /// <summary>
+        /// <para>How a construct is closed, where it is closed one way only.</para>
+        /// <para>Two are left to the writer. A bare <c>loop</c> ends either at an <c>end loop</c>
+        /// or at the <c>until</c> carrying the condition it is still waiting for, and guessing
+        /// between them writes the wrong word half the time — a <c>loop</c> that names its kind
+        /// has no such doubt. A run of statements under a <c>case</c> label is closed by nothing
+        /// at all: the next label ends it, or the <c>end switch</c> does.</para>
+        /// </summary>
+        private static string? Closer(Construct begun) => begun.Kind switch
+        {
+            Opened.LoopUntil or Opened.Case => null,
+
+            Opened.Loop => $"end {TokenType.Loop.Text()}",
+
+            // A block opened for scope alone is closed by a bare 'end', having had no word of its
+            // own to repeat.
+            _ => begun.Word == TokenType.Begin ? "end" : $"end {begun.Word.Text()}",
+        };
+
         /// <summary>The indent a line was written with, for the lines this one does not place.</summary>
         private int AsFound(int line)
         {
@@ -185,7 +247,7 @@ public static class Formatter
         /// </summary>
         private void Walk(IReadOnlyList<Token> tokens)
         {
-            Stack<Opened> open = new();
+            Stack<Construct> open = new();
             Stack<Bracket> brackets = new();
 
             IReadOnlyList<Token>? previous = null;
@@ -207,7 +269,7 @@ public static class Formatter
                 // where the switch does. So it is taken off before the line that ends it is
                 // placed, rather than by anything on that line saying so.
                 if (open.Count > 0
-                    && open.Peek() == Opened.Case
+                    && open.Peek().Kind == Opened.Case
                     && Starts(onThisLine, TokenType.Case, TokenType.Default, TokenType.End))
                 {
                     open.Pop();
@@ -243,13 +305,23 @@ public static class Formatter
                     previous = onThisLine;
                 }
             }
+
+            _short = open.Count;
         }
 
         /// <summary>
-        /// <para>Where a line inside a bracket begins, anchored to the line above it.</para>
-        /// <para>Three cases. A line that <b>closes</b> the bracket goes back to the line that
-        /// opened it, so a closing brace sits level with the statement rather than with the
-        /// contents it is ending.</para>
+        /// <para>Where a line inside a bracket begins, once it is known whether that line is
+        /// inside a <em>body</em> as well.</para>
+        /// <para><b>A lambda written across several lines is the case the body half exists
+        /// for.</b> Its body is a body like any other — statements, an <c>if</c> with something
+        /// inside it, an <c>end function</c> — and lining those up with an argument would push a
+        /// whole function off to wherever the call's bracket happened to fall, and flatten its
+        /// nesting on the way. So once a construct is open inside the bracket, the lines belong
+        /// to it and are nested from the line that opened it, which is what makes a function read
+        /// the same wherever it is written.</para>
+        /// <para>Otherwise the line is a wrapped one, and there are three cases. A line that
+        /// <b>closes</b> the bracket goes back to the line that opened it, so a closing brace
+        /// sits level with the statement rather than with the contents it is ending.</para>
         /// <para>A line that <b>begins something new</b> lines up with the first thing in the
         /// bracket. What says it is new is the character the line above it ended on: a comma, or
         /// the bracket itself. So the rows of a matrix line up with the first row, and the
@@ -259,31 +331,25 @@ public static class Formatter
         /// it were — the indent is what says so, and it says it in the one place a reader is
         /// already looking.</para>
         /// </summary>
-        /// <summary>
-        /// <para>Where a line inside a bracket begins, once it is known whether that line is
-        /// inside a <em>body</em> as well.</para>
-        /// <para><b>A lambda written across several lines is the case this exists for.</b> Its
-        /// body is a body like any other — statements, an <c>if</c> with something inside it, an
-        /// <c>end function</c> — and lining those up with an argument would push a whole function
-        /// off to wherever the call's bracket happened to fall, and flatten its nesting on the way.
-        /// So once a construct is open inside the bracket, the lines belong to it and are placed
-        /// by nesting from the statement, exactly as they would be had the lambda been written
-        /// anywhere else.</para>
-        /// </summary>
         private static int Inside(
             IReadOnlyList<Token> line,
             IReadOnlyList<Token>? previous,
             Bracket bracket,
-            Stack<Opened> open)
+            Stack<Construct> open)
         {
             if (open.Count <= bracket.Constructs)
             {
                 return Wrapped(line, previous, bracket);
             }
 
+            // The outermost construct opened inside this bracket, which is what everything under
+            // it is measured from. Not the line that opened the bracket: a lambda written as one
+            // item of a collection begins where that item begins, several columns in from the
+            // statement, and a body that ignored that would sit level with its own opener.
+            int body = open.ElementAt(open.Count - 1 - bracket.Constructs).Indent;
             int depth = open.Count - bracket.Constructs - (StepsOut(line, open) ? 1 : 0);
 
-            return bracket.Opener + (Math.Max(0, depth) * IndentWidth);
+            return body + (Math.Max(0, depth) * IndentWidth);
         }
 
         private static int Wrapped(
@@ -316,7 +382,7 @@ public static class Formatter
         /// </summary>
         private void Nest(
             IReadOnlyList<Token> line,
-            Stack<Opened> open,
+            Stack<Construct> open,
             Stack<Bracket> brackets,
             int indent)
         {
@@ -358,7 +424,10 @@ public static class Formatter
                 }
                 else if (Opens(token, line, at) is { } opened)
                 {
-                    open.Push(opened);
+                    Construct begun = new(opened, token.Type, indent);
+
+                    open.Push(begun);
+                    _opened[token.Span.Start.Line] = begun;
                 }
             }
         }
@@ -411,11 +480,11 @@ public static class Formatter
         /// switch's body among the statements, and what comes out is the group before it, which
         /// has already been taken off by the time this is asked.</para>
         /// </summary>
-        private static bool StepsOut(IReadOnlyList<Token> line, Stack<Opened> open) =>
+        private static bool StepsOut(IReadOnlyList<Token> line, Stack<Construct> open) =>
             Starts(line, TokenType.End, TokenType.Else, TokenType.Catch, TokenType.Finally)
             || (Starts(line, TokenType.Until)
                 && open.Count > 0
-                && open.Peek() == Opened.LoopUntil);
+                && open.Peek().Kind == Opened.LoopUntil);
 
         private static bool Starts(IReadOnlyList<Token> line, params TokenType[] any) =>
             line.Count > 0 && any.Contains(line[0].Type);
@@ -441,6 +510,15 @@ public static class Formatter
             /// </summary>
             Case,
         }
+
+        /// <summary>
+        /// <para>Something open above this line, the word that opened it, and where the line that
+        /// opened it began.</para>
+        /// <para>The column is carried rather than counted from how many are open, because a
+        /// construct written inside a bracket does not begin where its depth alone would put it:
+        /// a lambda written as one item of a collection begins where that item begins.</para>
+        /// </summary>
+        private readonly record struct Construct(Opened Kind, TokenType Word, int Indent);
 
         private static Opened? Opens(Token token, IReadOnlyList<Token> line, int at) =>
             token.Type switch
@@ -478,14 +556,14 @@ public static class Formatter
                 _ => null,
             };
 
-        private static bool Closes(Token token, Stack<Opened> open) => token.Type switch
+        private static bool Closes(Token token, Stack<Construct> open) => token.Type switch
         {
             TokenType.End => true,
 
             // Only where a loop written without a condition is waiting for one. Every other
             // 'until' is the bound of a counted loop, which is a different word doing a
             // different job in the same place.
-            TokenType.Until => open.Count > 0 && open.Peek() == Opened.LoopUntil,
+            TokenType.Until => open.Count > 0 && open.Peek().Kind == Opened.LoopUntil,
 
             _ => false,
         };

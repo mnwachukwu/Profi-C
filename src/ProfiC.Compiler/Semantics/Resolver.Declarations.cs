@@ -430,7 +430,64 @@ public sealed partial class Resolver
                     break;
             }
         }
+
+        ReportMembersSharingAName(type);
     }
+
+    /// <summary>
+    /// <para>Reports a name that two members of one type both answer to.</para>
+    /// <para>Two are allowed only where they are versions of one function, told apart by what
+    /// they take. Everything else is one name meaning two things: two fields, a field beside a
+    /// function, or two functions taking the same types. Left alone, the second declaration is
+    /// unreachable and nothing says so — the first one answers every use of the name, and the
+    /// reader who wrote the second watches their code do what the other one does.</para>
+    /// <para>Asked here rather than as each member is collected, because what tells two functions
+    /// apart is their parameter types, and those are not settled until every type is known.</para>
+    /// </summary>
+    private void ReportMembersSharingAName(DeclaredTypeSymbol type)
+    {
+        foreach (List<Symbol> sharing in type.Members.Values)
+        {
+            for (int at = 1; at < sharing.Count; at++)
+            {
+                Symbol member = sharing[at];
+
+                // A name that failed to parse is empty, and two of those are not a clash worth
+                // reporting — whatever went wrong has already been said once each.
+                if (member.Name.Length == 0 || member.Declaration is not { } written)
+                {
+                    continue;
+                }
+
+                if (sharing.Take(at).FirstOrDefault(
+                        before => !VersionsOfOneFunction(before, member))
+                    is { Declaration: { } first })
+                {
+                    Report(
+                        DiagnosticDescriptors.MemberNameTaken,
+                        written,
+                        type.WithArticleCapitalized(),
+                        member.Name,
+                        first.Span.Start.Line);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// <para>Whether two members of one name are versions of one function rather than a clash.
+    /// </para>
+    /// <para>A signature holding a type that did not resolve decides nothing, and is treated as
+    /// distinct so that one unknown type name is reported once rather than again here as a
+    /// clash it did not cause.</para>
+    /// </summary>
+    private static bool VersionsOfOneFunction(Symbol one, Symbol other) =>
+        one is FunctionSymbol first
+        && other is FunctionSymbol second
+        && (Undecided(first) || Undecided(second) || !Conversions.SameParameters(first, second));
+
+    private static bool Undecided(FunctionSymbol function) =>
+        function.Parameters.Any(parameter => parameter.Type.IsError);
 
     /// <summary>
     /// Reads a type during the first pass, when not every type has been recorded yet. Unknown

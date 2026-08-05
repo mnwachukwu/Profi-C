@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Runtime;
@@ -95,6 +96,16 @@ public sealed partial class Interpreter
     private const int MaximumDepth = 512;
 
     /// <summary>
+    /// <para>How much stack a program is given to run on.</para>
+    /// <para><b>A limit that fires after the stack is gone is not a limit.</b> The depth above
+    /// exists so that runaway recursion is reported as a sentence naming the cause; reaching it
+    /// costs on the order of twenty native frames a level, which is more than the stack a
+    /// process hands its first thread. So a run gets a thread of its own, sized for the depth
+    /// rather than the depth trimmed to fit whatever stack it happened to start on.</para>
+    /// </summary>
+    private const int StackBytes = 64 * 1024 * 1024;
+
+    /// <summary>
     /// Something watching the run, or null. Null is the ordinary case and costs one check per
     /// statement, which is why the gate can sit on the path every statement takes.
     /// </summary>
@@ -131,7 +142,7 @@ public sealed partial class Interpreter
 
         try
         {
-            return interpreter.Execute(lowered);
+            return Deeply(() => interpreter.Execute(lowered));
         }
         catch (ProfiCThrow uncaught)
         {
@@ -149,6 +160,46 @@ public sealed partial class Interpreter
             // where every other unhandled exception gives them a sentence.
             throw new UncaughtProfiCException(raised.GetType().Name, raised.Message);
         }
+    }
+
+    /// <summary>
+    /// <para>Runs the program on a thread with room for <see cref="MaximumDepth"/> calls, and
+    /// waits for it.</para>
+    /// <para>Whatever it raised is raised again here, on the caller's own thread, so that every
+    /// caller — the command line, a test, the debug adapter — catches what it always caught and
+    /// the stack this exists to provide is the only difference. Rethrown through
+    /// <see cref="ExceptionDispatchInfo"/> rather than by <c>throw raised</c>, which would
+    /// replace the trace with one starting here.</para>
+    /// </summary>
+    private static int Deeply(Func<int> run)
+    {
+        int answer = 0;
+        ExceptionDispatchInfo? raised = null;
+
+        Thread runner = new(
+            () =>
+            {
+                try
+                {
+                    answer = run();
+                }
+                catch (Exception failure)
+                {
+                    raised = ExceptionDispatchInfo.Capture(failure);
+                }
+            },
+            StackBytes)
+        {
+            IsBackground = true,
+            Name = "profi-c",
+        };
+
+        runner.Start();
+        runner.Join();
+
+        raised?.Throw();
+
+        return answer;
     }
 
     /// <summary>Runs one lowered file, which is a program of one.</summary>
@@ -305,15 +356,20 @@ public sealed partial class Interpreter
     }
 
     /// <summary>
-    /// <para>The starting value of a variable nobody has assigned.</para>
-    /// <para>Only an optional really has one — empty. Everything else is rejected before it
-    /// can be read, so this is a placeholder that a correct program never observes.</para>
+    /// <para>What a field holds before anybody writes to it.</para>
+    /// <para>Every primitive has a zero of its own, and an optional starts empty. Those are the
+    /// only types a program may leave alone: everything else is asked for where it is declared
+    /// or in a constructor, so the null at the foot of this is a placeholder for a field that
+    /// did not check and which a correct program never observes.</para>
+    /// <para>A local is a separate question and a stricter one — none of these reaches a local,
+    /// which must be given a value on every path that reads it.</para>
     /// </summary>
     private static object? DefaultFor(TypeSymbol type) => type switch
     {
         OptionalType => null,
         _ when ReferenceEquals(type, PrimitiveType.Integer) => 0L,
-        _ when ReferenceEquals(type, PrimitiveType.Real) => 0.0,
+        _ when ReferenceEquals(type, PrimitiveType.Real) => 0.0m,
+        _ when ReferenceEquals(type, PrimitiveType.Float) => 0.0,
         _ when ReferenceEquals(type, PrimitiveType.Boolean) => false,
         _ when ReferenceEquals(type, PrimitiveType.Character) => '\0',
         _ when ReferenceEquals(type, PrimitiveType.String) => string.Empty,
@@ -403,7 +459,9 @@ public sealed partial class Interpreter
     /// </summary>
     private Func<Instance, string>? RendererFor(DeclaredTypeSymbol type)
     {
-        if (FindMethod(type, "ToString", arity: 0) is not { } declared
+        // No version was chosen while checking, because nothing here is a call somebody wrote —
+        // this is the language deciding how to print a value. Count alone settles it.
+        if (FindMethod(type, chosen: null, "ToString", arity: 0) is not { } declared
             || BodyOf(declared) is not { } body)
         {
             return null;

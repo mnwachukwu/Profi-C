@@ -1,6 +1,6 @@
 bits.pc(27,27): error PC0342: 'xor' works on the bits of a whole number. For two booleans, '!=' asks whether exactly one of them holds.
-bits.pc(35,27): error PC0303: 'bitwise and' is not defined for a real and an integer.
-bits.pc(36,27): error PC0303: 'shiftleft' is not defined for a fraction and an integer.
+bits.pc(35,27): error PC0303: 'bitwise and' is not defined for a real and an integer. Convert one side, or use a member.
+bits.pc(36,27): error PC0303: 'shiftleft' is not defined for a fraction and an integer. Convert one side, or use a member.
 bits.pc(44,39): error PC0343: An integer holds 64 bits, so a shift of 64 places moves past all of them. An amount from 0 to 63 is what there is to move.
 bits.pc(45,40): error PC0343: An integer holds 64 bits, so a shift of -1 places moves past all of them. An amount from 0 to 63 is what there is to move.
 bits.pc(50,37): error PC0118: 'bitwise' says which of two operations follows, and 'not' is neither. Write 'bitwise and' or 'bitwise or' — 'xor', 'shiftleft' and 'shiftright' need no word before them.

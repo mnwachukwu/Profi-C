@@ -1,0 +1,390 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'CountingFirst'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ExactBeatsWidening'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WideningWhenNothingIsExact'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TheNearestModelWins'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AnOptionalIsItsOwnType'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AcrossAParentAndItsChild'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AnOverrideIsNotASecondVersion'
+            IdentifierExpr 'Program'
+    FunctionDecl 'CountingFirst'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "one:  " [String]
+            CallExpr
+              MemberExpr 'Join'
+                IdentifierExpr 'Program'
+              LiteralExpr "a" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "two:  " [String]
+            CallExpr
+              MemberExpr 'Join'
+                IdentifierExpr 'Program'
+              LiteralExpr "a" [String]
+              LiteralExpr "b" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "three:" [String]
+            CallExpr
+              MemberExpr 'Join'
+                IdentifierExpr 'Program'
+              LiteralExpr "a" [String]
+              LiteralExpr "b" [String]
+              LiteralExpr "c" [String]
+    FunctionDecl 'Join'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'string'
+      YieldStmt
+        IdentifierExpr 'a'
+    FunctionDecl 'Join'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'b'
+        NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          IdentifierExpr 'a'
+          IdentifierExpr 'b'
+    FunctionDecl 'Join'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'b'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'c'
+        NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          BinaryExpr '+'
+            IdentifierExpr 'a'
+            IdentifierExpr 'b'
+          IdentifierExpr 'c'
+    FunctionDecl 'ExactBeatsWidening'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "integer:  " [String]
+            CallExpr
+              MemberExpr 'Describe'
+                IdentifierExpr 'Program'
+              LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "real:     " [String]
+            CallExpr
+              MemberExpr 'Describe'
+                IdentifierExpr 'Program'
+              LiteralExpr 3.5 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "fraction: " [String]
+            CallExpr
+              MemberExpr 'Describe'
+                IdentifierExpr 'Program'
+              LiteralExpr 1|2 [Fraction]
+    FunctionDecl 'Describe'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "an integer, " [String]
+          IdentifierExpr 'n'
+    FunctionDecl 'Describe'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'r'
+        NamedTypeSyntax 'real'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "a real, " [String]
+          IdentifierExpr 'r'
+    FunctionDecl 'Describe'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'f'
+        NamedTypeSyntax 'fraction'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "a fraction, " [String]
+          IdentifierExpr 'f'
+    FunctionDecl 'WideningWhenNothingIsExact'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "widened: " [String]
+            CallExpr
+              MemberExpr 'Measure'
+                IdentifierExpr 'Program'
+              LiteralExpr 4 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "exact:   " [String]
+            CallExpr
+              MemberExpr 'Measure'
+                IdentifierExpr 'Program'
+              LiteralExpr 4.0 [Real]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "letter:  " [String]
+            CallExpr
+              MemberExpr 'Spell'
+                IdentifierExpr 'Program'
+              LiteralExpr 'q' [Character]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "word:    " [String]
+            CallExpr
+              MemberExpr 'Spell'
+                IdentifierExpr 'Program'
+              LiteralExpr "quiet" [String]
+    FunctionDecl 'Measure'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'r'
+        NamedTypeSyntax 'real'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "read as a real, " [String]
+          IdentifierExpr 'r'
+    FunctionDecl 'Spell'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'c'
+        NamedTypeSyntax 'character'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "one character, " [String]
+          IdentifierExpr 'c'
+    FunctionDecl 'Spell'
+      NamedTypeSyntax 'string'
+      ParameterDecl 's'
+        NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "a string of " [String]
+          MemberExpr 'Count'
+            IdentifierExpr 's'
+    FunctionDecl 'TheNearestModelWins'
+      VarDeclStmt 'rex'
+        NamedTypeSyntax 'Dog'
+        NewExpr 'Dog'
+      VarDeclStmt 'asAnimal'
+        NamedTypeSyntax 'Animal'
+        IdentifierExpr 'rex'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "as a dog:    " [String]
+            CallExpr
+              MemberExpr 'Feed'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'rex'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "as an animal:" [String]
+            CallExpr
+              MemberExpr 'Feed'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'asAnimal'
+    FunctionDecl 'Feed'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'a'
+        NamedTypeSyntax 'Animal'
+      YieldStmt
+        LiteralExpr "something an animal eats" [String]
+    FunctionDecl 'Feed'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'd'
+        NamedTypeSyntax 'Dog'
+      YieldStmt
+        LiteralExpr "something a dog eats" [String]
+    FunctionDecl 'AnOptionalIsItsOwnType'
+      VarDeclStmt 'missing'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Nothing'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "present: " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'Program'
+              LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "absent:  " [String]
+            CallExpr
+              MemberExpr 'Count'
+                IdentifierExpr 'Program'
+              IdentifierExpr 'missing'
+    FunctionDecl 'Count'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "a number, " [String]
+          IdentifierExpr 'n'
+    FunctionDecl 'Count'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'n'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "maybe a number, " [String]
+          IfExpr
+            CallExpr
+              MemberExpr 'HasValue'
+                IdentifierExpr 'n'
+            LiteralExpr "yes" [String]
+            LiteralExpr "no" [String]
+    FunctionDecl 'Nothing'
+      OptionalTypeSyntax
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'none'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+      YieldStmt
+        IdentifierExpr 'none'
+    FunctionDecl 'AcrossAParentAndItsChild'
+      VarDeclStmt 'ledger'
+        NamedTypeSyntax 'Ledger'
+        NewExpr 'Ledger'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "parent's: " [String]
+            CallExpr
+              MemberExpr 'Which'
+                IdentifierExpr 'ledger'
+              LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "child's:  " [String]
+            CallExpr
+              MemberExpr 'Which'
+                IdentifierExpr 'ledger'
+              LiteralExpr "x" [String]
+    FunctionDecl 'AnOverrideIsNotASecondVersion'
+      VarDeclStmt 'pet'
+        NamedTypeSyntax 'Animal'
+        NewExpr 'Dog'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "said:  " [String]
+            CallExpr
+              MemberExpr 'Speaks'
+                IdentifierExpr 'pet'
+      VarDeclStmt 'heard'
+        FunctionTypeSyntax
+          NamedTypeSyntax 'string'
+        MemberExpr 'Speaks'
+          IdentifierExpr 'pet'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "heard: " [String]
+            CallExpr
+              IdentifierExpr 'heard'
+  ModelDecl 'Animal'
+    FunctionDecl 'Speaks' [public virtual]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "..." [String]
+  ModelDecl 'Dog' extends Animal
+    FunctionDecl 'Speaks' [public override]
+      NamedTypeSyntax 'string'
+      YieldStmt
+        LiteralExpr "woof" [String]
+  ModelDecl 'Record'
+    FunctionDecl 'Which' [public]
+      NamedTypeSyntax 'string'
+      ParameterDecl 'n'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "the parent's, given " [String]
+          IdentifierExpr 'n'
+  ModelDecl 'Ledger' extends Record
+    FunctionDecl 'Which' [public]
+      NamedTypeSyntax 'string'
+      ParameterDecl 's'
+        NamedTypeSyntax 'string'
+      YieldStmt
+        BinaryExpr '+'
+          LiteralExpr "the child's, given " [String]
+          IdentifierExpr 's'

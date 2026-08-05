@@ -447,6 +447,128 @@ public sealed class LanguageServerTests
     }
 
     /// <summary>
+    /// <para>Hovering a call that produces nothing says nothing.</para>
+    /// <para><b>Two type names exist to be read inside a sentence and neither survives being
+    /// held up on its own.</b> A call that produces no value has the type written "call that
+    /// yields nothing", so a diagnostic can read "A call that yields nothing cannot be
+    /// indexed" — shown alone over the parentheses of a call, it announces an absence nobody
+    /// asked about. And the type the compiler could not work out is written <c>?</c>, which in
+    /// this language marks an optional, so that hover tells a reader something untrue about
+    /// their code.</para>
+    /// <para>Nothing is the honest answer to both, and it is what an editor already knows how to
+    /// show: no tooltip at all.</para>
+    /// </summary>
+    [Test]
+    public void HoveringACallThatProducesNothingSaysNothing()
+    {
+        using Workspace workspace = new();
+
+        // The second '()' on line 5: calling what was unwrapped, which yields nothing.
+        string answered = Answering(
+            Framed(
+                Open(
+                    workspace.UriOf("Program.pc"),
+                    "shared model Program\n"
+                    + "    delegate()? @delegate;\n"
+                    + "\n"
+                    + "    function Main()\n"
+                    + "        let del = Program.@delegate;\n"
+                    + "        del.Value()();\n"
+                    + "    end function\n"
+                    + "end model"),
+                new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = 13,
+                    ["method"] = "textDocument/hover",
+                    ["params"] = new JsonObject
+                    {
+                        ["textDocument"] = new JsonObject
+                        {
+                            ["uri"] = workspace.UriOf("Program.pc"),
+                        },
+                        ["position"] = new JsonObject { ["line"] = 5, ["character"] = 20 },
+                    },
+                }),
+            text => text.Contains("\"id\":13", StringComparison.Ordinal));
+
+        Assert.That(
+            Answered(answered, id: 13)?["result"]?.ToJsonString(),
+            Is.Null.Or.EqualTo("null"),
+            "the parentheses of a call that yields nothing described themselves as an absence");
+    }
+
+    /// <summary>
+    /// <para>Beginning a construct writes its ending, on the line below.</para>
+    /// <para><b>Below, and not at the caret, which is the whole of why this is safe.</b> An editor
+    /// applies what comes back and moves the caret along in front of anything inserted where it
+    /// stands, so an <c>end if</c> written at the caret would leave the reader past it, outside
+    /// the construct they had just opened — the opposite of what they asked for by pressing
+    /// Enter. Written a line down, the caret stays inside and the construct is already closed
+    /// behind it.</para>
+    /// </summary>
+    [Test]
+    public void BeginningAConstructWritesItsEnding()
+    {
+        using Workspace workspace = new();
+
+        // Enter pressed after 'if 1 > 0', so line 3 is empty and the caret is on it. The function
+        // below already ends; the 'if' does not, which is what says one is owed.
+        string answered = Answering(
+            Framed(
+                Open(
+                    workspace.UriOf("Program.pc"),
+                    "shared model Program\n"
+                    + "    function Main()\n"
+                    + "        if 1 > 0\n"
+                    + "\n"
+                    + "    end function\n"
+                    + "end model"),
+                new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = 12,
+                    ["method"] = "textDocument/onTypeFormatting",
+                    ["params"] = new JsonObject
+                    {
+                        ["textDocument"] = new JsonObject
+                        {
+                            ["uri"] = workspace.UriOf("Program.pc"),
+                        },
+                        ["position"] = new JsonObject { ["line"] = 3, ["character"] = 0 },
+                        ["ch"] = "\n",
+                        ["options"] = new JsonObject(),
+                    },
+                }),
+            text => text.Contains("\"id\":12", StringComparison.Ordinal));
+
+        JsonArray edits = (JsonArray)Answered(answered, id: 12)!["result"]!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(edits, Has.Count.EqualTo(2), "where the line begins, and what closes it");
+
+            Assert.That(
+                (string?)edits[0]!["newText"],
+                Is.EqualTo(new string(' ', 12)),
+                "inside the 'if', a level in from it");
+
+            Assert.That((int?)edits[1]!["range"]!["start"]!["line"], Is.EqualTo(4));
+            Assert.That((int?)edits[1]!["range"]!["end"]!["line"], Is.EqualTo(4));
+
+            Assert.That(
+                (int?)edits[1]!["range"]!["start"]!["character"],
+                Is.Zero,
+                "an insertion rather than a replacement, so nothing already written is lost");
+
+            Assert.That(
+                (string?)edits[1]!["newText"],
+                Is.EqualTo("        end if\n"),
+                "level with the 'if' it closes, and on a line of its own");
+        });
+    }
+
+    /// <summary>
     /// <para>The questions about a place answer, asked the way an editor asks them.</para>
     /// <para><b>Every other test here builds its URI with <c>Conversions.UriOf</c>, which is this
     /// codebase talking to itself.</b> VS Code escapes the colon after a drive letter; nothing

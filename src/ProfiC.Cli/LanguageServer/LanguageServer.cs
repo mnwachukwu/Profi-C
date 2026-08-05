@@ -603,17 +603,14 @@ public sealed class LanguageServer : IDisposable
         string text = source.GetLine(line).ToString().TrimEnd('\r', '\n');
         string found = text[..(text.Length - text.TrimStart(' ', '\t').Length)];
 
-        // Already where it belongs. Answering with an edit that changes nothing still counts as
-        // an edit, and an editor that applied one on every newline would fill an undo history
-        // with steps that undo nothing.
-        if (string.Equals(found, new string(' ', belongs), StringComparison.Ordinal))
-        {
-            return [];
-        }
+        JsonArray edits = [];
 
-        return
-        [
-            new JsonObject
+        // Left alone where it already begins in the right place. Answering with an edit that
+        // changes nothing still counts as an edit, and an editor that applied one on every
+        // newline would fill an undo history with steps that undo nothing.
+        if (!string.Equals(found, new string(' ', belongs), StringComparison.Ordinal))
+        {
+            edits.Add(new JsonObject
             {
                 ["range"] = new JsonObject
                 {
@@ -621,8 +618,45 @@ public sealed class LanguageServer : IDisposable
                     ["end"] = new JsonObject { ["line"] = line - 1, ["character"] = found.Length },
                 },
                 ["newText"] = new string(' ', belongs),
+            });
+        }
+
+        if (Closing(source, line) is { } closing)
+        {
+            edits.Add(closing);
+        }
+
+        return edits;
+    }
+
+    /// <summary>
+    /// <para>The <c>end</c> for a construct the line above began, written in on the line below so
+    /// that the reader carries on inside it.</para>
+    /// <para><b>Placed on the following line rather than at the caret, which is what keeps the
+    /// caret where it is.</b> Text inserted where somebody is typing pushes them along in front
+    /// of it, and being moved to the far side of an <c>end function</c> after pressing Enter is
+    /// worse than not having it written at all. So this needs a line below to write on, and where
+    /// the caret is on the last line of the file it writes nothing — a construct is opened on the
+    /// last line of a file about as often as a program has nothing after it.</para>
+    /// </summary>
+    private static JsonObject? Closing(SourceText source, int line)
+    {
+        if (line >= source.LineCount || Formatter.ClosingFor(source, line) is not { } closer)
+        {
+            return null;
+        }
+
+        string ending = source.Text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+
+        return new JsonObject
+        {
+            ["range"] = new JsonObject
+            {
+                ["start"] = new JsonObject { ["line"] = line, ["character"] = 0 },
+                ["end"] = new JsonObject { ["line"] = line, ["character"] = 0 },
             },
-        ];
+            ["newText"] = closer + ending,
+        };
     }
 
     /// <summary>The lines a range covers, counted as a reader counts them.</summary>

@@ -725,7 +725,9 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [visibility.pc](samples/visibility.pc) | **`shared` and `public` answer different questions.** One asks how many there are, the other who can reach it — a shared model's members are private until they say otherwise |
 | [mathematics.pc](samples/mathematics.pc) | **Every member of `Math`.** Constants, roots, logarithms, angles, rounding, and why `Log` is the natural one |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
-| [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, and holding any of them as a `Function` |
+| [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, holding any of them as a `Function`, and keeping one in a field |
+| [defaults.pc](samples/defaults.pc) | **What a field holds before anybody writes to it.** Every primitive at its own zero, an optional starting empty, and the constructor settling the one field that has no zero to start at |
+| [overloads.pc](samples/overloads.pc) | **One name, several versions.** Count before kind, exact before widening, the nearest model, an optional as its own type, versions across a parent and its child, and why an override is not a second version |
 | [closures.pc](samples/closures.pc) | **What a function remembers.** The variable rather than a copy of it, a fresh loop counter every turn, naming two runs at once, outliving the call that made it, keeping an instance, and reaching a parent |
 | [matrices.pc](samples/matrices.pc) | **Grids and cubes, and the arithmetic they hold.** `integer[][]` is a set of sets and `integer[][][]` a set of grids, with no feature added for either — then transposing, multiplying, and using a grid to turn a point in the plane and in space |
 | [shapes.pc](samples/shapes.pc) | Inheritance, `virtual`/`override`, and dispatch on the runtime type |
@@ -793,6 +795,8 @@ Programs the compiler rejects:
 | [numbers.pc](samples/negatives/compile/numbers.pc) | Numbers written past the edge of what holds them — including `-9223372036854775808`, which is the most negative integer and still one past the largest, because the minus is a separate operator |
 | [members.pc](samples/negatives/compile/members.pc) | A function used as a property, an instance member reached through its type, a call that yields nothing |
 | [shadowing.pc](samples/negatives/compile/shadowing.pc) | Names taken again while an enclosing scope is still using them — a block's local, a lambda's parameter, a loop binding, a caught exception |
+| [naming.pc](samples/negatives/compile/naming.pc) | One name claimed by two members — two fields, a field beside a function, two functions taking the same types — alongside the overloads that are correct |
+| [overloads.pc](samples/negatives/compile/overloads.pc) | Calls that do not settle which version they mean: two reachable only by widening, a lambda fitting both its shape and `Function`, an argument no version takes, a count no version has, and a fraction that does not become a real on its own |
 | [blocks.pc](samples/negatives/compile/blocks.pc) | An `end` that closes the wrong construct |
 | [switching.pc](samples/negatives/compile/switching.pc) | A switch on a real, a label that is not constant, one value handled twice, and a member left unhandled |
 | [results.pc](samples/negatives/compile/results.pc) | A function that never reaches the result it promises, and a call that yields nothing used as a value |

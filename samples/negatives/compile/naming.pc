@@ -1,0 +1,55 @@
+##
+    One name, two members.
+
+    This program does not compile. A name belongs to one member of a type: two fields cannot
+    share one, a field and a function cannot, and neither can two functions taking the same
+    types. Versions of one function, told apart by what they take, are the exception and the
+    only one.
+
+    What makes this worth refusing is that nothing goes wrong at the point of the mistake. Every
+    use of the name finds the first member declared, so the second sits there looking like code
+    and running never — and the reader who wrote it watches their program do what the other one
+    does.
+##
+
+model Shelf
+    # Two fields. Reading 'count' would find the first, whatever the second says.
+    integer count = 0;
+    string count = "none";
+
+    # A field beside a function. Worse than unreachable: the name would mean the field when
+    # read and the function when called, deciding by whether parentheses happen to follow.
+    public delegate(integer) report = function(i)
+        Console.WriteLine(i);
+    end function;
+
+    public function report(integer i)
+        Console.WriteLine(i);
+    end function
+
+    # Two functions taking the same types. There is nothing to choose between them, which the
+    # compiler used to say only where one was called — and only if one ever was.
+    public integer function Height()
+        yield 1;
+    end function
+
+    public integer function Height()
+        yield 2;
+    end function
+
+    # Versions of one function, told apart by what they take. These are correct, and are here
+    # to say so: a rule that refused them would refuse the standard library.
+    public function Add(integer copies)
+        Console.WriteLine(copies);
+    end function
+
+    public function Add(string title)
+        Console.WriteLine(title);
+    end function
+end model
+
+shared model Program
+    function Main()
+        Console.WriteLine("this program does not compile");
+    end function
+end model

@@ -1,0 +1,18 @@
+one:  a
+two:  ab
+three:abc
+integer:  an integer, 3
+real:     a real, 3.5
+fraction: a fraction, 1|2
+widened: read as a real, 4
+exact:   read as a real, 4
+letter:  one character, q
+word:    a string of 5
+as a dog:    something a dog eats
+as an animal:something an animal eats
+present: a number, 7
+absent:  maybe a number, no
+parent's: the parent's, given 1
+child's:  the child's, given x
+said:  woof
+heard: woof

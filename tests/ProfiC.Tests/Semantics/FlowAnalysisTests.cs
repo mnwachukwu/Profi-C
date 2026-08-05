@@ -320,6 +320,13 @@ public sealed class FlowAnalysisTests
 
     // ---- Constructors -------------------------------------------------------------------------
 
+    /// <summary>
+    /// <para>A constructor must give a value to every field whose type has none of its own.
+    /// </para>
+    /// <para><c>x</c> below is a primitive and starts at nought, so leaving it out is no
+    /// mistake. The set has nothing to start at, and a set that is nothing is not an empty
+    /// set — it is the null this language does without.</para>
+    /// </summary>
     [Test]
     public void AConstructorMustGiveEveryFieldAValue()
     {
@@ -327,7 +334,7 @@ public sealed class FlowAnalysisTests
             """
             model Point
                 integer x;
-                integer y;
+                integer[] seen;
 
                 public function Point(integer a)
                     this.x = a;
@@ -335,6 +342,103 @@ public sealed class FlowAnalysisTests
             end model
             """)), Is.EqualTo(new[] { "PC0402" }));
     }
+
+    /// <summary>
+    /// <para>A shared field of a type with no value of its own is given one where it is
+    /// declared, there being nowhere else.</para>
+    /// <para><b>The hole this closes was the null the language says it does not have.</b> A
+    /// shared field left alone held nothing, and nothing was a different thing for each type: a
+    /// set threw a raw <c>NullReferenceException</c> out of the runtime, and a function reported
+    /// "This is not something that can be called" — a sentence about callability, when what was
+    /// wrong was that nobody had ever put a function there.</para>
+    /// </summary>
+    [TestCase("delegate() announce;", TestName = "ASharedFieldMustStartWithAValue_Function")]
+    [TestCase("integer[] gathered;", TestName = "ASharedFieldMustStartWithAValue_Set")]
+    [TestCase("Function held;", TestName = "ASharedFieldMustStartWithAValue_AnyFunction")]
+    [TestCase("Exception raised;", TestName = "ASharedFieldMustStartWithAValue_Model")]
+    public void ASharedFieldMustStartWithAValue(string field) =>
+        Assert.That(
+            IdsOf(Check(
+                $$"""
+                shared model Program
+                    {{field}}
+
+                    function Main()
+                    end function
+                end model
+                """)),
+            Is.EqualTo(new[] { "PC0408" }),
+            field);
+
+    /// <summary>
+    /// <para>What a shared field may be left alone, and the one thing that is not a way out.
+    /// </para>
+    /// <para>A <b>primitive</b> has a zero of its own that means what a reader expects, so
+    /// spelling it out buys nothing. An <b>optional</b> starts empty, which is a value like any
+    /// other and is what makes a self-referential model constructible. Assigning the field from
+    /// a function is <em>not</em> a way out — the function may never be called, and something
+    /// can read the field before it is.</para>
+    /// </summary>
+    [Test]
+    public void AnInitializerOrAnOptionalSatisfiesASharedField() =>
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                IdsOf(Check(
+                    """
+                    shared model Program
+                        integer counted;
+                        string named;
+                        fraction part;
+                        boolean flag;
+
+                        function Main()
+                        end function
+                    end model
+                    """)),
+                Is.Empty,
+                "every primitive starts at its own zero");
+
+            Assert.That(
+                IdsOf(Check(
+                    """
+                    shared model Program
+                        integer[] gathered = {};
+
+                        function Main()
+                        end function
+                    end model
+                    """)),
+                Is.Empty,
+                "an initializer where it is declared");
+
+            Assert.That(
+                IdsOf(Check(
+                    """
+                    shared model Program
+                        delegate()? announce;
+
+                        function Main()
+                        end function
+                    end model
+                    """)),
+                Is.Empty,
+                "an optional, which says absence is one of the things it holds");
+
+            Assert.That(
+                IdsOf(Check(
+                    """
+                    shared model Program
+                        integer[] gathered;
+
+                        function Main()
+                            Program.gathered = {};
+                        end function
+                    end model
+                    """)),
+                Is.EqualTo(new[] { "PC0408" }),
+                "assigning it somewhere is not the same as starting with a value");
+        });
 
     [Test]
     public void AConstructorThatAssignsEveryFieldIsFine()

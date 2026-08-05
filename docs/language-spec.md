@@ -1083,7 +1083,18 @@ end model
 Modifiers are `public`, `protected`, `internal`, `shared`, and `virtual` or `override`. [§7.2](#72-virtual-dispatch)
 covers the last two. **A function that declares a result must reach a `yield` on every path** — `PC0404`
 — so a function cannot promise an integer and fall off the end without one. A constructor
-must leave every field assigned (`PC0402`).
+must leave every field assigned (`PC0402`), and **a `shared` field is given its value where it is
+declared** (`PC0408`) — the same obligation arriving in the only place it can, since a shared
+field belongs to the type rather than to any instance and no constructor runs that could fill it
+in.
+
+**Two kinds of field are exempt, and for the same reason: they already hold something.** Every
+primitive starts at a zero of its own — a counter at nought, a flag at `false`, a string empty,
+a fraction at `0|1` — and an optional starts empty, which is a value like any other and is what
+makes a self-referential model constructible. Everything else has no such value: a model, a set,
+a function or an enumeration left alone would hold nothing, and nothing for those is the null
+[§8](#8-optionals) exists to do without. So they are asked for, or written as an optional so
+that absence is in the type and the reader is made to prove it away.
 
 Functions may be declared among statements, capturing the locals around them. Types may not:
 a type introduced by a statement would tie name resolution to statement order, and forward
@@ -2034,6 +2045,13 @@ Overloads are chosen by argument count first, then by exact match, then by what 
 can convert to. Two versions reachable only by conversion is a tie, and a tie is reported
 (`PC0310`) rather than broken by a rule nobody remembers.
 
+**A name belongs to one member** (`PC0253`). Two members of a type share a name only when they
+are versions of one function, told apart by what they take — so two fields cannot, a field and a
+function cannot, and neither can two functions taking the same types. Without the rule the second
+declaration is simply unreachable: every use of the name finds the first, and the reader who
+wrote the second watches their code run somebody else's. It is reported where the second is
+written, and names the line the first is on.
+
 ### 9.1 Writing a function as a value
 
 A function value is written in one of two forms, and both say what they produce with `yield`:
@@ -2622,7 +2640,7 @@ Each carries one of three severities, and what separates them is how much is kno
 the program means.
 
 | Severity | The program's meaning | Blocks compilation |
-|---|---|---|
+|---|---|---|---|
 | `error` | genuinely unpredictable without the diagnostic | yes |
 | `warning` | clear, and unlikely to be what was intended | no |
 | `opinion` | clear, intended, and correct — and the language would write it differently | no |
@@ -2633,185 +2651,187 @@ of a reader.
 
 ### PC0000 to PC0099
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0001` | error | Unrecognized character |
-| `PC0002` | error | Unterminated string literal |
-| `PC0003` | error | Unterminated character literal |
-| `PC0004` | error | Malformed character literal |
-| `PC0005` | error | Unterminated block comment |
-| `PC0006` | error | Not an operator in Profi-C |
-| `PC0007` | error | Unrecognized escape sequence |
-| `PC0008` | error | Malformed Unicode escape sequence |
-| `PC0009` | opinion | This name needs no '@' |
-| `PC0010` | error | Nothing to escape |
-| `PC0011` | error | Unterminated interpolation |
-| `PC0012` | error | Nothing to interpolate |
-| `PC0013` | error | Unterminated block string |
-| `PC0014` | error | Nothing to format by |
-| `PC0015` | warning | More quotes in a row than close the block |
-| `PC0016` | error | Block string delimiters differ in length |
-| `PC0017` | error | This base has no digits |
-| `PC0018` | error | This digit is not in the base |
-| `PC0019` | error | This exponent has no digits |
-| `PC0020` | error | This separator has no digits after it |
-| `PC0021` | error | A name cannot begin with a digit |
-| `PC0022` | warning | This 'ignore' names no diagnostic |
-| `PC0023` | warning | That diagnostic cannot be ignored |
-| `PC0024` | opinion | This 'ignore' silences nothing |
-| `PC0025` | warning | This 'ignore' names neither a severity nor a diagnostic |
-| `PC0026` | error | Number too large to hold |
-| `PC0027` | error | A fraction over zero |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC0001` | error | Unrecognized character | Unrecognized character '{0}'. Nothing in the language uses it; remove it. |
+| `PC0002` | error | Unterminated string literal | Unterminated string literal. Add a closing '"'. |
+| `PC0003` | error | Unterminated character literal | Unterminated character literal. Add a closing quote mark. |
+| `PC0004` | error | Malformed character literal | A character literal must contain exactly one character. For more than one, write a string with '"'. |
+| `PC0005` | error | Unterminated block comment | Unterminated block comment; expected '##'. |
+| `PC0006` | error | Not an operator in Profi-C | '{0}' is not an operator in Profi-C. {1} |
+| `PC0007` | error | Unrecognized escape sequence | Unrecognized escape sequence '\{0}'. The escapes are \n, \t, \\, \", \', \0 and \uFFFF. |
+| `PC0008` | error | Malformed Unicode escape sequence | A Unicode escape must be '\u' followed by four hexadecimal digits. |
+| `PC0009` | opinion | This name needs no '@' | '{0}' is not a reserved word, so the '@' does nothing. Write '{0}'. |
+| `PC0010` | error | Nothing to escape | '@' marks a reserved word being used as a name, so a name must follow it. |
+| `PC0011` | error | Unterminated interpolation | Unterminated interpolation; expected '}}'. |
+| `PC0012` | error | Nothing to interpolate | An interpolation holds an expression. Write '{{name}}', or a single brace for a literal one. |
+| `PC0013` | error | Unterminated block string | Unterminated block string; expected '{0}'. |
+| `PC0014` | error | Nothing to format by | A ':' in an interpolation is followed by how to format the value, as in '{{total:F2}}'. Leave it out to format the value the ordinary way. |
+| `PC0015` | warning | More quotes in a row than close the block | {0} quotes in a row, where {1} close the block string. The last {1} end it and the rest are held. Open and close it with '{2}' to hold all {0}. |
+| `PC0016` | error | Block string delimiters differ in length | {0} quotes do not close a block string opened with {1}, so this is text and the block runs on. Open it with '{2}', or close it with '{3}'. |
+| `PC0017` | error | This base has no digits | '{0}' says the number that follows is {1}, and none follows. |
+| `PC0018` | error | This digit is not in the base | '{0}' is not a {1} digit, which is {2}. |
+| `PC0019` | error | This exponent has no digits | An 'e' says how many places to move the point, so it needs digits after it â€” '1e3' is 1000.0. |
+| `PC0020` | error | This separator has no digits after it | An '_' in a number separates digits, so more have to follow it â€” '1_000' is a thousand. |
+| `PC0021` | error | A name cannot begin with a digit | '{0}' is written against the number before it. A name begins with a letter or an underscore, and nothing in the language puts two values side by side. |
+| `PC0022` | warning | This 'ignore' names no diagnostic | '{0}' is not something this compiler reports, so this line silences nothing. Check the identifier against the one in the message. |
+| `PC0023` | warning | That diagnostic cannot be ignored | '{0}' stops compilation, and only a warning or an opinion can be ignored. This line cannot do anything; what it names has to be fixed. |
+| `PC0024` | opinion | This 'ignore' silences nothing | Nothing it reaches reports '{0}', so this line has no effect. Remove it. |
+| `PC0025` | warning | This 'ignore' names neither a severity nor a diagnostic | '{0}' is not 'warning', not 'opinion', and not an identifier such as 'PC0340'. |
+| `PC0026` | error | Number too large to hold | {0} is too large for {1}. {2} |
+| `PC0027` | error | A fraction over zero | {0} is a fraction over zero. The bar is division, so what sits under it can be anything but zero. |
 
 ### PC0100 to PC0199
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0100` | error | Unexpected token |
-| `PC0101` | error | Expected an expression |
-| `PC0102` | error | Expected a type |
-| `PC0103` | error | Expected a name |
-| `PC0104` | error | Mismatched block closer |
-| `PC0105` | error | Unterminated construct |
-| `PC0106` | error | Statement cannot start here |
-| `PC0107` | error | Expected a statement |
-| `PC0108` | error | Expected a declaration |
-| `PC0109` | error | Cannot assign to this expression |
-| `PC0110` | error | Type declared inside a function |
-| `PC0111` | opinion | A range loop's counter has no written type |
-| `PC0112` | error | An if expression has no 'else' |
-| `PC0113` | error | Too many problems |
-| `PC0114` | error | This word is reserved |
-| `PC0115` | opinion | This parameter's type is already known |
-| `PC0116` | error | A function's type is written with 'delegate' |
-| `PC0117` | error | A function's type is written with 'delegate' |
-| `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' |
-| `PC0119` | error | 'let' declares a local, not a field |
-| `PC0120` | error | A loop begins with 'loop' |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC0100` | error | Unexpected token | Expected {0}, but found {1}. |
+| `PC0101` | error | Expected an expression | Expected an expression, but found {0}. |
+| `PC0102` | error | Expected a type | Expected a type, but found {0}. |
+| `PC0103` | error | Expected a name | Expected a name, but found {0}. |
+| `PC0104` | error | Mismatched block closer | Expected 'end {0}' to close the {0} beginning on line {1}, but found 'end {2}'. |
+| `PC0105` | error | Unterminated construct | The {0} beginning on line {1} is never closed; expected 'end {0}'. |
+| `PC0106` | error | Statement cannot start here | A statement may not begin with '{0}'. Give the value a name first, as in 'let value = ...;', and then use it. |
+| `PC0107` | error | Expected a statement | Expected a statement, but found {0}. |
+| `PC0108` | error | Expected a declaration | Expected a declaration, but found {0}. |
+| `PC0109` | error | Cannot assign to this expression | The left side of an assignment must be a name, an index, or a member access. |
+| `PC0110` | error | Type declared inside a function | A {0} cannot be declared inside a function. Move it out to the enclosing model or namespace. |
+| `PC0111` | opinion | A range loop's counter has no written type | A range loop counts with integers, so its counter takes no type. Remove the '{0}'. |
+| `PC0112` | error | An if expression has no 'else' | This if expression has no 'else'. It produces a value, so it must say what the value is when the condition is false. |
+| `PC0113` | error | Too many problems | Too many problems; stopped after {0}. Fixing the ones above may account for the rest. |
+| `PC0114` | error | This word is reserved | '{0}' is a reserved word, so it cannot be a name on its own. Write '@{0}' to use it as one. |
+| `PC0115` | opinion | This parameter's type is already known | The surrounding code already says what '{0}' holds, so writing its type says it twice. Leave the type out. |
+| `PC0116` | error | A function's type is written with 'delegate' | 'Function' takes no parentheses. For a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'. |
+| `PC0117` | error | A function's type is written with 'delegate' | 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' â€” 'integer delegate(string)' takes a string and yields an integer. |
+| `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' | 'bitwise' says which of two operations follows, and {0} is neither. Write 'bitwise and' or 'bitwise or' â€” 'xor', 'shiftleft' and 'shiftright' need no word before them. |
+| `PC0119` | error | 'let' declares a local, not a field | 'let' works inside a function, where the value it holds is written beside it. A field is read far from here, so it says its type: '{0} {1} = ...'. |
+| `PC0120` | error | A loop begins with 'loop' | Every loop opens with 'loop', so this is written 'loop {0}'. The word after 'loop' says which kind: 'for', 'each', 'while', or nothing at all. |
 
 ### PC0200 to PC0299
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0200` | error | Name not found |
-| `PC0201` | error | Type not found |
-| `PC0202` | error | Name already declared |
-| `PC0203` | warning | This shadows a type the language provides |
-| `PC0204` | error | Member access needs a receiver |
-| `PC0205` | error | Cannot assign to a constant |
-| `PC0206` | error | Cannot assign to a loop variable |
-| `PC0207` | error | Circular inheritance |
-| `PC0208` | error | Cannot extend a sealed model |
-| `PC0209` | error | Cannot extend this type |
-| `PC0210` | error | Sealed and abstract together |
-| `PC0211` | error | Instance member on a shared model |
-| `PC0212` | error | No entry point |
-| `PC0213` | error | Program must be a shared model |
-| `PC0214` | error | '{0}' used outside a model |
-| `PC0215` | error | No parent to reach |
-| `PC0216` | error | Cannot extend a built-in type |
-| `PC0217` | error | Type already declared |
-| `PC0218` | error | Main declares no result or an integer |
-| `PC0219` | error | Two visibilities on one declaration |
-| `PC0220` | error | A type cannot be protected |
-| `PC0221` | error | Type belongs to another project |
-| `PC0222` | error | Nothing to override |
-| `PC0223` | error | Overridden function is not virtual |
-| `PC0224` | error | This hides a function from the base |
-| `PC0225` | error | Override yields a different result |
-| `PC0226` | error | This name is offered by more than one namespace |
-| `PC0227` | error | No such namespace |
-| `PC0228` | error | This namespace is already used here |
-| `PC0229` | error | Standard belongs to the language |
-| `PC0230` | opinion | Standard is already in scope |
-| `PC0231` | error | This belongs above any namespace |
-| `PC0232` | opinion | This namespace repeats one around it |
-| `PC0233` | error | Nothing can be of this type |
-| `PC0234` | error | Which program starts? |
-| `PC0235` | error | No such program |
-| `PC0236` | opinion | This 'entry' decides nothing |
-| `PC0237` | error | This name is already in use here |
-| `PC0238` | error | This function needs a body |
-| `PC0239` | error | An abstract function has no body |
-| `PC0240` | error | Only an abstract model may leave a function open |
-| `PC0241` | error | An inherited function is still open |
-| `PC0242` | opinion | An abstract function is already virtual |
-| `PC0243` | error | This changes the sequence being walked |
-| `PC0244` | warning | This documentation has nothing to document |
-| `PC0245` | warning | This documents a parameter that is not there |
-| `PC0246` | warning | This describes a value that is never given back |
-| `PC0247` | opinion | This is documented twice |
-| `PC0248` | error | 'base' has to come first |
-| `PC0249` | error | 'this' is not available yet |
-| `PC0250` | error | Nothing here builds the parent |
-| `PC0251` | opinion | This 'base()' changes nothing |
-| `PC0252` | error | An optional of an optional |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC0200` | error | Name not found | '{0}' is not defined here. Check the spelling, or declare it above this line. |
+| `PC0201` | error | Type not found | There is no type named '{0}'. Check the spelling, or the 'using' that would reach it. |
+| `PC0202` | error | Name already declared | '{0}' is already declared in this scope. Rename one of them. |
+| `PC0203` | warning | This shadows a type the language provides | '{0}' is also the name of a type in Standard, and a name declared here wins over one in scope. Write 'Standard.{0}' to reach the other, or rename this. |
+| `PC0204` | error | Member access needs a receiver | '{0}' is a {1} of '{2}', so it must be written as '{3}.{0}'. A bare name reaches only locals and parameters. |
+| `PC0205` | error | Cannot assign to a constant | '{0}' is a constant and cannot be assigned to. Drop 'constant' from its declaration, or assign a different name. |
+| `PC0206` | error | Cannot assign to a loop variable | '{0}' is a loop variable and is read-only inside the loop. Each iteration binds a fresh one, so assigning to it would change nothing. |
+| `PC0207` | error | Circular inheritance | '{0}' cannot extend itself, directly or through its ancestors. Break the circle. |
+| `PC0208` | error | Cannot extend a sealed model | '{0}' is sealed and cannot be extended. Drop 'sealed' from it, or extend what it extends. |
+| `PC0209` | error | Cannot extend this type | '{0}' is a {1}, and only a model can be extended. Hold one as a field instead. |
+| `PC0210` | error | Sealed and abstract together | '{0}' cannot be both sealed and abstract; it could then be neither extended nor instantiated, so nothing could use it. |
+| `PC0211` | error | Instance member on a shared model | '{0}' is a shared model, which is never instantiated. Mark the member 'shared', or drop 'shared' from '{0}'. |
+| `PC0212` | error | No entry point | A program needs a 'shared model Program' containing a function named 'Main'. |
+| `PC0213` | error | Program must be a shared model | 'Program' must be declared 'shared model', since there is no such thing as an instance of a running program. |
+| `PC0214` | error | '{0}' used outside a model | '{0}' can only be used inside a model's instance member. Drop 'shared' from this member, or reach what you want through its type name. |
+| `PC0215` | error | No parent to reach | 'base' needs a parent model, and '{0}' extends nothing. Give it one with 'extends', or write 'this' instead. |
+| `PC0216` | error | Cannot extend a built-in type | '{0}' is provided by the language and has nothing to inherit. Of the built-in types only 'Model' and the exceptions may follow 'extends'. |
+| `PC0217` | error | Type already declared | '{0}' is already declared {1}. Two types cannot share a name, whether they are written in one file or across several. Rename one of them. |
+| `PC0218` | error | Main declares no result or an integer | 'Main' must declare no result, or an integer, which becomes the program's exit code. |
+| `PC0219` | error | Two visibilities on one declaration | '{0}' is written {1}, and one declaration has one visibility. Keep the word that says how far this should reach. |
+| `PC0220` | error | A type cannot be protected | '{0}' is a type, and 'protected' is for members. Write 'internal' for its project, or 'public' for anywhere. |
+| `PC0221` | error | Type belongs to another project | '{0}' is internal to {1}, and this is {2}. Mark it 'public' if {2} is meant to use it. |
+| `PC0222` | error | Nothing to override | '{0}' is marked 'override', but {1} declares no '{0}' with these parameters. Check the name and the parameter types, or drop 'override' if this is a new function. |
+| `PC0223` | error | Overridden function is not virtual | '{0}' overrides a function in {1} that is not marked 'virtual', so {1} did not offer it for overriding. Mark the one in {1} 'virtual'. |
+| `PC0224` | error | This hides a function from the base | {1} already declares '{0}' with these parameters. Write 'override' to replace it, or rename this one. |
+| `PC0225` | error | Override yields a different result | '{0}' yields {1}, and the one it overrides in {2} yields {3}. An override yields what it overrides, since a caller holding a {2} reads the result as {2} declared it. |
+| `PC0226` | error | This name is offered by more than one namespace | '{0}' could mean {1}. Both are used here and neither is nearer, so write the one you mean in full. |
+| `PC0227` | error | No such namespace | No namespace named '{0}' is declared in this compilation. Check the spelling, or that the file declaring it is being compiled. |
+| `PC0228` | error | This namespace is already used here | '{0}' is already used in this file. Remove this line. |
+| `PC0229` | error | Standard belongs to the language | 'Standard' is the namespace the language's own types live in, and a program may not add to it. Name this namespace something else. |
+| `PC0230` | opinion | Standard is already in scope | Every file reaches Standard without saying so, so this line brings nothing. |
+| `PC0231` | error | This belongs above any namespace | '{0}' is a statement about the whole file, so it goes above every namespace in it. Move it to the top. |
+| `PC0232` | opinion | This namespace repeats one around it | '{0}' already sits inside a namespace of that name, so its types are reached as '{0}.{0}.â€¦'. Rename this one if that was not meant. |
+| `PC0233` | error | Nothing can be of this type | '{0}' has no instances, so nothing can ever be held here. {1} |
+| `PC0234` | error | Which program starts? | These sources declare more than one Program: {0}. Write 'entry {1}' in the project file to say which one begins. |
+| `PC0235` | error | No such program | '{0}' is not a Program among these sources. {1} |
+| `PC0236` | opinion | This 'entry' decides nothing | Only '{0}' declares a Program, so it begins whether or not this line is here. |
+| `PC0237` | error | This name is already in use here | '{0}' is already the name of something in an enclosing scope, so this one would hide it. Give it a name of its own. |
+| `PC0238` | error | This function needs a body | '{0}' ends at the semicolon, so nothing says what it does. Give it a body, or mark it 'abstract' to leave it to whatever extends this model. |
+| `PC0239` | error | An abstract function has no body | '{0}' is abstract, so every model extending this one writes what it does and this body would never run. End the declaration at ';', or drop the 'abstract'. |
+| `PC0240` | error | Only an abstract model may leave a function open | '{0}' is abstract, but '{1}' can be constructed â€” so an instance of it would reach a function nothing ever wrote. Mark '{1}' abstract too. |
+| `PC0241` | error | An inherited function is still open | '{0}' can be constructed, so it must write every function left open above it. Still open: {1}. Override each, or mark '{0}' abstract. |
+| `PC0242` | opinion | An abstract function is already virtual | '{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing further. Remove it. |
+| `PC0243` | error | This changes the sequence being walked | '{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Collect the changes into another set, or count with a range loop. |
+| `PC0244` | warning | This documentation has nothing to document | Nothing follows this that an '@summary:' can document, so nothing will show it. Move it directly above a declaration, or make it an ordinary comment. |
+| `PC0245` | warning | This documents a parameter that is not there | '{0}' is documented, but '{1}' takes {2}. Rename the line or take it out. |
+| `PC0246` | warning | This describes a value that is never given back | '{0}' yields nothing, so there is no value for '@yields:' to describe. |
+| `PC0247` | opinion | This is documented twice | '{0}' already has a line above this one, and the first is the one that shows. For a second paragraph, leave a blank line and keep writing. |
+| `PC0248` | error | 'base' has to come first | 'base(...)' must be the first statement in a constructor, so that '{0}' is fully built before anything here runs. |
+| `PC0249` | error | 'this' is not available yet | '{1}' is still being built here, so '{0}' cannot be reached from a field's starting value. Give '{2}' its value in a constructor instead. |
+| `PC0250` | error | Nothing here builds the parent | '{0}' extends '{1}', which cannot be built without being given something. Begin this constructor with 'base(...)': '{1}' takes {2}. |
+| `PC0251` | opinion | This 'base()' changes nothing | '{0}' is built before this constructor's body whether or not 'base()' is written, so this line does what would happen without it. Keep it if saying so helps. |
+| `PC0252` | error | An optional of an optional | This is already optional, so the second '?' says nothing new. Write one '?'. |
+| `PC0253` | error | Member name already taken | {0} already has a member named '{1}', declared on line {2}. Rename one, unless they are versions of one function taking different types. |
 
 ### PC0300 to PC0399
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0300` | error | Cannot convert |
-| `PC0301` | error | Conversion must be written out |
-| `PC0302` | error | Condition must be a boolean |
-| `PC0303` | error | Operator not defined for these types |
-| `PC0304` | error | Operator not defined for this type |
-| `PC0305` | error | Branches of an if expression have different types |
-| `PC0306` | error | Member not found |
-| `PC0307` | error | Not something that can be called |
-| `PC0308` | error | Wrong number of arguments |
-| `PC0309` | error | No overload matches |
-| `PC0310` | error | Ambiguous call |
-| `PC0311` | error | Not something that can be indexed |
-| `PC0312` | error | Index must be an integer |
-| `PC0313` | error | Cannot infer the type of an empty set |
-| `PC0314` | error | Set elements have different types |
-| `PC0315` | error | Cannot switch on this type |
-| `PC0316` | error | Cannot iterate this type |
-| `PC0317` | error | Range loop needs integers |
-| `PC0318` | error | This function yields nothing |
-| `PC0319` | error | Missing value to yield |
-| `PC0320` | error | Constant needs a value |
-| `PC0321` | error | Constant value must be known while compiling |
-| `PC0322` | error | This type cannot be constant |
-| `PC0323` | error | Nothing to infer from |
-| `PC0324` | error | Division by zero |
-| `PC0325` | error | Case label must be a constant |
-| `PC0326` | error | Duplicate case label |
-| `PC0327` | warning | This test is always false |
-| `PC0328` | error | Cannot be instantiated |
-| `PC0329` | error | Optional must be unwrapped first |
-| `PC0330` | error | This member is a function |
-| `PC0331` | error | Member needs an instance |
-| `PC0332` | error | This produces no value |
-| `PC0333` | error | Negative exponent on an integer |
-| `PC0334` | warning | This test is always true |
-| `PC0335` | error | Cannot cast to a value type |
-| `PC0336` | error | Parameter needs a type |
-| `PC0337` | warning | Not every member is handled |
-| `PC0338` | error | This member is a value |
-| `PC0339` | error | Member cannot be reached from here |
-| `PC0340` | opinion | This empty string does nothing |
-| `PC0341` | error | This cannot be formatted |
-| `PC0342` | error | This works on bits, not on booleans |
-| `PC0343` | error | This shift is outside the width of an integer |
-| `PC0344` | warning | This exception cannot be caught |
-| `PC0345` | error | Optional is changed by something that captured it |
-| `PC0346` | error | This real has no fraction to become |
-| `PC0347` | error | A value has no identity to compare |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC0300` | error | Cannot convert | Cannot use {0} where {1} is expected. {2} |
+| `PC0301` | error | Conversion must be written out | {0} does not become {1} on its own, because the result would surprise you. Write '{2}' to ask for it. |
+| `PC0302` | error | Condition must be a boolean | {0} must be a boolean, and this is {1}. Write a comparison. |
+| `PC0303` | error | Operator not defined for these types | '{0}' is not defined for {1} and {2}. Convert one side, or use a member. |
+| `PC0304` | error | Operator not defined for this type | '{0}' is not defined for {1}. Convert it, or use a member. |
+| `PC0305` | error | Branches of an if expression have different types | The branches of an if expression must have the same type, and these are {0} and {1}. Make them agree, or write an 'if' statement. |
+| `PC0306` | error | Member not found | {0} has no member named '{1}'. |
+| `PC0307` | error | Not something that can be called | {0} cannot be called. {1} |
+| `PC0308` | error | Wrong number of arguments | '{0}' takes {1}, but was given {2}. |
+| `PC0309` | error | No overload matches | No version of '{0}' accepts these arguments. Convert the ones that do not match. |
+| `PC0310` | error | Ambiguous call | Several versions of '{0}' match these arguments equally well. Give one argument the exact type a version takes. |
+| `PC0311` | error | Not something that can be indexed | {0} cannot be indexed. Only a set and a string can. |
+| `PC0312` | error | Index must be an integer | An index must be an integer, and this is {0}. Write a whole number. |
+| `PC0313` | error | Cannot infer the type of an empty set | The type of an empty set cannot be worked out from the set alone. Write the type, as in 'integer[] values = {};'. |
+| `PC0314` | error | Set elements have different types | The elements of a set must have one type, and these are {0} and {1}. Write the set's type, as in 'Shape[] values = {{...}};'. |
+| `PC0315` | error | Cannot switch on this type | A switch cannot examine {0}. Equality on it is unreliable, so a case label could never be trusted to match. |
+| `PC0316` | error | Cannot iterate this type | 'for each' needs a set or a string, and this is {0}. Ask it for one, or count with 'loop for'. |
+| `PC0317` | error | Range loop needs integers | A range loop counts with integers, and this is {0}. Count with whole numbers, or walk it with 'loop each'. |
+| `PC0318` | error | This function yields nothing | '{0}' declares no result, so 'yield' cannot carry a value. Declare a result, or write 'yield;'. |
+| `PC0319` | error | Missing value to yield | '{0}' yields a {1}, so 'yield' needs a value. Give it one, or drop the result type. |
+| `PC0320` | error | Constant needs a value | '{0}' is a constant, so it must be given a value where it is declared. Write one, or drop 'constant'. |
+| `PC0321` | error | Constant value must be known while compiling | The value of '{0}' must be worked out while compiling, so it can only be built from literals and other constants. |
+| `PC0322` | error | This type cannot be constant | {0} cannot be declared constant, because the binding could stay fixed while what it names changed. This may widen in a later version. |
+| `PC0323` | error | Nothing to infer from | 'let' works out the type from the value, so it needs one. Give it a value, or write the type instead. |
+| `PC0324` | error | Division by zero | This divides by zero. |
+| `PC0325` | error | Case label must be a constant | A case label must be known while compiling. |
+| `PC0326` | error | Duplicate case label | The value {0} is already handled by another case. |
+| `PC0327` | warning | This test is always false | {0} can never be {1}, so this is always false. |
+| `PC0328` | error | Cannot be instantiated | '{0}' is {1} and cannot be instantiated. |
+| `PC0329` | error | Optional must be unwrapped first | This is {0}, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist. |
+| `PC0330` | error | This member is a function | '{0}' is a function, so it has to be called: write '{0}()'. |
+| `PC0331` | error | Member needs an instance | '{0}' belongs to each {1} rather than to the {1} type, so it cannot be reached through the name '{1}'. Mark it 'shared', or read it from a value. |
+| `PC0332` | error | This produces no value | This produces no value, so there is nothing to use here. |
+| `PC0333` | error | Negative exponent on an integer | An integer raised to the power {0} is not a whole number. Raise a fraction instead, as in '(1\|2) ^ {0}', or use 'Math.Pow(...)' for a real result. |
+| `PC0334` | warning | This test is always true | {0} is always {1}, so this is always true. |
+| `PC0335` | error | Cannot cast to a value type | {0} is a value type, and value types have no inheritance for a cast to follow. |
+| `PC0336` | error | Parameter needs a type | Nothing here says what '{0}' holds. Write its type, as in '(integer {0})'. |
+| `PC0337` | warning | Not every member is handled | This switch does not handle every {0}: {1} {2} no case. Add one for each, or a 'default' for everything else. |
+| `PC0338` | error | This member is a value | '{0}' is a value rather than a function, so it is written without '()'. |
+| `PC0339` | error | Member cannot be reached from here | '{0}' is {1} in {2}, so it cannot be reached here. {3} |
+| `PC0340` | opinion | This empty string does nothing | 'WriteLine' ends the line by itself. Write 'Console.WriteLine()'. |
+| `PC0341` | error | This cannot be formatted | {0} has no 'Format', so ':{1}' says nothing. Leave the ':' out to write it the ordinary way. |
+| `PC0342` | error | This works on bits, not on booleans | '{0}' works on the bits of a whole number. For two booleans, '!=' asks whether exactly one of them holds. |
+| `PC0343` | error | This shift is outside the width of an integer | An integer holds 64 bits, so a shift of {0} places moves past all of them. An amount from 0 to 63 is what there is to move. |
+| `PC0344` | warning | This exception cannot be caught | Nothing catches {0}, so this clause would never run. Remove it. |
+| `PC0345` | error | Optional is changed by something that captured it | This is {0}, and checking it proves nothing because a function that captured '{1}' may assign it at any point. Copy it into a local and check that, or use 'Or(...)'. |
+| `PC0346` | error | This real has no fraction to become | {0} needs a numerator or denominator larger than an integer holds. Up to eighteen places after the point will convert. |
+| `PC0347` | error | A value has no identity to compare | {0} is a value, so asking whether two of them are the same object has no answer. Use '==' to compare what they hold. |
 
 ### PC0400 to PC0499
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0400` | error | Used before it is given a value |
-| `PC0401` | error | Not given a value on every path |
-| `PC0402` | error | Field not given a value |
-| `PC0403` | warning | Unreachable code |
-| `PC0404` | error | Not every path yields a value |
-| `PC0405` | error | Called before a name it uses is ready |
-| `PC0406` | opinion | Nothing here can end this loop |
-| `PC0407` | error | Nothing here for this to leave |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC0400` | error | Used before it is given a value | '{0}' is used here before it has been given a value. Give it one above this line. |
+| `PC0401` | error | Not given a value on every path | '{0}' is not given a value on every path that reaches this point. Give it one on every branch, or where it is declared. |
+| `PC0402` | error | Field not given a value | '{0}' must be given a value before this constructor ends. Give it one here, or an initializer where it is declared, or make it optional. |
+| `PC0403` | warning | Unreachable code | This can never be reached. |
+| `PC0404` | error | Not every path yields a value | '{0}' yields {1}, but it can reach its end without yielding one. Yield on every path out. |
+| `PC0405` | error | Called before a name it uses is ready | '{0}' uses '{1}', which has not been given a value yet. Call it after '{1}' is set, or move what it needs above this line. |
+| `PC0406` | opinion | Nothing here can end this loop | Nothing here breaks, yields, or throws, so nothing will stop this loop. Add a 'break', or give it a condition with 'loop while' or 'until'. |
+| `PC0407` | error | Nothing here for this to leave | '{0}' needs a loop around it, and there is none here. A 'switch' is not one: it runs one arm and stops, so there is nothing about it to leave or to go on with. |
+| `PC0408` | error | Shared field not given a value | '{0}' is shared, so no constructor runs that could give it a value. Give it one where it is declared, or make it optional. |
 
 ### PC0500 to PC0599
 
@@ -2820,31 +2840,31 @@ compiles.
 
 ### PC0600 to PC0699
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC0600` | error | Project file not found |
-| `PC0601` | error | Project has no header |
-| `PC0602` | error | Project has no name |
-| `PC0603` | error | Project is not closed |
-| `PC0604` | error | Unrecognized project entry |
-| `PC0605` | error | Source with no path |
-| `PC0606` | error | Source not found |
-| `PC0607` | error | Source is not Profi-C |
-| `PC0608` | error | Source listed more than once |
-| `PC0609` | error | Folder holds no source |
-| `PC0610` | error | Project builds nothing |
-| `PC0611` | error | Imported file not found |
-| `PC0612` | error | Import is not Profi-C |
-| `PC0613` | warning | Import names an absolute path |
-| `PC0614` | warning | Imports form a circle |
-| `PC0620` | error | Reference with no path |
-| `PC0621` | error | Referenced project not found |
-| `PC0622` | error | Reference is not a project |
-| `PC0623` | error | Project referenced more than once |
-| `PC0624` | error | Projects reference each other |
-| `PC0625` | error | Two projects claim one file |
-| `PC0626` | error | Nothing named to start at |
-| `PC0627` | error | More than one 'entry' |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC0600` | error | Project file not found | There is no project file at '{0}'. |
+| `PC0601` | error | Project has no header | A project file opens with 'project' and a name. |
+| `PC0602` | error | Project has no name | 'project' must be followed by a name. |
+| `PC0603` | error | Project is not closed | This project is never closed. Add 'end project'. |
+| `PC0604` | error | Unrecognized project entry | '{0}' is not something a project file says. A project names files with 'source' and other projects with 'reference'. |
+| `PC0605` | error | Source with no path | 'source' must be followed by a file or folder path. |
+| `PC0606` | error | Source not found | There is no file or folder at '{0}'. |
+| `PC0607` | error | Source is not Profi-C | '{0}' is not a .pc file, so a project cannot build it. |
+| `PC0608` | error | Source listed more than once | '{0}' is already part of this project. Remove this line. |
+| `PC0609` | error | Folder holds no source | '{0}' holds no .pc files. |
+| `PC0610` | error | Project builds nothing | This project lists no source, so there is nothing to build. |
+| `PC0611` | error | Imported file not found | There is no file at '{0}', which is looked for beside {1}. |
+| `PC0612` | error | Import is not Profi-C | '{0}' is not a .pc file, so it cannot be compiled with this one. |
+| `PC0613` | warning | Import names an absolute path | '{0}' names a path from the root of a disk, so it resolves only on the machine it was written on. A path relative to this file travels with it. |
+| `PC0614` | warning | Imports form a circle | This import closes a circle: {0}. Files beside one another need no import between them, and a project file spans folders without one. |
+| `PC0620` | error | Reference with no path | 'reference' must be followed by the path of a project file. |
+| `PC0621` | error | Referenced project not found | There is no project file at '{0}'. |
+| `PC0622` | error | Reference is not a project | '{0}' is not a .pcp file. A project references projects; it names files with 'source'. |
+| `PC0623` | error | Project referenced more than once | '{0}' is already referenced by this project. Remove this line. |
+| `PC0624` | error | Projects reference each other | This reference closes a circle: {0}. Move what both need into a third project they both reference. |
+| `PC0625` | error | Two projects claim one file | '{0}' is listed by {1} and by {2}. A file belongs to one project. Let the project that owns it keep it, and have the other reference that project. |
+| `PC0626` | error | Nothing named to start at | 'entry' says which Program begins, so a name must follow it, as in 'entry Tools.Program'. |
+| `PC0627` | error | More than one 'entry' | A project starts in one place, so it names one 'entry'. |
 
 ### PC9000 and up
 
@@ -2857,7 +2877,7 @@ there is nothing to write differently that would avoid the fault — and it is t
 use to whoever fixes it, so the message says which of the two the reader is and what the trace
 below it is for.
 
-| Identifier | | Reported when |
-|---|---|---|
-| `PC9000` | error | The compiler hit a problem it has no message for |
+| Identifier | | Reported when | What it says |
+|---|---|---|---|
+| `PC9000` | error | The compiler hit a problem it has no message for | {0}. This is a fault in the compiler rather than a mistake in this program, and there is nothing to write differently that would avoid it. The .NET stack trace below is what will fix it: please report it, along with the program that caused it. |
 

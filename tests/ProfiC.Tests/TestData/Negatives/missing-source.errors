@@ -1,2 +1,2 @@
 missing-source.pcp(9,1): error PC0606: There is no file or folder at 'nowhere.pc'.
-missing-source.pcp(11,1): error PC0608: '../runtime/empty-optional.pc' is already part of this project.
+missing-source.pcp(11,1): error PC0608: '../runtime/empty-optional.pc' is already part of this project. Remove this line.
