@@ -22,6 +22,16 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
 
     private IReadOnlyList<Diagnostic>? _visible;
 
+    /// <summary>
+    /// <para>How many of these anybody is going to read, which is what the cap counts.</para>
+    /// <para>Not <c>_diagnostics.Count</c>. A file that has said which diagnostics it does not
+    /// want to see is not handing a reader anything to wade through, and counting the silenced
+    /// ones would let a directive that is working push a file over the cap — which reports as
+    /// an error, and is not itself suppressible, so silencing more would only make it
+    /// worse.</para>
+    /// </summary>
+    private int _shown;
+
     private bool _reportedUnused;
 
     private SourceText? _source;
@@ -116,7 +126,11 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
             return;
         }
 
-        if (_diagnostics.Count >= MaximumDiagnostics)
+        // Kept either way, so that a directive which silenced something still counts as having
+        // done so once the whole compilation is in and the dead ones are reported.
+        bool silenced = _suppressions.Any(suppression => suppression.Covers(diagnostic));
+
+        if (!silenced && _shown >= MaximumDiagnostics)
         {
             IsFull = true;
 
@@ -134,6 +148,11 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
 
         _diagnostics.Add(diagnostic);
         _visible = null;
+
+        if (!silenced)
+        {
+            _shown++;
+        }
 
         if (diagnostic.Severity == DiagnosticSeverity.Error)
         {

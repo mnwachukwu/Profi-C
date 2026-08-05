@@ -15,10 +15,6 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
-          MemberExpr 'AResultWorkedOutAndDropped'
-            IdentifierExpr 'Program'
-      ExpressionStmt
-        CallExpr
           MemberExpr 'SeveralInOneWalk'
             IdentifierExpr 'Program'
     FunctionDecl 'ALoopThatOnlyCounts'
@@ -72,16 +68,6 @@ CompilationUnit
               MemberExpr 'WriteLine'
                 IdentifierExpr 'Console'
               LiteralExpr "  caught, and the type was the whole answer" [String]
-    FunctionDecl 'AResultWorkedOutAndDropped'
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'WriteLine'
-            IdentifierExpr 'Console'
-          LiteralExpr "Called for its effect:" [String]
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'Announced'
-            IdentifierExpr 'Program'
     FunctionDecl 'SeveralInOneWalk'
       VarDeclStmt 'numbers'
         SetTypeSyntax
@@ -109,12 +95,3 @@ CompilationUnit
           BinaryExpr '+'
             LiteralExpr "An ordinary name beginning with '_': " [String]
             IdentifierExpr '_count'
-    FunctionDecl 'Announced'
-      NamedTypeSyntax 'integer'
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'WriteLine'
-            IdentifierExpr 'Console'
-          LiteralExpr "  worked it out" [String]
-      YieldStmt
-        LiteralExpr 7 [Integer]

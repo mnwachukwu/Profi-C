@@ -221,6 +221,9 @@ shared model Program
 
         integer count = 5;
 
+        # Each of these is written to fail, so what it yields is beside the point — two of them
+        # yield anything at all only because failing is what they are here to do.
+        # ignore PC0412 in file
         Program.Show(function() 1 / zero; end function);
         Program.Show(function() three[7]; end function);
         Program.Show(function() nothing.Value(); end function);

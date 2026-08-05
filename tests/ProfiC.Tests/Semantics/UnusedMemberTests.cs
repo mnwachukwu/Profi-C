@@ -40,6 +40,23 @@ public sealed class UnusedMemberTests
         end model
         """;
 
+    /// <summary>A body, with a pair of helpers to call: one that answers and one that does not.</summary>
+    private static string[] IdsInBody(string body) => IdsIn($$"""
+        shared model Program
+            public shared integer function Rolled()
+                yield 6;
+            end function
+
+            public shared function Silent()
+                Console.WriteLine("done");
+            end function
+
+            function Main()
+        {{body}}
+            end function
+        end model
+        """);
+
     // ---- Reported ------------------------------------------------------------------------
 
     [TestCase("    shared integer Count = 3;", TestName = "a field")]
@@ -165,6 +182,57 @@ public sealed class UnusedMemberTests
     [Test]
     public void ADeclarationDoesNotCountAsAUseOfItself() =>
         Assert.That(IdsIn(Holding("    shared integer Count = 3;")), Is.EqualTo(new[] { "PC0410" }));
+
+    // ---- A statement that keeps nothing --------------------------------------------------
+
+    /// <summary>
+    /// <para>Where the value settles while compiling, or is a bare name, nothing happens at all.
+    /// </para>
+    /// <para>A statement keeps nothing by design — that is how a value is dropped on purpose —
+    /// so what is reported is not the dropping but that working the value out could do nothing
+    /// either.</para>
+    /// </summary>
+    [TestCase("        1 + 2;", TestName = "arithmetic that settles")]
+    [TestCase("        \"hello\";", TestName = "a literal")]
+    [TestCase("        true;", TestName = "a boolean literal")]
+    [TestCase("        kept;", TestName = "a bare name")]
+    public void AStatementThatCanDoNothingIsReported(string body) => Assert.That(
+        IdsInBody($"        integer kept = 1;\n{body}"),
+        Does.Contain("PC0411"));
+
+    /// <summary>
+    /// <para>Arithmetic is checked, so arithmetic can fail, and failing is something happening.
+    /// </para>
+    /// <para>Each of these is written on its own in <c>samples/exceptions.pc</c> to raise what it
+    /// raises. Calling them "nothing" would be false rather than merely unhelpful — which is why
+    /// the test is what the compiler can settle and not whether a call appears.</para>
+    /// </summary>
+    [TestCase("        1 / zero;", TestName = "a division that may not settle")]
+    [TestCase("        2147483647 * 2147483647 * 4;", TestName = "arithmetic that overflows")]
+    [TestCase("        three[7];", TestName = "an index that may be past the end")]
+    public void AStatementThatCanFailIsNotReported(string body) => Assert.That(
+        IdsInBody($"        integer zero = 0;\n        integer[] three = {{1, 2}};\n{body}"),
+        Does.Not.Contain("PC0411"));
+
+    /// <summary>A call that yields something nobody keeps: an opinion, and about the function.</summary>
+    [Test]
+    public void ACallWhoseResultIsDroppedIsAnOpinion() => Assert.That(
+        IdsInBody("        Program.Rolled();"),
+        Is.EqualTo(new[] { "PC0412" }));
+
+    [TestCase("        Program.Silent();", TestName = "a call that yields nothing")]
+    [TestCase("        Console.WriteLine(Program.Rolled());", TestName = "a result that is used")]
+    public void ACallWhoseResultGoesNowhereUnaskedIsNotReported(string body) =>
+        Assert.That(IdsInBody(body), Is.Empty);
+
+    /// <summary>
+    /// Not where the call did not resolve. Its type is the error type, and remarking on a
+    /// dropped value would stack a second thing to read onto a line whose one mistake is named.
+    /// </summary>
+    [Test]
+    public void ACallThatDidNotResolveEarnsNoOpinionOnTop() => Assert.That(
+        IdsInBody("        Program.Missing();"),
+        Is.EqualTo(new[] { "PC0306" }));
 
     /// <summary>
     /// <para>Two dead members naming each other keep each other alive, and nothing is reported.

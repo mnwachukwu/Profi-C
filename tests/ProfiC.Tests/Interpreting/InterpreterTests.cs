@@ -1040,7 +1040,7 @@ public sealed class InterpreterTests
         () => Run("""
             shared model Program
                 function Main()
-                    Program.Forever(1);
+                    Console.WriteLine(Program.Forever(1));
                 end function
 
                 integer function Forever(integer n)
@@ -1063,7 +1063,7 @@ public sealed class InterpreterTests
             shared model Program
                 function Main()
                     try
-                        Program.Forever(1);
+                        Console.WriteLine(Program.Forever(1));
                     catch Exception e
                         Console.WriteLine("caught");
                     end try

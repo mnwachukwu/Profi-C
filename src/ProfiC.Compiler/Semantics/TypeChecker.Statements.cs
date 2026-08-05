@@ -80,7 +80,7 @@ public sealed partial class TypeChecker
                 break;
 
             case ExpressionStmt expression:
-                CheckExpression(expression.Expression);
+                CheckWhatAStatementDoesWith(expression.Expression);
                 break;
 
             case AssignmentStmt assignment:
@@ -559,6 +559,40 @@ public sealed partial class TypeChecker
         }
 
         RequireAssignable(actual, expected, yieldStmt.Value);
+    }
+
+    /// <summary>
+    /// <para>An expression written as a statement, and what becomes of what it works out.</para>
+    /// <para>A statement keeps nothing, which is how a value is dropped on purpose. Two of those
+    /// are worth remarking on, and they are told apart by whether anything can happen.</para>
+    /// <para>Where the expression settles to a constant while compiling, or is a bare name,
+    /// evaluating it cannot do anything and cannot fail, so the line does nothing whatever
+    /// (<c>PC0411</c>). Arithmetic is not assumed to be one of those: it is checked, so
+    /// <c>2147483647 * 2147483647</c> on its own raises an overflow and a program may be written
+    /// to do that on purpose.</para>
+    /// <para>Where it is a call that yields something, the call does its job and only the answer
+    /// goes unheld (<c>PC0412</c>) — a remark about the function rather than the line.</para>
+    /// </summary>
+    private void CheckWhatAStatementDoesWith(Expression expression)
+    {
+        TypeSymbol yielded = CheckExpression(expression);
+
+        if (ConstantFolder.TryFold(expression, _model) is not null
+            || expression is IdentifierExpr)
+        {
+            Report(DiagnosticDescriptors.StatementDoesNothing, expression);
+            return;
+        }
+
+        // Not where the call did not resolve. Its type is the error type, which is not void and
+        // would earn a remark about dropping a value on top of the report that nothing was
+        // found — a second thing to read about a line whose one mistake has already been named.
+        if (expression is CallExpr
+            && !yielded.IsError
+            && !ReferenceEquals(yielded, PrimitiveType.Void))
+        {
+            Report(DiagnosticDescriptors.CallResultDropped, expression);
+        }
     }
 
     private void CheckAssignment(AssignmentStmt assignment)

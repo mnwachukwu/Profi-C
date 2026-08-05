@@ -1217,8 +1217,30 @@ Three are left out, because none of them is reached by writing its name: a const
 answers to `new`; an overridable function, which answers to whatever the value turns out to be;
 and the `Main` a program starts at.
 
-An editor shows both of these faded rather than underlined, keeping the color the name already
-had — so it still reads as the field or the local it is, and reads as one nothing reaches.
+**A statement that does nothing whatever is reported too** (`PC0411`). A statement keeps nothing,
+which is how a value is dropped on purpose — but where the value settles while compiling, or is
+a bare name, working it out cannot do anything either:
+
+```text
+1 + 2;                          PC0411: nothing happens
+"hello";                        PC0411, the same
+count;                          PC0411, the same
+```
+
+**Arithmetic in general is not one of these**, because arithmetic is checked. Written on its own,
+`2147483647 * 2147483647` raises an overflow and `1 / zero` raises a division by zero, and a
+program may be written to do exactly that. So the test is what the compiler can settle, not what
+the line looks like.
+
+**Where the statement is a call that yields something, only the answer goes unheld** (`PC0412`),
+and that is an opinion rather than a warning: the call runs and does its job. What it points at
+is the function — one that both acts and answers, called for half of itself, is usually two
+functions. Where it is not yours to split, keeping the value is the other fix;
+`Directory.Delete` answers whether there was a folder to remove, which is worth having.
+
+An editor shows the unused ones faded rather than underlined, keeping the color the name already
+had — so a name still reads as the field or the local it is, and reads as one nothing reaches.
+A dropped call result is not faded: the call is not spare.
 
 ### 4.6 Visibility
 
@@ -2915,6 +2937,8 @@ of a reader.
 | `PC0408` | error | Shared field not given a value | '{0}' is shared, so no constructor runs that could give it a value. Give it one where it is declared, or make it optional. |
 | `PC0409` | warning | This is never read | Nothing reads '{0}'. Remove it, or write '_' if the value is not wanted. |
 | `PC0410` | warning | Nothing uses this | Nothing uses '{0}'. Remove it, or widen it past 'private'. |
+| `PC0411` | warning | Nothing happens here | This works a value out and drops it, and nothing else happens. Remove the line. |
+| `PC0412` | opinion | This call's result is dropped | Nothing keeps what this yields. Keep it, or give the function a version that yields nothing. |
 
 ### PC0500 to PC0599
 

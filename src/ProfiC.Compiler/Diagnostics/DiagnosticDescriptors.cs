@@ -1706,6 +1706,40 @@ public static class DiagnosticDescriptors
         "Nothing uses '{0}'. Remove it, or widen it past 'private'.");
 
     /// <summary>
+    /// <para>A statement that works a value out and drops it, where working it out cannot do
+    /// anything either.</para>
+    /// <para>Reported only where nothing can happen: the expression settles to a constant while
+    /// compiling, or is a bare name. <b>Arithmetic in general does not qualify</b>, because it is
+    /// checked — <c>2147483647 * 2147483647</c> written on its own raises an overflow, and
+    /// <c>1 / zero</c> raises a division by zero, and a program may be written to do exactly
+    /// that. Saying those do nothing would be false rather than merely unhelpful, which is why
+    /// the test is what the compiler can settle rather than what the line looks like.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor StatementDoesNothing = UnusedWarning(
+        "PC0411",
+        "Nothing happens here",
+        "This works a value out and drops it, and nothing else happens. Remove the line.");
+
+    /// <summary>
+    /// <para>A call written as a statement, where the call yields something nobody keeps.</para>
+    /// <para>An opinion rather than a warning, because the call is doing its job: it was written
+    /// for what it does and not for what it gives back, and that is a reasonable thing to want.
+    /// What it points at is the function rather than the line — one that both acts and answers,
+    /// called for only half of itself, is usually two functions.</para>
+    /// <para>Both fixes are named because only one of them always applies. Splitting the
+    /// function is not open to a reader who called into the standard library, and several of
+    /// those answer something worth having — <c>Directory.Delete</c> yields whether there was a
+    /// folder to remove. Keeping the value is the fix that is always available.</para>
+    /// <para>Not faded. Every other opinion marks something spare, and nothing here is: the call
+    /// runs and matters. Greying it would say the opposite of what is meant.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor CallResultDropped = Opinion(
+        "PC0412",
+        "This call's result is dropped",
+        "Nothing keeps what this yields. Keep it, or give the function a version that yields "
+        + "nothing.");
+
+    /// <summary>
     /// <para>A function that declares a result can reach its end without producing one.</para>
     /// <para>The same forward walk that proves a variable holds a value proves this: if the end
     /// of the body is still reachable, some path through it yields nothing. What such a call

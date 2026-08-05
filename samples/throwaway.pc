@@ -11,7 +11,7 @@
     tell the difference either, says nothing.
 
     Nowhere else takes one, because nowhere else is a name obliged. Any expression is already a
-    statement, so 'Announce();' drops what it yields and 'let _ = Announce();' only spends a
+    statement, so a value is dropped by writing it on its own and 'let _ = ...' only spends a
     line agreeing. samples/negatives/compile/throwaway.pc holds that side.
 
     Because it binds nothing, several in one body are ordinary and none of them can be read.
@@ -27,7 +27,6 @@ shared model Program
         Program.ALoopThatOnlyCounts();
         Program.AnElementNobodyWants();
         Program.AnExceptionHandledRatherThanRead();
-        Program.AResultWorkedOutAndDropped();
         Program.SeveralInOneWalk();
     end function
 
@@ -72,17 +71,6 @@ shared model Program
     end function
 
     ##
-        A call made for what it does rather than what it gives back — and written without a
-        throwaway, because none is needed. Any expression stands as a statement, so the result
-        is dropped by saying nothing about it.
-    ##
-    function AResultWorkedOutAndDropped()
-        Console.WriteLine("Called for its effect:");
-
-        Program.Announced();
-    end function
-
-    ##
         Two throwaways in one body, and a name beginning with an underscore beside them. The
         first two are not a clash, because neither binds anything to clash with. The third is
         an ordinary name and is read like one.
@@ -98,10 +86,5 @@ shared model Program
         end loop
 
         Console.WriteLine("An ordinary name beginning with '_': " + _count);
-    end function
-
-    integer function Announced()
-        Console.WriteLine("  worked it out");
-        yield 7;
     end function
 end model

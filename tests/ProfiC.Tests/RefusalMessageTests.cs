@@ -140,7 +140,7 @@ public sealed class RefusalMessageTests : LexerTestBase
         // ---- Calling without ever stopping ------------------------------------------------------
         // The one refusal no catch clause takes. It carries a name all the same, because a
         // reader still has to be told what stopped their program.
-        ("Program.Forever(1);", typeof(ProfiC.Runtime.RecursionTooDeepException),
+        ("Console.WriteLine(Program.Forever(1));", typeof(ProfiC.Runtime.RecursionTooDeepException),
          "Calls nested more than 512 deep, so the program stopped. This nearly always means a "
          + "function calls itself without ever reaching the case that stops it. This is not the "
          + "machine running out of room — the language counts the calls and stops early, while "
