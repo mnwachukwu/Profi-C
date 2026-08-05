@@ -167,7 +167,7 @@ shared model Program
 
         try
             throw new OvenBroken();
-        catch KitchenProblem problem
+        catch KitchenProblem _
             Console.WriteLine("  caught it");
         finally
             Console.WriteLine("  and the kitchen is tidied again");
@@ -221,11 +221,11 @@ shared model Program
 
         integer count = 5;
 
-        Program.Show(function() let a = 1 / zero; end function);
-        Program.Show(function() let b = three[7]; end function);
-        Program.Show(function() let c = nothing.Value(); end function);
-        Program.Show(function() let d = 2147483647 * 2147483647 * 4; end function);
-        Program.Show(function() let e = count.Format("Q9"); end function);
+        Program.Show(function() let _ = 1 / zero; end function);
+        Program.Show(function() let _ = three[7]; end function);
+        Program.Show(function() let _ = nothing.Value(); end function);
+        Program.Show(function() let _ = 2147483647 * 2147483647 * 4; end function);
+        Program.Show(function() let _ = count.Format("Q9"); end function);
     end function
 
     ##
@@ -239,15 +239,15 @@ shared model Program
         try
             attempt();
             Console.WriteLine("  nothing went wrong");
-        catch DivideByZeroException problem
+        catch DivideByZeroException _
             Console.WriteLine("  divided by zero");
-        catch IndexOutOfRangeException problem
+        catch IndexOutOfRangeException _
             Console.WriteLine("  reached past the end");
-        catch EmptyOptionalException problem
+        catch EmptyOptionalException _
             Console.WriteLine("  read an empty optional");
-        catch OverflowException problem
+        catch OverflowException _
             Console.WriteLine("  too big to hold");
-        catch FormatException problem
+        catch FormatException _
             Console.WriteLine("  a pattern that means nothing");
         end try
     end function

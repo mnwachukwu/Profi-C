@@ -71,7 +71,7 @@ CompilationUnit
         SetTypeSyntax
           NamedTypeSyntax 'boolean'
         CollectionExpr
-      ForStmt 'i' to
+      ForStmt '_' to
         LiteralExpr 0 [Integer]
         IdentifierExpr 'limit'
         ExpressionStmt

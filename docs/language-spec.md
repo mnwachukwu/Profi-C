@@ -1011,6 +1011,47 @@ in another file, so `this.` tells a reader to stop looking in this function; and
 overlap would mean adding a field could break methods that have nothing to do with it. A local
 in an enclosing scope is always a few lines above, in the same body.
 
+**A bare `_` is a throwaway, and binds nothing.** It is written where the language hands a body
+a value the body has no use for:
+
+```text
+loop for _ = 1 to 3             count three times, and never ask which
+loop each _ in numbers          one line per element, whatever the element is
+catch ArgumentException _       the type was the whole answer
+let _ = Announce();             called for what it does, not what it gives back
+```
+
+Both rules above pass over it, because there is nothing to pass over: a throwaway enters no
+scope, so several in one body are ordinary rather than a clash, and none of them hides
+anything.
+
+```text
+let _ = 1;
+integer _ = 2;                  neither PC0202 nor PC0237 — nothing was declared
+```
+
+Its value is still worked out, and still checked against the type where one is written. A
+throwaway drops the value, not the work that produced it.
+
+Because it binds nothing, **it cannot be read** (`PC0254`), and it cannot name anything that is
+reached by writing its name — a field, a function, a type, an enumeration member, a namespace
+(`PC0255`). One written with no value to drop is a line that does nothing (`PC0256`).
+
+**A parameter is not a place for one** (`PC0257`), and it is the one receiving position that is
+not. Every other is invisible outside the body it sits in; a parameter is part of a signature
+somebody else reads to work out what to pass, and is shown to them at every call. A function
+with no use for an argument should not ask for one.
+
+Assigning to a throwaway is allowed and says nothing (`PC0258`), since a statement already
+drops the value it does not use:
+
+```text
+_ = Announce();                 the same as writing 'Announce();'
+```
+
+Only the bare underscore. `_count` and `_x` are names like any other, read and written like any
+other.
+
 ### 4.2 Constants
 
 `constant` marks a binding that never changes:
@@ -1142,6 +1183,34 @@ Java run, and it is here for the same reason: an uninitialized read is a bug tha
 value hides rather than prevents.
 
 The same pass reports code nothing can reach, as a warning (`PC0403`).
+
+**A local nothing ever reads is reported too** (`PC0409`), as a warning. Reading is what
+counts: a local assigned twice and read never has done as little as one nothing mentions again.
+
+```text
+integer forgotten = Total();    PC0409: nothing reads forgotten
+
+integer written = 1;
+written = 2;                    PC0409 as well — assigning is not reading
+```
+
+It is a warning rather than a refusal because the program runs either way. It is worth saying
+because a result worked out and then forgotten looks exactly like one meant to be dropped, and
+[a throwaway](#41-variables) is how a program says which it is — so `_` is exempt, having
+already said nothing will read it.
+
+**A private member nothing reaches is reported the same way** (`PC0410`), for fields and
+functions alike. Private is the only visibility this can be asked about: a private member is
+seen by its declaring type and no further, so the compilation holding that type holds every use
+it can ever have. Anything wider is reachable from code that is not here, and silence about it
+would mean nothing.
+
+Three are left out, because none of them is reached by writing its name: a constructor, which
+answers to `new`; an overridable function, which answers to whatever the value turns out to be;
+and the `Main` a program starts at.
+
+An editor shows both of these faded rather than underlined, keeping the color the name already
+had — so it still reads as the field or the local it is, and reads as one nothing reaches.
 
 ### 4.6 Visibility
 
@@ -2765,6 +2834,11 @@ of a reader.
 | `PC0251` | opinion | This 'base()' changes nothing | '{0}' is built before this constructor's body whether or not 'base()' is written, so this line does what would happen without it. Keep it if saying so helps. |
 | `PC0252` | error | An optional of an optional | This is already optional, so the second '?' says nothing new. Write one '?'. |
 | `PC0253` | error | Member name already taken | {0} already has a member named '{1}', declared on line {2}. Rename one, unless they are versions of one function taking different types. |
+| `PC0254` | error | A throwaway holds nothing | '_' throws its value away, so there is nothing here to use. Give it a name. |
+| `PC0255` | error | A throwaway cannot be a name | '_' throws a value away, so it cannot name {0}, which is reached by name. Give it a name. |
+| `PC0256` | error | A throwaway needs a value | '_' has nothing to throw away here. Give it a value, or remove the line. |
+| `PC0257` | error | A parameter needs a name | '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name. |
+| `PC0258` | opinion | This '_ =' adds nothing | A statement already drops the value it does not use, so '_ =' says what was going to happen anyway. Remove it. |
 
 ### PC0300 to PC0399
 
@@ -2832,6 +2906,8 @@ of a reader.
 | `PC0406` | opinion | Nothing here can end this loop | Nothing here breaks, yields, or throws, so nothing will stop this loop. Add a 'break', or give it a condition with 'loop while' or 'until'. |
 | `PC0407` | error | Nothing here for this to leave | '{0}' needs a loop around it, and there is none here. A 'switch' is not one: it runs one arm and stops, so there is nothing about it to leave or to go on with. |
 | `PC0408` | error | Shared field not given a value | '{0}' is shared, so no constructor runs that could give it a value. Give it one where it is declared, or make it optional. |
+| `PC0409` | warning | This is never read | Nothing reads '{0}'. Remove it, or write '_' if the value is not wanted. |
+| `PC0410` | warning | Nothing uses this | Nothing uses '{0}'. Remove it, or widen it past 'private'. |
 
 ### PC0500 to PC0599
 

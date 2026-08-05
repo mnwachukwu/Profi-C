@@ -44,7 +44,7 @@ shared model Program
         try
             book.Lend();
             Console.WriteLine("Lent " + book.Title() + ", " + book.Copies() + " left");
-        catch ArgumentException e
+        catch ArgumentException _
             Console.WriteLine("Cannot lend " + book.Title() + ": none on hand");
         end try
     end function

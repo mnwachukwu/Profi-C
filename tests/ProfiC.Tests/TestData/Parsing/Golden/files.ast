@@ -513,7 +513,7 @@ CompilationUnit
             MemberExpr 'WriteLine'
               IdentifierExpr 'Console'
             LiteralExpr "  wrote it" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'IOException'
           ExpressionStmt
             CallExpr
@@ -538,7 +538,7 @@ CompilationUnit
             MemberExpr 'WriteLine'
               IdentifierExpr 'Console'
             LiteralExpr "  copied it" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'IOException'
           ExpressionStmt
             CallExpr

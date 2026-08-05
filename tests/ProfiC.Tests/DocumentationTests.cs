@@ -1,3 +1,4 @@
+using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
@@ -21,10 +22,8 @@ public sealed class DocumentationTests : LexerTestBase
         diagnostics = new DiagnosticBag();
 
         CompilationUnit unit = Parser.Parse(new SourceText(text, "<test>"), diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: true);
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
-        DocumentationChecker.Check(unit, diagnostics);
+        FrontEnd.Check(
+            unit, diagnostics, requireEntryPoint: true, reportUnusedSuppressions: false);
 
         return unit;
     }
@@ -54,7 +53,7 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                     @summary: Counts up to a limit.
                 ##
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -76,7 +75,7 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                     Counts up to a limit. Written as prose, so it documents nothing.
                 ##
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -101,7 +100,7 @@ public sealed class DocumentationTests : LexerTestBase
                 # @a: the first.
                 # @b: the second.
                 # @yields: their sum.
-                shared integer function Add(integer a, integer b)
+                public shared integer function Add(integer a, integer b)
                     yield a + b;
                 end function
             """),
@@ -124,7 +123,7 @@ public sealed class DocumentationTests : LexerTestBase
         Report(Program("""
             # @summary: Adds two numbers.
             # @first: not what it is called.
-            shared integer function Add(integer a, integer b)
+            public shared integer function Add(integer a, integer b)
                 yield a + b;
             end function
         """)),
@@ -139,7 +138,7 @@ public sealed class DocumentationTests : LexerTestBase
                 # @summary: One comment.
 
                 # @summary: And a second, which is not part of the first.
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -154,7 +153,7 @@ public sealed class DocumentationTests : LexerTestBase
         Report("""
             # @summary: A pair of numbers.
             model Pair
-                integer a;
+                public integer a;
             end model
 
             shared model Program
@@ -171,7 +170,7 @@ public sealed class DocumentationTests : LexerTestBase
         CompilationUnit unit = Compile(
             Program("""
                 # @summary: How many terms to add.
-                shared constant integer Terms = 8;
+                public shared constant integer Terms = 8;
             """),
             out _);
 
@@ -196,7 +195,7 @@ public sealed class DocumentationTests : LexerTestBase
 
                     And the second, which is still the summary.
                 ##
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -217,7 +216,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @summary: One sentence
                     across two lines.
                 ##
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -239,7 +238,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @yields: the total.
                     @throws: nothing.
                 ##
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -271,7 +270,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @summary: That is why it yields an
                     optional: nothing more to read is an answer, not a fault.
                 ##
-                shared integer function Total(integer n)
+                public shared integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -293,7 +292,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Adds.
                 @count: how many.
             ##
-            shared integer function Total(integer n)
+            public shared integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -306,7 +305,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Says something.
                 @yields: a value that is not there.
             ##
-            shared function Speak()
+            public shared function Speak()
                 Console.WriteLine("hi");
             end function
         """)),
@@ -320,7 +319,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @n: how many.
                 @n: and again.
             ##
-            shared integer function Total(integer n)
+            public shared integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -348,7 +347,7 @@ public sealed class DocumentationTests : LexerTestBase
     [Test]
     public void NothingIsReportedForDocumentationThatWasNeverWritten() => Assert.That(
         Report(Program("""
-            shared integer function Total(integer n)
+            public shared integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -365,7 +364,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Adds two numbers.
                 @a: the first.
             ##
-            shared integer function Add(integer a, integer b)
+            public shared integer function Add(integer a, integer b)
                 yield a + b;
             end function
         """)),
@@ -374,7 +373,7 @@ public sealed class DocumentationTests : LexerTestBase
     // ---- What can carry it -----------------------------------------------------------------
 
     [TestCase("model Thing\nend model", TestName = "a model")]
-    [TestCase("structure Point\n    integer x;\nend structure", TestName = "a structure")]
+    [TestCase("structure Point\n    public integer x;\nend structure", TestName = "a structure")]
     [TestCase("enumeration Suit\n    Hearts,\n    Spades\nend enumeration", TestName = "an enumeration")]
     public void ATypeCanBeDocumented(string declaration) => Assert.That(
         Report($"""
@@ -390,8 +389,8 @@ public sealed class DocumentationTests : LexerTestBase
             """),
         Is.Empty);
 
-    [TestCase("integer count;", TestName = "a field")]
-    [TestCase("shared integer Total = 0;", TestName = "a shared field")]
+    [TestCase("public integer count;", TestName = "a field")]
+    [TestCase("public shared integer Total = 0;", TestName = "a shared field")]
     [TestCase("public function Speak()\n    end function", TestName = "a function")]
     public void AMemberCanBeDocumented(string member) => Assert.That(
         Report($"""

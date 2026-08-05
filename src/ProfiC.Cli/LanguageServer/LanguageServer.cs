@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
@@ -803,20 +804,16 @@ public sealed class LanguageServer : IDisposable
 
         if (compilation is not null)
         {
-            SemanticModel model = Resolver.Resolve(
+            // Unused directives are left unreported: this runs on every keystroke over a file
+            // that is halfway typed, where one naming a diagnostic the reader has not finished
+            // causing would read as silencing nothing. A build still reports them.
+            FrontEnd.Check(
                 compilation.Units,
                 diagnostics,
                 projects: compilation.Projects,
                 entryPoint: compilation.EntryPoint,
+                reportUnusedSuppressions: false,
                 cancellation: stop);
-
-            TypeChecker.Check(compilation.Units, model, diagnostics, stop);
-            DefiniteAssignment.Analyze(compilation.Units, model, diagnostics, stop);
-
-            foreach (CompilationUnit unit in compilation.Units)
-            {
-                DocumentationChecker.Check(unit, diagnostics);
-            }
         }
 
         stop.ThrowIfCancellationRequested();

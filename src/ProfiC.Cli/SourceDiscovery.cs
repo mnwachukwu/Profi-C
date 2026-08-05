@@ -497,6 +497,14 @@ public static class SourceDiscovery
             {
                 diagnostics.Add(diagnostic);
             }
+
+            // A directive belongs to the file it was written in, and silences what later passes
+            // report about that file rather than anything the scanner found. So it travels
+            // across with the diagnostics, from the same bag the file was parsed into.
+            foreach (Suppression suppression in aside.Suppressions)
+            {
+                diagnostics.Suppress(suppression);
+            }
         }
 
         // Every file here belongs to the one project a compilation nobody divided has, so

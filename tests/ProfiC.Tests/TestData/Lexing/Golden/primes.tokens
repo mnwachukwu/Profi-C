@@ -120,7 +120,7 @@
   42:33   Semicolon            ';'
   44:9    Loop                 'loop'
   44:14   For                  'for'
-  44:18   Identifier           'i'
+  44:18   Identifier           '_'
   44:20   Equal                '='
   44:22   IntegerLiteral       '0'
   44:24   To                   'to'

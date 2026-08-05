@@ -162,7 +162,7 @@ shared model Program
 
         try
             fromATry = 30;
-        catch Exception problem
+        catch Exception _
             Console.WriteLine("  unreachable");
         end try
 

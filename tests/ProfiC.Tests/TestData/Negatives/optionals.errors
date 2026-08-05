@@ -1,5 +1,7 @@
+optionals.pc(23,9): warning PC0409: Nothing reads 'total'. Remove it, or write '_' if the value is not wanted.
 optionals.pc(23,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
 optionals.pc(26,27): error PC0306: An Account? has no member named 'Describe'.
 optionals.pc(29,27): error PC0303: '+' is not defined for an integer? and an integer. Convert one side, or use a member.
 optionals.pc(33,31): error PC0306: An Account? has no member named 'balance'.
 optionals.pc(39,9): error PC0252: This is already optional, so the second '?' says nothing new. Write one '?'.
+optionals.pc(39,9): warning PC0409: Nothing reads 'twice'. Remove it, or write '_' if the value is not wanted.

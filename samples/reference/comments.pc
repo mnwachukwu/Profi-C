@@ -1,4 +1,8 @@
 # A line comment, running to the end of the line.
+#
+# ignore PC0410 in file
+# A catalog declares each thing a comment can sit beside. Nothing goes on to reach
+# what it declares, and reaching it would say nothing more.
 
 ##
     A block comment. It opens with two marks and closes with the next two, and everything on

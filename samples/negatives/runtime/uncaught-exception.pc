@@ -24,7 +24,7 @@ shared model Program
             end if
 
             Console.WriteLine("withdrew " + amount);
-        catch DivideByZeroException problem
+        catch DivideByZeroException _
             Console.WriteLine("this clause never matches");
         end try
     end function

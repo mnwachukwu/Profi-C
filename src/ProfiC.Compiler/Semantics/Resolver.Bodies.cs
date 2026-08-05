@@ -488,6 +488,9 @@ public sealed partial class Resolver
             Declaration = function,
         };
 
+        RefuseThrowawayAsAName(function.Name, function, "a function");
+        RefuseThrowawayParameters(function.Parameters);
+
         Declare(symbol, function);
         _model.Bind(function, symbol);
     }
@@ -508,6 +511,13 @@ public sealed partial class Resolver
         {
             Declaration = declaration,
         };
+
+        // A throwaway is written for the value it drops, so one with no value drops nothing
+        // and the line does nothing at all.
+        if (Throwaway.Is(declaration.Name) && declaration.Initializer is null)
+        {
+            Report(DiagnosticDescriptors.ThrowawayNeedsAValue, declaration);
+        }
 
         Declare(local, declaration);
         _model.Bind(declaration, local);
@@ -584,6 +594,16 @@ public sealed partial class Resolver
     /// </summary>
     private void BindAssignment(AssignmentStmt assignment)
     {
+        // Assigning to a throwaway is allowed and says nothing, so the value is bound and the
+        // target is not — there is no name on the left to bind. Lowering drops the assignment
+        // afterwards, leaving the statement that was going to run either way.
+        if (assignment.Target is IdentifierExpr name && Throwaway.Is(name.Name))
+        {
+            Report(DiagnosticDescriptors.ThrowawayAssignmentSaysNothing, assignment);
+            BindExpression(assignment.Value);
+            return;
+        }
+
         BindExpression(assignment.Target);
         BindExpression(assignment.Value);
 

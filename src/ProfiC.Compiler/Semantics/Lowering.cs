@@ -182,10 +182,15 @@ public sealed class Lowering
                 return new ExpressionStmt(expression.Span, LowerExpression(expression.Expression));
 
             case AssignmentStmt assignment:
-                return new AssignmentStmt(
-                    assignment.Span,
-                    LowerExpression(assignment.Target),
-                    LowerExpression(assignment.Value));
+                // Assigning to a throwaway is the value and nothing else: there is no place
+                // to store it. Lowered to the value on its own, which drops it the same way
+                // any statement drops what it does not use.
+                return assignment.Target is IdentifierExpr name && Throwaway.Is(name.Name)
+                    ? new ExpressionStmt(assignment.Span, LowerExpression(assignment.Value))
+                    : new AssignmentStmt(
+                        assignment.Span,
+                        LowerExpression(assignment.Target),
+                        LowerExpression(assignment.Value));
 
             default:
                 return statement;

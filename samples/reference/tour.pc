@@ -6,6 +6,11 @@
     unreachable.
 ##
 
+# ignore PC0409 in file
+# ignore PC0410 in file
+# A tour names each construct so a reader can see it. Nothing goes on to reach what it
+# declares, and reaching it would say nothing more.
+
 ##
     A using names a namespace declared somewhere in this compilation, and brings its types into
     this file under their bare names. The one below is declared at the foot of this same file:

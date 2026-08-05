@@ -563,6 +563,14 @@ public sealed partial class TypeChecker
 
     private void CheckAssignment(AssignmentStmt assignment)
     {
+        // A throwaway on the left names nothing, so there is no type to fit into. The value is
+        // still checked, since it still runs.
+        if (assignment.Target is IdentifierExpr name && Throwaway.Is(name.Name))
+        {
+            CheckExpression(assignment.Value);
+            return;
+        }
+
         // The declared type, not the narrowed one: assigning to a narrowed optional may put
         // an empty value back into it, and the declaration is what says whether that fits.
         TypeSymbol target = DeclaredTypeOf(assignment.Target);

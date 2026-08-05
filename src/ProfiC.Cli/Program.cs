@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
@@ -770,23 +771,12 @@ public static class Program
             return null;
         }
 
-        SemanticModel model = Resolver.Resolve(
+        SemanticModel model = FrontEnd.Check(
             compilation.Units,
             diagnostics,
             requireEntryPoint,
             compilation.Projects,
             compilation.EntryPoint);
-        TypeChecker.Check(compilation.Units, model, diagnostics);
-        DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
-
-        foreach (CompilationUnit unit in compilation.Units)
-        {
-            DocumentationChecker.Check(unit, diagnostics);
-        }
-
-        // Last, because whether an 'ignore' silenced anything is a question only the finished
-        // compilation can answer.
-        diagnostics.ReportUnusedSuppressions();
 
         return (compilation, model);
     }

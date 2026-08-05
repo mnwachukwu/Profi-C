@@ -235,7 +235,7 @@ CompilationUnit
       TryStmt
         ThrowStmt
           NewExpr 'OvenBroken'
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'KitchenProblem'
           ExpressionStmt
             CallExpr
@@ -310,7 +310,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt 'a' [inferred]
+            VarDeclStmt '_' [inferred]
               BinaryExpr '/'
                 LiteralExpr 1 [Integer]
                 IdentifierExpr 'zero'
@@ -319,7 +319,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt 'b' [inferred]
+            VarDeclStmt '_' [inferred]
               IndexExpr
                 IdentifierExpr 'three'
                 LiteralExpr 7 [Integer]
@@ -328,7 +328,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt 'c' [inferred]
+            VarDeclStmt '_' [inferred]
               CallExpr
                 MemberExpr 'Value'
                   IdentifierExpr 'nothing'
@@ -337,7 +337,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt 'd' [inferred]
+            VarDeclStmt '_' [inferred]
               BinaryExpr '*'
                 BinaryExpr '*'
                   LiteralExpr 2147483647 [Integer]
@@ -348,7 +348,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt 'e' [inferred]
+            VarDeclStmt '_' [inferred]
               CallExpr
                 MemberExpr 'Format'
                   IdentifierExpr 'count'
@@ -365,35 +365,35 @@ CompilationUnit
             MemberExpr 'WriteLine'
               IdentifierExpr 'Console'
             LiteralExpr "  nothing went wrong" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'DivideByZeroException'
           ExpressionStmt
             CallExpr
               MemberExpr 'WriteLine'
                 IdentifierExpr 'Console'
               LiteralExpr "  divided by zero" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'IndexOutOfRangeException'
           ExpressionStmt
             CallExpr
               MemberExpr 'WriteLine'
                 IdentifierExpr 'Console'
               LiteralExpr "  reached past the end" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'EmptyOptionalException'
           ExpressionStmt
             CallExpr
               MemberExpr 'WriteLine'
                 IdentifierExpr 'Console'
               LiteralExpr "  read an empty optional" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'OverflowException'
           ExpressionStmt
             CallExpr
               MemberExpr 'WriteLine'
                 IdentifierExpr 'Console'
               LiteralExpr "  too big to hold" [String]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'FormatException'
           ExpressionStmt
             CallExpr

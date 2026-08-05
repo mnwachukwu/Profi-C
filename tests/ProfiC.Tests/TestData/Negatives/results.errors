@@ -1,4 +1,6 @@
 results.pc(12,5): error PC0404: 'Describe' yields a string, but it can reach its end without yielding one. Yield on every path out.
+results.pc(12,5): warning PC0410: Nothing uses 'Describe'. Remove it, or widen it past 'private'.
 results.pc(17,5): error PC0404: 'Grade' yields a string, but it can reach its end without yielding one. Yield on every path out.
+results.pc(17,5): warning PC0410: Nothing uses 'Grade'. Remove it, or widen it past 'private'.
 results.pc(27,27): error PC0332: This produces no value, so there is nothing to use here.
 results.pc(30,23): error PC0332: This produces no value, so there is nothing to use here.

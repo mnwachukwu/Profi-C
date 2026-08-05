@@ -193,14 +193,14 @@ shared model Program
         try
             File.Write(Program.In("no/such/folder/notes.txt"), "text");
             Console.WriteLine("  wrote it");
-        catch IOException problem
+        catch IOException _
             Console.WriteLine("  writing where there is no folder raised IOException");
         end try
 
         try
             File.Copy(Program.In("absent.txt"), Program.In("copy.txt"));
             Console.WriteLine("  copied it");
-        catch IOException problem
+        catch IOException _
             Console.WriteLine("  copying what is not there raised IOException");
         end try
     end function

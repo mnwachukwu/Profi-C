@@ -215,7 +215,7 @@ shared model Program
         # Reading an empty one is an error rather than a wrong answer.
         try
             Console.WriteLine(missing.Value());
-        catch EmptyOptionalException problem
+        catch EmptyOptionalException _
             Console.WriteLine("  missing.Value()    -> refused, as it should be");
         end try
 
@@ -244,7 +244,7 @@ shared model Program
         Random rolls = new Random(42);
         Console.Write("  seeded 42, six rolls:  ");
 
-        loop for i = 1 to 6
+        loop for _ = 1 to 6
             Console.Write(rolls.Next(1, 7) + " ");
         end loop
 
@@ -253,7 +253,7 @@ shared model Program
         Random again = new Random(42);
         Console.Write("  the same seed again:   ");
 
-        loop for i = 1 to 6
+        loop for _ = 1 to 6
             Console.Write(again.Next(1, 7) + " ");
         end loop
 

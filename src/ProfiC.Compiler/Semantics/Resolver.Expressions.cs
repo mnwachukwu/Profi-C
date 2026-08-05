@@ -158,6 +158,15 @@ public sealed partial class Resolver
     /// </summary>
     private void BindIdentifier(IdentifierExpr identifier)
     {
+        // A throwaway answers to no name, so this is a read of something that was never kept.
+        // Said here rather than left to the lookup, which would report a name that is not
+        // defined and send the reader looking for a declaration they did write.
+        if (Throwaway.Is(identifier.Name))
+        {
+            Report(DiagnosticDescriptors.ThrowawayIsNotAValue, identifier);
+            return;
+        }
+
         if (_scope.Lookup(identifier.Name) is { } local)
         {
             _model.Bind(identifier, local);
@@ -321,6 +330,8 @@ public sealed partial class Resolver
     {
         InScope(lambda.Span, () =>
         {
+            RefuseThrowawayParameters(lambda.Parameters);
+
             foreach (ParameterDecl parameter in lambda.Parameters)
             {
                 // A parameter written as a bare name has no type yet. The type checker fills

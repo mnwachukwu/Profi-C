@@ -600,7 +600,7 @@ CompilationUnit
               MemberExpr 'Factorial'
                 IdentifierExpr 'Math'
               LiteralExpr 21 [Integer]
-        CatchClause 'problem'
+        CatchClause '_'
           NamedTypeSyntax 'OverflowException'
           ExpressionStmt
             CallExpr

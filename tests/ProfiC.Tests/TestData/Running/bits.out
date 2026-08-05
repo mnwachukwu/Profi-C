@@ -3,6 +3,7 @@
   may read:     true
   may delete:   false
   added twice:  true
+  now shares:   true
 == and, or, xor ==
   1100 and 1010: 1000
   1100 or  1010: 1110

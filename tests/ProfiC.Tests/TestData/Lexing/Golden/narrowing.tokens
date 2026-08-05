@@ -394,7 +394,7 @@
  164:26   Semicolon            ';'
  165:9    Catch                'catch'
  165:15   Identifier           'Exception'
- 165:25   Identifier           'problem'
+ 165:25   Identifier           '_'
  166:13   Identifier           'Console'
  166:20   Dot                  '.'
  166:21   Identifier           'WriteLine'

@@ -283,7 +283,7 @@ public sealed class LanguageServerTests
                 """
                 shared model Program
                     function Main()
-                        integer n = 9223372036854775808;
+                        integer _ = 9223372036854775808;
                         Console.WriteLine(Greeting.Words());
                     end function
                 end model

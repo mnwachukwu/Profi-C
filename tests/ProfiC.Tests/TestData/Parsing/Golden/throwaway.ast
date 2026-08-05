@@ -1,0 +1,114 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ALoopThatOnlyCounts'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AnElementNobodyWants'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AnExceptionHandledRatherThanRead'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'AResultWorkedOutAndDropped'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'SeveralInOneBody'
+            IdentifierExpr 'Program'
+    FunctionDecl 'ALoopThatOnlyCounts'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Three of the same thing:" [String]
+      ForStmt '_' to
+        LiteralExpr 1 [Integer]
+        LiteralExpr 3 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  tick" [String]
+    FunctionDecl 'AnElementNobodyWants'
+      VarDeclStmt 'numbers'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 4 [Integer]
+          LiteralExpr 5 [Integer]
+          LiteralExpr 6 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "One line per element:" [String]
+      ForEachStmt '_'
+        IdentifierExpr 'numbers'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "  one" [String]
+    FunctionDecl 'AnExceptionHandledRatherThanRead'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Handled by type alone:" [String]
+      TryStmt
+        ThrowStmt
+          NewExpr 'ArgumentException'
+            LiteralExpr "thrown on purpose" [String]
+        CatchClause '_'
+          NamedTypeSyntax 'ArgumentException'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  caught, and the type was the whole answer" [String]
+    FunctionDecl 'AResultWorkedOutAndDropped'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Called for its effect:" [String]
+      VarDeclStmt '_' [inferred]
+        CallExpr
+          MemberExpr 'Announced'
+            IdentifierExpr 'Program'
+      AssignmentStmt
+        IdentifierExpr '_'
+        CallExpr
+          MemberExpr 'Announced'
+            IdentifierExpr 'Program'
+    FunctionDecl 'SeveralInOneBody'
+      VarDeclStmt '_' [inferred]
+        LiteralExpr 1 [Integer]
+      VarDeclStmt '_'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 2 [Integer]
+      VarDeclStmt '_count'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "An ordinary name beginning with '_': " [String]
+            IdentifierExpr '_count'
+    FunctionDecl 'Announced'
+      NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "  worked it out" [String]
+      YieldStmt
+        LiteralExpr 7 [Integer]

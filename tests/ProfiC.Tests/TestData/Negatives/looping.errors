@@ -2,4 +2,5 @@ looping.pc(32,5): error PC0404: 'NothingEndsIt' yields an integer, but it can re
 looping.pc(33,9): opinion PC0406: Nothing here breaks, yields, or throws, so nothing will stop this loop. Add a 'break', or give it a condition with 'loop while' or 'until'.
 looping.pc(43,13): error PC0243: 'amounts' is the sequence this 'for each' is walking, and 'Insert' changes it. Collect the changes into another set, or count with a range loop.
 looping.pc(54,13): error PC0243: 'amounts' is the sequence this 'for each' is walking, and 'Remove' changes it. Collect the changes into another set, or count with a range loop.
+looping.pc(68,9): warning PC0409: Nothing reads 'amount'. Remove it, or write '_' if the value is not wanted.
 looping.pc(69,13): error PC0243: 'amounts' is the sequence this 'for each' is walking, and 'Clear' changes it. Collect the changes into another set, or count with a range loop.

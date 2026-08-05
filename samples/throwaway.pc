@@ -1,0 +1,102 @@
+##
+    The throwaway.
+
+    A single underscore written where a name belongs binds nothing. It is for the places the
+    language hands a program a value and the program has no use for it: the element of a loop
+    that only counts, an exception handled rather than read, a result worked out on the way to
+    something else.
+
+    Writing one says so. An invented name says the opposite — a reader meeting 'unused' has to
+    read to the end of the body to find out it was never used, and the compiler, which cannot
+    tell the difference either, says nothing.
+
+    Because it binds nothing, several in one body are ordinary and none of them can be read.
+    Only the bare underscore: '_count' and '_x' are names like any other.
+
+    samples/negatives/compile/throwaway.pc holds the other side — where a throwaway is refused,
+    and what a local nothing reads is told.
+##
+
+shared model Program
+
+    function Main()
+        Program.ALoopThatOnlyCounts();
+        Program.AnElementNobodyWants();
+        Program.AnExceptionHandledRatherThanRead();
+        Program.AResultWorkedOutAndDropped();
+        Program.SeveralInOneBody();
+    end function
+
+    ##
+        A range loop counting three times. The counter exists because the loop counts with one,
+        not because the body has anything to ask it.
+    ##
+    function ALoopThatOnlyCounts()
+        Console.WriteLine("Three of the same thing:");
+
+        loop for _ = 1 to 3
+            Console.WriteLine("  tick");
+        end loop
+    end function
+
+    ##
+        One line per element, whatever the element is. The walk is over the set's length, and
+        naming the element would claim the body reads it.
+    ##
+    function AnElementNobodyWants()
+        integer[] numbers = {4, 5, 6};
+
+        Console.WriteLine("One line per element:");
+
+        loop each _ in numbers
+            Console.WriteLine("  one");
+        end loop
+    end function
+
+    ##
+        A catch that deals with the exception by its type alone. Which one arrived is settled by
+        the clause that took it, so the value itself has nothing left to say.
+    ##
+    function AnExceptionHandledRatherThanRead()
+        Console.WriteLine("Handled by type alone:");
+
+        try
+            throw new ArgumentException("thrown on purpose");
+        catch ArgumentException _
+            Console.WriteLine("  caught, and the type was the whole answer");
+        end try
+    end function
+
+    ##
+        A call made for what it does rather than what it gives back. The initializer still runs:
+        a throwaway drops the value, not the work that produced it.
+    ##
+    function AResultWorkedOutAndDropped()
+        Console.WriteLine("Called for its effect:");
+
+        let _ = Program.Announced();
+
+        # A statement drops what it does not use, so writing '_ =' says what was going to
+        # happen anyway. The language has an opinion about it, kept here to show the form runs.
+        # ignore PC0258
+        _ = Program.Announced();
+    end function
+
+    ##
+        Two throwaways in one body, and a name beginning with an underscore beside them. The
+        first two are not a clash, because neither declares anything to clash with. The third
+        is an ordinary name and is read like one.
+    ##
+    function SeveralInOneBody()
+        let _ = 1;
+        integer _ = 2;
+        integer _count = 3;
+
+        Console.WriteLine("An ordinary name beginning with '_': " + _count);
+    end function
+
+    integer function Announced()
+        Console.WriteLine("  worked it out");
+        yield 7;
+    end function
+end model

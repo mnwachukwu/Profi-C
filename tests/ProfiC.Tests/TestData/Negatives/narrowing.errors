@@ -1,8 +1,22 @@
+narrowing.pc(16,5): warning PC0410: Nothing uses 'AnIfWithNoElse'. Remove it, or widen it past 'private'.
+narrowing.pc(23,9): warning PC0409: Nothing reads 'total'. Remove it, or write '_' if the value is not wanted.
 narrowing.pc(23,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(31,5): warning PC0410: Nothing uses 'ALoopThatMayNotRun'. Remove it, or widen it past 'private'.
+narrowing.pc(38,9): warning PC0409: Nothing reads 'total'. Remove it, or write '_' if the value is not wanted.
 narrowing.pc(38,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(46,5): warning PC0410: Nothing uses 'LeftBeforeTheStore'. Remove it, or widen it past 'private'.
+narrowing.pc(57,9): warning PC0409: Nothing reads 'total'. Remove it, or write '_' if the value is not wanted.
 narrowing.pc(57,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(65,5): warning PC0410: Nothing uses 'TheNextTurn'. Remove it, or widen it past 'private'.
 narrowing.pc(70,29): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(81,5): warning PC0410: Nothing uses 'WhatTheCatchDoesNotKnow'. Remove it, or widen it past 'private'.
+narrowing.pc(87,9): warning PC0409: Nothing reads 'problem'. Remove it, or write '_' if the value is not wanted.
 narrowing.pc(88,29): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(98,5): warning PC0410: Nothing uses 'OnlySometimesLeaves'. Remove it, or widen it past 'private'.
+narrowing.pc(105,9): warning PC0409: Nothing reads 'total'. Remove it, or write '_' if the value is not wanted.
 narrowing.pc(105,25): error PC0329: This is an integer?, which may be empty. Use 'HasValue()' to check, 'Or(...)' for a fallback, or 'Value()' to insist.
+narrowing.pc(113,5): warning PC0410: Nothing uses 'WhatAClosureCanUndo'. Remove it, or widen it past 'private'.
+narrowing.pc(123,9): warning PC0409: Nothing reads 'total'. Remove it, or write '_' if the value is not wanted.
 narrowing.pc(123,25): error PC0345: This is an integer?, and checking it proves nothing because a function that captured 'n' may assign it at any point. Copy it into a local and check that, or use 'Or(...)'.
+narrowing.pc(131,5): warning PC0410: Nothing uses 'CheckingItDoesNotHelp'. Remove it, or widen it past 'private'.
 narrowing.pc(142,29): error PC0345: This is an integer?, and checking it proves nothing because a function that captured 'n' may assign it at any point. Copy it into a local and check that, or use 'Or(...)'.

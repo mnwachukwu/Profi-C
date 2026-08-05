@@ -50,6 +50,11 @@ shared model Program
         integer again = granted bitwise or Program.Read;
 
         Console.WriteLine("  added twice:  " + (again == granted));
+
+        # And adding one that is not there sets it, which is the other half of the same rule.
+        integer widened = granted bitwise or Program.Share;
+
+        Console.WriteLine("  now shares:   " + ((widened bitwise and Program.Share) != 0));
     end function
 
     ##

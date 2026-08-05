@@ -157,6 +157,14 @@ public sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
     }
 
     /// <summary>
+    /// <para>Every directive recorded here.</para>
+    /// <para>For a caller moving one bag's contents into another: a file parsed apart carries
+    /// both what it reported and what it asked not to be reported, and the two only mean what
+    /// they were written to mean together.</para>
+    /// </summary>
+    public IReadOnlyList<Suppression> Suppressions => _suppressions;
+
+    /// <summary>
     /// <para>Reports every directive that named a diagnostic and silenced none, which is the
     /// last thing a compilation has to say.</para>
     /// <para><b>It is a pass, run once when nothing more will report.</b> Whether a directive

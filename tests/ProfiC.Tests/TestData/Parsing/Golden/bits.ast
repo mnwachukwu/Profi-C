@@ -92,6 +92,26 @@ CompilationUnit
               BinaryExpr '=='
                 IdentifierExpr 'again'
                 IdentifierExpr 'granted'
+      VarDeclStmt 'widened'
+        NamedTypeSyntax 'integer'
+        BinaryExpr 'bitwise or'
+          IdentifierExpr 'granted'
+          MemberExpr 'Share'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  now shares:   " [String]
+            ParenthesizedExpr
+              BinaryExpr '!='
+                ParenthesizedExpr
+                  BinaryExpr 'bitwise and'
+                    IdentifierExpr 'widened'
+                    MemberExpr 'Share'
+                      IdentifierExpr 'Program'
+                LiteralExpr 0 [Integer]
     FunctionDecl 'TheThreeOperations'
       ExpressionStmt
         CallExpr

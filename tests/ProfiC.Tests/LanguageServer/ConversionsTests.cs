@@ -1,4 +1,6 @@
+using System.Text.Json.Nodes;
 using ProfiC.Cli.LanguageServer;
+using ProfiC.Compiler.Diagnostics;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -101,4 +103,72 @@ public sealed class ConversionsTests
             Conversions.PathOf(Conversions.UriOf(path)),
             Is.EqualTo(path).IgnoreCase);
     }
+
+    // ---- Fading what nothing uses ----------------------------------------------------------
+
+    /// <summary>
+    /// <para>Tag 1 is the protocol's "unnecessary", and it is the whole of how an editor knows
+    /// to fade a span rather than underline it.</para>
+    /// <para>Asserted on the wire rather than on the descriptor, because the descriptor saying
+    /// so and the editor being told are two different things, and only the second is what a
+    /// reader sees.</para>
+    /// </summary>
+    [TestCaseSource(nameof(FadedDiagnostics))]
+    public void SomethingNothingUsesIsSentAsUnnecessary(DiagnosticDescriptor descriptor)
+    {
+        DiagnosticBag diagnostics = new();
+        diagnostics.Report(descriptor, default);
+
+        JsonObject written = Conversions.DiagnosticOf(diagnostics.Sorted()[0], source: null);
+
+        Assert.That((JsonArray?)written["tags"], Is.Not.Null, $"{descriptor.Id} should fade");
+        Assert.That((int?)written["tags"]![0], Is.EqualTo(1));
+    }
+
+    /// <summary>
+    /// Everything else carries no tag at all. An editor fades what it is told to fade, so a tag
+    /// on every diagnostic would fade the file.
+    /// </summary>
+    [TestCaseSource(nameof(UnfadedDiagnostics))]
+    public void SomethingThatMayBeWrongIsNotSentAsUnnecessary(DiagnosticDescriptor descriptor)
+    {
+        DiagnosticBag diagnostics = new();
+        diagnostics.Report(descriptor, default);
+
+        Assert.That(
+            Conversions.DiagnosticOf(diagnostics.Sorted()[0], source: null)["tags"],
+            Is.Null,
+            $"{descriptor.Id} should not fade");
+    }
+
+    public static IEnumerable<DiagnosticDescriptor> FadedDiagnostics() =>
+        DiagnosticDescriptors.ById.Values.Where(d => d.Unused);
+
+    public static IEnumerable<DiagnosticDescriptor> UnfadedDiagnostics() =>
+        DiagnosticDescriptors.ById.Values.Where(d => !d.Unused);
+
+    /// <summary>
+    /// <para>The two lists are what they are meant to be, named rather than counted.</para>
+    /// <para>Both tests above pass against an empty list, and the property they read is one
+    /// nothing else would notice going wrong. These are the ones that would fail if a descriptor
+    /// were marked the wrong way round.</para>
+    /// </summary>
+    [Test]
+    public void TheRightThingsFade() => Assert.Multiple(() =>
+    {
+        Assert.That(
+            FadedDiagnostics().Select(d => d.Id),
+            Does.Contain("PC0409").And.Contain("PC0410").And.Contain("PC0403"),
+            "a local nothing reads, a member nothing uses, and code nothing reaches");
+
+        Assert.That(
+            UnfadedDiagnostics().Select(d => d.Id),
+            Does.Contain("PC0406"),
+            "a loop nothing can end is missing something, not carrying something spare");
+
+        Assert.That(
+            FadedDiagnostics().Where(d => d.DefaultSeverity == DiagnosticSeverity.Error),
+            Is.Empty,
+            "nothing that stops the build is merely unnecessary");
+    });
 }

@@ -259,6 +259,15 @@ public sealed partial class Resolver
     /// </summary>
     private void Declare(Symbol symbol, SyntaxNode node)
     {
+        // A throwaway is left out of the scope, which is what makes several of them ordinary
+        // and reading one impossible. The symbol is still made and still bound to the
+        // declaration, so what it was given is still typed and still evaluated; it simply
+        // answers to no name.
+        if (Throwaway.Is(symbol.Name))
+        {
+            return;
+        }
+
         // A name that failed to parse is empty, and two of those are not a clash worth
         // reporting — whatever went wrong has already been said once each.
         bool named = symbol.Name.Length > 0;

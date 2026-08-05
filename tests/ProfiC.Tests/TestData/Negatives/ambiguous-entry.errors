@@ -1,1 +1,3 @@
+App.pc(4,5): warning PC0410: Nothing uses 'Main'. Remove it, or widen it past 'private'.
 Tools.pc(1,1): error PC0234: These sources declare more than one Program: App.Program and Tools.Program. Write 'entry App.Program' in the project file to say which one begins.
+Tools.pc(4,5): warning PC0410: Nothing uses 'Main'. Remove it, or widen it past 'private'.

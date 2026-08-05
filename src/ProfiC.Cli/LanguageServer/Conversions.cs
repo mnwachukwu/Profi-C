@@ -152,7 +152,7 @@ public static class Conversions
     {
         ArgumentNullException.ThrowIfNull(diagnostic);
 
-        return new JsonObject
+        JsonObject written = new()
         {
             ["range"] = RangeOf(diagnostic.Span, source),
             ["severity"] = SeverityOf(diagnostic.Severity),
@@ -160,6 +160,17 @@ public static class Conversions
             ["source"] = "profi-c",
             ["message"] = diagnostic.Message,
         };
+
+        // Tag 1 is the protocol's "unnecessary", which an editor shows by fading the span
+        // instead of underlining it — keeping whatever color the name already has, so it still
+        // reads as the field or the local it is and reads as one nothing reaches. Sent only
+        // where it is true; a tag on everything would fade the whole file.
+        if (diagnostic.Descriptor.Unused)
+        {
+            written["tags"] = new JsonArray(1);
+        }
+
+        return written;
     }
 
     /// <summary>

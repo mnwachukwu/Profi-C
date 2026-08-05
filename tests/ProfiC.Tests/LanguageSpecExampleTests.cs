@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
@@ -139,11 +140,7 @@ public sealed partial class LanguageSpecExampleTests : LexerTestBase
         DiagnosticBag diagnostics = new();
 
         CompilationUnit unit = Parser.Parse(source, diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics, requireEntryPoint: false);
-
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
-        DocumentationChecker.Check(unit, diagnostics);
+        FrontEnd.Check(unit, diagnostics, reportUnusedSuppressions: false);
 
         // Errors only. The specification shows plenty the compiler has an opinion about — that is
         // half of what a specification is for — but nothing in it may be wrong.

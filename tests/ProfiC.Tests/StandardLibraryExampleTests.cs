@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Documentation;
@@ -93,10 +94,7 @@ public sealed class StandardLibraryExampleTests : LexerTestBase
         DiagnosticBag diagnostics = new();
 
         CompilationUnit unit = Parser.Parse(source, diagnostics);
-        SemanticModel model = Resolver.Resolve(unit, diagnostics);
-        TypeChecker.Check(unit, model, diagnostics);
-        DefiniteAssignment.Analyze(unit, model, diagnostics);
-        DocumentationChecker.Check(unit, diagnostics);
+        FrontEnd.Check(unit, diagnostics, reportUnusedSuppressions: false);
 
         // Errors only. An example is allowed an opinion about itself — several deliberately show
         // a thing the compiler has a view on — but nothing in the reference may be wrong.

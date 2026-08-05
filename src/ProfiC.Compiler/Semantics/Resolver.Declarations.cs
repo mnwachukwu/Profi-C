@@ -84,6 +84,38 @@ public sealed partial class Resolver
         }
     }
 
+    /// <summary>
+    /// <para>Refuses a throwaway naming something that is reached by name.</para>
+    /// <para>A throwaway is for a binding the program does not want to keep, which only makes
+    /// sense where nothing needs to reach it again. A field, a function, a type or an
+    /// enumeration member is reached by writing its name, so one called <c>_</c> could never
+    /// be used at all.</para>
+    /// </summary>
+    private void RefuseThrowawayAsAName(string name, SyntaxNode declaration, string what)
+    {
+        if (Throwaway.Is(name))
+        {
+            Report(DiagnosticDescriptors.ThrowawayCannotName, declaration, what);
+        }
+    }
+
+    /// <summary>
+    /// <para>Refuses a throwaway written as a parameter.</para>
+    /// <para>Called where the parameters are first read rather than where they are put into a
+    /// scope, so that each is reported once and an abstract function — which has parameters and
+    /// no body to bind them into — is covered like any other.</para>
+    /// </summary>
+    private void RefuseThrowawayParameters(IReadOnlyList<ParameterDecl> parameters)
+    {
+        foreach (ParameterDecl parameter in parameters)
+        {
+            if (Throwaway.Is(parameter.Name))
+            {
+                Report(DiagnosticDescriptors.ThrowawayCannotBeAParameter, parameter);
+            }
+        }
+    }
+
     private NamespaceSymbol DeclareNamespace(QualifiedName name, NamespaceSymbol enclosing)
     {
         // Namespaces merge, so a program writing this one would be adding types that then read
@@ -105,6 +137,8 @@ public sealed partial class Resolver
             {
                 Report(DiagnosticDescriptors.NamespaceRepeatsEnclosingName, name, part);
             }
+
+            RefuseThrowawayAsAName(part, name, "a namespace");
 
             if (!current.Namespaces.TryGetValue(part, out NamespaceSymbol? child))
             {
@@ -146,6 +180,7 @@ public sealed partial class Resolver
         IReadOnlyList<Declaration> members)
     {
         WarnIfShadowsStandard(name, declaration);
+        RefuseThrowawayAsAName(name, declaration, $"a {symbol.Kind}");
 
         if (!enclosing.Types.TryAdd(name, symbol))
         {
@@ -224,6 +259,7 @@ public sealed partial class Resolver
                     };
 
                     CheckVisibilityWords(field.Modifiers, field.Name, field);
+                    RefuseThrowawayAsAName(field.Name, field, $"a {symbol.Kind}");
                     owner.AddMember(symbol);
                     _model.Bind(field, symbol);
                     break;
@@ -250,6 +286,8 @@ public sealed partial class Resolver
                     };
 
                     CheckVisibilityWords(function.Modifiers, function.Name, function);
+                    RefuseThrowawayAsAName(function.Name, function, "a function");
+                    RefuseThrowawayParameters(function.Parameters);
                     owner.AddMember(symbol);
                     _model.Bind(function, symbol);
                     break;
@@ -307,6 +345,7 @@ public sealed partial class Resolver
         };
 
         WarnIfShadowsStandard(symbol.Name, declaration);
+        RefuseThrowawayAsAName(symbol.Name, declaration, "an enumeration");
 
         if (owner is null)
         {
@@ -354,6 +393,7 @@ public sealed partial class Resolver
                 Declaration = member,
             };
 
+            RefuseThrowawayAsAName(member.Name, member, "an enumeration member");
             symbol.AddMember(memberSymbol);
             _model.Bind(member, memberSymbol);
             next++;

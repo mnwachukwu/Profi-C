@@ -185,7 +185,7 @@ shared model Program
 
         try
             Console.WriteLine(Math.Factorial(21));
-        catch OverflowException problem
+        catch OverflowException _
             Console.WriteLine("  Factorial(21) does not fit in an integer");
         end try
     end function

@@ -1,5 +1,10 @@
 # Every operator and punctuation mark, with each two-character form written
 # beside the one-character form it could be confused with.
+#
+# ignore PC0409 in file
+# ignore PC0410 in file
+# A catalog names each result so a reader can see what the operator gives back.
+# Nothing goes on to read them, and reading them would say nothing more.
 
 shared model Operators
 

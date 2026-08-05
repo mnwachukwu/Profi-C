@@ -10,7 +10,7 @@ model Text
     public shared string function Repeat(string what, integer times)
         string built = "";
 
-        loop for i = 1 to times
+        loop for _ = 1 to times
             built = built + what;
         end loop
 

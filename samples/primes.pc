@@ -41,7 +41,7 @@ shared model Program
     boolean[] function Sieve(integer limit)
         boolean[] composite = {};
 
-        loop for i = 0 to limit
+        loop for _ = 0 to limit
             composite.Insert(false);
         end loop
 

@@ -1,0 +1,79 @@
+##
+    Where a throwaway is refused.
+
+    This program does not compile. A throwaway receives a value nobody wants to keep, and every
+    place it is allowed is invisible from outside the body it sits in — a local, a loop's
+    element or counter, a caught exception. samples/throwaway.pc holds that side.
+
+    Everywhere else it is refused, and for two different reasons. Reading one asks for a value
+    that was thrown away. Naming something with one leaves that thing unreachable, since the
+    only way back to a field, a function, a type or an enumeration member is to write its name.
+
+    A parameter is refused for a third reason: it is part of a signature somebody else reads to
+    work out what to pass, and it is shown to them at every call. A function that has no use for
+    an argument should not ask for one.
+
+    The last mistake here is not a throwaway at all. A local nothing ever reads is worth saying
+    out loud, because a result worked out and then forgotten looks exactly like one meant to be
+    dropped — and writing '_' is how a program tells the two apart.
+##
+
+shared model Program
+
+    # A field is reached by writing its name, so one called '_' could never be read.
+    shared integer _ = 3;
+
+    # The same for a function, and for each of its parameters. A caller reading this signature
+    # is told the first argument matters enough to pass and not enough to name.
+    shared function Draw(integer _, integer height)
+        Console.WriteLine(height);
+    end function
+
+    shared function Main()
+        let _ = 41;
+
+        # Nothing was kept, so there is nothing here to read or to hand on.
+        Console.WriteLine(_);
+        Program.Draw(_, 2);
+
+        # A throwaway is the value it drops. With no value it drops nothing.
+        integer _;
+
+        # A lambda's parameter is a parameter. Where its argument is of no interest, the lambda
+        # is usually not where the work belongs.
+        integer delegate(integer) one = function(_)
+            yield 1;
+        end function;
+
+        Console.WriteLine(one(5));
+
+        # Not a throwaway, and not a refusal: a warning. Nothing reads this, so either it was
+        # meant to be used or it was meant to be dropped, and only one of those is written down.
+        integer forgotten = 9;
+    end function
+end model
+
+model Shelf
+    # A function called '_' is unreachable for the same reason a field is.
+    function _()
+        Console.WriteLine("nothing can call this");
+    end function
+
+    # The same warning, one level out: a private member nothing reaches. Private is the only
+    # visibility it can be said of, since a wider one may be reached from somewhere else.
+    integer capacity = 12;
+
+    public function Describe()
+        Console.WriteLine("a shelf");
+    end function
+end model
+
+# A type and its members are reached by name, and so is a namespace.
+namespace _
+    model _
+    end model
+
+    enumeration Weekday
+        _
+    end enumeration
+end namespace

@@ -68,7 +68,7 @@ CompilationUnit
       VarDeclStmt 'current'
         NamedTypeSyntax 'integer'
         LiteralExpr 1 [Integer]
-      ForStmt 'i' until
+      ForStmt '_' until
         LiteralExpr 0 [Integer]
         IdentifierExpr 'n'
         VarDeclStmt 'next'
@@ -95,7 +95,7 @@ CompilationUnit
       VarDeclStmt 'padded'
         NamedTypeSyntax 'string'
         IdentifierExpr 'text'
-      ForStmt 'i' until
+      ForStmt '_' until
         MemberExpr 'Count'
           IdentifierExpr 'text'
         LiteralExpr 12 [Integer]

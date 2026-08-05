@@ -1,4 +1,5 @@
 using ProfiC.Cli;
+using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Documentation;
 using ProfiC.Compiler.Diagnostics;
@@ -69,16 +70,8 @@ public sealed class MultiFileSampleTests : LexerTestBase
 
         Assert.That(compilation, Is.Not.Null, $"{entry} could not be gathered");
 
-        SemanticModel model = Resolver.Resolve(compilation!.Units, diagnostics, requireEntryPoint: true, compilation.Projects);
-        TypeChecker.Check(compilation.Units, model, diagnostics);
-        DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);
-
-        foreach (CompilationUnit documented in compilation.Units)
-        {
-            DocumentationChecker.Check(documented, diagnostics);
-        }
-
-        diagnostics.ReportUnusedSuppressions();
+        SemanticModel model = FrontEnd.Check(
+            compilation!.Units, diagnostics, requireEntryPoint: true, compilation.Projects);
 
         Assert.That(
             diagnostics.Sorted().Select(DiagnosticRenderer.Format),

@@ -46,11 +46,26 @@ public static class DiagnosticDescriptors
         new(id, DiagnosticSeverity.Warning, title, format);
 
     /// <summary>
+    /// A warning about something the program does not use, which an editor fades. Told apart
+    /// from an ordinary warning because the two say different things to a reader: one is
+    /// "this may be wrong", the other "nothing reaches this".
+    /// </summary>
+    private static DiagnosticDescriptor UnusedWarning(string id, string title, string format) =>
+        new(id, DiagnosticSeverity.Warning, title, format) { Unused = true };
+
+    /// <summary>
     /// A program that compiles, runs, and does what its author meant, written a way the
     /// language would rather it were not. Every opinion says some written token has no effect.
     /// </summary>
     private static DiagnosticDescriptor Opinion(string id, string title, string format) =>
         new(id, DiagnosticSeverity.Opinion, title, format);
+
+    /// <summary>
+    /// An opinion that some written token has no effect — which nearly every opinion is, and
+    /// which an editor fades so the spare word reads as spare.
+    /// </summary>
+    private static DiagnosticDescriptor UnusedOpinion(string id, string title, string format) =>
+        new(id, DiagnosticSeverity.Opinion, title, format) { Unused = true };
 
     // ---- Lexical, PC0001 to PC0099 ----------------------------------------------------
 
@@ -107,7 +122,7 @@ public static class DiagnosticDescriptors
     /// saying because the mark tells a reader "this word is otherwise taken", and one in front
     /// of a word that never was misleads them.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor UnnecessaryEscapedName = Opinion(
+    public static readonly DiagnosticDescriptor UnnecessaryEscapedName = UnusedOpinion(
         "PC0009",
         "This name needs no '@'",
         "'{0}' is not a reserved word, so the '@' does nothing. Write '{0}'.");
@@ -260,7 +275,7 @@ public static class DiagnosticDescriptors
     /// thing is there, and a wrong assertion is worth hearing; <c>ignore opinion</c> is a
     /// standing preference that claims nothing and stays silent with nothing to silence.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor IgnoreSilencedNothing = Opinion(
+    public static readonly DiagnosticDescriptor IgnoreSilencedNothing = UnusedOpinion(
         "PC0024",
         "This 'ignore' silences nothing",
         "Nothing it reaches reports '{0}', so this line has no effect. Remove it.");
@@ -328,7 +343,7 @@ public static class DiagnosticDescriptors
     /// worth saying because the argument reads as though it were doing the work, when the
     /// newline comes from <c>WriteLine</c> itself and the string is only standing there.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor EmptyLineNeedsNoArgument = Opinion(
+    public static readonly DiagnosticDescriptor EmptyLineNeedsNoArgument = UnusedOpinion(
         "PC0340",
         "This empty string does nothing",
         "'WriteLine' ends the line by itself. Write 'Console.WriteLine()'.");
@@ -393,7 +408,7 @@ public static class DiagnosticDescriptors
     /// to be used either way and nothing about the program is in doubt.</para>
     /// </summary>
 
-    public static readonly DiagnosticDescriptor ParameterTypeAlreadyKnown = Opinion(
+    public static readonly DiagnosticDescriptor ParameterTypeAlreadyKnown = UnusedOpinion(
         "PC0115",
         "This parameter's type is already known",
         "The surrounding code already says what '{0}' holds, so writing its type says it "
@@ -505,7 +520,7 @@ public static class DiagnosticDescriptors
     /// twice. Nothing about what the program means is in doubt, so the compiler corrects the
     /// spelling rather than refusing the program.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = Opinion(
+    public static readonly DiagnosticDescriptor RangeLoopTakesNoType = UnusedOpinion(
         "PC0111",
         "A range loop's counter has no written type",
         "A range loop counts with integers, so its counter takes no type. Remove the "
@@ -581,7 +596,7 @@ public static class DiagnosticDescriptors
     /// using would put it at — so this line changes no name in the file, including when
     /// another using offers the same one.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor StandardNeedsNoUsing = Opinion(
+    public static readonly DiagnosticDescriptor StandardNeedsNoUsing = UnusedOpinion(
         "PC0230",
         "Standard is already in scope",
         "Every file reaches Standard without saying so, so this line brings nothing.");
@@ -618,7 +633,7 @@ public static class DiagnosticDescriptors
         "Nothing can be of this type",
         "'{0}' has no instances, so nothing can ever be held here. {1}");
 
-    public static readonly DiagnosticDescriptor NamespaceRepeatsEnclosingName = Opinion(
+    public static readonly DiagnosticDescriptor NamespaceRepeatsEnclosingName = UnusedOpinion(
         "PC0232",
         "This namespace repeats one around it",
         "'{0}' already sits inside a namespace of that name, so its types are reached as "
@@ -867,6 +882,60 @@ public static class DiagnosticDescriptors
         + "are versions of one function taking different types.");
 
     /// <summary>
+    /// <para>A throwaway where a value is read or written.</para>
+    /// <para>Checked before the scope rather than after, because a throwaway is deliberately
+    /// kept out of it: the lookup would otherwise fail and report a name that is not defined,
+    /// which is true and tells the reader nothing about why.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ThrowawayIsNotAValue = Error(
+        "PC0254",
+        "A throwaway holds nothing",
+        "'_' throws its value away, so there is nothing here to use. Give it a name.");
+
+    /// <summary>
+    /// A throwaway naming something that is reached by name. Whatever is declared this way
+    /// could never be referred to, so the declaration cannot mean what it says.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ThrowawayCannotName = Error(
+        "PC0255",
+        "A throwaway cannot be a name",
+        "'_' throws a value away, so it cannot name {0}, which is reached by name. Give it a "
+        + "name.");
+
+    /// <summary>
+    /// A throwaway declared with nothing to throw away. Not a refusal of the throwaway but of
+    /// the line, which does nothing at all — the value it discards is the only reason to
+    /// write one.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ThrowawayNeedsAValue = Error(
+        "PC0256",
+        "A throwaway needs a value",
+        "'_' has nothing to throw away here. Give it a value, or remove the line.");
+
+    /// <summary>
+    /// <para>A throwaway written as a parameter.</para>
+    /// <para>Every other place a throwaway is allowed is invisible outside the body it sits in.
+    /// A parameter is not: it is part of a signature someone else reads to work out what to
+    /// pass, and it is shown to them at every call. A name is what that reader is owed, even
+    /// where the body ignores the value.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ThrowawayCannotBeAParameter = Error(
+        "PC0257",
+        "A parameter needs a name",
+        "'_' cannot name a parameter: it is part of the signature a caller reads. Give it a "
+        + "name.");
+
+    /// <summary>
+    /// Assigning to a throwaway, which is allowed and says nothing. A statement drops whatever
+    /// it does not use, so the value goes the same way with or without the <c>_ =</c>.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ThrowawayAssignmentSaysNothing = UnusedOpinion(
+        "PC0258",
+        "This '_ =' adds nothing",
+        "A statement already drops the value it does not use, so '_ =' says what was going to "
+        + "happen anyway. Remove it.");
+
+    /// <summary>
     /// <para>Several <c>Program</c>s and nothing saying which one begins.</para>
     /// <para>Namespaces make <c>Tools.Program</c> and <c>App.Program</c> two types rather than
     /// one name used twice, so both may sit in one compilation without colliding. The choice
@@ -893,7 +962,7 @@ public static class DiagnosticDescriptors
     /// An <c>entry</c> written where there is nothing to choose between. Harmless, and worth
     /// saying because it reads as though a choice were being made.
     /// </summary>
-    public static readonly DiagnosticDescriptor EntryPointUnnecessary = Opinion(
+    public static readonly DiagnosticDescriptor EntryPointUnnecessary = UnusedOpinion(
         "PC0236",
         "This 'entry' decides nothing",
         "Only '{0}' declares a Program, so it begins whether or not this line is here.");
@@ -1014,7 +1083,7 @@ public static class DiagnosticDescriptors
     /// <c>virtual</c> beside <c>abstract</c>. A warning: abstract already offers the function
     /// for overriding, so the second word is true and adds nothing.
     /// </summary>
-    public static readonly DiagnosticDescriptor AbstractIsAlreadyVirtual = Opinion(
+    public static readonly DiagnosticDescriptor AbstractIsAlreadyVirtual = UnusedOpinion(
         "PC0242",
         "An abstract function is already virtual",
         "'{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing "
@@ -1076,7 +1145,7 @@ public static class DiagnosticDescriptors
     /// and the second line is the one saying nothing new. A summary running to several
     /// paragraphs needs no second 'summary:' — a blank line inside one continues it.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor DocumentsTheSameThingTwice = Opinion(
+    public static readonly DiagnosticDescriptor DocumentsTheSameThingTwice = UnusedOpinion(
         "PC0247",
         "This is documented twice",
         "'{0}' already has a line above this one, and the first is the one that shows. For a "
@@ -1141,7 +1210,7 @@ public static class DiagnosticDescriptors
     /// several constructors is built by one of them, and <c>base()</c> is how a reader is told
     /// which — that line carries information, and this says nothing about it.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor BaseCallSaysWhatHappensAnyway = Opinion(
+    public static readonly DiagnosticDescriptor BaseCallSaysWhatHappensAnyway = UnusedOpinion(
         "PC0251",
         "This 'base()' changes nothing",
         "'{0}' is built before this constructor's body whether or not 'base()' is written, so "
@@ -1598,10 +1667,44 @@ public static class DiagnosticDescriptors
         "'{0}' is shared, so no constructor runs that could give it a value. Give it one where "
         + "it is declared, or make it optional.");
 
-    public static readonly DiagnosticDescriptor UnreachableCode = Warning(
+    public static readonly DiagnosticDescriptor UnreachableCode = UnusedWarning(
         "PC0403",
         "Unreachable code",
         "This can never be reached.");
+
+    /// <summary>
+    /// <para>A local nothing ever reads.</para>
+    /// <para>A warning rather than a refusal: the program runs, and the value may be there for
+    /// a reader rather than for the machine. It is worth saying because the usual cause is a
+    /// result worked out and then forgotten, which a reader cannot tell apart from one that was
+    /// meant to be dropped — writing <c>_</c> is how a program says which.</para>
+    /// <para>Reading counts; writing does not. A local assigned twice and read never is as
+    /// unused as one nothing mentions again.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor LocalNeverRead = UnusedWarning(
+        "PC0409",
+        "This is never read",
+        "Nothing reads '{0}'. Remove it, or write '_' if the value is not wanted.");
+
+    /// <summary>
+    /// <para>A member of a type that nothing reaches.</para>
+    /// <para><b>Private only</b>, and that is the whole of what makes it answerable. A private
+    /// member can be reached from one type and no further, so the compilation that holds the
+    /// type holds every use there will ever be. Anything wider is reachable from code that is
+    /// not being compiled — another project, a program written next year — and absence of a use
+    /// here would say nothing about it.</para>
+    /// <para>A constructor, an overridable function and the entry point are all left out. None
+    /// of them is reached by writing its name, so counting the times its name is written
+    /// measures the wrong thing.</para>
+    /// <para>What is asked is whether a name is written anywhere, not whether the line writing
+    /// it can ever run — so two dead members naming each other keep each other alive and neither
+    /// is reported. Answering the second would mean tracing reachability from every place a
+    /// program can begin, which is a much larger analysis than this one.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor MemberNeverUsed = UnusedWarning(
+        "PC0410",
+        "Nothing uses this",
+        "Nothing uses '{0}'. Remove it, or widen it past 'private'.");
 
     /// <summary>
     /// <para>A function that declares a result can reach its end without producing one.</para>
@@ -1639,6 +1742,8 @@ public static class DiagnosticDescriptors
     /// such a loop still gets <c>PC0404</c>, because a function promising a result and holding
     /// a loop that cannot end is not a loop question, it is a broken promise.</para>
     /// </summary>
+    // Not faded, unlike every other opinion: nothing written here is spare. The loop is missing
+    // what would end it, and greying it out would point at the code that is there.
     public static readonly DiagnosticDescriptor LoopCannotBeLeft = Opinion(
         "PC0406",
         "Nothing here can end this loop",

@@ -355,6 +355,19 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    access. This is why assignment is a statement and not an expression, so
    "if x = 5" cannot be written at all.
 
+   THE THROWAWAY IS NOT A PRODUCTION. A bare "_" is an Identifier to the
+   scanner, so nothing above distinguishes it and the productions are the
+   ones a reader already sees. What it means is settled while resolving: an
+   Identifier that is exactly "_" binds nothing, which is why several of them
+   in one body are not a clash and why none of them can be read back.
+
+   It is taken in the Identifier of VarDecl, ForStmt, ForEachStmt, and
+   CatchClause -- the positions where the language hands a body a value and
+   nothing outside can see what it was called. It is refused as the
+   Identifier of Param and LambdaParam, which a caller reads, and as the name
+   of anything reached by writing it: a field, a function, a type, an
+   enumeration member, a namespace.
+
    There is no dangling-else problem. "else if" belongs to the IfStmt
    production rather than being a nested IfStmt, and a whole chain closes
    with one "end" "if".
@@ -421,4 +434,26 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    breaks significant contradicts the language being layout-insensitive;
    and reinstating a body opener reverses the block structure the language
    is built around.
+
+   WHY A CATCH KEEPS ITS NAME. CatchClause requires an Identifier, and a
+   clause with no use for the exception writes "_". Dropping the Identifier
+   instead -- C#'s "catch (Exception)" -- would make CatchClause a fifth
+   place where something is followed directly by a body, and the worst of
+   them: what follows the Type would be an optional name, and a name is
+   exactly what an ordinary statement begins with.
+
+       catch Exception
+           Tally first = new Tally(10);
+           ...
+       end try
+
+   "Tally" would read as the exception's name and "first = new Tally(10)"
+   as an assignment to something undeclared. Nothing about that program
+   looks wrong, and no rule on what a body may begin with saves it, because
+   a declaration of a user type is among the most ordinary lines there are.
+   C# escapes this only because its parentheses delimit the clause.
+
+   So the name stays required, and "_" is the way to say it is not wanted.
+   That is also the one rule rather than two: every other binding position
+   takes a throwaway, and this one does too.
    ========================================================================== *)

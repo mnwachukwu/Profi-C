@@ -1,4 +1,9 @@
 # Every literal form Profi-C can write.
+#
+# ignore PC0409 in file
+# ignore PC0410 in file
+# A catalog names each literal so a reader can see it written down. Nothing goes on to
+# read one, and reading one would say nothing more.
 
 shared model Literals
 

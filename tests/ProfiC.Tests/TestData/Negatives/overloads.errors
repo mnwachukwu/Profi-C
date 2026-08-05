@@ -5,3 +5,9 @@ overloads.pc(41,43): error PC0301: A fraction does not become a real on its own,
 overloads.pc(48,27): error PC0310: Several versions of 'Held' match these arguments equally well. Give one argument the exact type a version takes.
 overloads.pc(54,41): error PC0300: Cannot use an integer where a Model is expected. A value is not a Model; there is no boxing here.
 overloads.pc(57,40): error PC0300: Cannot use an Animal where a Dog is expected. Nothing converts one to the other.
+overloads.pc(60,5): warning PC0410: Nothing uses 'Wide'. Remove it, or widen it past 'private'.
+overloads.pc(64,5): warning PC0410: Nothing uses 'Wide'. Remove it, or widen it past 'private'.
+overloads.pc(68,5): warning PC0410: Nothing uses 'Only'. Remove it, or widen it past 'private'.
+overloads.pc(72,5): warning PC0410: Nothing uses 'Only'. Remove it, or widen it past 'private'.
+overloads.pc(80,5): warning PC0410: Nothing uses 'Held'. Remove it, or widen it past 'private'.
+overloads.pc(84,5): warning PC0410: Nothing uses 'Held'. Remove it, or widen it past 'private'.
