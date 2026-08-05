@@ -1,7 +1,18 @@
-# A storefront, spread across folders.
+##
+    A storefront, spread across folders.
+
+    The 'output' is the reason to notice this is a project rather than a folder. Every loose .pc
+    in 'samples' builds into the one 'bin' beside them, because a source file has nowhere to
+    record where its build should go — so forty programs fill one folder with forty assemblies.
+
+    A project is a build describing itself, and has somewhere to put the answer. This one keeps
+    its build to itself. The path is read from the project file, so it means the same wherever
+    the build is started from, and the folder is made if it is not there.
+##
 
 project Storefront
     source Program.pc
     source models
     source pricing
+    output ../bin/storefront
 end project

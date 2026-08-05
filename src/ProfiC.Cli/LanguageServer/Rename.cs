@@ -75,7 +75,7 @@ public static class Rename
 
             foreach (SyntaxNode node in Everything(unit))
             {
-                if (!ReferenceEquals(model.GetSymbol(node), symbol))
+                if (!TheSameNameAs(symbol, model.GetSymbol(node)))
                 {
                     continue;
                 }
@@ -124,11 +124,31 @@ public static class Rename
                 continue;
             }
 
-            return symbol.Declaration is null ? null : (node, symbol);
+            return symbol.Declaration is null ? null : (node, TheNameItself(symbol));
         }
 
         return null;
     }
+
+    /// <summary>
+    /// <para>A constructor answers as the type it builds, because the two share one name and the
+    /// language requires it: a constructor is the function named for its model.</para>
+    /// <para>So there is one name here rather than two, and renaming either has to write both.
+    /// Renaming only the type leaves <c>function Book</c> inside <c>model Volume</c>, which is no
+    /// longer a constructor but an ordinary function that cannot be called and whose model can no
+    /// longer be built. Renaming only the constructor is the same wreck from the other side. In
+    /// both cases the editor reports a rename that worked.</para>
+    /// </summary>
+    private static Symbol TheNameItself(Symbol symbol) =>
+        symbol is FunctionSymbol { IsConstructor: true } && symbol.DeclaringType is { } built
+            ? built
+            : symbol;
+
+    /// <summary>Whether a node names the thing being renamed, counting a constructor as its type.</summary>
+    private static bool TheSameNameAs(Symbol wanted, Symbol? found) =>
+        ReferenceEquals(found, wanted)
+        || (found is FunctionSymbol { IsConstructor: true }
+            && ReferenceEquals(found.DeclaringType, wanted));
 
     private static IEnumerable<SyntaxNode> Everything(SyntaxNode node)
     {

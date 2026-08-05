@@ -154,6 +154,66 @@ public sealed class RenameTests
     }
 
     /// <summary>
+    /// <para>Renaming a model rewrites its constructor, and renaming its constructor rewrites the
+    /// model.</para>
+    /// <para><b>There is one name here and the compiler holds two symbols for it.</b> A
+    /// constructor is the function named for its model — that is what makes it one — so a rename
+    /// that changed only the type left <c>function Book</c> inside <c>model Volume</c>: no longer
+    /// a constructor, but an ordinary function nobody can call, in a model nobody can build. The
+    /// other direction is the same wreck approached from the other side, and both were reported
+    /// as a rename that worked.</para>
+    /// <para>Both ways round, because the cursor lands on either one about equally often and the
+    /// two are one name whichever is under it.</para>
+    /// </summary>
+    [TestCase(1, 7, TestName = "{m}(from the model)")]
+    [TestCase(5, 21, TestName = "{m}(from the constructor)")]
+    public void AModelAndItsConstructorAreOneName(int line, int column)
+    {
+        const string Books = """
+            model Book
+
+                public string title;
+
+                public function Book(string called)
+                    this.title = called;
+                end function
+
+            end model
+            """;
+
+        using Workspace workspace = new(Books);
+
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model, _) = Compile(workspace);
+
+        CompilationUnit beside =
+            units.Single(u => Path.GetFileName(u.Source.FileName) == "Beside.pc");
+
+        JsonObject? change = Rename.Edits(
+            units, model, beside, OffsetOf(beside.Source, line, column), "Volume");
+
+        JsonArray edits = EditsIn(change, workspace.At("Beside.pc"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(edits, Has.Count.EqualTo(2), "the model and its constructor");
+
+            Assert.That(
+                Applied(Books, edits),
+                Is.EqualTo("""
+                    model Volume
+
+                        public string title;
+
+                        public function Volume(string called)
+                            this.title = called;
+                        end function
+
+                    end model
+                    """));
+        });
+    }
+
+    /// <summary>
     /// <para>Renaming a model rewrites every <c>new</c> that builds one.</para>
     /// <para><b>The name in a <c>new</c> is a name, and for a long time nothing recorded that it
     /// was.</b> A node whose name was never written down is one rename walks past, so the

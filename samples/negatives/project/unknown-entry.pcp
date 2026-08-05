@@ -1,12 +1,17 @@
 ##
     A project that says something a project cannot say.
 
-    The whole vocabulary is 'project', 'source', 'reference', 'end project', and the language's
-    two comment forms. A project file describes a build, not a computation, so it borrows nothing
-    else from the language.
+    The whole vocabulary is 'project', 'source', 'reference', 'entry', 'output', 'ignore',
+    'end project', and the language's two comment forms. A project file describes a build, not a
+    computation, so it borrows nothing else from the language — and a word that is none of those
+    is a mistake rather than something to read hopefully.
+
+    Both lines are reported rather than only the first. A file written from memory of some other
+    build system holds several of these, and hearing about one per run would mean building once
+    for each word.
 ##
 
 project Unknown
     include ../runtime/overflow.pc
-    output Unknown.dll
+    exclude ../runtime/divide-by-zero.pc
 end project

@@ -2547,8 +2547,9 @@ Paths are relative to the project file and are written with forward slashes on e
 Comments are marked as they are in a program — `#` to the end of a line, `##` opening a block —
 and a blank line is ignored.
 
-A project file is not Profi-C. It describes a build rather than a computation, nothing in it
-is compiled, and its vocabulary is only `project`, `source`, `reference`, and `end project`.
+A project file is not Profi-C. It describes a build rather than a computation, nothing in it is
+compiled, and its whole vocabulary is `project`, `source`, `reference`, `entry`, `output`,
+`ignore`, and `end project`.
 
 **A project names another project with `reference`.** The referenced project's types are then
 available, exactly as though they were declared in this one:
@@ -2651,6 +2652,48 @@ lists what was there. A project starts in one place, so a second `entry` is `PC0
 
 The name is written as a `using` would write it — the namespaces in front of the type, and the
 type — because that is the name the type has. It is not a path to a file.
+
+#### What a build makes, and where it goes
+
+`pc build` compiles a compilation to a .NET assembly. **Every program that checks is one that
+builds**: the back end declines nothing, so the only thing that stops a build is a diagnostic
+from the front end.
+
+**A compilation declaring no `Program` builds a library.** That is what a project written to be
+referenced is, and there is nothing else it could be: an assembly with no entry point has
+nowhere to begin, so no launcher is made for it and no configuration naming a framework is
+written beside it. `pc build` says which of the two it made, because the difference between
+them is a single declaration and a `Main` whose name went astray should read as something
+rather than as silence. `pc run` on the same file is still `PC0212` — building and running ask
+different questions, and a library is a good answer to the first and no answer to the second.
+
+**A loose source file builds into a `bin` beside it.** The folder is relative to the file rather
+than to where the reader is standing, so building the same file from two directories puts the
+result in one place. It is a folder of its own rather than files dropped next to the source,
+because a build writes four things — the assembly, its configuration, the runtime, and a
+launcher — and mixing those with what somebody wrote makes neither easy to see.
+
+**A project says where its build goes**, and is the only way to say so:
+
+```text
+project Storefront
+    source Program.pc
+    output ../artifacts/storefront
+end project
+```
+
+The path is read relative to the project file, as a `source` and a `reference` are, so where a
+build lands does not depend on which directory it was started from. The folder is made if it is
+not there. A project is written to one place, so a second `output` is `PC0629`, and one naming
+nothing is `PC0628`.
+
+That a loose file has no such line is the point rather than an omission: it has nowhere to
+record the answer, so a folder holding several programs fills one `bin` with all of them. Where
+a build goes is a thing a build says about itself, and a project file is what a build says about
+itself. Wanting to say it is a reason to write one.
+
+`--out` on the command line beats both, because somebody typed it just now for this one build
+while a project file holds for every run of it.
 
 ### 12.2 A name belongs to one type
 
@@ -3004,6 +3047,8 @@ compiles.
 | `PC0625` | error | Two projects claim one file | '{0}' is listed by {1} and by {2}. A file belongs to one project. Let the project that owns it keep it, and have the other reference that project. |
 | `PC0626` | error | Nothing named to start at | 'entry' says which Program begins, so a name must follow it, as in 'entry Tools.Program'. |
 | `PC0627` | error | More than one 'entry' | A project starts in one place, so it names one 'entry'. |
+| `PC0628` | error | Nothing named to build into | 'output' says where a build is written, so a folder must follow it, as in 'output ../artifacts'. |
+| `PC0629` | error | More than one 'output' | A project is written to one place, so it names one 'output'. |
 
 ### PC9000 and up
 

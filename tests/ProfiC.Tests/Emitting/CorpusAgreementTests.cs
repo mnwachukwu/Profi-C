@@ -29,6 +29,17 @@ public sealed class CorpusAgreementTests : LexerTestBase
     private static IEnumerable<string> Programs =>
         ProfiC.Tests.Interpreting.SampleProgramTests.RunnableSampleNames;
 
+    /// <summary>
+    /// <para>The programs made of several files, entered the way a reader enters them.</para>
+    /// <para>These were emitted and verified and never compared. Verification asks whether the
+    /// CIL is well formed; it says nothing about whether it computes what the interpreter
+    /// computes — and a program spread across units is where the emitter's symbol maps have to
+    /// carry a type from one file into another, so it is the last place two engines should be
+    /// left free to differ.</para>
+    /// </summary>
+    private static IEnumerable<string> MultiFilePrograms =>
+        ProfiC.Tests.Interpreting.MultiFileSampleTests.EntryPoints;
+
     /// <summary>Everything the front end produces for one sample, ready for either engine.</summary>
     private static (IReadOnlyList<CompilationUnit> Units, SemanticModel Model) FrontEnd(string name)
     {
@@ -49,14 +60,61 @@ public sealed class CorpusAgreementTests : LexerTestBase
     }
 
     /// <summary>
+    /// The same, for a program gathered from a path. Discovery does the gathering rather than
+    /// this fixture, so what the two engines are handed is what a <c>pc build</c> of the same
+    /// path would compile, folder rules and project file and all.
+    /// </summary>
+    private static (IReadOnlyList<CompilationUnit> Units, SemanticModel Model) FrontEndAt(
+        string entry)
+    {
+        DiagnosticBag diagnostics = new();
+
+        string path = Path.Combine(
+            RepositoryRoot, "samples", entry.Replace('/', Path.DirectorySeparatorChar));
+
+        ProfiC.Cli.SourceDiscovery.Compilation gathered =
+            ProfiC.Cli.SourceDiscovery.Gather(path, diagnostics)!;
+
+        Assert.That(gathered, Is.Not.Null, $"{entry} was not gathered");
+
+        // Carried through as a build carries it. A project naming which of its programs begins
+        // is compiled as though it had not when this is left out.
+        SemanticModel model = Resolver.Resolve(
+            gathered.Units,
+            diagnostics,
+            requireEntryPoint: true,
+            projects: gathered.Projects,
+            entryPoint: gathered.EntryPoint);
+
+        TypeChecker.Check(gathered.Units, model, diagnostics);
+        DefiniteAssignment.Analyze(gathered.Units, model, diagnostics);
+
+        Assert.That(
+            diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error),
+            Is.Empty,
+            $"{entry} should compile before either engine is asked to run it");
+
+        return (ClosureConversion.Convert(Lowering.Lower(gathered.Units, model), model), model);
+    }
+
+    /// <summary>
     /// <para>One sample, run both ways.</para>
     /// <para>Every sample is a real comparison: the emitter declines nothing, so a sample that
     /// will not build is a failure rather than something to skip past.</para>
     /// </summary>
     [TestCaseSource(nameof(Programs))]
-    public void Sample_MeansTheSameEmittedAsInterpreted(string name)
+    public void Sample_MeansTheSameEmittedAsInterpreted(string name) =>
+        AssertBothEnginesAgree(name, FrontEnd(name));
+
+    /// <summary>The same question of a program that is more than one file.</summary>
+    [TestCaseSource(nameof(MultiFilePrograms))]
+    public void MultiFileSample_MeansTheSameEmittedAsInterpreted(string entry) =>
+        AssertBothEnginesAgree(entry, FrontEndAt(entry));
+
+    private static void AssertBothEnginesAgree(
+        string name, (IReadOnlyList<CompilationUnit> Units, SemanticModel Model) compiled)
     {
-        (IReadOnlyList<CompilationUnit> units, SemanticModel model) = FrontEnd(name);
+        (IReadOnlyList<CompilationUnit> units, SemanticModel model) = compiled;
 
         string folder = Path.Combine(Path.GetTempPath(), $"profi-c-corpus-{Guid.NewGuid():N}");
         Directory.CreateDirectory(folder);

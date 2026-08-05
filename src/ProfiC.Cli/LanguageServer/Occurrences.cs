@@ -151,8 +151,17 @@ public static class Occurrences
 
     private sealed record Declared(Symbol Symbol) : Match
     {
+        /// <summary>
+        /// <para>A constructor counts as its type, because the two share one name and the
+        /// language requires it: a constructor is the function named for its model. Marking the
+        /// type and leaving the constructor unmarked would show a reader one of the two places
+        /// the name is written and hide the other.</para>
+        /// </summary>
         public override bool Matches(SyntaxNode node, SemanticModel model) =>
-            ReferenceEquals(model.GetSymbol(node), Symbol);
+            model.GetSymbol(node) is { } found
+            && (ReferenceEquals(found, Symbol)
+                || (found is FunctionSymbol { IsConstructor: true }
+                    && ReferenceEquals(found.DeclaringType, Symbol)));
 
         public override bool IsWrittenAt(SyntaxNode node, HashSet<SyntaxNode> assigned) =>
             assigned.Contains(node) || IsDeclarationAt(node);

@@ -12,10 +12,19 @@
 # declares, and reaching it would say nothing more.
 
 ##
-    A using names a namespace declared somewhere in this compilation, and brings its types into
-    this file under their bare names. The one below is declared at the foot of this same file:
-    directives are unordered with respect to what they reach, which is the whole point of them.
+    The two directives answer different questions, and neither does the other's job.
+
+    An import decides which files are compiled. Naming a file gathers the files beside it, so
+    the three catalogs in this folder arrive without being asked for; the one below is a folder
+    down, where nothing would reach it. It affects no name — what it brings is reached the same
+    way it would be if it had been sitting alongside all along.
+
+    A using decides which names are reached without writing out where they live. The namespace
+    below is declared at the foot of this same file: directives are unordered with respect to
+    what they reach, which is the whole point of them.
 ##
+import "imported/Units.pc";
+
 using Tour.Shapes;
 
 namespace Tour
@@ -114,6 +123,14 @@ namespace Tour
             integer uninitialized;
             constant character Marker = 'x';
 
+            # The rest of the primitives, each written as the word that names it. A real is
+            # decimal and a float is binary, which is why both exist and why only one of them
+            # can hold a tenth exactly.
+            boolean ready = true;
+            real measured = 2.5;
+            float approximate = 0.1f;
+            fraction share = 1|3;
+
             # Every type form.
             integer[] numbers = {1, 2, 3};
             Shape? maybeShape;
@@ -162,6 +179,21 @@ namespace Tour
                 end if
 
                 if explicitly == 2
+                    break;
+                end if
+            end loop
+
+            # The same question asked afterwards instead. A 'loop ... until' runs its body
+            # once before it asks anything, and closes on the question rather than on 'end'.
+            loop
+                explicitly = explicitly + 1;
+            until explicitly > Tour.Limit
+
+            # A bare 'loop' asks nothing at all, so something inside it has to decide.
+            loop
+                explicitly = explicitly - 1;
+
+                if explicitly == 0
                     break;
                 end if
             end loop
@@ -227,10 +259,20 @@ namespace Tour
             # Every operator, across all nine precedence levels.
             let arithmetic = 1 + 2 - 3 * 4 / 5 % 6;
             let negated = -arithmetic;
+            let raised = 2 ^ 8;
             let compared = 1 < 2 and 3 > 2 or not (4 <= 5) and 6 >= 7;
             let equated = 1 == 2 or 1 != 2;
             let mixed = 22|7;
             let flag = true and false;
+
+            # Working on the bits of an integer rather than on the number it spells. 'and' and
+            # 'or' already answer about booleans, so the bitwise pair says which it means;
+            # nothing else claims 'xor', so that one stands alone.
+            let combined = 0b1100 bitwise or 0b1010;
+            let common = 0b1100 bitwise and 0b1010;
+            let differing = 0b1100 xor 0b1010;
+            let doubled = 1 shiftleft 4;
+            let halved = 64 shiftright 3;
 
             # Enumerations convert in both directions.
             let color = Color.Green;

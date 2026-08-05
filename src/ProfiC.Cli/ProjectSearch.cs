@@ -88,6 +88,119 @@ public static class ProjectSearch
     }
 
     /// <summary>
+    /// <para>Every project that builds a given one into itself, by referencing it directly or
+    /// through others.</para>
+    /// <para><b>The question <see cref="For"/> cannot answer, asked the other way round.</b>
+    /// Walking up from a file finds the project that claims it, and following that project's
+    /// references finds everything it builds on. Neither reaches what builds on <em>it</em> — and
+    /// a reference is one-way in the file system as well as in meaning, so the only way to find
+    /// the projects at the other end is to read them.</para>
+    /// <para>Which is why this takes the folders rather than searching from the project outward:
+    /// there is no upper bound on a file system, so a search with no boundary walks to the root
+    /// of the disk. The folders an editor has open are the boundary a reader would recognize, and
+    /// a project outside all of them is not one they are working on.</para>
+    /// <para>Every project is read, including ones with mistakes in them, since which projects a
+    /// project references is not a question about whether it builds — and a workspace almost
+    /// always holds at least one that does not, at least while somebody is editing it.</para>
+    /// <para>The order is the one the folders were named in and then the file system's, so an
+    /// answer built from this does not shuffle between runs.</para>
+    /// </summary>
+    public static IReadOnlyList<string> ProjectsBuilding(
+        string project, IEnumerable<string> folders)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(folders);
+
+        string wanted = Path.GetFullPath(project);
+
+        // What each project references, read once and kept in the order they were found. A
+        // project may be looked at several times over while the answer is worked out, and reading
+        // a file is the expensive part of this.
+        List<string> candidates = [];
+        Dictionary<string, List<string>> references = new(SourceDiscovery.PathComparer);
+
+        foreach (string found in ProjectsUnder(folders))
+        {
+            if (references.ContainsKey(found))
+            {
+                continue;
+            }
+
+            // Thrown away rather than reported. Nothing here was asked to check the projects it
+            // reads, and a folder of unrelated broken ones is not this question's problem.
+            DiagnosticBag aside = new();
+
+            candidates.Add(found);
+
+            references[found] =
+                ProjectFile.Read(found, aside, ProjectFile.Reading.ToSeeWhatItLists) is { } read
+                    ? [.. read.References.Select(entry => Path.GetFullPath(entry.Path))]
+                    : [];
+        }
+
+        // Outward from the project, one step at a time: whoever references it, then whoever
+        // references them. A reference is transitive, so a project two steps away builds this
+        // one's files just as directly as one step does.
+        List<string> reaching = [];
+        HashSet<string> reached = new(SourceDiscovery.PathComparer) { wanted };
+        Queue<string> asking = new([wanted]);
+
+        while (asking.Count > 0)
+        {
+            string target = asking.Dequeue();
+
+            foreach (string candidate in candidates)
+            {
+                if (!reached.Contains(candidate)
+                    && references[candidate].Any(
+                        one => SourceDiscovery.PathComparer.Equals(one, target)))
+                {
+                    reached.Add(candidate);
+                    reaching.Add(candidate);
+                    asking.Enqueue(candidate);
+                }
+            }
+        }
+
+        return reaching;
+    }
+
+    /// <summary>
+    /// Every project file anywhere inside the folders, each once. A folder that cannot be read
+    /// holds none as far as this is concerned, the same answer a folder walked upward gives.
+    /// </summary>
+    private static IEnumerable<string> ProjectsUnder(IEnumerable<string> folders)
+    {
+        foreach (string folder in folders)
+        {
+            string[] inside;
+
+            try
+            {
+                inside =
+                [
+                    .. Directory.EnumerateFiles(
+                                    folder,
+                                    "*" + SourceDiscovery.ProjectExtension,
+                                    SearchOption.AllDirectories)
+                                .Select(Path.GetFullPath)
+                                .OrderBy(path => path, StringComparer.Ordinal),
+                ];
+            }
+            catch (Exception unreadable) when (unreadable is IOException
+                                                          or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string project in inside)
+            {
+                yield return project;
+            }
+        }
+    }
+
+    /// <summary>
     /// <para>Whether a project builds a file, following what it references.</para>
     /// <para>A referenced project's sources are compiled into the build that reaches them, so a
     /// file reached that way is one this project builds — which is what makes running the project

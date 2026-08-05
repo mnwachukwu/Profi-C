@@ -18,13 +18,16 @@ namespace ProfiC.Cli;
 ///     source Program.pc
 ///     source models
 ///     source services/Ledger.pc
+///     output ../artifacts/bank
 /// end project
 /// </code>
 /// <para>A <c>source</c> naming a folder takes every <c>.pc</c> directly inside it, and does
 /// not descend — a nested folder is named by its own <c>source</c>, so what a project builds
 /// can always be read off the file. A <c>reference</c> names another project, whose types this
-/// one may then use. Paths are relative to the project file, and written with forward slashes
-/// on every platform.</para>
+/// one may then use. An <c>output</c> says where the build is written, and is the only way to
+/// say so: a loose source file has nowhere to record one, so it is written to the <c>bin</c>
+/// beside it. Paths are relative to the project file, and written with forward slashes on every
+/// platform.</para>
 /// </summary>
 public sealed class ProjectFile
 {
@@ -36,13 +39,15 @@ public sealed class ProjectFile
         SourceText source,
         IReadOnlyList<Entry> sourceFiles,
         IReadOnlyList<Entry> references,
-        string? entryPoint)
+        string? entryPoint,
+        string? output)
     {
         Name = name;
         Source = source;
         SourceFiles = sourceFiles;
         References = references;
         EntryPoint = entryPoint;
+        Output = output;
     }
 
     /// <summary>
@@ -81,6 +86,17 @@ public sealed class ProjectFile
     /// teach to whatever runs the build.</para>
     /// </summary>
     public string? EntryPoint { get; }
+
+    /// <summary>
+    /// <para>The folder a build is written into, resolved, or null where the project did not
+    /// say — which leaves the <c>bin</c> beside the project file.</para>
+    /// <para>This is the reason to write a project file for a folder that would compile without
+    /// one. A loose source file has nowhere to record where its build should go, so it goes to
+    /// the <c>bin</c> beside it, and a folder of several programs fills one <c>bin</c> with all
+    /// of them. Saying where is a thing a build says about itself, and a project file is what a
+    /// build says about itself.</para>
+    /// </summary>
+    public string? Output { get; }
 
     /// <summary>What a project is being read for, which decides how much of it has to be right.</summary>
     public enum Reading
@@ -145,6 +161,7 @@ public sealed class ProjectFile
         bool closed = false;
         bool sawEntry = false;
         string? entryPoint = null;
+        string? output = null;
         List<Entry> files = [];
         List<Entry> references = [];
         HashSet<string> seen = new(SourceDiscovery.PathComparer);
@@ -243,6 +260,31 @@ public sealed class ProjectFile
                     entryPoint = rest;
                     break;
 
+                // Where the build is written. Not something to build, so it does not answer the
+                // question of whether the project names anything: one made only of these is
+                // still empty. Whether the folder exists is not asked — a build makes it, the
+                // way it makes the one it writes to by default.
+                case "output" when name is not null:
+                    if (rest.Length == 0)
+                    {
+                        diagnostics.Report(DiagnosticDescriptors.ProjectOutputMissingPath, span);
+                        break;
+                    }
+
+                    if (output is not null)
+                    {
+                        diagnostics.Report(DiagnosticDescriptors.ProjectOutputRepeated, span);
+                        break;
+                    }
+
+                    // Resolved against the project's folder, as a source and a reference are, so
+                    // that where a build lands does not depend on where it was started from. A
+                    // path that was already absolute survives the combining unchanged.
+                    output = Path.GetFullPath(
+                        Path.Combine(folder, rest.Replace('/', Path.DirectorySeparatorChar)));
+
+                    break;
+
                 // What every file the project builds should stop being told. A project file
                 // has no prose, so a word here that names neither a severity nor a diagnostic
                 // is a mistake, where the same words in a comment would be a remark.
@@ -300,7 +342,7 @@ public sealed class ProjectFile
         // does not, since a project with a mistake in it has nothing to hand a compilation.
         return reading == Reading.ToBuild && diagnostics.Errors != failuresBefore
             ? null
-            : new ProjectFile(name, source, files, references, entryPoint);
+            : new ProjectFile(name, source, files, references, entryPoint, output);
     }
 
     /// <summary>

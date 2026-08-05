@@ -33,16 +33,31 @@ public sealed class IlVerificationTests : LexerTestBase
 
     /// <summary>
     /// <para>The programs made of several files, entered the way a reader enters them.</para>
-    /// <para>Nothing else emits these. The corpus diff runs one file at a time, so a program
-    /// spread across units — which is where the emitter's symbol maps have to carry a type from
-    /// one file into another — reached the back end in no test at all until this one.</para>
+    /// <para>Read off the same discovery the running fixture uses rather than listed here, so a
+    /// folder added to the corpus is verified from the moment it exists. Listed, a fifth one
+    /// would run and never reach the back end, which is the failure this fixture is for.</para>
     /// </summary>
     private static IEnumerable<string> MultiFilePrograms =>
+        Interpreting.MultiFileSampleTests.EntryPoints.Select(
+            entry => entry.Replace('/', Path.DirectorySeparatorChar));
+
+    /// <summary>
+    /// <para>The compilations in the corpus that are not programs, entered the way a reader
+    /// would enter them.</para>
+    /// <para>Both declare no <c>Program</c>, so neither runs and neither is reached by any
+    /// fixture that starts from one. <c>books</c> exists to be referenced, which is what a
+    /// library is; the reference folder exists to be read, and putting it through the emitter is
+    /// the only thing that asks whether every <em>declaration</em> form in the grammar can be
+    /// laid out — a different question from whether every construct has been run, and the one
+    /// that went unasked while nested types crashed the emitter.</para>
+    /// <para>Written out rather than discovered, and safe to write out because
+    /// <see cref="EverySampleFileIsReachedByABuild"/> fails naming any file that no build here
+    /// gathers.</para>
+    /// </summary>
+    private static IEnumerable<string> Libraries =>
     [
-        Path.Combine("bookshelf", "Program.pc"),
-        Path.Combine("storefront", "storefront.pcp"),
-        Path.Combine("toolkit", "Program.pc"),
-        Path.Combine("library", "library.pcp"),
+        Path.Combine("reference", "tour.pc"),
+        Path.Combine("library", "books", "books.pcp"),
     ];
 
     [TestCaseSource(nameof(Programs))]
@@ -51,7 +66,48 @@ public sealed class IlVerificationTests : LexerTestBase
 
     [TestCaseSource(nameof(MultiFilePrograms))]
     public void MultiFileSample_EmitsVerifiableCil(string entry) =>
-        AssertVerifies(entry, () => FrontEndOfProgramAt(entry));
+        AssertVerifies(entry, () => FrontEndOfProgramAt(entry, requireEntryPoint: true));
+
+    [TestCaseSource(nameof(Libraries))]
+    public void Library_EmitsVerifiableCil(string entry) =>
+        AssertVerifies(entry, () => FrontEndOfProgramAt(entry, requireEntryPoint: false));
+
+    /// <summary>
+    /// <para>Every sample file is part of something the back end is asked to build.</para>
+    /// <para>The ratchet under the three lists above. A file reached by no build is one the whole
+    /// emitter half of this suite is blind to — which is exactly what the reference corpus was
+    /// for as long as it existed, and how a nested type came to crash <c>pc build</c> while
+    /// several thousand tests passed.</para>
+    /// <para>The negatives are left out, since what they hold is mistakes and a file that will
+    /// not check has nothing to emit.</para>
+    /// </summary>
+    [Test]
+    public void EverySampleFileIsReachedByABuild()
+    {
+        HashSet<string> reached = new(ProfiC.Cli.SourceDiscovery.PathComparer);
+
+        foreach (string entry in Programs.Select(name => Path.Combine("samples", name))
+                                         .Concat(MultiFilePrograms.Concat(Libraries)
+                                             .Select(e => Path.Combine("samples", e))))
+        {
+            DiagnosticBag diagnostics = new();
+            string path = Path.Combine(RepositoryRoot, entry);
+
+            if (ProfiC.Cli.SourceDiscovery.Gather(path, diagnostics) is not { } gathered)
+            {
+                continue;
+            }
+
+            reached.UnionWith(gathered.Units.Select(unit => Path.GetFullPath(unit.Source.FileName)));
+        }
+
+        Assert.That(
+            EverySampleFile.Where(file => !reached.Contains(Path.GetFullPath(file)))
+                           .Select(file => Path.GetRelativePath(RepositoryRoot, file))
+                           .Order(StringComparer.Ordinal),
+            Is.Empty,
+            "sample files no build in this fixture reaches, so nothing ever emits them");
+    }
 
     private static void AssertVerifies(
         string name, Func<(IReadOnlyList<CompilationUnit> Units, SemanticModel Model)> frontEnd)
@@ -101,7 +157,7 @@ public sealed class IlVerificationTests : LexerTestBase
     /// <c>pc build</c> of the same path would produce, folder rules and project file and all.
     /// </summary>
     private static (IReadOnlyList<CompilationUnit> Units, SemanticModel Model) FrontEndOfProgramAt(
-        string entry)
+        string entry, bool requireEntryPoint)
     {
         DiagnosticBag diagnostics = new();
         string path = Path.Combine(RepositoryRoot, "samples", entry);
@@ -111,8 +167,14 @@ public sealed class IlVerificationTests : LexerTestBase
 
         Assert.That(compilation, Is.Not.Null, $"{entry} was not gathered");
 
+        // Carried through as a build carries it. A project naming which of its programs begins
+        // is compiled as though it had not when this is left out.
         SemanticModel model = Resolver.Resolve(
-            compilation.Units, diagnostics, requireEntryPoint: true, projects: compilation.Projects);
+            compilation.Units,
+            diagnostics,
+            requireEntryPoint,
+            projects: compilation.Projects,
+            entryPoint: compilation.EntryPoint);
 
         TypeChecker.Check(compilation.Units, model, diagnostics);
         DefiniteAssignment.Analyze(compilation.Units, model, diagnostics);

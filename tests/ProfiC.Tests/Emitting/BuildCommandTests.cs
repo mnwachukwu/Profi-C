@@ -41,6 +41,14 @@ public sealed class BuildCommandTests
 
         public string Program { get; }
 
+        /// <summary>Puts another file in the workspace, and gives back where it landed.</summary>
+        public string Write(string name, string contents)
+        {
+            string path = Path.Combine(Folder, name);
+            File.WriteAllText(path, contents);
+            return path;
+        }
+
         public void Dispose() => Directory.Delete(Folder, recursive: true);
     }
 
@@ -456,6 +464,237 @@ public sealed class BuildCommandTests
             Assert.That(code, Is.EqualTo(2));
             Assert.That(said, Does.Contain("--outt"));
             Assert.That(Directory.Exists(Path.Combine(workspace.Folder, "bin")), Is.False);
+        });
+    }
+
+    // ---- Where a project says to put it -------------------------------------------------------
+
+    /// <summary>
+    /// <para>A project's <c>output</c> decides where its build lands.</para>
+    /// <para>This is the one way to say so. A loose source file has nowhere to record a choice,
+    /// so it goes to the <c>bin</c> beside it — which means a folder of several programs fills
+    /// one <c>bin</c> with all of them, and the way out of that is to write the file that has
+    /// somewhere to put the answer.</para>
+    /// </summary>
+    [Test]
+    public void AProjectSaysWhereItsBuildGoes()
+    {
+        using Workspace workspace = new();
+
+        string project = workspace.Write("Hello.pcp", """
+            project Hello
+                source Hello.pc
+                output somewhere/deeper
+            end project
+            """);
+
+        (int code, string said) = Build("build", project);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.Zero, said);
+
+            Assert.That(
+                File.Exists(Path.Combine(workspace.Folder, "somewhere", "deeper", "Hello.dll")),
+                Is.True,
+                said);
+
+            Assert.That(Directory.Exists(Path.Combine(workspace.Folder, "bin")), Is.False,
+                        "the default should not also have been written");
+        });
+    }
+
+    /// <summary>
+    /// <c>--out</c> wins over the project, because somebody typed it just now for this one build
+    /// while the project holds for every run of it.
+    /// </summary>
+    [Test]
+    public void OutBeatsWhatTheProjectSays()
+    {
+        using Workspace workspace = new();
+
+        string project = workspace.Write("Hello.pcp", """
+            project Hello
+                source Hello.pc
+                output declared
+            end project
+            """);
+
+        string asked = Path.Combine(workspace.Folder, "asked");
+
+        (int code, string said) = Build("build", project, "--out", asked);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.Zero, said);
+            Assert.That(File.Exists(Path.Combine(asked, "Hello.dll")), Is.True, said);
+
+            Assert.That(Directory.Exists(Path.Combine(workspace.Folder, "declared")), Is.False,
+                        "what the project said should have been passed over, not written too");
+        });
+    }
+
+    /// <summary>
+    /// Resolved against the project file rather than against where the reader is standing, as a
+    /// <c>source</c> and a <c>reference</c> are — so where a build lands does not depend on which
+    /// directory it was started from.
+    /// </summary>
+    [Test]
+    public void AProjectsOutputIsReadFromTheProjectsFolder()
+    {
+        using Workspace workspace = new();
+
+        Directory.CreateDirectory(Path.Combine(workspace.Folder, "inner"));
+        File.Move(workspace.Program, Path.Combine(workspace.Folder, "inner", "Hello.pc"));
+
+        string project = workspace.Write(Path.Combine("inner", "Hello.pcp"), """
+            project Hello
+                source Hello.pc
+                output ../up-one
+            end project
+            """);
+
+        (int code, string said) = Build("build", project);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.Zero, said);
+
+            Assert.That(File.Exists(Path.Combine(workspace.Folder, "up-one", "Hello.dll")),
+                        Is.True, said);
+        });
+    }
+
+    [Test]
+    public void AnOutputWithNoFolderIsRefused()
+    {
+        using Workspace workspace = new();
+
+        string project = workspace.Write("Hello.pcp", """
+            project Hello
+                source Hello.pc
+                output
+            end project
+            """);
+
+        (int code, string said) = Build("build", project);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.EqualTo(1));
+            Assert.That(said, Does.Contain("PC0628"));
+        });
+    }
+
+    [Test]
+    public void TwoOutputsAreRefused()
+    {
+        using Workspace workspace = new();
+
+        string project = workspace.Write("Hello.pcp", """
+            project Hello
+                source Hello.pc
+                output here
+                output there
+            end project
+            """);
+
+        (int code, string said) = Build("build", project);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.EqualTo(1));
+            Assert.That(said, Does.Contain("PC0629"));
+        });
+    }
+
+    // ---- Building something with nowhere to begin ---------------------------------------------
+
+    private const string NoProgram = """
+        model Greeting
+            public shared string function Words()
+                yield "Hello, World!";
+            end function
+        end model
+        """;
+
+    /// <summary>
+    /// <para>A compilation declaring no <c>Program</c> builds a library rather than being
+    /// refused.</para>
+    /// <para>Which is what a project written to be referenced is. Every build demanded somewhere
+    /// to begin until this, so the referenced half of the language's own <c>reference</c> feature
+    /// could not be built at all.</para>
+    /// </summary>
+    [Test]
+    public void SomethingWithNoProgramBuildsAsALibrary()
+    {
+        using Workspace workspace = new();
+
+        File.Delete(workspace.Program);
+        string source = workspace.Write("Greeting.pc", NoProgram);
+
+        (int code, string said) = Build("build", source);
+
+        string bin = Path.Combine(workspace.Folder, "bin");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.Zero, said);
+            Assert.That(File.Exists(Path.Combine(bin, "Greeting.dll")), Is.True, said);
+
+            // Nothing starts a library, so there is nothing to say which framework to start it
+            // with and nothing to start it without naming one.
+            Assert.That(File.Exists(Path.Combine(bin, "Greeting.runtimeconfig.json")), Is.False,
+                        "a library needs no configuration naming a framework to start");
+
+            Assert.That(
+                File.Exists(Path.Combine(bin, AppHost.NameFor("Greeting", AppHost.ThisPlatform))),
+                Is.False,
+                "and nothing to launch");
+        });
+    }
+
+    /// <summary>
+    /// <para>It says which of the two it made.</para>
+    /// <para>The difference between them is one declaration, so a <c>Main</c> whose name went
+    /// astray would otherwise read as a build that quietly did less than was wanted. Saying it
+    /// is what turns that into something a reader can see.</para>
+    /// </summary>
+    [Test]
+    public void ItSaysWhenWhatItBuiltIsALibrary()
+    {
+        using Workspace workspace = new();
+
+        File.Delete(workspace.Program);
+
+        (int code, string said) = Build("build", workspace.Write("Greeting.pc", NoProgram));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.Zero, said);
+            Assert.That(said, Does.Contain("a library"), said);
+            Assert.That(said, Does.Not.Contain("Run it with"), "there is nothing to run");
+        });
+    }
+
+    /// <summary>
+    /// <para>Running one is still refused, and says the same thing it always did.</para>
+    /// <para>Building and running ask different questions of the same file. A library is a
+    /// perfectly good answer to the first and no answer at all to the second.</para>
+    /// </summary>
+    [Test]
+    public void RunningSomethingWithNoProgramIsStillRefused()
+    {
+        using Workspace workspace = new();
+
+        File.Delete(workspace.Program);
+
+        (int code, string said) = Build("run", workspace.Write("Greeting.pc", NoProgram));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.EqualTo(1));
+            Assert.That(said, Does.Contain("PC0212"));
         });
     }
 }

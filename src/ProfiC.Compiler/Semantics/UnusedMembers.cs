@@ -96,8 +96,8 @@ public sealed class UnusedMembers : SyntaxVisitor
     /// <summary>
     /// <para>A private function, unless its name is not how it is reached.</para>
     /// <para>A constructor answers to <c>new</c>, an overridable function to whatever the value
-    /// turns out to be at run time, and the entry point to the runtime starting the program.
-    /// Each would read as unused however much it is used.</para>
+    /// turns out to be at run time, and a program's <c>Main</c> to the runtime starting it. Each
+    /// would read as unused however much it is used.</para>
     /// </summary>
     public override void VisitFunctionDecl(FunctionDecl node)
     {
@@ -107,13 +107,29 @@ public sealed class UnusedMembers : SyntaxVisitor
                 IsConstructor: false,
                 IsOverridable: false,
             } function
-            && !ReferenceEquals(function, _model.EntryPoint))
+            && !CouldBeStarted(function))
         {
             Declared(function, node);
         }
 
         base.VisitFunctionDecl(node);
     }
+
+    /// <summary>
+    /// <para>Whether a runtime could start this: a <c>Main</c> in a <c>shared model Program</c>.
+    /// </para>
+    /// <para><b>Every one of them, rather than the one this build begins at.</b> A compilation
+    /// may hold several programs, since a namespace makes <c>Tools.Program</c> and
+    /// <c>App.Program</c> two types — and which of them begins is settled by a line in a project
+    /// file. Asking only about the chosen one reports the others as used by nothing, when what is
+    /// true of them is that they are used exactly as the chosen one is, in the build that chooses
+    /// them. Changing that line runs a different one with no code edited, and a warning that
+    /// moves from file to file as a project is retargeted is describing the project rather than
+    /// the code.</para>
+    /// </summary>
+    private static bool CouldBeStarted(FunctionSymbol function) =>
+        string.Equals(function.Name, "Main", StringComparison.Ordinal)
+        && function.DeclaringType is ModelSymbol { IsShared: true, Name: "Program" };
 
     /// <summary>
     /// <para>Every node that names something, counted as a use of what it names.</para>

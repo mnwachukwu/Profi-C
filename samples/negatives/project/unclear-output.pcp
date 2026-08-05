@@ -1,0 +1,19 @@
+##
+    A project that cannot say where its build goes.
+
+    'output' names the folder a build is written into, and is the only way to say so — a loose
+    source file has nowhere to record the answer, so it lands in the 'bin' beside it. Where a
+    build goes is a thing a build says about itself, and this is the file that says things about
+    a build.
+
+    The first line names nothing. The third disagrees with the second, and a build is written to
+    one place, so there is no answer to pick between them: whichever were chosen, half the file
+    would be wrong.
+##
+
+project Unclear
+    source ../runtime/overflow.pc
+    output
+    output here
+    output there
+end project

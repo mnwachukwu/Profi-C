@@ -1,0 +1,2 @@
+unclear-output.pcp(16,1): error PC0628: 'output' says where a build is written, so a folder must follow it, as in 'output ../artifacts'.
+unclear-output.pcp(18,1): error PC0629: A project is written to one place, so it names one 'output'.

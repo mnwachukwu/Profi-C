@@ -1,0 +1,28 @@
+##
+    The other program, which this build compiles and does not begin at.
+
+    It is a whole program: change the 'entry' line in observatory.pcp to
+    Observatory.Ranking.Program and this is what runs, with nothing else edited. That is what
+    the line is for — which program begins is a fact about the build rather than about either
+    piece of code.
+##
+
+namespace Observatory.Ranking;
+
+shared model Program
+
+    function Main()
+        Star brightest = Sky.Brightest()[0];
+
+        loop each star in Sky.Brightest()
+            # A magnitude runs backwards, so the brightest star is the smallest number.
+            if star.magnitude < brightest.magnitude
+                brightest = star;
+            end if
+        end loop
+
+        Console.WriteLine("== the brightest ==");
+        Console.WriteLine("  {{brightest.name}} at magnitude {{brightest.magnitude:F2}}");
+    end function
+
+end model

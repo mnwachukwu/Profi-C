@@ -1890,6 +1890,21 @@ public static class DiagnosticDescriptors
         "More than one 'entry'",
         "A project starts in one place, so it names one 'entry'.");
 
+    public static readonly DiagnosticDescriptor ProjectOutputMissingPath = Error(
+        "PC0628",
+        "Nothing named to build into",
+        "'output' says where a build is written, so a folder must follow it, as in "
+        + "'output ../artifacts'.");
+
+    /// <summary>
+    /// One build is written to one place. A second <c>output</c> would either be a leftover or
+    /// a disagreement, and neither has an answer worth guessing at.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ProjectOutputRepeated = Error(
+        "PC0629",
+        "More than one 'output'",
+        "A project is written to one place, so it names one 'output'.");
+
     // ---- Imports, PC0611 to PC0619 -------------------------------------------------------
 
     public static readonly DiagnosticDescriptor ImportNotFound = Error(

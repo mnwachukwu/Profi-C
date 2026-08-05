@@ -1,0 +1,42 @@
+##
+    What both programs in this project are about.
+
+    This file declares no Program, so it is shared code: whichever program the build begins at,
+    this is compiled with it and its names are in reach. The two programs sit in namespaces
+    below this one, and a name is read outward from where it is written — so each of them
+    writes 'Star' and 'Sky' with nothing qualified.
+##
+
+namespace Observatory;
+
+public model Star
+
+    public string name;
+    public real magnitude;
+
+    public function Star(string called, real brightness)
+        this.name = called;
+        this.magnitude = brightness;
+    end function
+
+end model
+
+public model Sky
+
+    ##
+        The same handful of stars for both programs, which is the reason they are one project
+        rather than two. A magnitude runs backwards: the smaller the number, the brighter the
+        star, and a negative one is brighter still.
+    ##
+    public shared Star[] function Brightest()
+        yield
+        {
+            new Star("Sirius", -1.46),
+            new Star("Canopus", -0.74),
+            new Star("Arcturus", -0.05),
+            new Star("Vega", 0.03),
+            new Star("Capella", 0.08)
+        };
+    end function
+
+end model

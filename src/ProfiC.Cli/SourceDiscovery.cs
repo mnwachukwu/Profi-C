@@ -62,12 +62,16 @@ public static class SourceDiscovery
     /// project named one. Null for a folder, which is one program by construction, and for a
     /// project that did not say — right where its sources declare one, reported where they
     /// declare several.</para>
+    /// <para><see cref="Output"/> is the folder a build writes into, where the project named
+    /// one. Null everywhere else, which leaves the <c>bin</c> beside what was named: a loose
+    /// source file has nowhere to record a choice, so the choice belongs to a project.</para>
     /// </summary>
     public sealed record Compilation(
         string Label,
         IReadOnlyList<CompilationUnit> Units,
         IReadOnlyDictionary<SourceText, string> Projects,
-        string? EntryPoint = null);
+        string? EntryPoint = null,
+        string? Output = null);
 
     /// <summary>A file a command was pointed at, and which of the two kinds it is.</summary>
     public readonly record struct FileTarget(string Path, bool IsProject);
@@ -589,10 +593,10 @@ public static class SourceDiscovery
             }
         }
 
-        // The named project's own entry, not one a reference wrote: a referenced project is
-        // being built into this one, and what it would have started at had it been built alone
-        // is not this build's business.
-        return new Compilation(root.Name, units, projects, root.EntryPoint);
+        // The named project's own entry and output, not ones a reference wrote: a referenced
+        // project is being built into this one, and where it would have gone had it been built
+        // alone is not this build's business.
+        return new Compilation(root.Name, units, projects, root.EntryPoint, root.Output);
     }
 
     /// <summary>

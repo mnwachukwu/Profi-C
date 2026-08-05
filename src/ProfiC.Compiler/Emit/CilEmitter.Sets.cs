@@ -87,10 +87,18 @@ public sealed partial class CilEmitter
     /// <c>finally</c> so that leaving the loop by <c>break</c>, by a <c>yield</c>, or by an
     /// exception still unmarks it — a set left marked would refuse every later change, and the
     /// program would fail somewhere with no walk in sight.</para>
+    /// <para>A string is walked too, and has nothing to mark: it cannot be changed at all, so
+    /// the question a mark answers cannot arise. Only a set has anything to hold still.</para>
     /// </summary>
     private void EmitWalk(WalkStmt walk)
     {
-        Type built = SetTypeOf(walk.Sequence);
+        if (_model.GetType(walk.Sequence) is not SetType sequence)
+        {
+            EmitStatements([walk.Body]);
+            return;
+        }
+
+        Type built = TypeOf(sequence, "a set");
 
         // The sequence is a name by now, so evaluating it twice is a read, not work repeated.
         EmitExpression(walk.Sequence);

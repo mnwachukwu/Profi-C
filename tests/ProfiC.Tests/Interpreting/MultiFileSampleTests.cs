@@ -60,6 +60,42 @@ public sealed class MultiFileSampleTests : LexerTestBase
         }
     }
 
+    /// <summary>
+    /// <para>The claim <c>observatory.pcp</c> makes about itself: the line decides, and nothing
+    /// else does.</para>
+    /// <para>Its two programs are compiled from the same three files either way, so what
+    /// separates them is one word in a project file. The recorded output above pins whichever
+    /// the project names today; this pins that the other one is a whole program rather than
+    /// something that merely parses, and that choosing it takes no edit to any <c>.pc</c>.</para>
+    /// <para>Both are asked of the same gathered sources, which is what makes it the same
+    /// build — a test that re-read the folder for each could differ for some other reason and
+    /// still pass.</para>
+    /// </summary>
+    [TestCase("Observatory.Cataloging.Program", "== the catalog ==")]
+    [TestCase("Observatory.Ranking.Program", "== the brightest ==")]
+    public void TheEntryLineDecidesWhichProgramRuns(string program, string expected)
+    {
+        DiagnosticBag diagnostics = new();
+
+        SourceDiscovery.Compilation gathered = SourceDiscovery.Gather(
+            Path.Combine(RepositoryRoot, "samples", "observatory", "observatory.pcp"),
+            diagnostics)!;
+
+        SemanticModel model = FrontEnd.Check(
+            gathered.Units, diagnostics, requireEntryPoint: true, gathered.Projects, program);
+
+        Assert.That(
+            diagnostics.Sorted().Select(DiagnosticRenderer.Format),
+            Is.Empty,
+            $"starting at {program} should check cleanly");
+
+        StringWriter output = new();
+        ProfiC.Interpreter.Interpreter.Run(
+            Lowering.Lower(gathered.Units, model), model, output, TextReader.Null);
+
+        Assert.That(output.ToString(), Does.StartWith(expected));
+    }
+
     [TestCaseSource(nameof(EntryPoints))]
     public void MultiFileSample_RunsAndPrintsWhatItRecorded(string entry)
     {
@@ -70,8 +106,15 @@ public sealed class MultiFileSampleTests : LexerTestBase
 
         Assert.That(compilation, Is.Not.Null, $"{entry} could not be gathered");
 
+        // The project's own entry point is carried through, as a build carries it. Left out, a
+        // project naming which of its programs begins is compiled as though it had not, and
+        // reports PC0234 about a question it answered.
         SemanticModel model = FrontEnd.Check(
-            compilation!.Units, diagnostics, requireEntryPoint: true, compilation.Projects);
+            compilation!.Units,
+            diagnostics,
+            requireEntryPoint: true,
+            compilation.Projects,
+            compilation.EntryPoint);
 
         Assert.That(
             diagnostics.Sorted().Select(DiagnosticRenderer.Format),

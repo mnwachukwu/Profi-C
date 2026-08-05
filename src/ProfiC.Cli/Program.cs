@@ -825,6 +825,11 @@ public static class Program
     /// <para>What is emitted is the closure-converted tree rather than the lowered one. The
     /// emitter is the reason that pass exists: it receives a tree with no captures left in it
     /// and never reasons about them.</para>
+    /// <para>A compilation that declares no <c>Program</c> builds a library rather than being
+    /// refused. That is what a project written to be referenced is, and there was no way to
+    /// build one while every build demanded somewhere to begin. What was made is said either
+    /// way, so a <c>Main</c> whose name went astray reads as a library rather than as
+    /// silence.</para>
     /// </summary>
     private static int RunBuild(string[] args)
     {
@@ -843,7 +848,7 @@ public static class Program
 
         DiagnosticBag diagnostics = new();
 
-        if (Compile(target.Path, diagnostics, requireEntryPoint: true) is not var (compilation, model))
+        if (Compile(target.Path, diagnostics, requireEntryPoint: false) is not var (compilation, model))
         {
             DiagnosticRenderer.WriteAll(diagnostics);
             return Reported;
@@ -856,7 +861,8 @@ public static class Program
         }
 
         string name = Path.GetFileNameWithoutExtension(compilation.Label);
-        string output = Path.Combine(options.Folder, name + ".dll");
+        string output = Path.Combine(
+            WhereToWrite(options, compilation, target), name + ".dll");
 
         IReadOnlyList<CompilationUnit> emitting = ClosureConversion.Convert(
             Lowering.Lower(compilation.Units, model), model);
@@ -864,6 +870,19 @@ public static class Program
         CilEmitter.Emit(emitting, model, name, output);
 
         DiagnosticRenderer.WriteAll(diagnostics);
+
+        if (model.EntryPoint is null)
+        {
+            Console.WriteLine($"{compilation.Label}: wrote {output}, a library.");
+
+            // Said plainly, because the difference between the two is one declaration and the
+            // reader who wanted a program is owed the reason they did not get one.
+            Console.WriteLine(
+                "Nothing here declares a 'shared model Program', so there is nowhere to begin "
+                + "and nothing to run. Another build reaches these types with 'reference'.");
+
+            return Ok;
+        }
 
         Console.WriteLine($"{compilation.Label}: wrote {output}");
 
@@ -892,11 +911,44 @@ public static class Program
         return Ok;
     }
 
-    /// <summary>What a build was asked for beyond the program itself.</summary>
-    private readonly record struct Build(string Folder, string Runtime);
+    /// <summary>
+    /// What a build was asked for on the command line. <c>Folder</c> is null where nothing was
+    /// written there, which leaves the choice to the project, and the project's default to
+    /// <see cref="WhereToWrite"/>.
+    /// </summary>
+    private readonly record struct Build(string? Folder, string Runtime);
 
-    /// <summary>The folder a build writes into, when nothing says otherwise.</summary>
+    /// <summary>The folder a build writes into, when neither the command line nor a project says.</summary>
     private const string DefaultOutputFolder = "bin";
+
+    /// <summary>
+    /// <para>Where the assembly is written, from the three places that can decide it.</para>
+    /// <para><c>--out</c> first, because somebody typed it just now for this one build.
+    /// A project's <c>output</c> next, because a project is a build describing itself and holds
+    /// for every run of it. Otherwise a <c>bin</c> beside whatever was named.</para>
+    /// <para>That default is why <c>output</c> exists. A loose source file has nowhere to record
+    /// a choice, so a folder holding several programs fills one <c>bin</c> with all of them —
+    /// which is fine until it is not, and the way out is to write the project file that has
+    /// somewhere to put the answer.</para>
+    /// </summary>
+    private static string WhereToWrite(
+        Build options, SourceDiscovery.Compilation compilation, SourceDiscovery.FileTarget target)
+    {
+        if (options.Folder is { } written)
+        {
+            return written;
+        }
+
+        if (compilation.Output is { } declared)
+        {
+            return declared;
+        }
+
+        // Relative to what was named rather than to where the reader is standing, so that
+        // building the same file from two directories puts the result in one place.
+        return Path.Combine(
+            Path.GetDirectoryName(Path.GetFullPath(target.Path)) ?? ".", DefaultOutputFolder);
+    }
 
     /// <summary>
     /// <para>Reads what a build was asked for: where to put it, and what to build it for.</para>
@@ -908,7 +960,6 @@ public static class Program
     /// </summary>
     private static Build? BuildOptions(string[] args, SourceDiscovery.FileTarget target)
     {
-        string beside = Path.GetDirectoryName(Path.GetFullPath(target.Path)) ?? ".";
         string? folder = null;
         string? runtime = null;
 
@@ -955,11 +1006,9 @@ public static class Program
         }
 
         // A written folder is taken as the reader meant it — relative to where they are, which
-        // is what every other tool does with a path typed on a command line. The default is
-        // relative to the program instead, so that building the same file from two directories
-        // puts the result in one place.
+        // is what every other tool does with a path typed on a command line.
         return new Build(
-            folder is null ? Path.Combine(beside, DefaultOutputFolder) : Path.GetFullPath(folder),
+            folder is null ? null : Path.GetFullPath(folder),
             runtime ?? AppHost.ThisPlatform);
     }
 

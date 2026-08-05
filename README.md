@@ -459,6 +459,28 @@ on, and a **launcher** you can start without naming `dotnet`. A folder of its ow
 beside the source, because four files a tool made should not be mixed in with the one you wrote —
 and because every `.gitignore` already knows the name. `--out` puts them somewhere else.
 
+**A loose `.pc` file always builds into the `bin` beside it.** There is nowhere in a source file
+to say otherwise, which means a folder holding a dozen programs fills one `bin` with all twelve.
+Where a build goes is a thing a build says about itself, and the file that says things about a
+build is a project file:
+
+```text
+project Storefront
+    source Program.pc
+    output ../artifacts/storefront
+end project
+```
+
+The path is read relative to the project file, so where the build lands does not depend on which
+directory you started it from, and the folder is made if it is not there. `--out` still beats
+it — you typed that just now, for this one build.
+
+**Something that declares no `Program` builds a library**, rather than being refused for having
+nowhere to begin. That is what `books.pcp` in [samples/library](samples/library) is: a project
+written to be referenced by another. No launcher is made for one and no configuration is written
+beside it, because nothing starts a library — `pc build` says which of the two it made, and
+`pc run` on the same file still asks for a `Program`.
+
 The launcher is the stock .NET apphost, the same one `dotnet publish` produces, with the name of
 the assembly written into the region reserved in it for exactly that. **The machine still needs
 .NET installed** — this is a launcher, not a self-contained copy of the runtime.
@@ -538,6 +560,7 @@ project Storefront
     source Program.pc
     source models
     source pricing
+    output ../bin/storefront
 end project
 ```
 
@@ -546,9 +569,12 @@ pc run storefront/storefront.pcp
 ```
 
 A `source` naming a folder takes every `.pc` directly inside it, and does not descend, so what
-a project builds can always be read off the file. Paths are relative to the project file. The
-format is deliberately small and is not Profi-C: it describes a build, not a computation, and
-nothing in it compiles.
+a project builds can always be read off the file. An `output` says where the build goes, and is
+the only way to say so — a loose `.pc` has nowhere to record one, which is why the forty
+programs in `samples/` all land in the same `bin` and this one does not. Paths are relative to
+the project file. The whole vocabulary is `project`, `source`, `reference`, `entry`, `output`,
+`ignore` and `end project`; the format is deliberately small and is not Profi-C, since it
+describes a build rather than a computation and nothing in it compiles.
 
 **A project builds on another with `reference`**, which brings that project's types:
 
@@ -744,8 +770,8 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [namespaces.pc](samples/namespaces.pc) | **Where a name sits.** Two namespaces each holding a `Circle`, both forms of declaring one, what a `using` decides, and what qualifying reaches past it |
 
 `samples/reference/` holds four files that are not programs and declare no entry point:
-[tour.pc](samples/reference/tour.pc), which contains nearly every construct in the grammar
-exactly once, and [literals.pc](samples/reference/literals.pc),
+[tour.pc](samples/reference/tour.pc), which contains every construct in the grammar at least
+once, and [literals.pc](samples/reference/literals.pc),
 [operators.pc](samples/reference/operators.pc), and
 [comments.pc](samples/reference/comments.pc), which exercise the scanner.
 
@@ -753,11 +779,21 @@ They sit in their own folder because of the rule that naming a source file also 
 files beside it that declare no `Program` — which is what makes a folder of shared code work
 without a project file. All four declare none, so putting them among the programs would attach
 four hundred lines of reference material to every one of them. Apart, they compile as a unit
-with each other and with nothing else.
+with each other, plus the one file below them that the tour reaches by `import`, which is the
+only way anything reaches it.
 
-"Nearly every construct", because the tour opens with block namespaces and so holds no
-file-scoped one. [namespaces.pc](samples/namespaces.pc) writes that form, with blocks nested
-inside it — which is how the two combine.
+"Every construct" is a test rather than an aspiration: `TourCoverageTests` reads the tour alone
+and holds it against every reserved word, every symbol, every node the parser can build, and
+every modifier, operator, literal form and receiver. The one exception is stated there too — a
+file-scoped namespace claims the whole file it is written in, so no file can hold one alongside
+the block form, and the tour opens with blocks. [namespaces.pc](samples/namespaces.pc) writes
+that form, with blocks nested inside it, which is how the two combine.
+
+The whole corpus reaches the back end. Every program is built, run, and compared against what
+the interpreter printed; the two files that are not programs are built as libraries and their
+CIL verified. A file no build gathers fails `EverySampleFileIsReachedByABuild` by name — which
+is the check that would have caught `pc build` crashing on a nested type while several thousand
+tests passed.
 
 **That corpus, not [the grammar file](docs/grammar.ebnf), is what pins the syntax.** Nothing
 reads the grammar — no parser is generated from it, and no build step checks it. Profi-C is
@@ -772,7 +808,8 @@ Two samples are more than one file, and each shows a different way of saying so:
 | Sample | What it is for |
 |---|---|
 | [bookshelf/](samples/bookshelf/) | **A folder is enough.** `Program.pc` beside `Book.pc` and `Shelf.pc`, with nothing said to connect them |
-| [storefront/](samples/storefront/) | **A project across folders.** [storefront.pcp](samples/storefront/storefront.pcp) lists a file and two folders |
+| [storefront/](samples/storefront/) | **A project across folders.** [storefront.pcp](samples/storefront/storefront.pcp) lists a file and two folders, and says with `output` where its build goes |
+| [observatory/](samples/observatory/) | **Two programs, one project.** Both declare a `Program`, in different namespaces, over shared code — and [observatory.pcp](samples/observatory/observatory.pcp) says with `entry` which one begins |
 | [toolkit/](samples/toolkit/) | **Naming a file directly.** An `import` reaches into `shared/`, and what it names imports one more |
 | [library/](samples/library/) | **A project built on another.** [library.pcp](samples/library/library.pcp) references `books/books.pcp` and uses its types |
 
@@ -839,6 +876,7 @@ Projects that will not build:
 | [missing-source.pcp](samples/negatives/project/missing-source.pcp) | A path that is not there, and one listed twice |
 | [circular.pcp](samples/negatives/project/circular.pcp) | Two projects referencing each other, so neither can be built first |
 | [quiet-and-empty.pcp](samples/negatives/project/quiet-and-empty.pcp) | An `ignore` naming neither a severity nor a diagnostic, in a project that names nothing to build |
+| [unclear-output.pcp](samples/negatives/project/unclear-output.pcp) | An `output` naming no folder, and two more disagreeing about which one |
 
 How each one fails is recorded under `tests/ProfiC.Tests/TestData/Negatives/` and asserted on
 every build, holding the wording as well as the outcome. A compile sample must be rejected
@@ -862,9 +900,10 @@ docs/
 samples/               .pc programs, one per file
   bookshelf/           one program across three files in a folder
   storefront/          one program across three folders, listed by a .pcp
+  observatory/         two programs in one project, with an entry saying which begins
   toolkit/             one program reaching other files by import
   library/             one project referencing another
-  reference/           tour.pc and the scanner corpus; not programs
+  reference/           tour.pc and the scanner corpus; libraries, not programs
   negatives/           programs that are wrong on purpose
 ```
 

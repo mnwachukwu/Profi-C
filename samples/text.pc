@@ -181,6 +181,16 @@ shared model Program
         end loop
 
         Console.WriteLine("  spelled:    {{spelled.Trim()}}");
+
+        # The same walk without the counting. A string is a sequence of characters, so 'loop
+        # each' takes one straight off it and there is no set to make first.
+        string backwards = "";
+
+        loop each letter in word
+            backwards = letter + backwards;
+        end loop
+
+        Console.WriteLine("  backwards:  {{backwards}}");
     end function
 
     ##

@@ -13,13 +13,11 @@
 
     The fix is one line: 'entry Tools.Program', or 'entry App.Program'. Written where there is
     only one program to begin with, that line decides nothing and is warned about instead.
+
+    samples/observatory is this file with the line in it, and runs.
 ##
 
 project AmbiguousEntry
     source programs/Tools.pc
     source programs/App.pc
-
-    # Neither program is run, so nothing reaches what they declare. That is the shape of
-    # every negative, and not the lesson of this one.
-    ignore PC0410
 end project

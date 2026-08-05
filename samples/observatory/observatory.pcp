@@ -1,0 +1,23 @@
+##
+    Two programs, one project, and a line saying which one begins.
+
+    Both files declare a 'shared model Program'. They are still two different types, because a
+    namespace is part of a name — so nothing collides and both are perfectly good programs.
+
+    What an assembly holds is one entry point, so something has to choose, and it is not the
+    compiler's to choose: picking for itself would mean picking by the order the sources happen
+    to be listed, and swapping two lines here would quietly change which program ran. The
+    project says instead, and says it in the file that describes the build.
+
+    Written where a project holds only one program, the line decides nothing and is an opinion
+    (PC0236). Left out where a project holds two, the build is refused and both are named
+    (PC0234) — see negatives/project/ambiguous-entry.pcp, which is this file without this line.
+##
+
+project Observatory
+    source Sky.pc
+    source Catalog.pc
+    source Ranking.pc
+
+    entry Observatory.Cataloging.Program
+end project

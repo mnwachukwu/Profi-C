@@ -52,6 +52,20 @@ public sealed class LanguageServer : IDisposable
     /// </summary>
     private Hints.Wants _hints = Hints.Wants.Default;
 
+    /// <summary>
+    /// Which folders the editor has open, read at startup and kept current as they are added and
+    /// removed. Nothing until it says, which is also the answer for a single file opened alone.
+    /// </summary>
+    private WorkspaceFolders _workspace = WorkspaceFolders.None;
+
+    /// <summary>
+    /// <para>The folders the editor has open.</para>
+    /// <para>Held here because this is the one place told about them: they arrive in
+    /// <c>initialize</c> and in nothing else, so anything that needs to know where the reader is
+    /// working has to be handed it from here.</para>
+    /// </summary>
+    public WorkspaceFolders OpenFolders => _workspace;
+
     public LanguageServer(Stream input, Stream output, TimeSpan? quiet = null)
     {
         _wire = new LspConnection(input, output);
@@ -105,7 +119,16 @@ public sealed class LanguageServer : IDisposable
         {
             case "initialize":
                 _hints = Hints.Wanted(parameters?["initializationOptions"] as JsonObject);
+                _workspace = WorkspaceFolders.Opened(parameters);
                 _wire.Respond(id, Capabilities());
+                break;
+
+            // A folder added or removed while the editor was open. Read rather than ignored,
+            // because the alternative is a set of folders that was right when the session began
+            // and is wrong for the rest of it — and a reader who just opened the folder they
+            // wanted has no way to tell that is why nothing about it can be answered.
+            case "workspace/didChangeWorkspaceFolders":
+                _workspace = _workspace.After(parameters?["event"] as JsonObject);
                 break;
 
             // Settings changed while the editor was open. Read rather than ignored, so that
@@ -284,6 +307,18 @@ public sealed class LanguageServer : IDisposable
                 ["prepareProvider"] = true,
             },
 
+            // Which folders the editor has open, and being told when that changes. Asked for
+            // rather than assumed: a client sends the folders only to a server that says it
+            // supports them, and sends the notification only to one that says it wants it.
+            ["workspace"] = new JsonObject
+            {
+                ["workspaceFolders"] = new JsonObject
+                {
+                    ["supported"] = true,
+                    ["changeNotifications"] = true,
+                },
+            },
+
             // The legend has to arrive before any tokens do: what comes back is numbers, and
             // these two lists are what the numbers mean. An editor that asked without them would
             // have no way to read the answer.
@@ -453,6 +488,14 @@ public sealed class LanguageServer : IDisposable
         return Rename.Prepare(unit, model, offset);
     }
 
+    /// <summary>
+    /// <para>Every edit renaming the name under the cursor takes, across every project that
+    /// builds it.</para>
+    /// <para>Reaching past the one compilation matters more here than anywhere else, because
+    /// this writes. A rename that stopped at the project boundary would edit the declaration and
+    /// leave every use in the projects built on it — turning a working workspace into a broken
+    /// one, from a command that reported success.</para>
+    /// </summary>
     private JsonObject? RenameAt(JsonObject? parameters)
     {
         if ((string?)parameters?["newName"] is not { Length: > 0 } newName)
@@ -460,9 +503,46 @@ public sealed class LanguageServer : IDisposable
             return null;
         }
 
-        return Compiled(parameters) is var (units, model, unit, offset)
-            ? Rename.Edits(units, model, unit, offset, newName)
-            : null;
+        if (Compiled(parameters) is not var (units, model, unit, offset))
+        {
+            return null;
+        }
+
+        if (Rename.Edits(units, model, unit, offset, newName) is not { } change)
+        {
+            return null;
+        }
+
+        JsonObject changes = (JsonObject)change["changes"]!;
+
+        foreach ((IReadOnlyList<CompilationUnit> also, SemanticModel elsewhere,
+                  CompilationUnit declaring, int at) in AlsoBuilding(units, unit, model, offset))
+        {
+            if (Rename.Edits(also, elsewhere, declaring, at, newName)
+                    is not { } more
+                || more["changes"] is not JsonObject byFile)
+            {
+                continue;
+            }
+
+            foreach ((string uri, JsonNode? edits) in byFile.ToArray())
+            {
+                if (edits is not JsonArray listed)
+                {
+                    continue;
+                }
+
+                if (changes[uri] is JsonArray already)
+                {
+                    Merge(already, listed);
+                    continue;
+                }
+
+                changes[uri] = listed.DeepClone();
+            }
+        }
+
+        return change;
     }
 
     private JsonObject? SignatureAt(JsonObject? parameters)
@@ -690,8 +770,172 @@ public sealed class LanguageServer : IDisposable
         bool includingDeclaration =
             (bool?)parameters?["context"]?["includeDeclaration"] ?? true;
 
-        return Occurrences.Across(units, model, unit, offset, includingDeclaration);
+        if (Occurrences.Across(units, model, unit, offset, includingDeclaration) is not { } here)
+        {
+            return null;
+        }
+
+        foreach ((IReadOnlyList<CompilationUnit> also, SemanticModel elsewhere,
+                  CompilationUnit declaring, int at) in AlsoBuilding(units, unit, model, offset))
+        {
+            if (Occurrences.Across(also, elsewhere, declaring, at, includingDeclaration) is { } more)
+            {
+                Merge(here, more);
+            }
+        }
+
+        return here;
     }
+
+    /// <summary>
+    /// <para>The same question, asked again of every other project that builds this file.</para>
+    /// <para><b>A reference is one-way, and so is what a compilation can see.</b> Asking about a
+    /// file compiles the project claiming it together with everything that project builds on —
+    /// never the projects built on <em>it</em>, which is where the rest of the uses are. So the
+    /// answer for a type in a referenced project was complete when asked from the program that
+    /// uses it and short when asked from the file declaring it, which is the file somebody is
+    /// most likely to be looking at while asking.</para>
+    /// <para>Asked once per project rather than by compiling them all together. Two projects are
+    /// two builds, and merging them would put two <c>Program</c> declarations in one compilation
+    /// and make every name a question about which of them won.</para>
+    /// <para>What identifies the same name in another build is <b>where it is declared</b> — the
+    /// file, and the offset its name starts at. Symbols are not shared between compilations, so
+    /// nothing can be compared by reference across them; a declaration's place is the same in
+    /// every build that reads the file. Which means each project can simply be asked the original
+    /// question again, with the cursor put on the declaration.</para>
+    /// <para>Nothing is yielded for a name the language owns or one with no declaration to point
+    /// at. Both are answerable within a compilation and neither can be anchored across one.</para>
+    /// </summary>
+    private IEnumerable<(IReadOnlyList<CompilationUnit> Units, SemanticModel Model,
+                         CompilationUnit Declaring, int Offset)> AlsoBuilding(
+        IReadOnlyList<CompilationUnit> units,
+        CompilationUnit asking,
+        SemanticModel model,
+        int offset)
+    {
+        if (Declaring(units, asking, model, offset) is not var (file, at))
+        {
+            yield break;
+        }
+
+        if (ProjectSearch.For(Path.GetFullPath(asking.Source.FileName)).Project is not { } claiming)
+        {
+            yield break;
+        }
+
+        foreach (string project in
+                 ProjectSearch.ProjectsBuilding(claiming, _workspace.Folders))
+        {
+            DiagnosticBag aside = new();
+
+            if (SourceDiscovery.Gather(project, aside, _documents.Reader) is not { } compilation)
+            {
+                continue;
+            }
+
+            CompilationUnit? declaring = compilation.Units.FirstOrDefault(
+                one => SourceDiscovery.PathComparer.Equals(
+                    Path.GetFullPath(one.Source.FileName), file));
+
+            if (declaring is null)
+            {
+                continue;
+            }
+
+            SemanticModel elsewhere = Resolver.Resolve(
+                compilation.Units,
+                aside,
+                projects: compilation.Projects,
+                entryPoint: compilation.EntryPoint);
+
+            TypeChecker.Check(compilation.Units, elsewhere, aside);
+
+            yield return (compilation.Units, elsewhere, declaring, at);
+        }
+    }
+
+    /// <summary>
+    /// <para>Where the name under the cursor was declared: the file, and the offset its name
+    /// starts at.</para>
+    /// <para>Null for a name the language owns, which no program declares and no other build
+    /// could be pointed at, and for one whose declaration the resolver did not record.</para>
+    /// <para>The file is found by looking for the unit holding the declaration, because only a
+    /// <see cref="CompilationUnit"/> knows which file it was read from — every node below one
+    /// carries a span into a file and no way back to it.</para>
+    /// </summary>
+    private static (string File, int Offset)? Declaring(
+        IReadOnlyList<CompilationUnit> units,
+        CompilationUnit asking,
+        SemanticModel model,
+        int offset)
+    {
+        foreach (SyntaxNode node in NodeAt.NamesAt(asking, offset))
+        {
+            if (model.GetBuiltIn(node) is not null)
+            {
+                return null;
+            }
+
+            if (model.GetSymbol(node) is not { Declaration: { } declared } || !declared.HasName)
+            {
+                continue;
+            }
+
+            if (units.FirstOrDefault(unit => Holds(unit, declared)) is not { } holding)
+            {
+                return null;
+            }
+
+            return (Path.GetFullPath(holding.Source.FileName), declared.NameSpan.Start.Offset);
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether a unit is the one a node was parsed into.</summary>
+    private static bool Holds(SyntaxNode within, SyntaxNode node)
+    {
+        if (ReferenceEquals(within, node))
+        {
+            return true;
+        }
+
+        foreach (SyntaxNode child in within.Children)
+        {
+            if (Holds(child, node))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// <para>Adds what another project answered, leaving out anything already here.</para>
+    /// <para>Every project referencing another compiles its files too, so a use inside the
+    /// referenced project comes back from every build that reaches it. Two answers naming one
+    /// place in one file are one answer, and an editor handed both marks it twice — or, renaming,
+    /// writes the new name over itself.</para>
+    /// </summary>
+    private static void Merge(JsonArray into, JsonArray more)
+    {
+        HashSet<string> already = [.. into.Select(Key)];
+
+        foreach (JsonNode? one in more)
+        {
+            if (one is not null && already.Add(Key(one)))
+            {
+                into.Add(one.DeepClone());
+            }
+        }
+    }
+
+    /// <summary>
+    /// What makes two answers the same one: everything they say. Compared whole rather than field
+    /// by field, so an answer that grows a field goes on being compared by all of it.
+    /// </summary>
+    private static string Key(JsonNode? entry) => entry?.ToJsonString() ?? string.Empty;
 
     /// <summary>
     /// <para>The types a stretch of the file leaves unwritten.</para>

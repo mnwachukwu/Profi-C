@@ -35,6 +35,7 @@ and the last word is "this"
   first:      c
   last:       t
   spelled:    c a s t
+  backwards:  tsac
 == text into numbers ==
   an integer: 42
   a real:     3.5

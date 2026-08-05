@@ -1,0 +1,21 @@
+##
+    One of the two programs this project holds, and the one it begins at.
+
+    Its name is Observatory.Cataloging.Program. The other is Observatory.Ranking.Program, and
+    the two do not collide: a namespace is part of a type's name, so these are two types rather
+    than one name written twice.
+##
+
+namespace Observatory.Cataloging;
+
+shared model Program
+
+    function Main()
+        Console.WriteLine("== the catalog ==");
+
+        loop each star in Sky.Brightest()
+            Console.WriteLine("  {{star.name}} at magnitude {{star.magnitude:F2}}");
+        end loop
+    end function
+
+end model

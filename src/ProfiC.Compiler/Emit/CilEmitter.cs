@@ -657,6 +657,10 @@ public sealed partial class CilEmitter
     /// is a token in the header and the simpler overload has nowhere to put one. A
     /// <c>runtimeconfig.json</c> goes beside it: without one the host does not know which
     /// framework to start, and the assembly will not run however correct its code is.</para>
+    /// <para>A compilation declaring no <c>Program</c> is a library — types for something else to
+    /// build on, with nowhere to begin. It says so in its header and takes no configuration
+    /// beside it, since what a configuration names is the framework to start and nothing starts
+    /// a library.</para>
     /// </summary>
     private void Save(string path)
     {
@@ -678,7 +682,9 @@ public sealed partial class CilEmitter
 
         ManagedPEBuilder image = new(
             header: new PEHeaderBuilder(
-                imageCharacteristics: Characteristics.ExecutableImage,
+                imageCharacteristics: _start is null
+                    ? Characteristics.ExecutableImage | Characteristics.Dll
+                    : Characteristics.ExecutableImage,
                 subsystem: Subsystem.WindowsCui),
             metadataRootBuilder: new MetadataRootBuilder(metadata),
             ilStream: il,
@@ -698,7 +704,11 @@ public sealed partial class CilEmitter
             assembly.WriteContentTo(file);
         }
 
-        File.WriteAllText(RuntimeConfigBeside(path), RuntimeConfig);
+        if (_start is not null)
+        {
+            File.WriteAllText(RuntimeConfigBeside(path), RuntimeConfig);
+        }
+
         CopyRuntimeBeside(path);
     }
 

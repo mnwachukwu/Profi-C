@@ -352,6 +352,23 @@ CompilationUnit
               CallExpr
                 MemberExpr 'Trim'
                   IdentifierExpr 'spelled'
+      VarDeclStmt 'backwards'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      ForEachStmt 'letter'
+        IdentifierExpr 'word'
+        AssignmentStmt
+          IdentifierExpr 'backwards'
+          BinaryExpr '+'
+            IdentifierExpr 'letter'
+            IdentifierExpr 'backwards'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  backwards:  ' ''
+            InterpolationPart
+              IdentifierExpr 'backwards'
     FunctionDecl 'ReadingNumbersBack'
       ExpressionStmt
         CallExpr
