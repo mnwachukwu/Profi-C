@@ -1902,7 +1902,39 @@ An enumeration converts to `integer` with `ToInteger()`, and an integer converts
 
 A model, structure, or enumeration may be declared inside a model or structure. A nested type
 holds no reference to the type it sits inside; it is a type declared in that scope, not an
-inner instance. Types may not be declared inside a function body — see [§4.4](#44-functions).
+inner instance. One that needs an instance of its container takes it as a constructor argument,
+exactly as a C# nested class does. Types may not be declared inside a function body — see
+[§4.4](#44-functions).
+
+**Nesting says where the type belongs, and that decides how it is named.** From outside, the
+container is written first. From inside it — and from anything nested deeper within it — the
+bare name is enough:
+
+```text
+Tree.Node held = new Tree.Node(7);   from anywhere the container is named
+Node made = new Node(7);             from inside Tree, and nowhere else
+```
+
+A bare name never reaches across the program, which is what lets two containers each hold a
+`Node` without either giving way. That is the point of nesting rather than an incidental of it:
+a helper type belongs to the one type that uses it.
+
+**A nested type is a member, and carries a member's visibility.** Saying nothing means the
+declaring type alone (`PC0339` where something else names it), exactly as a field or a function
+does, and exactly as C# treats a nested class:
+
+```text
+model Tree
+    model Hidden      Tree's own; naming it elsewhere is refused
+    end model
+
+    public model Node  named from anywhere the container is
+    end model
+end model
+```
+
+Both rules match C#, which is the point: a reader who learns nesting here will find it means
+the same thing there.
 
 ## 8. Optionals
 
@@ -2821,7 +2853,6 @@ of a reader.
 | `PC0208` | error | Cannot extend a sealed model | '{0}' is sealed and cannot be extended. Drop 'sealed' from it, or extend what it extends. |
 | `PC0209` | error | Cannot extend this type | '{0}' is a {1}, and only a model can be extended. Hold one as a field instead. |
 | `PC0210` | error | Sealed and abstract together | '{0}' cannot be both sealed and abstract; it could then be neither extended nor instantiated, so nothing could use it. |
-| `PC0211` | error | Instance member on a shared model | '{0}' is a shared model, which is never instantiated. Mark the member 'shared', or drop 'shared' from '{0}'. |
 | `PC0212` | error | No entry point | A program needs a 'shared model Program' containing a function named 'Main'. |
 | `PC0213` | error | Program must be a shared model | 'Program' must be declared 'shared model', since there is no such thing as an instance of a running program. |
 | `PC0214` | error | '{0}' used outside a model | '{0}' can only be used inside a model's instance member. Drop 'shared' from this member, or reach what you want through its type name. |
@@ -2868,6 +2899,7 @@ of a reader.
 | `PC0255` | error | A throwaway cannot be a name | '_' throws a value away, so it cannot name {0}, which is reached by name. Give it a name. |
 | `PC0256` | error | Nothing here asks for a name | '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line. |
 | `PC0257` | error | A parameter needs a name | '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name. |
+| `PC0259` | opinion | This 'shared' is already implied | Every member of a shared model is shared already, so this says nothing. Remove it. |
 
 ### PC0300 to PC0399
 

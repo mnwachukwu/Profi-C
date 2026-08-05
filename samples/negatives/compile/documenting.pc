@@ -6,6 +6,10 @@
     never reason enough.
 ##
 
+# Nothing here is run, so nothing reads what it declares and nothing keeps what it
+# works out. That is the shape of every negative, and not the lesson of this one.
+# ignore PC0410 in file
+
 shared model Program
 
     ##
@@ -14,7 +18,7 @@ shared model Program
         @yields: the total.
         @summary: and the summary again, which the first one already carried.
     ##
-    shared integer function Total(integer n)
+    integer function Total(integer n)
         integer sum = 0;
 
         loop for i = 1 to n
@@ -28,7 +32,7 @@ shared model Program
         @summary: Writes a line and gives nothing back.
         @yields: a value that does not exist.
     ##
-    shared function Announce(string text)
+    function Announce(string text)
         Console.WriteLine(text);
     end function
 

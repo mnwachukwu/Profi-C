@@ -6,6 +6,10 @@
     Console.WriteLine, which takes a value of any kind but still takes a value.
 ##
 
+# Nothing here is run, so nothing reads what it declares and nothing keeps what it
+# works out. That is the shape of every negative, and not the lesson of this one.
+# ignore PC0410 in file
+
 shared model Program
 
     # This says it yields a string and never yields at all.

@@ -23,20 +23,17 @@ public sealed class NameScope
     private readonly Scope _locals;
     private readonly NamespaceSymbol _here;
     private readonly IReadOnlyList<NamespaceSymbol> _usings;
-    private readonly IReadOnlyDictionary<string, DeclaredTypeSymbol> _nested;
 
     internal NameScope(
         Scope locals,
         NamespaceSymbol here,
         IReadOnlyList<NamespaceSymbol> usings,
-        IReadOnlyDictionary<string, DeclaredTypeSymbol> nested,
         DeclaredTypeSymbol? enclosingType,
         bool inSharedMember)
     {
         _locals = locals;
         _here = here;
         _usings = usings;
-        _nested = nested;
         EnclosingType = enclosingType;
         InSharedMember = inSharedMember;
     }
@@ -84,11 +81,21 @@ public sealed class NameScope
             }
         }
 
-        foreach (DeclaredTypeSymbol nested in _nested.Values)
+        // A type nested inside another answers to a bare name only from inside its container,
+        // so only those are offered — the same walk outward the resolver makes when it reads
+        // one. Offering every nested type in the program would suggest names that do not
+        // resolve, which is worse than suggesting nothing.
+        for (Symbol? scope = EnclosingType; scope is DeclaredTypeSymbol holding;
+             scope = holding.Container)
         {
-            if (already.Add(nested.Name))
+            foreach (DeclaredTypeSymbol nested in
+                     holding.Members.Values.SelectMany(members => members)
+                            .OfType<DeclaredTypeSymbol>())
             {
-                yield return nested;
+                if (already.Add(nested.Name))
+                {
+                    yield return nested;
+                }
             }
         }
 

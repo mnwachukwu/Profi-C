@@ -78,7 +78,7 @@ shared model Tally
         @remarks: Private, like the field it resets. A shared model may keep things to itself
         exactly as any other model does.
     ##
-    shared function Reset()
+    function Reset()
         Tally.counted = 0;
     end function
 

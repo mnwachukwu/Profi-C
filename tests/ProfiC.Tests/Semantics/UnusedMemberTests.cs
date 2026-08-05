@@ -43,11 +43,11 @@ public sealed class UnusedMemberTests
     /// <summary>A body, with a pair of helpers to call: one that answers and one that does not.</summary>
     private static string[] IdsInBody(string body) => IdsIn($$"""
         shared model Program
-            public shared integer function Rolled()
+            public integer function Rolled()
                 yield 6;
             end function
 
-            public shared function Silent()
+            public function Silent()
                 Console.WriteLine("done");
             end function
 
@@ -59,11 +59,11 @@ public sealed class UnusedMemberTests
 
     // ---- Reported ------------------------------------------------------------------------
 
-    [TestCase("    shared integer Count = 3;", TestName = "a field")]
-    [TestCase("    shared constant integer Limit = 3;", TestName = "a constant field")]
+    [TestCase("    integer Count = 3;", TestName = "a field")]
+    [TestCase("    constant integer Limit = 3;", TestName = "a constant field")]
     [TestCase(
         """
-            shared function Helper()
+            function Helper()
                 Console.WriteLine("nothing calls this");
             end function
         """,
@@ -74,12 +74,12 @@ public sealed class UnusedMemberTests
     // ---- Not reported --------------------------------------------------------------------
 
     [TestCase(
-        "    shared integer Count = 3;",
+        "    integer Count = 3;",
         "        Console.WriteLine(Program.Count);",
         TestName = "a field something reads")]
     [TestCase(
         """
-            shared function Helper()
+            function Helper()
                 Console.WriteLine("called");
             end function
         """,
@@ -87,7 +87,7 @@ public sealed class UnusedMemberTests
         TestName = "a function something calls")]
     [TestCase(
         """
-            shared integer function Twice(integer n)
+            integer function Twice(integer n)
                 yield n * 2;
             end function
         """,
@@ -104,7 +104,7 @@ public sealed class UnusedMemberTests
     [TestCase("internal", TestName = "internal")]
     [TestCase("protected", TestName = "protected")]
     public void AMemberWiderThanPrivateIsNotReported(string visibility) => Assert.That(
-        IdsIn(Holding($"    {visibility} shared integer Count = 3;")),
+        IdsIn(Holding($"    {visibility} integer Count = 3;")),
         Is.Empty);
 
     /// <summary>The entry point is reached by the runtime rather than by its name.</summary>
@@ -181,7 +181,51 @@ public sealed class UnusedMemberTests
     /// </summary>
     [Test]
     public void ADeclarationDoesNotCountAsAUseOfItself() =>
-        Assert.That(IdsIn(Holding("    shared integer Count = 3;")), Is.EqualTo(new[] { "PC0410" }));
+        Assert.That(IdsIn(Holding("    integer Count = 3;")), Is.EqualTo(new[] { "PC0410" }));
+
+    // ---- 'shared' where it is already true -------------------------------------------------
+
+    /// <summary>
+    /// A shared model has no instances, so there is nothing for an instance member to belong
+    /// to and every member of one is shared whether it says so or not.
+    /// </summary>
+    [TestCase("    public shared integer Count = 3;", TestName = "a field")]
+    [TestCase(
+        "    public shared function Go()\n        Console.WriteLine(\"go\");\n    end function",
+        TestName = "a function")]
+    public void SharedOnAMemberOfASharedModelIsRemarkedOn(string member) =>
+        Assert.That(IdsIn(Holding(member)), Does.Contain("PC0259"));
+
+    /// <summary>
+    /// <para><b>A nested type is not a member in this sense</b>, and keeps the word it was
+    /// written with.</para>
+    /// <para>The implication exists because an instance member needs an instance to belong to.
+    /// A type does not: a model nested inside a shared one is instantiable, and saying
+    /// <c>shared</c> of it says something about that model rather than repeating something
+    /// about its container.</para>
+    /// </summary>
+    [TestCase("    shared model Inner\n    end model", TestName = "a shared nested model")]
+    [TestCase("    model Inner\n    end model", TestName = "an instantiable nested model")]
+    [TestCase("    shared structure Point\n        public integer x;\n    end structure",
+        TestName = "a shared nested structure")]
+    public void SharedOnANestedTypeIsNotRemarkedOn(string nested) =>
+        Assert.That(IdsIn(Holding(nested)), Does.Not.Contain("PC0259"));
+
+    /// <summary>Nor on a member of an ordinary model, where the word is what makes it shared.</summary>
+    [Test]
+    public void SharedOnAMemberOfAnOrdinaryModelIsNotRemarkedOn() => Assert.That(
+        IdsIn("""
+            model Counter
+                public shared integer Made = 0;
+            end model
+
+            shared model Program
+                function Main()
+                    Console.WriteLine(Counter.Made);
+                end function
+            end model
+            """),
+        Does.Not.Contain("PC0259"));
 
     // ---- A statement that keeps nothing --------------------------------------------------
 
@@ -249,11 +293,11 @@ public sealed class UnusedMemberTests
     public void MembersThatOnlyNameEachOtherAreNotReported() => Assert.That(
         IdsIn("""
             shared model Program
-                shared function First()
+                function First()
                     Program.Second();
                 end function
 
-                shared function Second()
+                function Second()
                     Program.First();
                 end function
 

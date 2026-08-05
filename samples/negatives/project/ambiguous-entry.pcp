@@ -18,4 +18,8 @@
 project AmbiguousEntry
     source programs/Tools.pc
     source programs/App.pc
+
+    # Neither program is run, so nothing reaches what they declare. That is the shape of
+    # every negative, and not the lesson of this one.
+    ignore PC0410
 end project

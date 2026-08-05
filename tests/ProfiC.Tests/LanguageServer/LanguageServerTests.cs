@@ -41,7 +41,7 @@ public sealed class LanguageServerTests
                 "Greeting.pc",
                 """
                 shared model Greeting
-                    public shared string function Words()
+                    public string function Words()
                         yield "hello";
                     end function
                 end model
@@ -758,7 +758,7 @@ public sealed class LanguageServerTests
             "Greeting.pc",
             """
             shared model Greeting
-                public shared string function Words()
+                public string function Words()
                     yield 42;
                 end function
             end model

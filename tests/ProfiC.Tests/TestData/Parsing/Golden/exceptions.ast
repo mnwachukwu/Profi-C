@@ -311,18 +311,12 @@ CompilationUnit
             IdentifierExpr 'Program'
           LambdaExpr block
             ExpressionStmt
-              BinaryExpr '/'
-                LiteralExpr 1 [Integer]
-                IdentifierExpr 'zero'
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'Show'
-            IdentifierExpr 'Program'
-          LambdaExpr block
-            ExpressionStmt
-              IndexExpr
-                IdentifierExpr 'three'
-                LiteralExpr 7 [Integer]
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                BinaryExpr '/'
+                  LiteralExpr 1 [Integer]
+                  IdentifierExpr 'zero'
       ExpressionStmt
         CallExpr
           MemberExpr 'Show'
@@ -330,19 +324,37 @@ CompilationUnit
           LambdaExpr block
             ExpressionStmt
               CallExpr
-                MemberExpr 'Value'
-                  IdentifierExpr 'nothing'
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                IndexExpr
+                  IdentifierExpr 'three'
+                  LiteralExpr 7 [Integer]
       ExpressionStmt
         CallExpr
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
             ExpressionStmt
-              BinaryExpr '*'
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                CallExpr
+                  MemberExpr 'Value'
+                    IdentifierExpr 'nothing'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Show'
+            IdentifierExpr 'Program'
+          LambdaExpr block
+            ExpressionStmt
+              CallExpr
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
                 BinaryExpr '*'
-                  LiteralExpr 2147483647 [Integer]
-                  LiteralExpr 2147483647 [Integer]
-                LiteralExpr 4 [Integer]
+                  BinaryExpr '*'
+                    LiteralExpr 2147483647 [Integer]
+                    LiteralExpr 2147483647 [Integer]
+                  LiteralExpr 4 [Integer]
       ExpressionStmt
         CallExpr
           MemberExpr 'Show'
@@ -350,9 +362,12 @@ CompilationUnit
           LambdaExpr block
             ExpressionStmt
               CallExpr
-                MemberExpr 'Format'
-                  IdentifierExpr 'count'
-                LiteralExpr "Q9" [String]
+                MemberExpr 'WriteLine'
+                  IdentifierExpr 'Console'
+                CallExpr
+                  MemberExpr 'Format'
+                    IdentifierExpr 'count'
+                  LiteralExpr "Q9" [String]
     FunctionDecl 'Show'
       ParameterDecl 'attempt'
         FunctionTypeSyntax

@@ -113,13 +113,6 @@ public sealed partial class Resolver
         {
             // Settled when signatures were, so it is read rather than resolved again.
             _model.BindType(field, symbol.Type);
-
-            // A shared model has no instances, so an instance member on one could never be
-            // reached.
-            if (_currentModel is { IsShared: true } && !symbol.IsShared)
-            {
-                Report(DiagnosticDescriptors.SharedModelMemberNotShared, field, _currentModel.Name);
-            }
         }
 
         if (field.Initializer is not null)
@@ -164,11 +157,6 @@ public sealed partial class Resolver
         if (isMember)
         {
             _inSharedMember = symbol?.IsShared ?? false;
-
-            if (_currentModel is { IsShared: true } && symbol is { IsShared: false })
-            {
-                Report(DiagnosticDescriptors.SharedModelMemberNotShared, function, _currentModel.Name);
-            }
         }
 
         try

@@ -221,14 +221,13 @@ shared model Program
 
         integer count = 5;
 
-        # Each of these is written to fail, so what it yields is beside the point — two of them
-        # yield anything at all only because failing is what they are here to do.
-        # ignore PC0412 in file
-        Program.Show(function() 1 / zero; end function);
-        Program.Show(function() three[7]; end function);
-        Program.Show(function() nothing.Value(); end function);
-        Program.Show(function() 2147483647 * 2147483647 * 4; end function);
-        Program.Show(function() count.Format("Q9"); end function);
+        # Each of these asks for a value it cannot have. Nothing is ever printed: working the
+        # argument out is what raises, so the call around it never happens.
+        Program.Show(function() Console.WriteLine(1 / zero); end function);
+        Program.Show(function() Console.WriteLine(three[7]); end function);
+        Program.Show(function() Console.WriteLine(nothing.Value()); end function);
+        Program.Show(function() Console.WriteLine(2147483647 * 2147483647 * 4); end function);
+        Program.Show(function() Console.WriteLine(count.Format("Q9")); end function);
     end function
 
     ##

@@ -1,5 +1,3 @@
-naming.pc(17,5): warning PC0410: Nothing uses 'count'. Remove it, or widen it past 'private'.
-naming.pc(18,5): error PC0253: A Shelf already has a member named 'count', declared on line 17. Rename one, unless they are versions of one function taking different types.
-naming.pc(18,5): warning PC0410: Nothing uses 'count'. Remove it, or widen it past 'private'.
-naming.pc(26,5): error PC0253: A Shelf already has a member named 'report', declared on line 22. Rename one, unless they are versions of one function taking different types.
-naming.pc(36,5): error PC0253: A Shelf already has a member named 'Height', declared on line 32. Rename one, unless they are versions of one function taking different types.
+naming.pc(22,5): error PC0253: A Shelf already has a member named 'count', declared on line 21. Rename one, unless they are versions of one function taking different types.
+naming.pc(30,5): error PC0253: A Shelf already has a member named 'report', declared on line 26. Rename one, unless they are versions of one function taking different types.
+naming.pc(40,5): error PC0253: A Shelf already has a member named 'Height', declared on line 36. Rename one, unless they are versions of one function taking different types.

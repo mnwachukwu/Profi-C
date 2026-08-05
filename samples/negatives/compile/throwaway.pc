@@ -24,19 +24,19 @@
 shared model Program
 
     # A field is reached by writing its name, so one called '_' could never be read.
-    shared integer _ = 3;
+    integer _ = 3;
 
     # The same for a function, and for each of its parameters. A caller reading this signature
     # is told the first argument matters enough to pass and not enough to name.
-    shared function Draw(integer _, integer height)
+    function Draw(integer _, integer height)
         Console.WriteLine(height);
     end function
 
-    shared integer function Compute()
+    integer function Compute()
         yield 7;
     end function
 
-    shared function Main()
+    function Main()
         # Nothing obliges a declaration to name anything, so a throwaway here spends a line
         # agreeing with what 'Compute();' would have said on its own.
         let _ = Program.Compute();

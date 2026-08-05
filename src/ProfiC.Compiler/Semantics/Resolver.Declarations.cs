@@ -237,6 +237,23 @@ public sealed partial class Resolver
         }
     }
 
+    /// <summary>
+    /// <para>Remarks on <c>shared</c> written where it is already true.</para>
+    /// <para>Asked of the words the member was written with rather than of the symbol, since the
+    /// symbol has had <c>shared</c> added to it by <see cref="EffectiveModifiers"/> and would
+    /// answer yes either way.</para>
+    /// </summary>
+    private void RemarkOnSharedInsideASharedModel(
+        DeclarationModifiers written,
+        Declaration declaration,
+        bool ownerIsShared)
+    {
+        if (ownerIsShared && written.Has(DeclarationModifiers.Shared))
+        {
+            Report(DiagnosticDescriptors.SharedInsideASharedModel, declaration);
+        }
+    }
+
     private void CollectMembers(
         DeclaredTypeSymbol owner,
         IReadOnlyList<Declaration> members,
@@ -259,6 +276,7 @@ public sealed partial class Resolver
                     };
 
                     CheckVisibilityWords(field.Modifiers, field.Name, field);
+                    RemarkOnSharedInsideASharedModel(field.Modifiers, field, ownerIsShared);
                     RefuseThrowawayAsAName(field.Name, field, $"a {symbol.Kind}");
                     owner.AddMember(symbol);
                     _model.Bind(field, symbol);
@@ -286,6 +304,7 @@ public sealed partial class Resolver
                     };
 
                     CheckVisibilityWords(function.Modifiers, function.Name, function);
+                    RemarkOnSharedInsideASharedModel(function.Modifiers, function, ownerIsShared);
                     RefuseThrowawayAsAName(function.Name, function, "a function");
                     RefuseThrowawayParameters(function.Parameters);
                     owner.AddMember(symbol);
@@ -327,7 +346,6 @@ public sealed partial class Resolver
         symbol.Container = owner;
         owner.AddMember(symbol);
         _allTypes.Add(symbol);
-        _nestedTypes[symbol.Name] = symbol;
         _model.Bind(declaration, symbol);
 
         CheckTypeModifiers(symbol, declaration);
@@ -372,7 +390,6 @@ public sealed partial class Resolver
 
         if (owner is not null)
         {
-            _nestedTypes[symbol.Name] = symbol;
         }
         _model.Bind(declaration, symbol);
 

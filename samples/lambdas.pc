@@ -245,13 +245,10 @@ shared model Program
 
         Console.WriteLine("each its own: " + readFirst() + " " + readSecond());
 
-        # Next both raises the count and answers what it became. Only the raising is wanted
-        # here, which is exactly the shape PC0412 remarks on — kept, because what this sample
-        # is showing is that the two readers see the same variable.
-        # ignore PC0412
-        first.Next();
-        # ignore PC0412
-        first.Next();
+        # Next both raises the count and answers what it became, so raising the first twice
+        # can say what it passed through on the way.
+        Console.WriteLine("raising the first twice: "
+                            + first.Next() + ", " + first.Next());
 
         Console.WriteLine("after raising the first: "
                             + readFirst() + " " + readSecond());

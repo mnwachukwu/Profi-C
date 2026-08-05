@@ -32,12 +32,9 @@ shared model Program
         Program.LookingInAFolder();
         Program.WhenSomethingGoesWrong();
 
-        # Taking the folder takes everything in it. Delete answers whether there was one, and
-        # the line below asks the question that matters here instead.
-        # ignore PC0412
-        Directory.Delete(Program.Folder);
-
-        Console.WriteLine("cleaned up: {{not Directory.Exists(Program.Folder)}}");
+        # Taking the folder takes everything in it, and Delete answers whether there was one
+        # to take — so asking again afterwards would be asking a question already answered.
+        Console.WriteLine("cleaned up: {{Directory.Delete(Program.Folder)}}");
     end function
 
     # @summary: A path to a file inside this program's working folder.

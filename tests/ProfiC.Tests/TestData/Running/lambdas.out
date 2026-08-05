@@ -18,6 +18,7 @@ still the same:   true
 10 + 5 + 5:       20
 1 2 3 
 each its own: 10 100
+raising the first twice: 11, 12
 after raising the first: 12 100
 tripled: {3, 6, 9}
 counting: 11 12 13

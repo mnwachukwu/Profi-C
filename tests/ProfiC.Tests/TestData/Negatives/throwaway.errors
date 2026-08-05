@@ -1,5 +1,5 @@
 throwaway.pc(27,5): error PC0255: '_' throws a value away, so it cannot name a field, which is reached by name. Give it a name.
-throwaway.pc(31,26): error PC0257: '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name.
+throwaway.pc(31,19): error PC0257: '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name.
 throwaway.pc(42,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.
 throwaway.pc(43,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.
 throwaway.pc(44,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.

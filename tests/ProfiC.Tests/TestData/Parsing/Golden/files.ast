@@ -36,22 +36,15 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
-          MemberExpr 'Delete'
-            IdentifierExpr 'Directory'
-          MemberExpr 'Folder'
-            IdentifierExpr 'Program'
-      ExpressionStmt
-        CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           InterpolatedStringExpr 'cleaned up: ' ''
             InterpolationPart
-              UnaryExpr 'not'
-                CallExpr
-                  MemberExpr 'Exists'
-                    IdentifierExpr 'Directory'
-                  MemberExpr 'Folder'
-                    IdentifierExpr 'Program'
+              CallExpr
+                MemberExpr 'Delete'
+                  IdentifierExpr 'Directory'
+                MemberExpr 'Folder'
+                  IdentifierExpr 'Program'
     FunctionDecl 'In'
       NamedTypeSyntax 'string'
       ParameterDecl 'name'

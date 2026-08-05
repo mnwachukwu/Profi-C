@@ -1,11 +1,8 @@
-members.pc(30,9): warning PC0409: Nothing reads 'wrongType'. Remove it, or write '_' if the value is not wanted.
-members.pc(30,41): error PC0300: Cannot use a string where an integer is expected. Write 'ToInteger()', or 'Integer.Parse(...)'.
-members.pc(31,9): warning PC0409: Nothing reads 'tooMany'. Remove it, or write '_' if the value is not wanted.
-members.pc(31,27): error PC0308: 'Counter' takes 1 argument, but was given 2.
-members.pc(38,27): error PC0330: 'Distinct' is a function, so it has to be called: write 'Distinct()'.
-members.pc(41,27): error PC0331: 'count' belongs to each Counter rather than to the Counter type, so it cannot be reached through the name 'Counter'. Mark it 'shared', or read it from a value.
-members.pc(41,27): error PC0339: 'count' is private in Counter, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.
-members.pc(44,9): warning PC0409: Nothing reads 'answer'. Remove it, or write '_' if the value is not wanted.
-members.pc(44,26): error PC0332: This produces no value, so there is nothing to use here.
-members.pc(47,27): error PC0332: This produces no value, so there is nothing to use here.
-members.pc(50,27): error PC0306: An integer[] has no member named 'Length'.
+members.pc(34,41): error PC0300: Cannot use a string where an integer is expected. Write 'ToInteger()', or 'Integer.Parse(...)'.
+members.pc(35,27): error PC0308: 'Counter' takes 1 argument, but was given 2.
+members.pc(42,27): error PC0330: 'Distinct' is a function, so it has to be called: write 'Distinct()'.
+members.pc(45,27): error PC0331: 'count' belongs to each Counter rather than to the Counter type, so it cannot be reached through the name 'Counter'. Mark it 'shared', or read it from a value.
+members.pc(45,27): error PC0339: 'count' is private in Counter, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.
+members.pc(48,26): error PC0332: This produces no value, so there is nothing to use here.
+members.pc(51,27): error PC0332: This produces no value, so there is nothing to use here.
+members.pc(54,27): error PC0306: An integer[] has no member named 'Length'.

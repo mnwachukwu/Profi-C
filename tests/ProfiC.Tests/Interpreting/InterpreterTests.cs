@@ -1287,7 +1287,7 @@ public sealed class InterpreterTests
     public void ASharedModelHoldsStateAcrossCalls() => Assert.That(
         Run("""
             shared model Program
-                shared integer seen = 0;
+                integer seen = 0;
 
                 function Main()
                     Program.Note();

@@ -1,0 +1,52 @@
+##
+    Reaching a type declared inside another the wrong way.
+
+    This program does not compile. Nesting says where a type belongs, and that answer is what
+    decides how it is named: from outside, the container is written first, and a nested type
+    says who may name it exactly as any other member does. samples/nesting.pc holds that side.
+
+    Two mistakes, and they are opposites. A bare name reaches a nested type only from inside the
+    container, so writing one from outside finds nothing — the name was never loose in the
+    program. And a nested type that says nothing about its reach is the container's own, so
+    naming it from elsewhere is refused however correctly it is written.
+
+    Nothing here is run, so nothing reads what it declares and nothing keeps what it
+    works out. That is the shape of every negative, and not the lesson of this one.
+# ignore PC0409 in file
+# ignore PC0410 in file
+##
+
+shared model Program
+
+    function Main()
+        # A bare name never reached across the program. Tree is what holds Node.
+        Node loose = new Node(1);
+
+        Console.WriteLine(loose.value);
+
+        # Written correctly, and still refused: Hidden is Tree's own.
+        Tree.Hidden kept = new Tree.Hidden(2);
+
+        Console.WriteLine(kept.value);
+    end function
+end model
+
+model Tree
+
+    public model Node
+        public integer value;
+
+        public function Node(integer held)
+            this.value = held;
+        end function
+    end model
+
+    # No word, so this one belongs to Tree and to nothing else.
+    model Hidden
+        public integer value;
+
+        public function Hidden(integer held)
+            this.value = held;
+        end function
+    end model
+end model

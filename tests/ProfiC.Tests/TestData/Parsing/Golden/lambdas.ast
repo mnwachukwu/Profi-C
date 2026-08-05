@@ -518,12 +518,19 @@ CompilationUnit
               IdentifierExpr 'readSecond'
       ExpressionStmt
         CallExpr
-          MemberExpr 'Next'
-            IdentifierExpr 'first'
-      ExpressionStmt
-        CallExpr
-          MemberExpr 'Next'
-            IdentifierExpr 'first'
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "raising the first twice: " [String]
+                CallExpr
+                  MemberExpr 'Next'
+                    IdentifierExpr 'first'
+              LiteralExpr ", " [String]
+            CallExpr
+              MemberExpr 'Next'
+                IdentifierExpr 'first'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

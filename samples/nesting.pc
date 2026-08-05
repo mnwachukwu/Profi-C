@@ -1,0 +1,158 @@
+##
+    A type declared inside another.
+
+    Nesting says where a type belongs. A model written inside another is that model's own: its
+    name is reached by writing the container's name first, it is private unless it says
+    otherwise, and two containers may each hold a Node without either knowing about the other.
+
+    It is not a way of writing a top-level type indented. What a reader can say about the shape
+    of a program is exactly what nesting is for — and it carries to C#, where a nested class
+    works the same way and is private by default too.
+
+    A nested type holds no reference to the type around it. One that needs an instance of its
+    container takes it as a constructor argument, as a C# nested class does.
+##
+
+shared model Program
+
+    function Main()
+        Program.ReachedByNamingTheContainer();
+        Program.TwoContainersEachWithANode();
+        Program.OneKeptToItself();
+        Program.ThreeDeep();
+    end function
+
+    ##
+        Nesting goes as deep as it is written, and the rule does not change with depth: a name
+        is read outward from where it is written, so each vantage point writes exactly the part
+        of the path that is not already around it.
+
+        From outside Outer that is the whole of it; from inside Outer, one step less; from
+        inside Middle, the bare name; and from inside Inner, its own name — which is the same
+        rule as the one before it, since Inner is inside Middle too.
+    ##
+    function ThreeDeep()
+        Console.WriteLine("The same type, from four places:");
+
+        Outer.Middle.Inner outside = new Outer.Middle.Inner(1);
+
+        Console.WriteLine("  from outside Outer: " + outside.value);
+        Console.WriteLine("  from inside Outer:  " + Outer.FromOuter(2).value);
+        Console.WriteLine("  from inside Middle: " + Outer.Middle.FromMiddle(3).value);
+        Console.WriteLine("  from inside Inner:  " + Outer.Middle.Inner.Beside(4).value);
+    end function
+
+    ##
+        From outside, the container is named first. Inside Tree, the bare name is enough — the
+        walk goes outward from where the name is written, and stops at the outermost container.
+    ##
+    function ReachedByNamingTheContainer()
+        Console.WriteLine("Named from outside:");
+
+        Tree.Node held = new Tree.Node(7);
+
+        Console.WriteLine("  Tree.Node holds " + held.value);
+        Console.WriteLine("  and Tree reaches it unqualified: " + Tree.Rooted(9).value);
+    end function
+
+    ##
+        Two Nodes, and nothing between them. Each belongs to the type that declares it, so
+        neither name has to give way — which is the whole of what a flat pool of names cannot do.
+    ##
+    function TwoContainersEachWithANode()
+        Console.WriteLine("One name, two types:");
+
+        Tree.Node counted = new Tree.Node(1);
+        Ledger.Node named = new Ledger.Node("first");
+
+        Console.WriteLine("  Tree.Node   holds " + counted.value);
+        Console.WriteLine("  Ledger.Node holds " + named.label);
+    end function
+
+    ##
+        A nested type says nothing about who may name it, so it is the container's own — the
+        default every member has. Ledger.Entry is reachable only from inside Ledger, which is
+        why what comes back here is a string rather than the Entry itself.
+    ##
+    function OneKeptToItself()
+        Console.WriteLine("Kept inside:");
+        Console.WriteLine("  " + Ledger.Describe());
+    end function
+end model
+
+shared model Tree
+
+    public model Node
+        public integer value;
+
+        public function Node(integer held)
+            this.value = held;
+        end function
+    end model
+
+    # Inside the container the bare name reaches it, with nothing to qualify.
+    public Node function Rooted(integer value)
+        yield new Node(value);
+    end function
+end model
+
+shared model Ledger
+
+    public model Node
+        public string label;
+
+        public function Node(string named)
+            this.label = named;
+        end function
+    end model
+
+    # No word written, so this one is Ledger's own and nothing outside can name it.
+    model Entry
+        public string what;
+
+        public function Entry(string said)
+            this.what = said;
+        end function
+    end model
+
+    public string function Describe()
+        Entry only = new Entry("an Entry, which only Ledger can name");
+
+        yield only.what;
+    end function
+end model
+
+##
+    Three deep, to show the rule does not change with depth. Each of the three writes only the
+    part of the path that is not already around it, which is the same walk outward at every
+    level rather than a special case for the first one.
+##
+shared model Outer
+
+    public model Middle
+
+        public model Inner
+            public integer value;
+
+            public function Inner(integer held)
+                this.value = held;
+            end function
+
+            # Inside Inner, its own bare name — which is the rule one level up, since Inner is
+            # inside Middle as well as being itself.
+            public shared Inner function Beside(integer held)
+                yield new Inner(held);
+            end function
+        end model
+
+        # Inside Middle, the bare name of what Middle holds.
+        public shared Inner function FromMiddle(integer held)
+            yield new Inner(held);
+        end function
+    end model
+
+    # Inside Outer, one step down: Middle is bare, Inner is named through it.
+    public Middle.Inner function FromOuter(integer held)
+        yield new Middle.Inner(held);
+    end function
+end model

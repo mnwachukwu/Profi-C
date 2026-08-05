@@ -222,12 +222,26 @@ public sealed partial class CilEmitter
         {
             switch (declaration)
             {
+                // A type's own members are walked as well as a namespace's, since a model or a
+                // structure may be declared inside another and needs a CLR type of its own.
                 case ModelDecl model:
                     yield return Shaped.Of(model);
+
+                    foreach (Shaped found in Models(model.Members))
+                    {
+                        yield return found;
+                    }
+
                     break;
 
                 case StructureDecl structure:
                     yield return Shaped.Of(structure);
+
+                    foreach (Shaped found in Models(structure.Members))
+                    {
+                        yield return found;
+                    }
+
                     break;
 
                 case NamespaceDecl inner:
@@ -253,6 +267,22 @@ public sealed partial class CilEmitter
             {
                 case EnumerationDecl enumeration:
                     yield return enumeration;
+                    break;
+
+                case ModelDecl model:
+                    foreach (EnumerationDecl found in Enumerations(model.Members))
+                    {
+                        yield return found;
+                    }
+
+                    break;
+
+                case StructureDecl structure:
+                    foreach (EnumerationDecl found in Enumerations(structure.Members))
+                    {
+                        yield return found;
+                    }
+
                     break;
 
                 case NamespaceDecl inner:
@@ -308,6 +338,15 @@ public sealed partial class CilEmitter
                 return;
             }
 
+            // A nested type is defined on its container's builder, so the container has to be
+            // there first — the same constraint a base is, and settled the same way.
+            if (_model.GetSymbol(model.Node) is DeclaredTypeSymbol
+                { Container: DeclaredTypeSymbol outer }
+                && byType.TryGetValue(outer, out Shaped holding))
+            {
+                Place(holding);
+            }
+
             if (_model.GetSymbol(model.Node) is ModelSymbol { BaseType: { } parent }
                 && byType.TryGetValue(parent, out Shaped above))
             {
@@ -356,6 +395,23 @@ public sealed partial class CilEmitter
         if (declaration.IsStructure)
         {
             shape |= TypeAttributes.Sealed;
+        }
+
+        // A type declared inside another becomes a CLR nested type, which is what C# does with
+        // one and what keeps two containers free to hold a Node each: the names never meet.
+        // The reach written into the metadata is assembly-wide unless the language said public,
+        // since everything a program emits lands in one assembly and a narrower one would have
+        // the runtime refuse what the compiler allowed.
+        if (owner.Container is DeclaredTypeSymbol outer && _types.TryGetValue(outer, out TypeBuilder? around))
+        {
+            _types[owner] = around.DefineNestedType(
+                owner.Name,
+                (owner.Visibility == Visibility.Public
+                    ? TypeAttributes.NestedPublic
+                    : TypeAttributes.NestedAssembly) | TypeAttributes.Class | shape,
+                BaseOf(owner));
+
+            return;
         }
 
         _types[owner] = _module.DefineType(

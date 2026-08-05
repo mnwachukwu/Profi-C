@@ -1,0 +1,13 @@
+Named from outside:
+  Tree.Node holds 7
+  and Tree reaches it unqualified: 9
+One name, two types:
+  Tree.Node   holds 1
+  Ledger.Node holds first
+Kept inside:
+  an Entry, which only Ledger can name
+The same type, from four places:
+  from outside Outer: 1
+  from inside Outer:  2
+  from inside Middle: 3
+  from inside Inner:  4

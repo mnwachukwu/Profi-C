@@ -11,6 +11,10 @@
     the two side by side.
 ##
 
+# Nothing here is run, so nothing reads what it declares and nothing keeps what it
+# works out. That is the shape of every negative, and not the lesson of this one.
+# ignore PC0409 in file
+
 model Basket
     public integer count;
 

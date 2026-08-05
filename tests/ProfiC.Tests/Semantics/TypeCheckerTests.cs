@@ -1488,7 +1488,7 @@ public sealed class TypeCheckerTests
                 end model
 
                 shared model Program
-                    shared Shape[] Known = {new Rectangle(), new Circle()};
+                    Shape[] Known = {new Rectangle(), new Circle()};
 
                     function Main()
                         Shape[] shapes = {new Rectangle(), new Circle()};

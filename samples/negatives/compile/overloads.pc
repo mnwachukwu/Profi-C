@@ -8,6 +8,10 @@
     The working side of the same rules is in samples/overloads.pc.
 ##
 
+# Nothing here is run, so nothing reads what it declares and nothing keeps what it
+# works out. That is the shape of every negative, and not the lesson of this one.
+# ignore PC0410 in file
+
 model Animal
     # @summary: What this animal says.
     # @yields: nothing in particular.

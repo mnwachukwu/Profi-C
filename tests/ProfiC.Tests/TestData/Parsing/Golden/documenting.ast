@@ -1,6 +1,6 @@
 CompilationUnit
   ModelDecl 'Program' [shared]
-    FunctionDecl 'Harmonic' [shared]
+    FunctionDecl 'Harmonic'
       NamedTypeSyntax 'fraction'
       ParameterDecl 'n'
         NamedTypeSyntax 'integer'
@@ -19,7 +19,7 @@ CompilationUnit
               IdentifierExpr 'i'
       YieldStmt
         IdentifierExpr 'total'
-    FunctionDecl 'Divides' [shared]
+    FunctionDecl 'Divides'
       NamedTypeSyntax 'boolean'
       ParameterDecl 'value'
         NamedTypeSyntax 'integer'
@@ -37,7 +37,7 @@ CompilationUnit
               IdentifierExpr 'value'
               IdentifierExpr 'by'
             LiteralExpr 0 [Integer]
-    FieldDecl 'Terms' [shared constant]
+    FieldDecl 'Terms' [constant]
       NamedTypeSyntax 'integer'
       LiteralExpr 8 [Integer]
     FunctionDecl 'Main'

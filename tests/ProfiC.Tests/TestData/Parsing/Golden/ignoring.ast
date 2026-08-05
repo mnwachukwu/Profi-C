@@ -35,7 +35,7 @@ CompilationUnit
         CallExpr
           MemberExpr 'Counting'
             IdentifierExpr 'Program'
-    FunctionDecl 'Counting' [shared]
+    FunctionDecl 'Counting'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

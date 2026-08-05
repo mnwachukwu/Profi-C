@@ -15,15 +15,6 @@ public sealed partial class Resolver
     /// </summary>
     private readonly List<DeclaredTypeSymbol> _allTypes = [];
 
-    /// <summary>
-    /// <para>Types declared inside another type, by bare name.</para>
-    /// <para>Held apart because a nested type belongs to no namespace: its container is the
-    /// type around it. Whether reaching one should require naming that type is a question of
-    /// its own, and holding them here answers it the way the language answers it today.</para>
-    /// </summary>
-    private readonly Dictionary<string, DeclaredTypeSymbol> _nestedTypes =
-        new(StringComparer.Ordinal);
-
     /// <summary>The namespace a name is currently being read from.</summary>
     private NamespaceSymbol? _lookupNamespace;
 
@@ -63,7 +54,32 @@ public sealed partial class Resolver
             return imported;
         }
 
-        return _nestedTypes.TryGetValue(name, out DeclaredTypeSymbol? nested) ? nested : null;
+        return NestedInScope(name);
+    }
+
+    /// <summary>
+    /// <para>A type nested inside the one being read from, or inside a type around that.</para>
+    /// <para>Walked outward from where the name was written, so a type declared inside
+    /// <c>Shape</c> is a bare name to <c>Shape</c>'s own code and to anything nested deeper
+    /// inside it — and to nothing else. From outside, the container has to be named:
+    /// <c>Shape.Corner</c>.</para>
+    /// <para>That is what nesting is for. A flat map of every nested type by bare name, which
+    /// is what stood here, made nesting a way of writing a top-level type indented: the name
+    /// reached across the whole program, two containers could not each hold a <c>Node</c>, and
+    /// writing the container's name did not work at all.</para>
+    /// </summary>
+    private DeclaredTypeSymbol? NestedInScope(string name)
+    {
+        for (Symbol? scope = _currentType; scope is DeclaredTypeSymbol holding;
+             scope = holding.Container)
+        {
+            if (NestedTypeIn(holding, name) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -141,8 +157,51 @@ public sealed partial class Resolver
             }
         }
 
+        return LookupThroughTypes(parts);
+    }
+
+    /// <summary>
+    /// <para>A dotted name whose prefix is a type rather than a namespace, which is how a type
+    /// declared inside another is reached from outside it.</para>
+    /// <para>The split is looked for from the right, so the longest prefix that names a type
+    /// wins and <c>Tools.Shapes.Square.Corner</c> reads as far into namespaces as it can before
+    /// it starts reading into types. The prefix goes back through the whole of qualified lookup
+    /// rather than through namespaces alone, which is what lets types nest more than one deep.
+    /// </para>
+    /// </summary>
+    private DeclaredTypeSymbol? LookupThroughTypes(IReadOnlyList<string> parts)
+    {
+        for (int split = parts.Count - 1; split >= 1; split--)
+        {
+            if (LookupQualifiedType([.. parts.Take(split)]) is not { } holding)
+            {
+                continue;
+            }
+
+            DeclaredTypeSymbol? reached = holding;
+
+            for (int index = split; index < parts.Count && reached is not null; index++)
+            {
+                reached = NestedTypeIn(reached, parts[index]);
+            }
+
+            if (reached is not null)
+            {
+                return reached;
+            }
+        }
+
         return null;
     }
+
+    /// <summary>
+    /// <para>A type declared directly inside another, by name.</para>
+    /// <para>Only what the type itself declares. A nested type is not inherited: extending a
+    /// model says what its instances can do, and the types written inside it are not part of
+    /// that — the same answer C# gives.</para>
+    /// </summary>
+    private static DeclaredTypeSymbol? NestedTypeIn(DeclaredTypeSymbol owner, string name) =>
+        owner.Lookup(name).OfType<DeclaredTypeSymbol>().FirstOrDefault();
 
     /// <summary>
     /// <para>Every namespace a written prefix could name, nearest first.</para>

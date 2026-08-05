@@ -1,0 +1,4 @@
+nesting.pc(23,9): error PC0201: There is no type named 'Node'. Check the spelling, or the 'using' that would reach it.
+nesting.pc(23,22): error PC0201: There is no type named 'Node'. Check the spelling, or the 'using' that would reach it.
+nesting.pc(28,9): error PC0339: 'Hidden' is private in Tree, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.
+nesting.pc(28,28): error PC0339: 'Hidden' is private in Tree, so it cannot be reached here. Mark it 'public' to allow that, or 'internal' to allow it anywhere in this project.

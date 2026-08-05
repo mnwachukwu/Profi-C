@@ -216,7 +216,6 @@ public sealed partial class Resolver
                     _lookupFile is not null && _fileUsings.TryGetValue(_lookupFile, out List<NamespaceSymbol>? used)
                         ? used
                         : [],
-                    _nestedTypes,
                     _currentType,
                     _inSharedMember));
         }
@@ -429,6 +428,15 @@ public sealed partial class Resolver
     /// </summary>
     private void RequireVisibleType(SyntaxNode where, DeclaredTypeSymbol declared)
     {
+        // A type declared inside another is reached like a member of it, so what decides is
+        // which type is asking rather than which project. Asked here because a type name is
+        // resolved here; the same question about a field or a function is asked while checking.
+        if (declared.Container is DeclaredTypeSymbol holding)
+        {
+            RequireNestedTypeVisible(where, declared, holding);
+            return;
+        }
+
         if (declared.Visibility == Visibility.Public)
         {
             return;
@@ -448,6 +456,69 @@ public sealed partial class Resolver
             TypeChecker.ProjectName(declared.Project),
             TypeChecker.ProjectName(here));
     }
+
+    /// <summary>
+    /// <para>Whether a type declared inside another may be named from where the name was
+    /// written, which is the rule every other member follows.</para>
+    /// <para>Private reaches the declaring type and whatever is nested deeper inside it, so a
+    /// helper can be shared among the parts of one type without being offered to the program.
+    /// Protected reaches down the line of descent, and internal reaches the project.</para>
+    /// </summary>
+    private void RequireNestedTypeVisible(
+        SyntaxNode where,
+        DeclaredTypeSymbol declared,
+        DeclaredTypeSymbol holding)
+    {
+        Visibility visibility = declared.Visibility;
+
+        bool reaches = visibility switch
+        {
+            Visibility.Public => true,
+            Visibility.Internal =>
+                string.Equals(WhereFrom()?.Project ?? _currentProject, holding.Project, StringComparison.Ordinal),
+            Visibility.Protected => WithinOrExtending(holding),
+            _ => Within(holding),
+        };
+
+        if (reaches)
+        {
+            return;
+        }
+
+        Report(
+            DiagnosticDescriptors.MemberIsNotVisible,
+            where,
+            declared.Name,
+            visibility.Spell(),
+            visibility == Visibility.Internal
+                ? TypeChecker.ProjectName(holding.Project)
+                : holding.Name,
+            TypeChecker.WideningFor(visibility));
+    }
+
+    /// <summary>The type a name is being read from, which is what visibility is judged against.</summary>
+    private DeclaredTypeSymbol? WhereFrom() => _currentType;
+
+    /// <summary>Whether the name sits inside the given type, however deeply nested.</summary>
+    private bool Within(DeclaredTypeSymbol holding)
+    {
+        for (Symbol? scope = _currentType; scope is DeclaredTypeSymbol inside;
+             scope = inside.Container)
+        {
+            if (ReferenceEquals(inside, holding))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool WithinOrExtending(DeclaredTypeSymbol holding) =>
+        Within(holding)
+        || (_currentType is ModelSymbol model
+            && holding is ModelSymbol target
+            && model.SelfAndAncestors().Any(ancestor => ReferenceEquals(ancestor, target)));
 
     /// <summary>
     /// <para>The symbol for a built-in type.</para>

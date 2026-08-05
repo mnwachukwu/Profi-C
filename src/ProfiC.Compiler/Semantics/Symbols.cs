@@ -129,10 +129,15 @@ public abstract class DeclaredTypeSymbol(string name, DeclarationModifiers modif
     public string Project { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// How far this type can be seen. A type says nothing far more often than it says
-    /// <c>public</c>, so silence means the project rather than the world.
+    /// <para>How far this type can be seen. A type says nothing far more often than it says
+    /// <c>public</c>, so silence means the project rather than the world.</para>
+    /// <para><b>A type declared inside another is a member of it</b>, and takes a member's
+    /// default instead: the declaring type alone. That is what makes nesting a way of keeping a
+    /// helper out of everybody's way rather than only a way of writing one indented, and it is
+    /// the answer C# gives to the same question.</para>
     /// </summary>
-    public Visibility Visibility => Modifiers.OfType();
+    public Visibility Visibility =>
+        Container is DeclaredTypeSymbol ? Modifiers.OfMember() : Modifiers.OfType();
 
     /// <summary>Members declared directly on this type, keyed by name.</summary>
     public Dictionary<string, List<Symbol>> Members { get; } = new(StringComparer.Ordinal);

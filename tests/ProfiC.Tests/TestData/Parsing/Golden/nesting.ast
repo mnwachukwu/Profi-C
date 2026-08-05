@@ -1,0 +1,228 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ReachedByNamingTheContainer'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'TwoContainersEachWithANode'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'OneKeptToItself'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ThreeDeep'
+            IdentifierExpr 'Program'
+    FunctionDecl 'ThreeDeep'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "The same type, from four places:" [String]
+      VarDeclStmt 'outside'
+        NamedTypeSyntax 'Outer.Middle.Inner'
+        NewExpr 'Outer.Middle.Inner'
+          LiteralExpr 1 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from outside Outer: " [String]
+            MemberExpr 'value'
+              IdentifierExpr 'outside'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from inside Outer:  " [String]
+            MemberExpr 'value'
+              CallExpr
+                MemberExpr 'FromOuter'
+                  IdentifierExpr 'Outer'
+                LiteralExpr 2 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from inside Middle: " [String]
+            MemberExpr 'value'
+              CallExpr
+                MemberExpr 'FromMiddle'
+                  MemberExpr 'Middle'
+                    IdentifierExpr 'Outer'
+                LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  from inside Inner:  " [String]
+            MemberExpr 'value'
+              CallExpr
+                MemberExpr 'Beside'
+                  MemberExpr 'Inner'
+                    MemberExpr 'Middle'
+                      IdentifierExpr 'Outer'
+                LiteralExpr 4 [Integer]
+    FunctionDecl 'ReachedByNamingTheContainer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Named from outside:" [String]
+      VarDeclStmt 'held'
+        NamedTypeSyntax 'Tree.Node'
+        NewExpr 'Tree.Node'
+          LiteralExpr 7 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Tree.Node holds " [String]
+            MemberExpr 'value'
+              IdentifierExpr 'held'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  and Tree reaches it unqualified: " [String]
+            MemberExpr 'value'
+              CallExpr
+                MemberExpr 'Rooted'
+                  IdentifierExpr 'Tree'
+                LiteralExpr 9 [Integer]
+    FunctionDecl 'TwoContainersEachWithANode'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "One name, two types:" [String]
+      VarDeclStmt 'counted'
+        NamedTypeSyntax 'Tree.Node'
+        NewExpr 'Tree.Node'
+          LiteralExpr 1 [Integer]
+      VarDeclStmt 'named'
+        NamedTypeSyntax 'Ledger.Node'
+        NewExpr 'Ledger.Node'
+          LiteralExpr "first" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Tree.Node   holds " [String]
+            MemberExpr 'value'
+              IdentifierExpr 'counted'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  Ledger.Node holds " [String]
+            MemberExpr 'label'
+              IdentifierExpr 'named'
+    FunctionDecl 'OneKeptToItself'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Kept inside:" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  " [String]
+            CallExpr
+              MemberExpr 'Describe'
+                IdentifierExpr 'Ledger'
+  ModelDecl 'Tree' [shared]
+    ModelDecl 'Node' [public]
+      FieldDecl 'value' [public]
+        NamedTypeSyntax 'integer'
+      FunctionDecl 'Node' [public]
+        ParameterDecl 'held'
+          NamedTypeSyntax 'integer'
+        AssignmentStmt
+          MemberExpr 'value'
+            ThisExpr
+          IdentifierExpr 'held'
+    FunctionDecl 'Rooted' [public]
+      NamedTypeSyntax 'Node'
+      ParameterDecl 'value'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        NewExpr 'Node'
+          IdentifierExpr 'value'
+  ModelDecl 'Ledger' [shared]
+    ModelDecl 'Node' [public]
+      FieldDecl 'label' [public]
+        NamedTypeSyntax 'string'
+      FunctionDecl 'Node' [public]
+        ParameterDecl 'named'
+          NamedTypeSyntax 'string'
+        AssignmentStmt
+          MemberExpr 'label'
+            ThisExpr
+          IdentifierExpr 'named'
+    ModelDecl 'Entry'
+      FieldDecl 'what' [public]
+        NamedTypeSyntax 'string'
+      FunctionDecl 'Entry' [public]
+        ParameterDecl 'said'
+          NamedTypeSyntax 'string'
+        AssignmentStmt
+          MemberExpr 'what'
+            ThisExpr
+          IdentifierExpr 'said'
+    FunctionDecl 'Describe' [public]
+      NamedTypeSyntax 'string'
+      VarDeclStmt 'only'
+        NamedTypeSyntax 'Entry'
+        NewExpr 'Entry'
+          LiteralExpr "an Entry, which only Ledger can name" [String]
+      YieldStmt
+        MemberExpr 'what'
+          IdentifierExpr 'only'
+  ModelDecl 'Outer' [shared]
+    ModelDecl 'Middle' [public]
+      ModelDecl 'Inner' [public]
+        FieldDecl 'value' [public]
+          NamedTypeSyntax 'integer'
+        FunctionDecl 'Inner' [public]
+          ParameterDecl 'held'
+            NamedTypeSyntax 'integer'
+          AssignmentStmt
+            MemberExpr 'value'
+              ThisExpr
+            IdentifierExpr 'held'
+        FunctionDecl 'Beside' [public shared]
+          NamedTypeSyntax 'Inner'
+          ParameterDecl 'held'
+            NamedTypeSyntax 'integer'
+          YieldStmt
+            NewExpr 'Inner'
+              IdentifierExpr 'held'
+      FunctionDecl 'FromMiddle' [public shared]
+        NamedTypeSyntax 'Inner'
+        ParameterDecl 'held'
+          NamedTypeSyntax 'integer'
+        YieldStmt
+          NewExpr 'Inner'
+            IdentifierExpr 'held'
+    FunctionDecl 'FromOuter' [public]
+      NamedTypeSyntax 'Middle.Inner'
+      ParameterDecl 'held'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        NewExpr 'Middle.Inner'
+          IdentifierExpr 'held'

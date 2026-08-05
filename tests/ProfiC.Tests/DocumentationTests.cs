@@ -53,7 +53,7 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                     @summary: Counts up to a limit.
                 ##
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -75,7 +75,7 @@ public sealed class DocumentationTests : LexerTestBase
                 ##
                     Counts up to a limit. Written as prose, so it documents nothing.
                 ##
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -100,7 +100,7 @@ public sealed class DocumentationTests : LexerTestBase
                 # @a: the first.
                 # @b: the second.
                 # @yields: their sum.
-                public shared integer function Add(integer a, integer b)
+                public integer function Add(integer a, integer b)
                     yield a + b;
                 end function
             """),
@@ -123,7 +123,7 @@ public sealed class DocumentationTests : LexerTestBase
         Report(Program("""
             # @summary: Adds two numbers.
             # @first: not what it is called.
-            public shared integer function Add(integer a, integer b)
+            public integer function Add(integer a, integer b)
                 yield a + b;
             end function
         """)),
@@ -138,7 +138,7 @@ public sealed class DocumentationTests : LexerTestBase
                 # @summary: One comment.
 
                 # @summary: And a second, which is not part of the first.
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -170,7 +170,7 @@ public sealed class DocumentationTests : LexerTestBase
         CompilationUnit unit = Compile(
             Program("""
                 # @summary: How many terms to add.
-                public shared constant integer Terms = 8;
+                public constant integer Terms = 8;
             """),
             out _);
 
@@ -195,7 +195,7 @@ public sealed class DocumentationTests : LexerTestBase
 
                     And the second, which is still the summary.
                 ##
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -216,7 +216,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @summary: One sentence
                     across two lines.
                 ##
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -238,7 +238,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @yields: the total.
                     @throws: nothing.
                 ##
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -270,7 +270,7 @@ public sealed class DocumentationTests : LexerTestBase
                     @summary: That is why it yields an
                     optional: nothing more to read is an answer, not a fault.
                 ##
-                public shared integer function Total(integer n)
+                public integer function Total(integer n)
                     yield n;
                 end function
             """),
@@ -292,7 +292,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Adds.
                 @count: how many.
             ##
-            public shared integer function Total(integer n)
+            public integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -305,7 +305,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Says something.
                 @yields: a value that is not there.
             ##
-            public shared function Speak()
+            public function Speak()
                 Console.WriteLine("hi");
             end function
         """)),
@@ -319,7 +319,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @n: how many.
                 @n: and again.
             ##
-            public shared integer function Total(integer n)
+            public integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -347,7 +347,7 @@ public sealed class DocumentationTests : LexerTestBase
     [Test]
     public void NothingIsReportedForDocumentationThatWasNeverWritten() => Assert.That(
         Report(Program("""
-            public shared integer function Total(integer n)
+            public integer function Total(integer n)
                 yield n;
             end function
         """)),
@@ -364,7 +364,7 @@ public sealed class DocumentationTests : LexerTestBase
                 @summary: Adds two numbers.
                 @a: the first.
             ##
-            public shared integer function Add(integer a, integer b)
+            public integer function Add(integer a, integer b)
                 yield a + b;
             end function
         """)),

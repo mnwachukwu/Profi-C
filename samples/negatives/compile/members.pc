@@ -5,6 +5,10 @@
     instance member needs an instance, and a call that yields nothing has no result to use.
 ##
 
+# Nothing here is run, so nothing reads what it declares and nothing keeps what it
+# works out. That is the shape of every negative, and not the lesson of this one.
+# ignore PC0409 in file
+
 model Counter
     integer count;
 

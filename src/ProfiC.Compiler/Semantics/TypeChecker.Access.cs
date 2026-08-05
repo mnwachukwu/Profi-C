@@ -77,10 +77,19 @@ public sealed partial class TypeChecker
         FieldSymbol field => field.Visibility,
         FunctionSymbol function => function.Visibility,
 
-        // An enumeration member and a nested type are reached as far as the type holding them,
-        // since neither carries a visibility of its own.
+        // A type declared inside another carries a visibility like any other member.
+        DeclaredTypeSymbol { Container: DeclaredTypeSymbol } nested => nested.Visibility,
+
+        // An enumeration member is reached as far as the enumeration holding it, since it
+        // carries no visibility of its own.
         _ => Visibility.Public,
     };
+
+    /// <summary>
+    /// The word that would widen a member enough to be reached from where it was named. Shared
+    /// with the resolver, which asks the same question of a type declared inside another.
+    /// </summary>
+    internal static string WideningFor(Visibility visibility) => Widening(visibility);
 
     /// <summary>The word that would let this member be reached from where it was named.</summary>
     private static string Widening(Visibility visibility) => visibility switch

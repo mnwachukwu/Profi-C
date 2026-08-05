@@ -685,12 +685,6 @@ public static class DiagnosticDescriptors
         "'{0}' cannot be both sealed and abstract; it could then be neither extended nor "
         + "instantiated, so nothing could use it.");
 
-    public static readonly DiagnosticDescriptor SharedModelMemberNotShared = Error(
-        "PC0211",
-        "Instance member on a shared model",
-        "'{0}' is a shared model, which is never instantiated. Mark the member 'shared', or "
-        + "drop 'shared' from '{0}'.");
-
     public static readonly DiagnosticDescriptor EntryPointMissing = Error(
         "PC0212",
         "No entry point",
@@ -927,6 +921,22 @@ public static class DiagnosticDescriptors
     /// pass, and it is shown to them at every call. A name is what that reader is owed, even
     /// where the body ignores the value.</para>
     /// </summary>
+    /// <summary>
+    /// <para><c>shared</c> written on a member of a shared model, which is already shared.</para>
+    /// <para>A shared model has no instances, so there is nothing for an instance member to
+    /// belong to and every member of one is shared whether it says so or not. The word is
+    /// spare, exactly as <c>virtual</c> beside <c>abstract</c> is.</para>
+    /// <para><b>A nested type is not this.</b> A model, structure or enumeration declared inside
+    /// another keeps the modifiers it was written with — nothing makes it shared for being
+    /// nested — so <c>shared</c> on one of those is doing work.</para>
+    /// <para>Numbered past <c>PC0258</c>, which was retired the same day it was added. Reusing a
+    /// retired identifier would leave one number meaning two things across the history.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor SharedInsideASharedModel = UnusedOpinion(
+        "PC0259",
+        "This 'shared' is already implied",
+        "Every member of a shared model is shared already, so this says nothing. Remove it.");
+
     public static readonly DiagnosticDescriptor ThrowawayCannotBeAParameter = Error(
         "PC0257",
         "A parameter needs a name",

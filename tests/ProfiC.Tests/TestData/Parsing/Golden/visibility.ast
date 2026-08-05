@@ -34,7 +34,7 @@ CompilationUnit
       YieldStmt
         MemberExpr 'counted'
           IdentifierExpr 'Tally'
-    FunctionDecl 'Reset' [shared]
+    FunctionDecl 'Reset'
       AssignmentStmt
         MemberExpr 'counted'
           IdentifierExpr 'Tally'
