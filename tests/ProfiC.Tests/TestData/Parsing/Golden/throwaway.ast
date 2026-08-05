@@ -19,7 +19,7 @@ CompilationUnit
             IdentifierExpr 'Program'
       ExpressionStmt
         CallExpr
-          MemberExpr 'SeveralInOneBody'
+          MemberExpr 'SeveralInOneWalk'
             IdentifierExpr 'Program'
     FunctionDecl 'ALoopThatOnlyCounts'
       ExpressionStmt
@@ -78,24 +78,30 @@ CompilationUnit
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
           LiteralExpr "Called for its effect:" [String]
-      VarDeclStmt '_' [inferred]
+      ExpressionStmt
         CallExpr
           MemberExpr 'Announced'
             IdentifierExpr 'Program'
-      AssignmentStmt
-        IdentifierExpr '_'
-        CallExpr
-          MemberExpr 'Announced'
-            IdentifierExpr 'Program'
-    FunctionDecl 'SeveralInOneBody'
-      VarDeclStmt '_' [inferred]
-        LiteralExpr 1 [Integer]
-      VarDeclStmt '_'
-        NamedTypeSyntax 'integer'
-        LiteralExpr 2 [Integer]
+    FunctionDecl 'SeveralInOneWalk'
+      VarDeclStmt 'numbers'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+          LiteralExpr 7 [Integer]
+          LiteralExpr 8 [Integer]
       VarDeclStmt '_count'
         NamedTypeSyntax 'integer'
         LiteralExpr 3 [Integer]
+      ForEachStmt '_'
+        IdentifierExpr 'numbers'
+        ForStmt '_' to
+          LiteralExpr 1 [Integer]
+          LiteralExpr 2 [Integer]
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "  a pair of throwaways, one inside the other" [String]
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'

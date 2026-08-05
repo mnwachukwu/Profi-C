@@ -361,12 +361,17 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    Identifier that is exactly "_" binds nothing, which is why several of them
    in one body are not a clash and why none of them can be read back.
 
-   It is taken in the Identifier of VarDecl, ForStmt, ForEachStmt, and
-   CatchClause -- the positions where the language hands a body a value and
-   nothing outside can see what it was called. It is refused as the
-   Identifier of Param and LambdaParam, which a caller reads, and as the name
-   of anything reached by writing it: a field, a function, a type, an
-   enumeration member, a namespace.
+   It is taken in exactly three places -- the Identifier of ForStmt, of
+   ForEachStmt, and of CatchClause -- and what they share is that the
+   production obliges a name where the body may have no use for one.
+
+   It is refused everywhere else, VarDecl and the left of an ExprStmt
+   assignment included. Nothing obliges those to name anything, and ExprStmt
+   admits a bare Expr, so a value is dropped by writing it on its own and a
+   throwaway written to drop the same value only spends a line. It is refused
+   as the Identifier of Param and LambdaParam, which a caller reads, and as
+   the name of anything reached by writing it: a field, a function, a type,
+   an enumeration member, a namespace.
 
    There is no dangling-else problem. "else if" belongs to the IfStmt
    production rather than being a nested IfStmt, and a whole chain closes

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ProfiC.Compiler.Diagnostics;
@@ -62,6 +63,45 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
         Documented().Except(Declared()),
         Is.Empty,
         "diagnostics Appendix A lists that the compiler cannot report");
+
+    /// <summary>
+    /// <para>A message is either literal text or a format string, and never half of each.</para>
+    /// <para>Nothing formats a descriptor that takes no arguments — the text is used as
+    /// written — so one that takes none may hold a brace as punctuation, and <c>PC0313</c>'s
+    /// <c>values = {}</c> does. That is fine exactly as long as it stays argumentless. Give it a
+    /// <c>{0}</c> and the message is formatted instead: the brace stops being punctuation and
+    /// becomes a malformed placeholder, which throws at the moment the diagnostic was going to
+    /// be reported — so the compiler crashes where it meant to explain something.</para>
+    /// <para>Nothing about that fails to compile, and it is the kind of thing found by the
+    /// reader who hit it. So the rule is checked on the ones that carry a placeholder: those
+    /// have to survive being formatted, which means every brace in them is one or is doubled.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void AMessageCarryingAPlaceholderSurvivesBeingFormatted() => Assert.Multiple(() =>
+    {
+        foreach (DiagnosticDescriptor descriptor in Descriptors())
+        {
+            MatchCollection placeholders =
+                Regex.Matches(descriptor.MessageFormat, @"\{(\d+)\}");
+
+            if (placeholders.Count == 0)
+            {
+                continue;
+            }
+
+            int wanted = placeholders.Max(
+                p => int.Parse(p.Groups[1].Value, CultureInfo.InvariantCulture)) + 1;
+
+            object?[] args = [.. Enumerable.Range(0, wanted).Select(object? (i) => $"<{i}>")];
+
+            Assert.That(
+                () => string.Format(CultureInfo.InvariantCulture, descriptor.MessageFormat, args),
+                Throws.Nothing,
+                $"{descriptor.Id} carries a placeholder, so every brace in it must be one "
+                + "or be doubled");
+        }
+    });
 
     /// <summary>The word the appendix and the renderer both use for a severity.</summary>
     private static string Spelled(DiagnosticSeverity severity) => severity switch

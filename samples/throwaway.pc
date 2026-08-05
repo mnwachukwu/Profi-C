@@ -1,14 +1,18 @@
 ##
     The throwaway.
 
-    A single underscore written where a name belongs binds nothing. It is for the places the
-    language hands a program a value and the program has no use for it: the element of a loop
-    that only counts, an exception handled rather than read, a result worked out on the way to
-    something else.
+    A single underscore written where a name belongs binds nothing. It stands in for a name the
+    language obliges a program to write and the program has no use for: the counter of a loop
+    that only counts, the element of a walk that ignores it, an exception handled rather than
+    read. Three places, and what they share is that leaving the name out is not an option.
 
     Writing one says so. An invented name says the opposite — a reader meeting 'unused' has to
     read to the end of the body to find out it was never used, and the compiler, which cannot
     tell the difference either, says nothing.
+
+    Nowhere else takes one, because nowhere else is a name obliged. Any expression is already a
+    statement, so 'Announce();' drops what it yields and 'let _ = Announce();' only spends a
+    line agreeing. samples/negatives/compile/throwaway.pc holds that side.
 
     Because it binds nothing, several in one body are ordinary and none of them can be read.
     Only the bare underscore: '_count' and '_x' are names like any other.
@@ -24,7 +28,7 @@ shared model Program
         Program.AnElementNobodyWants();
         Program.AnExceptionHandledRatherThanRead();
         Program.AResultWorkedOutAndDropped();
-        Program.SeveralInOneBody();
+        Program.SeveralInOneWalk();
     end function
 
     ##
@@ -68,29 +72,30 @@ shared model Program
     end function
 
     ##
-        A call made for what it does rather than what it gives back. The initializer still runs:
-        a throwaway drops the value, not the work that produced it.
+        A call made for what it does rather than what it gives back — and written without a
+        throwaway, because none is needed. Any expression stands as a statement, so the result
+        is dropped by saying nothing about it.
     ##
     function AResultWorkedOutAndDropped()
         Console.WriteLine("Called for its effect:");
 
-        let _ = Program.Announced();
-
-        # A statement drops what it does not use, so writing '_ =' says what was going to
-        # happen anyway. The language has an opinion about it, kept here to show the form runs.
-        # ignore PC0258
-        _ = Program.Announced();
+        Program.Announced();
     end function
 
     ##
         Two throwaways in one body, and a name beginning with an underscore beside them. The
-        first two are not a clash, because neither declares anything to clash with. The third
-        is an ordinary name and is read like one.
+        first two are not a clash, because neither binds anything to clash with. The third is
+        an ordinary name and is read like one.
     ##
-    function SeveralInOneBody()
-        let _ = 1;
-        integer _ = 2;
+    function SeveralInOneWalk()
+        integer[] numbers = {7, 8};
         integer _count = 3;
+
+        loop each _ in numbers
+            loop for _ = 1 to 2
+                Console.WriteLine("  a pair of throwaways, one inside the other");
+            end loop
+        end loop
 
         Console.WriteLine("An ordinary name beginning with '_': " + _count);
     end function

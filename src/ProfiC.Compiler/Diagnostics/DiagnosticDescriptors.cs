@@ -903,14 +903,22 @@ public static class DiagnosticDescriptors
         + "name.");
 
     /// <summary>
-    /// A throwaway declared with nothing to throw away. Not a refusal of the throwaway but of
-    /// the line, which does nothing at all — the value it discards is the only reason to
-    /// write one.
+    /// <para>A throwaway written where nothing asked for a name.</para>
+    /// <para>It stands in for a name the language obliges a program to write — a loop's
+    /// counter, a walked element, a caught exception. Those are the places a name cannot simply
+    /// be left out.</para>
+    /// <para>Anywhere else it costs a line rather than saving one. Any expression is already a
+    /// statement, so <c>Compute();</c> drops what it yields exactly as <c>let _ = Compute();</c>
+    /// would, and says it in fewer words. That reasoning carries to a shape the language does
+    /// not have yet: destructuring several values at once may take a throwaway for the ones
+    /// nobody wants, but not for all of them, since a left side that keeps nothing is a call
+    /// written the long way round.</para>
     /// </summary>
-    public static readonly DiagnosticDescriptor ThrowawayNeedsAValue = Error(
+    public static readonly DiagnosticDescriptor ThrowawayWhereNoNameIsAsked = Error(
         "PC0256",
-        "A throwaway needs a value",
-        "'_' has nothing to throw away here. Give it a value, or remove the line.");
+        "Nothing here asks for a name",
+        "'_' stands in for a name the language asks for, and nothing asks for one here. Write "
+        + "the value on its own, or remove the line.");
 
     /// <summary>
     /// <para>A throwaway written as a parameter.</para>
@@ -925,15 +933,6 @@ public static class DiagnosticDescriptors
         "'_' cannot name a parameter: it is part of the signature a caller reads. Give it a "
         + "name.");
 
-    /// <summary>
-    /// Assigning to a throwaway, which is allowed and says nothing. A statement drops whatever
-    /// it does not use, so the value goes the same way with or without the <c>_ =</c>.
-    /// </summary>
-    public static readonly DiagnosticDescriptor ThrowawayAssignmentSaysNothing = UnusedOpinion(
-        "PC0258",
-        "This '_ =' adds nothing",
-        "A statement already drops the value it does not use, so '_ =' says what was going to "
-        + "happen anyway. Remove it.");
 
     /// <summary>
     /// <para>Several <c>Program</c>s and nothing saying which one begins.</para>

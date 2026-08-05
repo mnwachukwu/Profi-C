@@ -310,7 +310,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt '_' [inferred]
+            ExpressionStmt
               BinaryExpr '/'
                 LiteralExpr 1 [Integer]
                 IdentifierExpr 'zero'
@@ -319,7 +319,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt '_' [inferred]
+            ExpressionStmt
               IndexExpr
                 IdentifierExpr 'three'
                 LiteralExpr 7 [Integer]
@@ -328,7 +328,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt '_' [inferred]
+            ExpressionStmt
               CallExpr
                 MemberExpr 'Value'
                   IdentifierExpr 'nothing'
@@ -337,7 +337,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt '_' [inferred]
+            ExpressionStmt
               BinaryExpr '*'
                 BinaryExpr '*'
                   LiteralExpr 2147483647 [Integer]
@@ -348,7 +348,7 @@ CompilationUnit
           MemberExpr 'Show'
             IdentifierExpr 'Program'
           LambdaExpr block
-            VarDeclStmt '_' [inferred]
+            ExpressionStmt
               CallExpr
                 MemberExpr 'Format'
                   IdentifierExpr 'count'

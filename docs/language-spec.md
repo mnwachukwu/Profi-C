@@ -1011,14 +1011,14 @@ in another file, so `this.` tells a reader to stop looking in this function; and
 overlap would mean adding a field could break methods that have nothing to do with it. A local
 in an enclosing scope is always a few lines above, in the same body.
 
-**A bare `_` is a throwaway, and binds nothing.** It is written where the language hands a body
-a value the body has no use for:
+**A bare `_` is a throwaway, and binds nothing.** It stands in for a name the language *obliges*
+a program to write, where the program has no use for one. There are three such places, and what
+they share is that leaving the name out is not an option:
 
 ```text
 loop for _ = 1 to 3             count three times, and never ask which
 loop each _ in numbers          one line per element, whatever the element is
 catch ArgumentException _       the type was the whole answer
-let _ = Announce();             called for what it does, not what it gives back
 ```
 
 Both rules above pass over it, because there is nothing to pass over: a throwaway enters no
@@ -1026,28 +1026,36 @@ scope, so several in one body are ordinary rather than a clash, and none of them
 anything.
 
 ```text
-let _ = 1;
-integer _ = 2;                  neither PC0202 nor PC0237 — nothing was declared
+loop each _ in numbers
+    loop for _ = 1 to 2         neither PC0202 nor PC0237 — nothing was bound
+    end loop
+end loop
 ```
 
-Its value is still worked out, and still checked against the type where one is written. A
-throwaway drops the value, not the work that produced it.
+**Nowhere else takes one** (`PC0256`), because nowhere else is a name obliged. Any expression is
+already a statement, so a value is dropped by writing it on its own — and a throwaway written to
+drop the same value spends a line agreeing:
+
+```text
+Announce();                     drops what it yields
+let _ = Announce();             PC0256: the same thing, one line longer
+_ = Announce();                 PC0256, for the same reason
+integer _;                      PC0256 — and this one does nothing at all
+```
+
+That reasoning reaches a shape the language does not have yet. Destructuring several values at
+once would be a fourth place a name is obliged, so a throwaway would belong there for the parts
+nobody wants — but not for *all* of them, since a left side that keeps nothing is a call written
+the long way round.
 
 Because it binds nothing, **it cannot be read** (`PC0254`), and it cannot name anything that is
 reached by writing its name — a field, a function, a type, an enumeration member, a namespace
-(`PC0255`). One written with no value to drop is a line that does nothing (`PC0256`).
+(`PC0255`).
 
 **A parameter is not a place for one** (`PC0257`), and it is the one receiving position that is
 not. Every other is invisible outside the body it sits in; a parameter is part of a signature
 somebody else reads to work out what to pass, and is shown to them at every call. A function
 with no use for an argument should not ask for one.
-
-Assigning to a throwaway is allowed and says nothing (`PC0258`), since a statement already
-drops the value it does not use:
-
-```text
-_ = Announce();                 the same as writing 'Announce();'
-```
 
 Only the bare underscore. `_count` and `_x` are names like any other, read and written like any
 other.
@@ -2836,9 +2844,8 @@ of a reader.
 | `PC0253` | error | Member name already taken | {0} already has a member named '{1}', declared on line {2}. Rename one, unless they are versions of one function taking different types. |
 | `PC0254` | error | A throwaway holds nothing | '_' throws its value away, so there is nothing here to use. Give it a name. |
 | `PC0255` | error | A throwaway cannot be a name | '_' throws a value away, so it cannot name {0}, which is reached by name. Give it a name. |
-| `PC0256` | error | A throwaway needs a value | '_' has nothing to throw away here. Give it a value, or remove the line. |
+| `PC0256` | error | Nothing here asks for a name | '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line. |
 | `PC0257` | error | A parameter needs a name | '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name. |
-| `PC0258` | opinion | This '_ =' adds nothing | A statement already drops the value it does not use, so '_ =' says what was going to happen anyway. Remove it. |
 
 ### PC0300 to PC0399
 

@@ -512,11 +512,12 @@ public sealed partial class Resolver
             Declaration = declaration,
         };
 
-        // A throwaway is written for the value it drops, so one with no value drops nothing
-        // and the line does nothing at all.
-        if (Throwaway.Is(declaration.Name) && declaration.Initializer is null)
+        // Nothing obliges a declaration to name anything — it is written because a name was
+        // wanted. So a throwaway here saves no name and costs a line, and whatever it was given
+        // says the same thing as a statement of its own.
+        if (Throwaway.Is(declaration.Name))
         {
-            Report(DiagnosticDescriptors.ThrowawayNeedsAValue, declaration);
+            Report(DiagnosticDescriptors.ThrowawayWhereNoNameIsAsked, declaration);
         }
 
         Declare(local, declaration);
@@ -594,12 +595,12 @@ public sealed partial class Resolver
     /// </summary>
     private void BindAssignment(AssignmentStmt assignment)
     {
-        // Assigning to a throwaway is allowed and says nothing, so the value is bound and the
-        // target is not — there is no name on the left to bind. Lowering drops the assignment
-        // afterwards, leaving the statement that was going to run either way.
+        // The same on the left of an assignment, and for the same reason: nothing asked for a
+        // name here either. The value is still bound, so what it is made of is still reported
+        // on; the target is not, there being no name on the left to bind.
         if (assignment.Target is IdentifierExpr name && Throwaway.Is(name.Name))
         {
-            Report(DiagnosticDescriptors.ThrowawayAssignmentSaysNothing, assignment);
+            Report(DiagnosticDescriptors.ThrowawayWhereNoNameIsAsked, assignment);
             BindExpression(assignment.Value);
             return;
         }

@@ -1,12 +1,15 @@
-throwaway.pc(24,5): error PC0255: '_' throws a value away, so it cannot name a field, which is reached by name. Give it a name.
-throwaway.pc(28,26): error PC0257: '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name.
-throwaway.pc(36,27): error PC0254: '_' throws its value away, so there is nothing here to use. Give it a name.
-throwaway.pc(37,22): error PC0254: '_' throws its value away, so there is nothing here to use. Give it a name.
-throwaway.pc(40,9): error PC0256: '_' has nothing to throw away here. Give it a value, or remove the line.
-throwaway.pc(44,50): error PC0257: '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name.
-throwaway.pc(52,9): warning PC0409: Nothing reads 'forgotten'. Remove it, or write '_' if the value is not wanted.
-throwaway.pc(58,5): error PC0255: '_' throws a value away, so it cannot name a function, which is reached by name. Give it a name.
-throwaway.pc(64,5): warning PC0410: Nothing uses 'capacity'. Remove it, or widen it past 'private'.
-throwaway.pc(72,11): error PC0255: '_' throws a value away, so it cannot name a namespace, which is reached by name. Give it a name.
-throwaway.pc(73,5): error PC0255: '_' throws a value away, so it cannot name a model, which is reached by name. Give it a name.
-throwaway.pc(77,9): error PC0255: '_' throws a value away, so it cannot name an enumeration member, which is reached by name. Give it a name.
+throwaway.pc(27,5): error PC0255: '_' throws a value away, so it cannot name a field, which is reached by name. Give it a name.
+throwaway.pc(31,26): error PC0257: '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name.
+throwaway.pc(42,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.
+throwaway.pc(43,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.
+throwaway.pc(44,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.
+throwaway.pc(47,9): error PC0256: '_' stands in for a name the language asks for, and nothing asks for one here. Write the value on its own, or remove the line.
+throwaway.pc(50,27): error PC0254: '_' throws its value away, so there is nothing here to use. Give it a name.
+throwaway.pc(51,22): error PC0254: '_' throws its value away, so there is nothing here to use. Give it a name.
+throwaway.pc(55,50): error PC0257: '_' cannot name a parameter: it is part of the signature a caller reads. Give it a name.
+throwaway.pc(63,9): warning PC0409: Nothing reads 'forgotten'. Remove it, or write '_' if the value is not wanted.
+throwaway.pc(69,5): error PC0255: '_' throws a value away, so it cannot name a function, which is reached by name. Give it a name.
+throwaway.pc(75,5): warning PC0410: Nothing uses 'capacity'. Remove it, or widen it past 'private'.
+throwaway.pc(83,11): error PC0255: '_' throws a value away, so it cannot name a namespace, which is reached by name. Give it a name.
+throwaway.pc(84,5): error PC0255: '_' throws a value away, so it cannot name a model, which is reached by name. Give it a name.
+throwaway.pc(88,9): error PC0255: '_' throws a value away, so it cannot name an enumeration member, which is reached by name. Give it a name.

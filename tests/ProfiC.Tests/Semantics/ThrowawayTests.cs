@@ -46,9 +46,6 @@ public sealed class ThrowawayTests
 
     // ---- Where a throwaway is taken ------------------------------------------------------
 
-    [TestCase("        let _ = 41;", TestName = "an inferred local")]
-    [TestCase("        integer _ = 41;", TestName = "a local with a written type")]
-    [TestCase("        let _ = Program.Rolled();", TestName = "a result dropped")]
     [TestCase(
         """
                 loop for _ = 1 to 3
@@ -83,21 +80,29 @@ public sealed class ThrowawayTests
     [Test]
     public void SeveralThrowawaysInOneBodyAreNotAClash() => Assert.That(
         IdsIn("""
-                let _ = 1;
-                integer _ = 2;
-                let _ = 3;
+                integer[] numbers = {1, 2};
+
+                loop each _ in numbers
+                    Console.WriteLine("one");
+                end loop
+
+                loop for _ = 1 to 2
+                    Console.WriteLine("two");
+                end loop
         """),
         Is.Empty);
 
+    /// <summary>One inside another, which is where the no-shadowing rule would otherwise bite.</summary>
     [Test]
-    public void AThrowawayInsideAnotherScopeShadowsNothing() => Assert.That(
+    public void AThrowawayInsideAnotherShadowsNothing() => Assert.That(
         IdsIn("""
-                integer depth = 1;
-                let _ = 1;
+                integer[] numbers = {1, 2};
 
-                if depth > 0
-                    let _ = 2;
-                end if
+                loop each _ in numbers
+                    loop for _ = 1 to 2
+                        Console.WriteLine("nested");
+                    end loop
+                end loop
         """),
         Is.Empty);
 
@@ -112,16 +117,29 @@ public sealed class ThrowawayTests
 
     // ---- Where it is refused -------------------------------------------------------------
 
-    [TestCase("        let _ = 1;\n        Console.WriteLine(_);", TestName = "read")]
-    [TestCase("        let _ = 1;\n        Program.Rolled(_);", TestName = "handed on")]
-    [TestCase("        Console.WriteLine(_ + 1);", TestName = "read without one declared")]
+    [TestCase("        Console.WriteLine(_);", TestName = "read")]
+    [TestCase("        Program.Rolled(_);", TestName = "handed on")]
+    [TestCase("        Console.WriteLine(_ + 1);", TestName = "read inside an expression")]
     public void ReadingAThrowawayIsRefused(string body) =>
         Assert.That(IdsIn(body), Does.Contain("PC0254"));
 
-    /// <summary>A throwaway with no value drops nothing, so the line does nothing at all.</summary>
+    /// <summary>
+    /// <para>Nothing obliges a declaration or an assignment to name anything, so a throwaway in
+    /// one saves no name and spends a line.</para>
+    /// <para>Any expression is already a statement, which is what makes every one of these
+    /// avoidable: <c>Rolled();</c> drops the value and says so in fewer words.</para>
+    /// </summary>
+    [TestCase("        let _ = Program.Rolled();", TestName = "an inferred local")]
+    [TestCase("        integer _ = Program.Rolled();", TestName = "a local with a written type")]
+    [TestCase("        _ = Program.Rolled();", TestName = "an assignment")]
+    [TestCase("        integer _;", TestName = "a local with no value at all")]
+    public void AThrowawayWhereNoNameIsAskedForIsRefused(string body) =>
+        Assert.That(IdsIn(body), Does.Contain("PC0256"));
+
+    /// <summary>The value still runs through the checker, so what it is made of is still said.</summary>
     [Test]
-    public void AThrowawayWithNothingToDropIsRefused() =>
-        Assert.That(IdsIn("        integer _;"), Does.Contain("PC0256"));
+    public void TheValueOfARefusedThrowawayIsStillChecked() =>
+        Assert.That(IdsIn("        let _ = Program.Missing();"), Does.Contain("PC0306"));
 
     [TestCase("shared integer _ = 1;", TestName = "a field")]
     [TestCase("shared function _()\n    end function", TestName = "a function")]
@@ -182,17 +200,6 @@ public sealed class ThrowawayTests
         """),
         Does.Contain("PC0257"));
 
-    // ---- Assigning to one, which is allowed and says nothing ------------------------------
-
-    /// <summary>
-    /// A statement drops whatever it does not use, so the assignment is the value and nothing
-    /// else. Allowed, and the language has an opinion about writing it.
-    /// </summary>
-    [Test]
-    public void AssigningToAThrowawayIsAnOpinionRatherThanARefusal() => Assert.That(
-        IdsIn("        _ = Program.Rolled();"),
-        Is.EqualTo(new[] { "PC0258" }));
-
     // ---- A local nothing reads ------------------------------------------------------------
 
     [TestCase("        integer forgotten = 9;", TestName = "declared and left")]
@@ -235,6 +242,13 @@ public sealed class ThrowawayTests
 
     /// <summary>A throwaway is exempt, because it has already said nothing will read it.</summary>
     [Test]
-    public void AThrowawayIsNotReportedAsUnread() =>
-        Assert.That(IdsIn("        let _ = Program.Rolled();"), Is.Empty);
+    public void AThrowawayIsNotReportedAsUnread() => Assert.That(
+        IdsIn("""
+                integer[] numbers = {1, 2};
+
+                loop each _ in numbers
+                    Console.WriteLine("one");
+                end loop
+        """),
+        Is.Empty);
 }

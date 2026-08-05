@@ -1,21 +1,24 @@
 ##
     Where a throwaway is refused.
 
-    This program does not compile. A throwaway receives a value nobody wants to keep, and every
-    place it is allowed is invisible from outside the body it sits in — a local, a loop's
-    element or counter, a caught exception. samples/throwaway.pc holds that side.
+    This program does not compile. A throwaway stands in for a name the language obliges a
+    program to write — a loop's counter, a walked element, a caught exception — and there are
+    three such places. samples/throwaway.pc holds that side.
 
-    Everywhere else it is refused, and for two different reasons. Reading one asks for a value
-    that was thrown away. Naming something with one leaves that thing unreachable, since the
-    only way back to a field, a function, a type or an enumeration member is to write its name.
+    Everywhere else it is refused, for three different reasons. Where nothing asked for a name,
+    it costs a line and saves none: any expression is already a statement, so the value drops
+    just as well written on its own. Reading one asks for a value that was thrown away. Naming
+    something with one leaves that thing unreachable, since the only way back to a field, a
+    function, a type or an enumeration member is to write its name.
 
-    A parameter is refused for a third reason: it is part of a signature somebody else reads to
+    A parameter is refused for a fourth reason: it is part of a signature somebody else reads to
     work out what to pass, and it is shown to them at every call. A function that has no use for
     an argument should not ask for one.
 
-    The last mistake here is not a throwaway at all. A local nothing ever reads is worth saying
-    out loud, because a result worked out and then forgotten looks exactly like one meant to be
-    dropped — and writing '_' is how a program tells the two apart.
+    The last mistakes here are not throwaways at all. A local nothing ever reads, and a private
+    member nothing reaches, are both worth saying out loud: a result worked out and then
+    forgotten looks exactly like one meant to be dropped, and writing '_' is how a program tells
+    the two apart — where the language asked for the name in the first place.
 ##
 
 shared model Program
@@ -29,15 +32,23 @@ shared model Program
         Console.WriteLine(height);
     end function
 
+    shared integer function Compute()
+        yield 7;
+    end function
+
     shared function Main()
-        let _ = 41;
+        # Nothing obliges a declaration to name anything, so a throwaway here spends a line
+        # agreeing with what 'Compute();' would have said on its own.
+        let _ = Program.Compute();
+        integer _ = Program.Compute();
+        _ = Program.Compute();
+
+        # And with no value at all, the line does nothing whatsoever.
+        integer _;
 
         # Nothing was kept, so there is nothing here to read or to hand on.
         Console.WriteLine(_);
         Program.Draw(_, 2);
-
-        # A throwaway is the value it drops. With no value it drops nothing.
-        integer _;
 
         # A lambda's parameter is a parameter. Where its argument is of no interest, the lambda
         # is usually not where the work belongs.
