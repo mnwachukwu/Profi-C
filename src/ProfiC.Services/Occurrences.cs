@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>Every place in this file that writes the name under the cursor.</para>
@@ -65,7 +65,7 @@ public static class Occurrences
 
             marks.Add(new JsonObject
             {
-                ["range"] = Conversions.RangeOf(node.NameSpan, unit.Source),
+                ["range"] = Lsp.RangeOf(node.NameSpan, unit.Source),
                 ["kind"] = wanted.IsWrittenAt(node, assigned) ? Written : Read,
             });
         }
@@ -120,8 +120,8 @@ public static class Occurrences
 
                 found.Add(new JsonObject
                 {
-                    ["uri"] = Conversions.UriOf(unit.Source.FileName),
-                    ["range"] = Conversions.RangeOf(node.NameSpan, unit.Source),
+                    ["uri"] = Lsp.UriOf(unit.Source.FileName),
+                    ["range"] = Lsp.RangeOf(node.NameSpan, unit.Source),
                 });
             }
         }

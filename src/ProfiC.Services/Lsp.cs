@@ -2,17 +2,20 @@ using System.Text.Json.Nodes;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
-/// <para>Where the compiler's idea of a place and the protocol's meet.</para>
+/// <para>Where the compiler's idea of a place and the language server protocol's meet.</para>
 /// <para>Kept in one file because there are exactly two disagreements and both are the kind that
 /// is wrong by one forever once it is wrong anywhere: the compiler counts lines and columns from
 /// one, as every Profi-C diagnostic prints them, and the protocol counts from zero. Doing the
 /// arithmetic at each call site is how one of them ends up off by one and the others do not.
 /// </para>
+/// <para>Named for the protocol rather than for what it does, because the compiler already has a
+/// <c>Conversions</c> and it is about types. Two of that name in one file is an alias somebody
+/// has to read past every time.</para>
 /// </summary>
-public static class Conversions
+public static class Lsp
 {
     /// <summary>
     /// <para>The path a <c>file:</c> URI names, or null where it names something else.</para>

@@ -3,7 +3,7 @@ using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>Changing a name everywhere it is written.</para>
@@ -38,7 +38,7 @@ public static class Rename
 
         return new JsonObject
         {
-            ["range"] = Conversions.RangeOf(node.NameSpan, asking.Source),
+            ["range"] = Lsp.RangeOf(node.NameSpan, asking.Source),
             ["placeholder"] = symbol.Name,
         };
     }
@@ -90,14 +90,14 @@ public static class Rename
 
                 edits.Add(new JsonObject
                 {
-                    ["range"] = Conversions.RangeOf(node.NameSpan, unit.Source),
+                    ["range"] = Lsp.RangeOf(node.NameSpan, unit.Source),
                     ["newText"] = newName,
                 });
             }
 
             if (edits.Count > 0)
             {
-                changes[Conversions.UriOf(unit.Source.FileName)] = edits;
+                changes[Lsp.UriOf(unit.Source.FileName)] = edits;
             }
         }
 

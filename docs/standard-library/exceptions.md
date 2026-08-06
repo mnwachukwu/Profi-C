@@ -89,6 +89,19 @@ naming it is reported (`PC0344`) rather than left sitting there looking like a h
 input that has run out — each of those yields an [optional](optionals.md) instead, because each is
 an ordinary thing to happen rather than a fault.
 
+**The names are .NET's; the messages are not.** A name a reader learns here means the same thing
+in C#, which is why none of them were renamed. What each one *says* is written for this language:
+dividing by a variable holding zero reports that a divisor written down would have been refused
+while compiling, so this one must have arrived in a variable — where C# says only "Attempted to
+divide by zero."
+
+**`catch Exception` takes less here than C#'s `catch (Exception)` does.** It takes what the program
+caused, and not a failure in the implementation. In C# the root clause takes everything including a
+bug in a library, which is how a `catch (Exception)` ends up reporting someone else's defect as the
+program's. `RecursionTooDeepException` above is the same reasoning as C#'s uncatchable
+`StackOverflowException`, applied the same way — and it does not borrow that name, since a name
+shared with C# should behave as C#'s does.
+
 ## Two that are worth reading twice
 
 **`OverflowException` on a fraction rarely names the culprit.** Denominators multiply every time

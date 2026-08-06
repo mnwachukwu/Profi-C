@@ -1,7 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>What is being called where the cursor sits, and which argument it is writing.</para>

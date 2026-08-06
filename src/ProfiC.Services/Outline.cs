@@ -2,7 +2,7 @@ using System.Text.Json;
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>What a file declares, as a tree, for an editor to show.</para>

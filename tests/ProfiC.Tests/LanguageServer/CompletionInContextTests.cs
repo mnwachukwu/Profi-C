@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using ProfiC.Cli;
 using ProfiC.Cli.LanguageServer;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -53,7 +54,7 @@ public sealed class CompletionInContextTests
         using Workspace workspace = new(text);
 
         return Completion.Bare(
-            workspace.At, new SourceText(text, workspace.At), offset, SourceDiscovery.FromDisk);
+            workspace.At, new SourceText(text, workspace.At), offset, Gathering.Around);
     }
 
     private static string[] Labels(JsonArray? offered) =>
@@ -445,7 +446,7 @@ public sealed class CompletionInContextTests
         using Workspace workspace = new(text);
 
         return Completion.After(
-            workspace.At, new SourceText(text, workspace.At), offset, SourceDiscovery.FromDisk);
+            workspace.At, new SourceText(text, workspace.At), offset, Gathering.Around);
     }
 
     /// <summary>

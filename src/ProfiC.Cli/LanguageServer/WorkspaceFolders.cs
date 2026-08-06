@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using ProfiC.Services;
 
 namespace ProfiC.Cli.LanguageServer;
 
@@ -82,7 +83,7 @@ public sealed record WorkspaceFolders(IReadOnlyList<string> Folders)
             Add(folders, path);
         }
 
-        if (folders.Count == 0 && Conversions.PathOf((string?)parameters["rootUri"]) is { } root)
+        if (folders.Count == 0 && Lsp.PathOf((string?)parameters["rootUri"]) is { } root)
         {
             Add(folders, root);
         }
@@ -132,7 +133,7 @@ public sealed record WorkspaceFolders(IReadOnlyList<string> Folders)
 
         foreach (JsonNode? folder in folders)
         {
-            if (Conversions.PathOf((string?)(folder?["uri"])) is { } path)
+            if (Lsp.PathOf((string?)(folder?["uri"])) is { } path)
             {
                 yield return path;
             }

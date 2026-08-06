@@ -6,7 +6,7 @@ using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>The questions an editor asks about a place in a file, answered from a compilation.</para>
@@ -53,7 +53,7 @@ public static class Answers
         {
             ["name"] = entry.Name,
             ["detail"] = entry.Detail,
-            ["kind"] = Conversions.SymbolKindOf(entry.Kind),
+            ["kind"] = Lsp.SymbolKindOf(entry.Kind),
             ["range"] = range,
 
             // What is revealed and selected when the entry is clicked: the name, so that
@@ -131,7 +131,7 @@ public static class Answers
         // The name rather than the whole node, so hovering a local underlines the local and not
         // the declaration it sits in. A node with no name in it answers with itself, which is what
         // an expression wants.
-        return Reply(written, Conversions.RangeOf(node.NameSpan, source));
+        return Reply(written, Lsp.RangeOf(node.NameSpan, source));
     }
 
     private static JsonObject Reply(string written, JsonNode range) => new()
@@ -455,12 +455,12 @@ public static class Answers
             {
                 found.Add(new JsonObject
                 {
-                    ["uri"] = Conversions.UriOf(unit.Source.FileName),
+                    ["uri"] = Lsp.UriOf(unit.Source.FileName),
 
                     // The name, so that following one lands the cursor on it. Selecting the
                     // whole function instead would highlight fifteen lines to answer "where is
                     // this declared".
-                    ["range"] = Conversions.RangeOf(declared.NameSpan, unit.Source),
+                    ["range"] = Lsp.RangeOf(declared.NameSpan, unit.Source),
                 });
             }
 
@@ -526,7 +526,11 @@ public static class Answers
                     ? $"**{parameter.Name}:** {said}"
                     : null;
 
-                parameters.Add(Placed(
+                // Added as a node rather than through the generic overload, which is not safe to
+                // trim: it accepts anything and would serialize a type whose members a trimmer
+                // had already removed. This one takes a node, which is what it already is — and
+                // this is a path a trimmed build reaches, since a browser asks it.
+                parameters.Add((JsonNode)Placed(
                     label, $"{parameter.Type} {parameter.Name}", ref past, about));
             }
         }
@@ -544,7 +548,8 @@ public static class Answers
                 // No name to show — the catalog holds types and the back end switches on an id,
                 // so there is nothing a name would be read from. Inventing one would be inventing
                 // it.
-                parameters.Add(Placed(label, parameter?.ToString() ?? "anything", ref past, null));
+                parameters.Add(
+                    (JsonNode)Placed(label, parameter?.ToString() ?? "anything", ref past, null));
             }
         }
         else

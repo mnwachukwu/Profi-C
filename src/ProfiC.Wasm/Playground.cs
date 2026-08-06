@@ -8,6 +8,7 @@ using ProfiC.Compiler.Formatting;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Wasm;
 
@@ -237,6 +238,92 @@ public static partial class Playground
         Parser.Parse(text, diagnostics);
 
         return diagnostics.HasErrors ? source : Formatter.Format(text);
+    }
+
+    /// <summary>
+    /// <para>What could be written where the cursor is.</para>
+    /// <para>The same list an editor shows, from the same code that builds it for one: what
+    /// follows a dot is the members of whatever precedes it, and what follows nothing is the
+    /// names in scope. Neither is worked out here — a second answer to "what is in scope" would
+    /// be a second resolver, and the day it disagreed would be a page telling somebody a name
+    /// they can write does not exist.</para>
+    /// <para>An empty list where the cursor is somewhere no name can go, rather than nothing at
+    /// all: a page has one thing to do with either, and the distinction an editor draws between
+    /// them is about whether to leave a list already on screen alone.</para>
+    /// </summary>
+    [JSExport]
+    public static string Complete(string source, int offset)
+    {
+        SourceText text = new(source, FileName);
+
+        JsonArray offered =
+            Completion.After(FileName, text, offset, OnThePage)
+            ?? Completion.Bare(FileName, text, offset, OnThePage)
+            ?? [];
+
+        return offered.ToJsonString();
+    }
+
+    /// <summary>
+    /// <para>What the compiler knows about the place the cursor is in: the thing under it, and the
+    /// call it sits inside.</para>
+    /// <para><b>Both at once, because they answer together and are asked together.</b> A cursor
+    /// halfway through <c>Math.Round(</c> is over a name and inside a call, and a page wanting to
+    /// show either would otherwise take the program through the front end twice to find out.
+    /// </para>
+    /// <para>Each is the shape an editor is sent, which is what makes the page able to do more
+    /// with them rather than less: the hover carries markdown holding a line of Profi-C, and the
+    /// signature carries its parameters as places in the label rather than as text. A page owns
+    /// its own renderer for both, and can color the one and embolden the other — neither of which
+    /// an editor's tooltip will do.</para>
+    /// </summary>
+    [JSExport]
+    public static string Describe(string source, int offset)
+    {
+        SourceText text = new(source, FileName);
+
+        if (OnThePage(FileName, text, CancellationToken.None)
+            is not { Model: { } model, Unit: { } unit })
+        {
+            return "{}";
+        }
+
+        JsonObject answer = new();
+
+        if (Answers.Hover([unit], unit, model, text, offset) is { } hover)
+        {
+            answer["hover"] = hover;
+        }
+
+        if (Answers.Signature([unit], unit, model, text, offset) is { } signature)
+        {
+            answer["signature"] = signature;
+        }
+
+        return answer.ToJsonString();
+    }
+
+    /// <summary>
+    /// <para>The program a page holds, which is the one file in the editor on it.</para>
+    /// <para>What the same question answers to on a machine is a folder or a project, read off a
+    /// disk. There is no disk here and there are no files beside this one, so gathering is the
+    /// whole of what changes between the two — and it is the only thing the language services ask
+    /// their caller for.</para>
+    /// <para>Resolved and checked, and nothing after that. The passes that follow report what is
+    /// unassigned and what is unused, and a file somebody is halfway through typing trips both
+    /// constantly — while none of it is anything a completion list or a hover reads.</para>
+    /// </summary>
+    private static Around OnThePage(string path, SourceText text, CancellationToken cancellation)
+    {
+        DiagnosticBag aside = new();
+        CompilationUnit unit = Parser.Parse(text, aside);
+
+        SemanticModel model = Resolver.Resolve(
+            [unit], aside, requireEntryPoint: false, cancellation: cancellation);
+
+        TypeChecker.Check([unit], model, aside, cancellation);
+
+        return new Around(model, unit);
     }
 
     /// <summary>The compiler's version, so a page can say which one it is running.</summary>

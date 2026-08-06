@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ProfiC.Cli.LanguageServer;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 

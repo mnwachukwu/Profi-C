@@ -3,7 +3,7 @@ using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>What every name in a file is, so an editor can color it for what it means rather than

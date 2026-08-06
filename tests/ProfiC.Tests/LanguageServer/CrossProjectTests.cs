@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using ProfiC.Cli.LanguageServer;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -13,7 +14,7 @@ namespace ProfiC.Tests.LanguageServer;
 /// every use of it in the other project was left behind. That is worse than not offering rename,
 /// because it reports success and leaves a workspace that no longer builds.</para>
 /// <para>Driven through the server over its own wire rather than by calling
-/// <see cref="ProfiC.Cli.LanguageServer.Rename"/> directly, because what changed is which
+/// <see cref="ProfiC.Services.Rename"/> directly, because what changed is which
 /// compilations get asked. Called directly, the old behavior and the new are the same function
 /// returning the same answer about the one compilation it was handed.</para>
 /// </summary>
@@ -82,7 +83,7 @@ public sealed class CrossProjectTests
 
         public string At(params string[] parts) => Path.Combine([Root, .. parts]);
 
-        public string UriOf(params string[] parts) => Conversions.UriOf(At(parts));
+        public string UriOf(params string[] parts) => Lsp.UriOf(At(parts));
 
         private void Write(string name, string body) =>
             File.WriteAllText(Path.Combine(Root, name), body);
@@ -118,7 +119,7 @@ public sealed class CrossProjectTests
         ["params"] = new JsonObject
         {
             ["workspaceFolders"] = new JsonArray(
-                new JsonObject { ["uri"] = Conversions.UriOf(root), ["name"] = "workspace" }),
+                new JsonObject { ["uri"] = Lsp.UriOf(root), ["name"] = "workspace" }),
         },
     };
 

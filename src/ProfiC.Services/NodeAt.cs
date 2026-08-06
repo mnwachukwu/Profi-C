@@ -1,6 +1,6 @@
 using ProfiC.Compiler.Ast;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>Finds the syntax the cursor is in.</para>

@@ -5,7 +5,7 @@ using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>What could come next, after a dot or on its own.</para>
@@ -60,7 +60,7 @@ public static class Completion
         string path,
         SourceText source,
         int offset,
-        SourceReader read,
+        Surrounding around,
         CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -73,7 +73,7 @@ public static class Completion
         // A receiver whose type is in error is one the compiler could not work out — a name
         // nothing declares, most often. Every type answers ToString and Equals, so offering what
         // is known about it would offer those two and imply the name is fine.
-        if (ReceiverType(path, source, offset, read, cancellation)
+        if (ReceiverType(path, source, offset, around, cancellation)
                 is not var (found, within, unit, model)
             || found is not { IsError: false } receiver)
         {
@@ -104,7 +104,11 @@ public static class Completion
                 };
             }
 
-            offered.Add(item);
+            // Added as a node rather than through the generic overload, which is not safe to trim:
+            // it accepts anything and would serialize a type whose members a trimmer had already
+            // removed. This one takes a node, which is what it already is — and this is a path a
+            // trimmed build reaches, since a browser asks it.
+            offered.Add((JsonNode)item);
         }
 
         return offered;
@@ -127,7 +131,7 @@ public static class Completion
         string path,
         SourceText source,
         int offset,
-        SourceReader read,
+        Surrounding around,
         CancellationToken cancellation = default)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -143,7 +147,7 @@ public static class Completion
             ? new SourceText(Repaired(source.Text, offset), source.FileName)
             : source;
 
-        if (Compiled(path, reading, read, cancellation) is not var (model, unit))
+        if (around(path, reading, cancellation) is not { Model: { } model, Unit: { } unit })
         {
             return null;
         }
@@ -189,7 +193,8 @@ public static class Completion
                 continue;
             }
 
-            offered.Add(Row(symbol.Name, Describe(symbol), KindOf(symbol), wanted, Produced(symbol)));
+            offered.Add(
+                (JsonNode)Row(symbol.Name, Describe(symbol), KindOf(symbol), wanted, Produced(symbol)));
         }
 
         // A receiver is not a type, so 'new this' is not a thing anybody writes.
@@ -200,7 +205,7 @@ public static class Completion
 
         foreach (string keyword in Receivers(names))
         {
-            offered.Add(Row(
+            offered.Add((JsonNode)Row(
                 keyword,
                 names.EnclosingType?.Name ?? string.Empty,
                 Keyword,
@@ -339,14 +344,14 @@ public static class Completion
         string path,
         SourceText source,
         int offset,
-        SourceReader read,
+        Surrounding around,
         CancellationToken cancellation)
     {
         SourceText completing = new(
             source.Text[..offset] + Standing(source.Text, offset) + source.Text[offset..],
             source.FileName);
 
-        if (Compiled(path, completing, read, cancellation) is not var (model, unit))
+        if (around(path, completing, cancellation) is not { Model: { } model, Unit: { } unit })
         {
             return null;
         }
@@ -376,7 +381,7 @@ public static class Completion
             // Answered from the compilation that was made here even so. Its tree is the one that
             // did not parse around the cursor, so it says nothing about what the place would take
             // — which is the honest answer where the line it is on is not a statement.
-            return NamedBefore(path, source, offset, read, cancellation) is { } fallback
+            return NamedBefore(path, source, offset, around, cancellation) is { } fallback
                 ? (fallback, within, unit, model)
                 : null;
         }
@@ -403,7 +408,7 @@ public static class Completion
     /// writing, and a finished line parses.</para>
     /// </summary>
     private static TypeSymbol? NamedBefore(
-        string path, SourceText source, int offset, SourceReader read, CancellationToken cancellation)
+        string path, SourceText source, int offset, Surrounding around, CancellationToken cancellation)
     {
         string text = source.Text;
 
@@ -434,7 +439,7 @@ public static class Completion
 
         string name = text[start..end];
 
-        if (Compiled(path, source, read, cancellation) is not var (model, unit))
+        if (around(path, source, cancellation) is not { Model: { } model, Unit: { } unit })
         {
             return null;
         }
@@ -581,55 +586,6 @@ public static class Completion
         }
 
         return Placeholder + ";";
-    }
-
-    /// <summary>
-    /// <para>The whole program around a file, checked, with the given text standing in for what
-    /// is on disk.</para>
-    /// <para>The whole program rather than the one file: a name in scope may be a type declared
-    /// next door, and a compilation of one file would not have it.</para>
-    /// <para>Checked and not merely resolved, because what is offered says types — a local's, and
-    /// what a function yields — and those are the checker's answers.</para>
-    /// </summary>
-    private static (SemanticModel Model, CompilationUnit Unit)? Compiled(
-        string path, SourceText text, SourceReader read, CancellationToken cancellation)
-    {
-        DiagnosticBag aside = new();
-
-        SourceReader instead = asked =>
-            SourceDiscovery.PathComparer.Equals(Path.GetFullPath(asked), Path.GetFullPath(path))
-                ? text
-                : read(asked);
-
-        if (SourceDiscovery.Gather(path, aside, instead) is not { } compilation)
-        {
-            return null;
-        }
-
-        // Found by path, the way every other question here finds it. By reference it depends on
-        // the text handed to the reader being the very object that comes back on the unit, which
-        // holds when the reader is asked for exactly the path it was given and not otherwise —
-        // and a file reached a second way is then a unit that looks unrelated to the one asked
-        // about.
-        CompilationUnit? unit = compilation.Units.FirstOrDefault(
-            u => SourceDiscovery.PathComparer.Equals(
-                Path.GetFullPath(u.Source.FileName), Path.GetFullPath(path)));
-
-        if (unit is null)
-        {
-            return null;
-        }
-
-        SemanticModel model = Resolver.Resolve(
-            compilation.Units,
-            aside,
-            projects: compilation.Projects,
-            entryPoint: compilation.EntryPoint,
-            cancellation: cancellation);
-
-        TypeChecker.Check(compilation.Units, model, aside, cancellation);
-
-        return (model, unit);
     }
 
     /// <summary>

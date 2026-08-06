@@ -7,6 +7,7 @@ using ProfiC.Compiler.Formatting;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Cli.LanguageServer;
 
@@ -412,7 +413,7 @@ public sealed class LanguageServer : IDisposable
         // Null for an editor's untitled buffer, which names no file. There is nothing to compile
         // and nowhere to compile it with — a program is a compilation, and a buffer belongs to no
         // folder until it is saved into one.
-        return Conversions.PathOf((string?)node["uri"]) is { } path ? (path, node) : null;
+        return Lsp.PathOf((string?)node["uri"]) is { } path ? (path, node) : null;
     }
 
     private static int Version(JsonObject node) => (int?)node["version"] ?? 0;
@@ -464,7 +465,7 @@ public sealed class LanguageServer : IDisposable
 
         SourceText source = _documents.Reader(document.Path);
 
-        if (Conversions.OffsetOf(parameters?["position"] as JsonObject, source) is not { } offset)
+        if (Lsp.OffsetOf(parameters?["position"] as JsonObject, source) is not { } offset)
         {
             return null;
         }
@@ -473,8 +474,10 @@ public sealed class LanguageServer : IDisposable
         // cursor. Both are answered here rather than in one place that branches, because what a
         // member access offers and what a bare name offers have nothing in common but the shape
         // of the reply.
-        return Completion.After(document.Path, source, offset, _documents.Reader)
-            ?? Completion.Bare(document.Path, source, offset, _documents.Reader);
+        Surrounding around = Gathering.Through(_documents.Reader);
+
+        return Completion.After(document.Path, source, offset, around)
+            ?? Completion.Bare(document.Path, source, offset, around);
     }
 
     private JsonObject? PrepareRenameAt(JsonObject? parameters)
@@ -577,7 +580,7 @@ public sealed class LanguageServer : IDisposable
         _ = new ProfiC.Compiler.Lexing.Lexer(source, found).Scan();
 
         return Fixes.For(
-            Conversions.UriOf(document.Path),
+            Lsp.UriOf(document.Path),
             parameters?["context"]?["diagnostics"] as JsonArray,
             [.. found]);
     }
@@ -955,9 +958,9 @@ public sealed class LanguageServer : IDisposable
             return null;
         }
 
-        if (Conversions.OffsetOf(parameters?["range"]?["start"] as JsonObject, unit.Source)
+        if (Lsp.OffsetOf(parameters?["range"]?["start"] as JsonObject, unit.Source)
                 is not { } from
-            || Conversions.OffsetOf(parameters?["range"]?["end"] as JsonObject, unit.Source)
+            || Lsp.OffsetOf(parameters?["range"]?["end"] as JsonObject, unit.Source)
                 is not { } to)
         {
             return null;
@@ -985,7 +988,7 @@ public sealed class LanguageServer : IDisposable
             return null;
         }
 
-        return Conversions.OffsetOf(parameters?["position"] as JsonObject, unit.Source) is { } offset
+        return Lsp.OffsetOf(parameters?["position"] as JsonObject, unit.Source) is { } offset
             ? (units, model, unit, offset)
             : null;
     }
@@ -1101,7 +1104,7 @@ public sealed class LanguageServer : IDisposable
 
             sources.TryGetValue(full, out SourceText? source);
             (byFile.TryGetValue(full, out JsonArray? found) ? found : byFile[full] = [])
-                .Add(Conversions.DiagnosticOf(diagnostic, source));
+                .Add(Lsp.DiagnosticOf(diagnostic, source));
         }
 
         lock (_reporting)
@@ -1130,7 +1133,7 @@ public sealed class LanguageServer : IDisposable
     private void Send(string path, JsonArray found) =>
         _wire.Notify("textDocument/publishDiagnostics", new JsonObject
         {
-            ["uri"] = Conversions.UriOf(path),
+            ["uri"] = Lsp.UriOf(path),
             ["diagnostics"] = found,
         });
 

@@ -12,6 +12,7 @@ using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 using ProfiC.Interpreter;
 using ProfiC.Runtime;
+using ProfiC.Services;
 
 namespace ProfiC.Cli;
 

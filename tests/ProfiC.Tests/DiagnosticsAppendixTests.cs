@@ -21,9 +21,6 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
     private static string SpecificationPath =>
         Path.Combine(RepositoryRoot, "docs", "language-spec.md");
 
-    private static string SummaryPath =>
-        Path.Combine(RepositoryRoot, "docs", "language-summary.md");
-
     private static IEnumerable<DiagnosticDescriptor> Descriptors() =>
         typeof(DiagnosticDescriptors)
             .GetFields(BindingFlags.Public | BindingFlags.Static)
@@ -152,18 +149,18 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
     }
 
     /// <summary>
-    /// <para>The summary counts the warnings and the opinions in two sentences, each saying its
+    /// <para>The appendix counts the warnings and the opinions in two sentences, each saying its
     /// number in words.</para>
-    /// <para>It is a third hand-written list of the same thing, and the only one nothing checks
-    /// — which is why it was the one that drifted. A count is also the claim a reader is least
-    /// likely to verify and most likely to repeat.</para>
+    /// <para>It is a second hand-written list of the same thing, and a count is the claim a
+    /// reader is least likely to verify and most likely to repeat — which is why it drifted the
+    /// last time nothing checked it.</para>
     /// <para>Each count is read from its own sentence rather than looked for anywhere in the
     /// file. The two happen to be equal, so a search of the whole document would find the other
     /// one's number and agree with itself.</para>
     /// </summary>
     [TestCase(DiagnosticSeverity.Warning, "Warnings are few")]
     [TestCase(DiagnosticSeverity.Opinion, "Opinions are the language")]
-    public void TheSummaryCountsThemCorrectly(DiagnosticSeverity severity, string opening)
+    public void TheAppendixCountsThemCorrectly(DiagnosticSeverity severity, string opening)
     {
         string[] words =
         [
@@ -177,12 +174,12 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
         Assert.That(reported, Is.LessThan(words.Length), "this table needs more number words");
 
         Match sentence = Regex.Match(
-            File.ReadAllText(SummaryPath),
+            File.ReadAllText(SpecificationPath),
             $@"\*\*{Regex.Escape(opening)}[^*]*\*\* (\w+) exist");
 
         Assert.That(
             sentence.Success,
-            $"the summary should carry a sentence opening '{opening}' and counting them");
+            $"the appendix should carry a sentence opening '{opening}' and counting them");
 
         Assert.That(
             sentence.Groups[1].Value,

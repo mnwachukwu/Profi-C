@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using ProfiC.Cli;
 using ProfiC.Cli.LanguageServer;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -65,7 +66,7 @@ public sealed class CompletionTests
             workspace.At,
             new SourceText(text, workspace.At),
             offset,
-            SourceDiscovery.FromDisk);
+            Gathering.Around);
     }
 
     /// <summary>What is offered for a bare name where the marker sits, the same way.</summary>
@@ -85,7 +86,7 @@ public sealed class CompletionTests
             workspace.At,
             new SourceText(text, workspace.At),
             offset,
-            SourceDiscovery.FromDisk);
+            Gathering.Around);
     }
 
     private static string[] Labels(JsonArray? offered) =>
@@ -471,7 +472,7 @@ public sealed class CompletionTests
             + "counter.".Length;
 
         string[] offered = Labels(
-            Completion.After(workspace.At, buffer, offset, reader));
+            Completion.After(workspace.At, buffer, offset, Gathering.Through(reader)));
 
         Assert.That(offered, Does.Contain("Next"));
     }

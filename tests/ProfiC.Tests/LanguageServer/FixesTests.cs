@@ -3,6 +3,7 @@ using ProfiC.Cli.LanguageServer;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Lexing;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -40,7 +41,7 @@ public sealed class FixesTests
         new(new JsonObject
         {
             ["code"] = diagnostic.Id,
-            ["range"] = Conversions.RangeOf(diagnostic.Span, null),
+            ["range"] = Lsp.RangeOf(diagnostic.Span, null),
             ["message"] = diagnostic.Message,
         });
 

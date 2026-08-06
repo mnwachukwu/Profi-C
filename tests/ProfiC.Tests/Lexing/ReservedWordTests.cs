@@ -193,45 +193,14 @@ public sealed class ReservedWordTests : LexerTestBase
         Assert.That(ScanSingle("model").Type, Is.EqualTo(TokenType.Model));
     }
 
-    // ---- What the summary tells a reader ---------------------------------------------
+    // ---- What the documentation tells a reader ----------------------------------------
 
     /// <summary>
-    /// <para>The list printed in the language summary is the list the compiler has.</para>
+    /// <para>The list printed in the specification is the list the compiler has.</para>
     /// <para>It is written out by hand, in a grid, so a word added to the language reaches it
     /// only if somebody remembers — and the grid has to be reflowed to stay square, which is
-    /// the sort of edit that drops one.</para>
-    /// </summary>
-    [Test]
-    public void TheSummaryListsEveryReservedWord()
-    {
-        string[] listed = WordsInTheSummary();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(
-                listed.Except(ReservedWords.Keywords.Keys),
-                Is.Empty,
-                "the summary lists words the language does not reserve");
-
-            Assert.That(
-                ReservedWords.Keywords.Keys.Except(listed),
-                Is.Empty,
-                "the language reserves words the summary does not list");
-        });
-    }
-
-    /// <summary>And the heading counts them, since a reader takes the number on trust.</summary>
-    [Test]
-    public void TheSummarySaysHowManyThereAre() => Assert.That(
-        File.ReadAllText(SummaryPath),
-        Does.Contain($"### 1.1 The {ReservedWords.Count} reserved words"));
-
-    /// <summary>
-    /// <para>The specification prints the same list, and it is the one nothing was checking —
-    /// which is how it came to be missing <c>delegate</c> for as long as that word existed.
-    /// </para>
-    /// <para>Two hand-written copies of one table drift independently, so both are held to it.
-    /// </para>
+    /// the sort of edit that drops one. Nothing was checking it for as long as it was missing
+    /// <c>delegate</c>.</para>
     /// </summary>
     [Test]
     public void TheSpecificationListsEveryReservedWord()
@@ -264,9 +233,6 @@ public sealed class ReservedWordTests : LexerTestBase
         File.ReadAllText(SpecificationPath),
         Does.Contain($"Profi-C has **{ReservedWords.Count}** reserved words"));
 
-    private static string SummaryPath =>
-        Path.Combine(RepositoryRootForTests, "docs", "language-summary.md");
-
     private static string SpecificationPath =>
         Path.Combine(RepositoryRootForTests, "docs", "language-spec.md");
 
@@ -288,23 +254,6 @@ public sealed class ReservedWordTests : LexerTestBase
 
         int open = Array.FindLastIndex(
             lines, close - 1, l => l.StartsWith("```", StringComparison.Ordinal));
-
-        return [.. lines[(open + 1)..close]
-            .SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))];
-    }
-
-    /// <summary>The words in the summary's fenced block, whatever shape the grid is in.</summary>
-    private static string[] WordsInTheSummary()
-    {
-        string[] lines = File.ReadAllLines(SummaryPath);
-
-        int heading = Array.FindIndex(
-            lines, l => l.StartsWith("### 1.1 ", StringComparison.Ordinal));
-
-        Assert.That(heading, Is.GreaterThanOrEqualTo(0), "the summary has no reserved-word list");
-
-        int open = Array.FindIndex(lines, heading, l => l.StartsWith("```", StringComparison.Ordinal));
-        int close = Array.FindIndex(lines, open + 1, l => l.StartsWith("```", StringComparison.Ordinal));
 
         return [.. lines[(open + 1)..close]
             .SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))];

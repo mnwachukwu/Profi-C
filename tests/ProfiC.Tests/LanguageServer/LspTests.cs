@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using ProfiC.Cli.LanguageServer;
 using ProfiC.Compiler.Diagnostics;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -8,13 +9,13 @@ namespace ProfiC.Tests.LanguageServer;
 /// <para>Turning what an editor calls a place into what the compiler calls one.</para>
 /// <para><b>Written against the URIs editors actually send, not against the ones this code
 /// produces.</b> That distinction is the whole reason this file exists: every other test here
-/// made a URI with <see cref="Conversions.UriOf"/> and handed it back, so both ends were this
+/// made a URI with <see cref="Lsp.UriOf"/> and handed it back, so both ends were this
 /// codebase's and they agreed with each other while agreeing with no editor. VS Code escapes the
 /// colon in a drive letter; nothing here ever did; and the round trip passed for months while the
 /// server could not open a file on Windows.</para>
 /// </summary>
 [TestFixture]
-public sealed class ConversionsTests
+public sealed class LspTests
 {
     /// <summary>
     /// <para>A drive letter arrives escaped, and still names the same file.</para>
@@ -37,7 +38,7 @@ public sealed class ConversionsTests
     public void ADriveLetterIsReadWhicheverWayItIsWritten(string uri)
     {
         Assert.That(
-            Conversions.PathOf(uri),
+            Lsp.PathOf(uri),
             Is.EqualTo(Path.GetFullPath("D:/Repos/Profi-C/samples/hello.pc")).IgnoreCase);
     }
 
@@ -46,7 +47,7 @@ public sealed class ConversionsTests
     [Test]
     public void AnEscapedSpaceIsASpace() =>
         Assert.That(
-            Conversions.PathOf("file:///d%3A/My%20Programs/hello.pc"),
+            Lsp.PathOf("file:///d%3A/My%20Programs/hello.pc"),
             Is.EqualTo(Path.GetFullPath("D:/My Programs/hello.pc")).IgnoreCase);
 
     /// <summary>
@@ -59,7 +60,7 @@ public sealed class ConversionsTests
     [Test]
     public void AnEscapedSpaceIsASpaceWithNoDriveEither() =>
         Assert.That(
-            Conversions.PathOf("file:///home/matt/My%20Programs/hello.pc"),
+            Lsp.PathOf("file:///home/matt/My%20Programs/hello.pc"),
             Is.EqualTo("/home/matt/My Programs/hello.pc"));
 
     /// <summary>
@@ -72,7 +73,7 @@ public sealed class ConversionsTests
     [Test]
     public void APathIsSpelledTheWayThePathsItIsComparedAgainstAre()
     {
-        string path = Conversions.PathOf("file:///d%3A/Repos/Profi-C/samples/hello.pc")!;
+        string path = Lsp.PathOf("file:///d%3A/Repos/Profi-C/samples/hello.pc")!;
 
         Assert.That(path, Is.EqualTo(Path.GetFullPath(path)));
     }
@@ -86,7 +87,7 @@ public sealed class ConversionsTests
     [TestCase("")]
     [TestCase(null)]
     public void SomethingThatIsNotAFileIsNotAPath(string? uri) =>
-        Assert.That(Conversions.PathOf(uri), Is.Null);
+        Assert.That(Lsp.PathOf(uri), Is.Null);
 
     /// <summary>
     /// <para>What this produces, this can read back.</para>
@@ -100,7 +101,7 @@ public sealed class ConversionsTests
         string path = Path.Combine(Path.GetTempPath(), "profi c", "hello.pc");
 
         Assert.That(
-            Conversions.PathOf(Conversions.UriOf(path)),
+            Lsp.PathOf(Lsp.UriOf(path)),
             Is.EqualTo(path).IgnoreCase);
     }
 
@@ -119,7 +120,7 @@ public sealed class ConversionsTests
         DiagnosticBag diagnostics = new();
         diagnostics.Report(descriptor, default);
 
-        JsonObject written = Conversions.DiagnosticOf(diagnostics.Sorted()[0], source: null);
+        JsonObject written = Lsp.DiagnosticOf(diagnostics.Sorted()[0], source: null);
 
         Assert.That((JsonArray?)written["tags"], Is.Not.Null, $"{descriptor.Id} should fade");
         Assert.That((int?)written["tags"]![0], Is.EqualTo(1));
@@ -136,7 +137,7 @@ public sealed class ConversionsTests
         diagnostics.Report(descriptor, default);
 
         Assert.That(
-            Conversions.DiagnosticOf(diagnostics.Sorted()[0], source: null)["tags"],
+            Lsp.DiagnosticOf(diagnostics.Sorted()[0], source: null)["tags"],
             Is.Null,
             $"{descriptor.Id} should not fade");
     }

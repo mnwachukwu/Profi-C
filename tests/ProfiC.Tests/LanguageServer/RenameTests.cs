@@ -5,6 +5,7 @@ using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -115,7 +116,7 @@ public sealed class RenameTests
     }
 
     private static JsonArray EditsIn(JsonObject? change, string file) =>
-        (JsonArray?)change?["changes"]?[ProfiC.Cli.LanguageServer.Conversions.UriOf(file)] ?? [];
+        (JsonArray?)change?["changes"]?[Lsp.UriOf(file)] ?? [];
 
     /// <summary>
     /// <para>A local is renamed where it is declared and everywhere it is used.</para>

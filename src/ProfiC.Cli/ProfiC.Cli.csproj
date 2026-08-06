@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ProfiC.Compiler\ProfiC.Compiler.csproj" />
     <ProjectReference Include="..\ProfiC.Interpreter\ProfiC.Interpreter.csproj" />
+    <ProjectReference Include="..\ProfiC.Services\ProfiC.Services.csproj" />
   </ItemGroup>
 
 </Project>

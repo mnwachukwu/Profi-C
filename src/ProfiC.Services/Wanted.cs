@@ -1,8 +1,7 @@
 using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
-using TypeConversions = ProfiC.Compiler.Semantics.Conversions;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>What the place the cursor sits in would accept.</para>
@@ -88,7 +87,7 @@ public sealed class Wanted
     /// </summary>
     public bool Fits(TypeSymbol? type) =>
         type is { IsError: false } given
-        && _types.Any(wanted => TypeConversions.IsAssignable(given, wanted));
+        && _types.Any(wanted => Conversions.IsAssignable(given, wanted));
 
     /// <summary>
     /// <para>The types one node would accept at an offset: null where the cursor is not in a

@@ -914,6 +914,24 @@ its own compiler and nothing else, so far.
 Both languages have these. Profi-C's version is better, and in several rows the difference is
 between a mistake the compiler refuses and one it lets you find at run time.
 
+**Start with how many words there are to learn.**
+
+| | Profi-C | C# |
+|---|---|---|
+| Reserved everywhere | **63** | 77 |
+| Contextual — reserved only in one position | **0** | 46 |
+| Words that are special somewhere | **63** | 123 |
+
+C#'s figures are Roslyn's own, from `SyntaxFacts.GetReservedKeywordKinds` and
+`GetContextualKeywordKinds`, minus four undocumented `__`-prefixed ones it also counts. Profi-C's
+is asserted by a test, so the number above cannot drift from the compiler.
+
+**The second row is the difference that shows up while writing.** In C#, `value`, `var`, `record`,
+`await` and forty-odd others are keywords in one position and ordinary names everywhere else, so
+whether a word is reserved depends on where it sits. In Profi-C a word is reserved everywhere or
+nowhere, and `@` takes one back as a name — one rule, written at the point it applies. The list
+itself is [§2.1 of the specification](language-spec.md#21-reserved-words).
+
 | | Profi-C | C# | Why it is better |
 |---|---|---|---|
 | **A value that may be absent** | `string?`, and reading one unproven does not compile | `string?`, and reading one unproven is a warning | There is no `null` to permit. C#'s nullable reference types are analysis over a runtime that still allows it, so the guarantee is advice; here it is the type system |
@@ -1011,10 +1029,34 @@ properties, together with a key-to-value type and rectangular sets. They are the
 for binding directly to .NET, which is what would turn the last row of
 [§10.4](#114-reaching-other-code) from "nothing" into "everything".
 
+Direct binding arrives over several versions, and each stage is worth having as a language
+improvement on its own — none is justified only by the binder:
+
+| Stage | Contents | Lift |
+|---|---|---|
+| v2 | generics, interfaces, properties | large; the keystone |
+| v3 | `out`/`ref`, indexers, `params`, operator overloading, extension methods | medium, and freely splittable |
+| v4 | `async`/`await`/`Task` | very large on its own |
+| v5 | attributes, the CLR array type, variance, assembly references, the import mechanism | larger than the v1 compiler |
+
+**This is not a foreign function interface problem.** Profi-C compiles to CIL and runs on the CLR,
+so calling `System.Math.Sqrt` is CIL calling CIL with the same collector and calling convention.
+The obstacle is that Profi-C cannot *name* a generic type, an interface, or a property, so any .NET
+member using one is unreachable however the call is made. That is why those three head the v2 list.
+
+**Planned, but not yet placed in a version:** events, iterators, pattern matching, tuples, and
+partial types.
+
+Two of the absences are **present under another name.** A `structure` is what C# spells `struct`.
+And an optional covers a value type, so `integer?`, `boolean?` and `fraction?` each hold a number or
+nothing — nullable value types are not missing, they are the same feature reached through
+[§6](#6-optionals-sets-and-fractions) rather than through a second kind of type.
+
 The rest are **decisions**. No `null`, no ternary, no fallthrough, no compound assignment, no
 `++`, no truthiness, no `unsafe`: each was weighed against a beginner reading a line and getting
 it right, and each cost something a working developer would miss. That trade is the language's
-whole premise — see [§2 of the summary](language-summary.md#2-reserved-models) and the
+whole premise — see the specification's
+[design principles](language-spec.md#03-design-principles) and the
 [README](../README.md#what-it-is-for).
 
 ---

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    What an editor asks the compiler, apart from whatever is doing the asking.
+
+    Every question here is answered from a parse tree and a semantic model and nothing else: where
+    a name is declared, what type it has, what could be written next, which occurrences are the
+    same thing. None of that is about a protocol, a socket, or a disk — which is exactly why it
+    lives on its own rather than inside the command line, where it began. A browser has no stdin
+    to speak a protocol over and no disk to gather files from, and it wants the same answers.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>ProfiC.Services</RootNamespace>
+    <Description>The answers an editor asks the Profi-C compiler for.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProfiC.Compiler\ProfiC.Compiler.csproj" />
+  </ItemGroup>
+
+</Project>

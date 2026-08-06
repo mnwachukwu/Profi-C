@@ -3,7 +3,7 @@ using ProfiC.Compiler.Ast;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>The type a name was given, written in beside it where the program does not say.</para>
@@ -109,7 +109,7 @@ public static class Hints
     private static JsonObject Written(
         SourceText source, int at, string label, int kind, bool ahead) => new()
     {
-        ["position"] = Conversions.PositionOf(source.PositionAt(at)),
+        ["position"] = Lsp.PositionOf(source.PositionAt(at)),
         ["label"] = label,
         ["kind"] = kind,
         ["paddingLeft"] = false,

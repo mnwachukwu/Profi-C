@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Text;
 
-namespace ProfiC.Cli.LanguageServer;
+namespace ProfiC.Services;
 
 /// <summary>
 /// <para>The one-click fixes an editor offers beside a problem.</para>

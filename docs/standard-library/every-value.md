@@ -23,6 +23,26 @@ from `Model`, which every type descends from.
 `Equals` accepts a value of **any** type. Comparing two things that could never be equal is not a
 mistake worth refusing — it answers `false`, which is the truthful answer.
 
+Both are `virtual`, so any type may write its own — a structure as freely as a model. Calling
+either on a value does not box: it compiles to a direct call, the way `5.ToString()` does in C#.
+
+### What `ToString` says when nothing overrides it
+
+| Type | Default |
+|---|---|
+| A structure | Field by field, as `Point { X = 1, Y = 2 }` |
+| An enumeration | The member's name |
+| A model | The type's name |
+
+**The difference is forced rather than chosen.** A structure cannot contain itself, so walking its
+fields always finishes. A model can take part in a cycle — and while `==` solves that with
+cycle-safe bisimulation, there is no equivalent trick for printing, so a model prints its type name
+and an author who wants more writes one.
+
+A declared `ToString` is what a value prints everywhere: written out, printed on its own, joined to
+a string with `+`, or inside a set. All of them dispatch on the runtime type, so printing and
+calling never disagree.
+
 ```
 integer count = 3;
 string name = "Ada";

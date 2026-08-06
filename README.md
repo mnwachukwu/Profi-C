@@ -48,7 +48,7 @@ coloring by what each name means, and breakpoints and stepping. Installing it is
 
 Profi-C exists to make programming concepts legible to a beginner while staying faithful to
 the patterns a C# developer uses daily, so that what a student learns **transfers** rather
-than has to be unlearned. [What it keeps and what it changes](docs/language-summary.md#5-similar-to-c)
+than has to be unlearned. [What it keeps and what it changes](docs/side-by-side.md)
 is set out side by side.
 
 That goal is load-bearing. Where ergonomics and pedagogy conflict, pedagogy wins:
@@ -93,7 +93,7 @@ functions with closures, and compile-time definite assignment.
 |---|---|
 | [docs/language-spec.md](docs/language-spec.md) | The normative specification, plus an appendix listing every diagnostic |
 | [docs/standard-library/](docs/standard-library/README.md) | **Every type and every member**, indexed by name, each linking to the page that explains it |
-| [docs/language-summary.md](docs/language-summary.md) | A condensed reference, and the quickest way in for a **C# developer** |
+| [docs/language-summary.md](docs/language-summary.md) | Where to find things — what each document holds, and which one answers what |
 | [docs/side-by-side.md](docs/side-by-side.md) | The **full comparison to C#**: every construct written both ways, what C# does better, and what it can express that Profi-C cannot |
 | [docs/grammar.ebnf](docs/grammar.ebnf) | The surface syntax as productions, and the precedence table |
 
@@ -892,8 +892,10 @@ src/
   ProfiC.Compiler/     lexer, parser, semantic analysis, lowering, CIL emission
   ProfiC.Runtime/      the value types a program uses: fraction, set, deep equality
   ProfiC.Interpreter/  runs the lowered tree, and decides where a debugger stops
-  ProfiC.Cli/          the profi-c command, and the debug adapter that speaks to editors
+  ProfiC.Services/     what an editor asks: completion, hover, rename, every use of a name
+  ProfiC.Cli/          the profi-c command, the language server, and the debug adapter
   ProfiC.Cli.Alias/    pc, the short name for the same command
+  ProfiC.Wasm/         the front end and the interpreter, built to run in a browser
 tests/
   ProfiC.Tests/
 docs/

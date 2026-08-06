@@ -5,6 +5,7 @@ using ProfiC.Compiler.Diagnostics;
 using ProfiC.Compiler.Parsing;
 using ProfiC.Compiler.Semantics;
 using ProfiC.Compiler.Text;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 

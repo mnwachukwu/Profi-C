@@ -1,6 +1,7 @@
 using ProfiC.Cli;
 using ProfiC.Cli.LanguageServer;
 using ProfiC.Compiler.Diagnostics;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using ProfiC.Cli.LanguageServer;
+using ProfiC.Services;
 
 namespace ProfiC.Tests.LanguageServer;
 
@@ -52,7 +53,7 @@ public sealed class LanguageServerTests
 
         public string At(string name) => Path.Combine(Folder, name);
 
-        public string UriOf(string name) => Conversions.UriOf(At(name));
+        public string UriOf(string name) => Lsp.UriOf(At(name));
 
         public void Write(string name, string body) =>
             File.WriteAllText(Path.Combine(Folder, name), body);
@@ -571,7 +572,7 @@ public sealed class LanguageServerTests
 
     /// <summary>
     /// <para>The questions about a place answer, asked the way an editor asks them.</para>
-    /// <para><b>Every other test here builds its URI with <c>Conversions.UriOf</c>, which is this
+    /// <para><b>Every other test here builds its URI with <c>Lsp.UriOf</c>, which is this
     /// codebase talking to itself.</b> VS Code escapes the colon after a drive letter; nothing
     /// here ever did; and the whole suite stayed green while the server could not open a file on
     /// Windows at all. So this one writes the URI the way the editor writes it, and asks the four

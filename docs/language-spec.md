@@ -152,6 +152,14 @@ what it means without a glossary.
 out; anything it borrows is written the way its source writes it, so a name a reader already
 knows is the name they type.
 
+**Keywords are lowercase and everything the library provides is PascalCase**, so the casing says
+at a glance what is language and what is library. Two pairs sit either side of that line and are
+worth knowing before they are met: `model` declares a type while `Model` is the root type, and
+`or` is the boolean operator while `Or` is the optional's fallback. The second pair is the
+confusable one, since both live near the idea of *otherwise* — `a or b` and `a.Or(b)` are
+different things. The language is case-sensitive, so they never collide; they are worth a look in
+review all the same.
+
 **Every construct says what it closes.** `end if`, `end loop`, `end model`. The compiler
 verifies the qualifier and reports a mismatch by name, so a beginner who loses track of
 nesting is told exactly where.
@@ -178,7 +186,11 @@ The differences that matter most to a C# reader:
 
 - **`yield` means return.** This is the single most dangerous difference, since C# uses
   `yield return` for iterators. In Profi-C it is an ordinary return statement.
-- **There is no `null`.** Optionals replace it, and access is strict.
+- **There is no `null`.** Optionals replace it, and access is strict. Null and .NET coexist
+  because null is translated at the boundary and never enters Profi-C's type system: every .NET
+  reference-typed return maps to `T?` unless it is documented as never absent, so what a Profi-C
+  program sees is an empty optional. The curated wrappers therefore already do what an automatic
+  binder would do, and no signature changes when one arrives.
 - **`==` is deep by default** on models and sets, comparing structurally with cycle-safe
   bisimulation. `Reference.Equals(a, b)` spells out C#'s default behavior.
 - **`this.` is mandatory**, not conventional.
@@ -212,8 +224,14 @@ source span. Three severities exist, and what separates them is how much is know
 the program means. An **error** is reported where the meaning is genuinely unpredictable, and
 is the only severity that prevents compilation. A **warning** is reported where the meaning is
 clear and unlikely to be what was intended. An **opinion** is reported where the meaning is
-clear, intended, and correct, and the language would still write it differently; every opinion
-says that some written token has no effect.
+clear, intended, and correct, and the language would still write it differently. Nearly every
+opinion says that some written token has no effect — the exception is a `loop` with no condition
+that nothing inside can break, yield, or throw out of, where nothing written is redundant and
+something is missing instead. It is an opinion rather than a warning because a program meaning to
+run until it is stopped from outside is one somebody may write.
+
+Nothing is wrong with a program that has an opinion against it, and reading them in order is a
+reasonable way to learn what the language expects.
 
 Identifiers are stable from v1 onward: one that has been published keeps its meaning, and one
 that is withdrawn is not reissued. Before v1 they may be renumbered freely, since nothing
@@ -605,9 +623,17 @@ rather than named ([§1.3](#13-comments)), so it takes no word away from a progr
 
 Words a C# author might expect to be reserved and which are **not**: `private`, `static`,
 `null`, `void`, `return`, `class`, `interface`, `enum`, `struct`, `var`, `do`, `foreach`,
-`const`, `bool`, `int`. Members are private by default, so `public` and `protected` opt out
-rather than `private` opting in; `shared` fills the role of `static`; there is no `null`; and
-nothing the language defines is abbreviated.
+`select`, `when`, `const`, `bool`, `int`. Members are private by default, so `public` and
+`protected` opt out rather than `private` opting in; `shared` fills the role of `static`; there
+is no `null`; and nothing the language defines is abbreviated — `enumeration` rather than
+`enum`, `constant` rather than `const`, `boolean` rather than `bool`.
+
+**Every one of the 63 is reserved everywhere**, which is the whole of the rule. C# has a second
+kind: `value`, `var`, `record`, `await` and forty-odd others are keywords in one position and
+ordinary names in every other, so whether a word is reserved there depends on where it sits.
+Profi-C has none of those, and `@` takes any of the 63 back as a name — one rule, written at the
+point it applies. The
+[comparison with C#](side-by-side.md#9-where-profi-c-does-it-better) counts both languages.
 
 ### 2.2 Operators and punctuation
 
@@ -2502,6 +2528,11 @@ for the extension only where both a `.pc` and a `.pcp` of that name exist.
 and `Reference`, which may not be declared at all — every program must declare `Program`, but
 may not declare a second one, and may not use the name for an ordinary model.
 
+There is no such thing as an instance of a running program, so the entry point cannot be
+constructed and cannot hold instance state. A `shared model` has shared members throughout, where
+a C# `static class` marks each of its own — so `function Main()` and `shared function Main()` are
+the same declaration, and the explicit form is legal and says nothing the first does not.
+
 **`Main` declares no result, or an integer.** The integer is the program's exit code, which is
 what whatever ran it reads to learn whether it succeeded.
 
@@ -2824,9 +2855,33 @@ the program means.
 | `warning` | clear, and unlikely to be what was intended | no |
 | `opinion` | clear, intended, and correct — and the language would write it differently | no |
 
-An opinion always says that some written token has no effect. Nothing is wrong with a program
-that has one, and reading them in order is a reasonable way to learn what the language expects
-of a reader.
+Nothing is wrong with a program that has an opinion against it, and reading them in order is a
+reasonable way to learn what the language expects of a reader.
+
+**Warnings are few, and each one names its fix.** Eighteen exist: more quotes in a row than close
+a block string, a type shadowing one the language provides, a test that is always true, a test
+that is always false, a `switch` leaving enumeration members unhandled, unreachable code, a local
+nothing ever reads, a private member nothing reaches, a statement that works a value out and drops
+it, a `catch` naming the one exception nothing catches, an import naming an absolute path, imports
+that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one
+naming a diagnostic that stops compilation, and one in a project file naming neither a severity
+nor a diagnostic — and three about documentation that has come apart from what it documents: one
+above nothing that can carry it, one naming a parameter that is not there, and one describing a
+value never given back.
+
+**Opinions are the language having taste, and nearly every one says a written token has no
+effect.** Fourteen exist: an unnecessary `@` on a name, a `shared` on a member of a shared model
+that is shared already, a type on a range loop's counter, a lambda parameter type the surrounding
+code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a
+name it sits inside, an `entry` where only one program exists to choose, `virtual` beside
+`abstract`, `Console.WriteLine("")` where the empty string does nothing, an `ignore` that silences
+nothing, a `base()` reaching the parent a constructor reaches anyway, a doc that says the same
+thing twice, and a call whose result nothing keeps.
+
+The fourteenth is the exception to that shape: a `loop` with no condition that nothing inside can
+break, yield, or throw out of. Nothing written there is redundant — something is missing — and the
+language says so as an opinion because a program meaning to run until it is stopped from outside
+is one somebody may write.
 
 ### PC0000 to PC0099
 
