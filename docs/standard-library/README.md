@@ -197,12 +197,14 @@ word cannot stand in front of a dot.
 | Member | On | Yields | Where |
 |---|---|---|---|
 | `Create(...)` | `Fraction` | `fraction` | [Fraction](numbers.md#fraction) |
+| `Denominator` | `fraction` | `integer` | [On a number](numbers.md#members-on-a-number) |
 | `Format(pattern)` | every number | `string` | [Writing a number out](numbers.md#writing-a-number-out) |
 | `Infinity` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
 | `MaxValue` | `Integer` · `Real` · `Float` | that type | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
 | `MinValue` | `Integer` · `Real` · `Float` | that type | [What each type knows](numbers.md#what-each-type-knows-about-itself) |
 | `NegativeInfinity` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
 | `NotANumber` | `Float` | `float` | [What only a float has](numbers.md#what-only-a-float-has) |
+| `Numerator` | `fraction` | `integer` | [On a number](numbers.md#members-on-a-number) |
 | `Parse(text)` | `Integer` · `Real` · `Float` · `Boolean` · `Character` · `Fraction` | that type, optional | [What each type knows](numbers.md#what-each-type-knows-about-itself) · [Boolean and Character](text.md#boolean-and-character) |
 | `Reciprocal()` | `fraction` | `fraction` | [On a number](numbers.md#members-on-a-number) |
 | `ToFloat()` | `integer` · `real` · `fraction` | `float` | [On a number](numbers.md#members-on-a-number) |

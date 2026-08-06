@@ -588,7 +588,7 @@ The set matches C#, so an escape a student learns here works unchanged there.
 Profi-C has **63** reserved words. A name may take one back by writing `@` in front of it —
 `@end`, `@each` — which is the only place a name may begin with something other than a letter.
 
-```text
+```words
 abstract     and          as           base         begin        bitwise      boolean
 break        case         catch        character    constant     continue     default
 delegate     each         else         end          enumeration  extends      false
@@ -701,6 +701,11 @@ with that: a tenth that does not round-trip, a division by zero that produces an
 `fraction` is the one with no counterpart in C#. It is a numerator and a denominator held
 separately and kept reduced, so `1|3 + 1|3 + 1|3` is exactly `1|1`, which the same sum in
 either `real` or `float` is not.
+
+Both halves can be read, as `Numerator` and `Denominator`. They answer for the reduced form,
+which is the only form a fraction has: `2|4` reduces when it is made, so its numerator is `1`.
+The sign is kept above the line, so a denominator is never negative and never zero. Neither is
+assignable — a fraction is a value, and changing half of one would make it a different number.
 
 Which conversions among the four happen on their own and which are written out is
 [§3.1a](#31a-converting-between-numbers).

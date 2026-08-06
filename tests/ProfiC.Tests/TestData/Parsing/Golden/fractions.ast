@@ -194,6 +194,83 @@ CompilationUnit
         CallExpr
           MemberExpr 'WriteLine'
             IdentifierExpr 'Console'
+          LiteralExpr "== the two halves ==" [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "1|3 is " [String]
+                MemberExpr 'Numerator'
+                  ParenthesizedExpr
+                    LiteralExpr 1|3 [Fraction]
+              LiteralExpr " over " [String]
+            MemberExpr 'Denominator'
+              ParenthesizedExpr
+                LiteralExpr 1|3 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "2|4 is " [String]
+                MemberExpr 'Numerator'
+                  ParenthesizedExpr
+                    LiteralExpr 2|4 [Fraction]
+              LiteralExpr " over " [String]
+            MemberExpr 'Denominator'
+              ParenthesizedExpr
+                LiteralExpr 2|4 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "5|1 is " [String]
+                MemberExpr 'Numerator'
+                  ParenthesizedExpr
+                    LiteralExpr 5|1 [Fraction]
+              LiteralExpr " over " [String]
+            MemberExpr 'Denominator'
+              ParenthesizedExpr
+                LiteralExpr 5|1 [Fraction]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              BinaryExpr '+'
+                LiteralExpr "2|-3 is " [String]
+                MemberExpr 'Numerator'
+                  CallExpr
+                    MemberExpr 'Create'
+                      IdentifierExpr 'Fraction'
+                    LiteralExpr 2 [Integer]
+                    UnaryExpr '-'
+                      LiteralExpr 3 [Integer]
+              LiteralExpr " over " [String]
+            MemberExpr 'Denominator'
+              CallExpr
+                MemberExpr 'Create'
+                  IdentifierExpr 'Fraction'
+                LiteralExpr 2 [Integer]
+                UnaryExpr '-'
+                  LiteralExpr 3 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
           LiteralExpr "== raising to a power stays exact ==" [String]
       ExpressionStmt
         CallExpr

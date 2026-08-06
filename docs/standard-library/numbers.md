@@ -13,7 +13,7 @@
 
 | Section | Members |
 |---|---|
-| [Members on a number](#members-on-a-number) | `Format` `ToFloat` `ToReal` `ToFraction` `Reciprocal` |
+| [Members on a number](#members-on-a-number) | `Format` `ToFloat` `ToReal` `ToFraction` `Reciprocal` `Numerator` `Denominator` |
 | [Writing a number out](#writing-a-number-out) | `Format` |
 | [Fraction](#fraction) | `Fraction.Create` |
 | [What each type knows about itself](#what-each-type-knows-about-itself) | `Integer.MaxValue` `Integer.MinValue` `Real.MaxValue` `Real.MinValue` `Float.MaxValue` `Float.MinValue` |
@@ -60,6 +60,8 @@ Console.WriteLine(1|3 + 1|3 + 1|3);   # 1|1
 | `fraction` | `ToReal()` | `real` | The nearest real |
 | `fraction` | `ToFloat()` | `float` | The nearest float |
 | `fraction` | `Reciprocal()` | `fraction` | The fraction turned over |
+| `fraction` | `Numerator` | `integer` | The number above the line |
+| `fraction` | `Denominator` | `integer` | The number below it, never zero and never negative |
 
 A `real` has no `ToFraction()`, and needs none: it counts in tens, so it already is a fraction
 over a power of ten and converts on its own. The [chart below](#the-whole-conversion-chart) has
@@ -73,6 +75,20 @@ fraction third = 1|3;
 
 Console.WriteLine(third.Reciprocal());   # 3|1
 Console.WriteLine(third.ToReal());       # 0.3333333333333333333333333333
+```
+
+**`Numerator` and `Denominator` answer for the reduced fraction, not for what was written.** A
+fraction reduces when it is made, so `2|4` is not a fraction that remembers being written that
+way — it is `1|2`, and there is nothing left to ask about the `2` and the `4`. The sign is kept
+above the line, which is why a denominator is never negative.
+
+Both are read without parentheses. Nothing is worked out to answer them: a fraction is already
+kept as these two numbers.
+
+```
+Console.WriteLine((2|4).Numerator);      # 1
+Console.WriteLine((2|4).Denominator);    # 2
+Console.WriteLine((5|1).Denominator);    # 1
 ```
 
 <a id="writing-a-number-out"></a>

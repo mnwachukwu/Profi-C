@@ -172,24 +172,45 @@ public static class BuiltInExceptions
     /// program writes after <c>catch</c> and the type that travels at run time are the same
     /// entry, so a name the language can raise is a name the language can catch.
     /// </summary>
-    private static readonly (string Name, Type Type)[] Catalog =
+    /// <summary>
+    /// <para>One entry in the catalog: a name a program writes, and the type it denotes.</para>
+    /// <para>The type is marked as one whose constructors are reached without being named,
+    /// because that is what happens to it — the interpreter builds one with
+    /// <see cref="Activator"/> when a program throws. Nothing in the source says so, so a build
+    /// that removes what it cannot see removes exactly the constructors this depends on, and the
+    /// failure arrives when somebody throws rather than when anything is built.</para>
+    /// </summary>
+    /// <remarks>
+    /// Marked on the parameter as well as the property. A positional record is a constructor and
+    /// a property, the value passes through both, and what is not said on each end is dropped at
+    /// that end.
+    /// </remarks>
+    private readonly record struct BuiltIn(
+        string Name,
+        [property: System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]
+        [param: System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]
+        Type Type);
+
+    private static readonly BuiltIn[] Catalog =
     [
-        ("Exception", typeof(Exception)),
-        ("DivideByZeroException", typeof(DivideByZeroException)),
-        ("IndexOutOfRangeException", typeof(IndexOutOfRangeException)),
-        ("EmptyOptionalException", typeof(EmptyOptionalException)),
-        ("SequenceChangedException", typeof(SequenceChangedException)),
-        ("InvalidCastException", typeof(InvalidCastException)),
-        ("FormatException", typeof(FormatException)),
-        ("ArgumentException", typeof(ArgumentException)),
-        ("OverflowException", typeof(OverflowException)),
-        ("RecursionTooDeepException", typeof(RecursionTooDeepException)),
+        new("Exception", typeof(Exception)),
+        new("DivideByZeroException", typeof(DivideByZeroException)),
+        new("IndexOutOfRangeException", typeof(IndexOutOfRangeException)),
+        new("EmptyOptionalException", typeof(EmptyOptionalException)),
+        new("SequenceChangedException", typeof(SequenceChangedException)),
+        new("InvalidCastException", typeof(InvalidCastException)),
+        new("FormatException", typeof(FormatException)),
+        new("ArgumentException", typeof(ArgumentException)),
+        new("OverflowException", typeof(OverflowException)),
+        new("RecursionTooDeepException", typeof(RecursionTooDeepException)),
 
         // Everything that can go wrong with a file except the file not being there, which is
         // an absent optional rather than a fault. Maps onto System.IOException, which is
         // already the parent of the more particular ones the framework raises, so a locked
         // file, a bad path and a full disk all arrive here without being listed separately.
-        ("IOException", typeof(System.IO.IOException)),
+        new("IOException", typeof(System.IO.IOException)),
     ];
 
     /// <summary>Every exception name the language defines.</summary>
@@ -208,14 +229,24 @@ public static class BuiltInExceptions
     /// <summary>Whether a <c>catch</c> naming this type could ever take anything.</summary>
     public static bool MayBeCaught(string profiCName) => !Uncatchable.Contains(profiCName);
 
-    /// <summary>Maps a Profi-C exception name to the type it denotes.</summary>
+    /// <summary>
+    /// <para>Maps a Profi-C exception name to the type it denotes.</para>
+    /// <para>What comes back is built with <see cref="Activator"/> by whoever asked, so it is
+    /// marked as a type whose constructors are reached without being named — otherwise a build
+    /// that removes what it cannot see removes them, and throwing fails at the moment a program
+    /// throws rather than at the moment anything is built.</para>
+    /// </summary>
+    [return: System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]
     public static Type? Resolve(string profiCName)
     {
-        foreach ((string name, Type type) in Catalog)
+        // Read through the entry rather than by taking it apart, so that what the property says
+        // about the type travels with it. A deconstruction drops the annotation on the way out.
+        foreach (BuiltIn one in Catalog)
         {
-            if (name == profiCName)
+            if (one.Name == profiCName)
             {
-                return type;
+                return one.Type;
             }
         }
 

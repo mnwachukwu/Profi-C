@@ -372,6 +372,15 @@ public enum BuiltInId
     FractionReciprocal,
 
     /// <summary>
+    /// <para>The two halves a fraction is kept in, once it has been reduced.</para>
+    /// <para>Answered from the reduced form rather than from what was written, which is the only
+    /// answer a fraction can give: <c>2|4</c> and <c>1|2</c> are one value, and nothing about the
+    /// first survives being made.</para>
+    /// </summary>
+    FractionNumerator,
+    FractionDenominator,
+
+    /// <summary>
     /// <para>A float as the fraction it exactly is.</para>
     /// <para>Explicit, unlike the same conversion from a real, and not because it loses anything
     /// — every finite float is a rational. It is explicit because the answer is startling:
@@ -1328,11 +1337,19 @@ public static class BuiltIns
     /// what it costs: a third has no decimal that ends, so what comes back no longer multiplies
     /// back to one. The answer is surprising enough to be worth writing down. A float's
     /// <c>ToFraction</c> is the other conversion held back for that reason.</para>
+    /// <para><c>Numerator</c> and <c>Denominator</c> are values rather than calls, because
+    /// neither does anything: a fraction is already kept as those two numbers, and asking for one
+    /// reads it rather than working it out.</para>
     /// </summary>
     public static IReadOnlyList<BuiltInMember> OnFraction() =>
     [
         Member(BuiltInId.FractionToReal, "ToReal", PrimitiveType.Real),
         Member(BuiltInId.FractionToFloat, "ToFloat", PrimitiveType.Float),
+
+        // The reduced form, which is the only form there is. A fraction reduces when it is made,
+        // so these answer for the value rather than for what somebody typed.
+        Value(BuiltInId.FractionNumerator, "Numerator", PrimitiveType.Integer),
+        Value(BuiltInId.FractionDenominator, "Denominator", PrimitiveType.Integer),
 
         // Exact, where a real's reciprocal is only nearly one: a third turned over is three,
         // and 1.0 / (1.0 / 3.0) is not quite one.

@@ -106,6 +106,10 @@ public sealed partial class CilEmitter
                 EmitMathMember([], onMath);
                 return;
 
+            case { } onAFraction when CilBuiltIns.IsOnAFraction(onAFraction):
+                EmitFractionMember(member, [], onAFraction);
+                return;
+
             case BuiltInId.ExceptionMessage:
                 EmitExceptionMessage(member);
                 return;

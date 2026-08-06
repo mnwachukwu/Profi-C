@@ -45,7 +45,7 @@ Profi-C cannot.
 
 ### 1.1 The 63 reserved words
 
-```
+```words
 abstract    and         as          base        begin       bitwise     boolean
 break       case        catch       character   constant    continue    default
 delegate    each        else        end         enumeration extends     false
@@ -213,7 +213,7 @@ printing and calling never disagree.
 | `Math` | `Pi` and `E` as values; `Sqrt`, `Cbrt`, `Root`, `Pow`, `Log` and its family, the trig six and their hyperbolic counterparts, `Abs`, `Min`, `Max`, the three roundings, and `Factorial` |
 | `Random` | `new Random()` or `new Random(seed)`, and the same members through the name; `Next` excludes its upper bound, as .NET's does |
 | `DateTime` | `new DateTime(...)`; what .NET reads as a property is read as one here, so `Year` and `Now` take no parentheses |
-| `fraction` | `ToReal`, `ToFloat`; `Reciprocal` turns it over, so `(2\|3).Reciprocal()` is `3\|2` |
+| `fraction` | `ToReal`, `ToFloat`; `Reciprocal` turns it over, so `(2\|3).Reciprocal()` is `3\|2`; `Numerator` and `Denominator` are the two halves, reduced |
 | enumerations | `ToString` returns the member name |
 | `integer`, `real` | `ToFloat` |
 | `float` | `ToReal`, `ToFraction` |

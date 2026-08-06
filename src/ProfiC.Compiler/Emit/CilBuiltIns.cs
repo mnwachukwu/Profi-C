@@ -191,6 +191,8 @@ internal static class CilBuiltIns
         id is BuiltInId.FractionToReal
            or BuiltInId.FractionToFloat
            or BuiltInId.FractionReciprocal
+           or BuiltInId.FractionNumerator
+           or BuiltInId.FractionDenominator
            or BuiltInId.FractionFormat
            or BuiltInId.FractionCreate
            or BuiltInId.FractionCreateWhole

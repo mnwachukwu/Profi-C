@@ -45,6 +45,21 @@ shared model Program
         Console.WriteLine("twice gives it back: " + ((2|3).Reciprocal().Reciprocal() == 2|3));
         Console.WriteLine("a real does not:     " + ((1.0 / (1.0 / 49.0)) == 49.0));
 
+        ##
+            A fraction is kept as two whole numbers, and Numerator and Denominator are those
+            two. They answer for the reduced form, because that is the only form there is:
+            2|4 is not a fraction that remembers being written that way, it is 1|2.
+        ##
+        Console.WriteLine();
+        Console.WriteLine("== the two halves ==");
+        Console.WriteLine("1|3 is " + (1|3).Numerator + " over " + (1|3).Denominator);
+        Console.WriteLine("2|4 is " + (2|4).Numerator + " over " + (2|4).Denominator);
+        Console.WriteLine("5|1 is " + (5|1).Numerator + " over " + (5|1).Denominator);
+
+        # The sign is kept on the numerator, so a denominator is never negative.
+        Console.WriteLine("2|-3 is " + Fraction.Create(2, -3).Numerator
+                            + " over " + Fraction.Create(2, -3).Denominator);
+
         Console.WriteLine();
         Console.WriteLine("== raising to a power stays exact ==");
         Console.WriteLine("(1|2) ^ 3  is " + (1|2) ^ 3);

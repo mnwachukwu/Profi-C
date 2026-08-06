@@ -1,0 +1,214 @@
+##
+    Long division, worked out the way it is taught.
+
+    The arithmetic is the easy half. What makes a worked solution readable is that every
+    number sits in the column it belongs to — a subtraction under the digits it is taken
+    from, each quotient digit above the digit that produced it — and columns are the part a
+    program has to be told about, since nothing in the arithmetic knows where a digit goes.
+
+    So this keeps one idea throughout: at step i, everything on the page ends in the column
+    holding the i-th digit of the dividend. The working value, the number subtracted from it,
+    the rule under them, and what is left. One rule, applied to every line.
+
+    The answer is written with 'r' for the remainder: 327 over 12 is 27 r 3.
+
+    It asks for the two numbers rather than choosing them, and settles for a worked example
+    when there is nothing to read — which is what happens wherever this runs without somebody
+    at a keyboard.
+##
+
+shared model Program
+
+    # ---- Putting something in a column ---------------------------------------------------
+
+    ##
+        @summary: A run of spaces.
+
+        @remarks: A count of zero or less yields nothing, which is what a column already at
+        the left edge needs. Counting from one to zero simply does not run.
+    ##
+    string function Spaces(integer count)
+        string made = "";
+
+        loop for _ = 1 to count
+            made = made + " ";
+        end loop
+
+        yield made;
+    end function
+
+    # @summary: Text padded on the left so that its last character lands in a given column.
+    string function EndingAt(string text, integer column)
+        yield Program.Spaces(column - text.Count + 1) + text;
+    end function
+
+    # @summary: A rule of a given width, ending in a given column.
+    string function RuleEndingAt(integer width, integer column)
+        string rule = "";
+
+        loop for _ = 1 to width
+            rule = rule + "-";
+        end loop
+
+        yield Program.EndingAt(rule, column);
+    end function
+
+    # ---- Taking a number apart -----------------------------------------------------------
+
+    ##
+        @summary: The digits of a whole number, largest place first.
+
+        @remarks: Walked down from the largest power of ten the number reaches rather than
+        peeled off the end, so that they come out in reading order and nothing has to be
+        turned around afterward. Zero has one digit, which is zero.
+    ##
+    integer[] function DigitsOf(integer whole)
+        integer place = 1;
+
+        loop while place <= whole / 10
+            place = place * 10;
+        end loop
+
+        integer[] digits = {};
+        integer left = whole;
+
+        loop while place >= 1
+            digits.Insert(left / place);
+            left = left % place;
+            place = place / 10;
+        end loop
+
+        yield digits;
+    end function
+
+    # ---- The division itself -------------------------------------------------------------
+
+    ##
+        @summary: Writes out the long division of one whole number by another.
+
+        @remarks: The dividend's digits are brought down one at a time. Each turn makes a
+        working value, takes as many divisors out of it as will come, and leaves the rest to
+        be carried into the next turn.
+
+        A leading turn that yields nothing is not written down: 12 does not go into 3, and a
+        worked solution does not open with a zero. That is what 'started' is for.
+
+        @dividend: The number being divided. Zero or more.
+        @divisor: The number to divide by. One or more.
+    ##
+    function Divide(integer dividend, integer divisor)
+        if divisor <= 0 or dividend < 0
+            Console.WriteLine("This writes out whole numbers: a dividend of zero or more, "
+                                + "and a divisor of one or more.");
+            yield;
+        end if
+
+        integer[] digits = Program.DigitsOf(dividend);
+
+        # Where the dividend begins on the page, past "12 | ".
+        integer lead = ("" + divisor).Count + 3;
+        integer last = lead + digits.Count - 1;
+
+        # Every line of the worked solution is built before any of it is written, because the
+        # answer belongs at the top and is not known until the bottom.
+        string[] steps = {};
+
+        string quotient = "";
+        integer working = 0;
+        boolean started = false;
+
+        loop for i = 0 to digits.Count - 1
+            working = working * 10 + digits[i];
+
+            integer figure = working / divisor;
+            integer taken = figure * divisor;
+
+            # Nothing has gone in yet, and a solution does not open with a zero.
+            if figure == 0 and not started
+                continue;
+            end if
+
+            # The working value is already on the page for the first turn that yields
+            # something: it is part of the dividend. Every later one has to be written, since
+            # it is what was left over with the next digit brought down beside it.
+            if started
+                steps.Insert(Program.EndingAt("" + working, lead + i));
+            end if
+
+            started = true;
+            quotient = quotient + figure;
+
+            steps.Insert(Program.EndingAt("" + taken, lead + i));
+            steps.Insert(Program.RuleEndingAt(("" + working).Count, lead + i));
+
+            working = working - taken;
+        end loop
+
+        # A dividend smaller than the divisor never starts, and its answer is nought and all
+        # of itself.
+        if not started
+            quotient = "0";
+        end if
+
+        # The answer sits over the dividend, its last digit above the dividend's last. The
+        # remainder follows it rather than being placed, since nothing is under it.
+        string answer = Program.EndingAt(quotient, last);
+
+        if working > 0
+            answer = answer + " r " + working;
+        end if
+
+        Console.WriteLine(answer);
+        Console.WriteLine(Program.RuleEndingAt(digits.Count, last));
+        Console.WriteLine(divisor + " | " + dividend);
+
+        loop each step in steps
+            Console.WriteLine(step);
+        end loop
+
+        # What is left, once there has been something to take it from.
+        if started
+            Console.WriteLine(Program.EndingAt("" + working, last));
+        end if
+
+        Console.WriteLine();
+    end function
+
+    ##
+        @summary: Asks for a whole number, and settles for one when there is no answer.
+
+        @remarks: Reading gives a string? — there may be nothing there to read at all — and
+        reading a number out of text gives an integer?, since not every text is one. Both have
+        to be dealt with, and this deals with them the same way: say what is being used
+        instead, and carry on. A program that stops because nobody typed anything teaches
+        nothing to the person who ran it to watch it work.
+
+        @question: What to write before waiting.
+        @instead: What to use when nothing readable was typed.
+    ##
+    integer function Ask(string question, integer instead)
+        Console.Write(question);
+
+        integer? typed = Console.Read().Or("").Trim().ToInteger();
+
+        if typed.HasValue()
+            Console.WriteLine(typed.Value());
+            yield typed.Value();
+        end if
+
+        Console.WriteLine(instead + "   (nothing readable was typed)");
+        yield instead;
+    end function
+
+    function Main()
+        Console.WriteLine("Long division, worked out.");
+        Console.WriteLine();
+
+        integer dividend = Program.Ask("What are you dividing?    ", 327);
+        integer divisor = Program.Ask("And what by?              ", 12);
+
+        Console.WriteLine();
+        Program.Divide(dividend, divisor);
+    end function
+
+end model

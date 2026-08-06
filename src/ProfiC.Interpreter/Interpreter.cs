@@ -170,9 +170,22 @@ public sealed partial class Interpreter
     /// the stack this exists to provide is the only difference. Rethrown through
     /// <see cref="ExceptionDispatchInfo"/> rather than by <c>throw raised</c>, which would
     /// replace the trace with one starting here.</para>
+    /// <para><b>A browser has no thread to give.</b> WebAssembly in a page is single-threaded
+    /// unless the page is served cross-origin isolated, which is a demand on whoever hosts it
+    /// rather than a property of the program — so asking for one there fails at
+    /// <c>Start</c> and takes every program down with it, however small. Where that is the
+    /// platform, the program runs on the thread already here and takes the stack that thread
+    /// has. The depth limit is what keeps runaway recursion a sentence rather than a crash, and
+    /// it is unchanged; what is given up is only the extra room, which affects a program deep
+    /// enough to need it and no other.</para>
     /// </summary>
     private static int Deeply(Func<int> run)
     {
+        if (OperatingSystem.IsBrowser())
+        {
+            return run();
+        }
+
         int answer = 0;
         ExceptionDispatchInfo? raised = null;
 

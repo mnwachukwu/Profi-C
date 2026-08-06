@@ -569,6 +569,26 @@ public sealed class BuiltInCatalogTests
 
     // Its own undo, which is the property a real does not have.
     [TestCase("Console.WriteLine((2|3).Reciprocal().Reciprocal() == 2|3)", "true\n")]
+
+    // Read without parentheses, and answering for the reduced fraction rather than for what was
+    // written: 2|4 reduces when it is made, so there is no 2 and no 4 left to ask about.
+    [TestCase("Console.WriteLine((1|3).Numerator)", "1\n")]
+    [TestCase("Console.WriteLine((1|3).Denominator)", "3\n")]
+    [TestCase("Console.WriteLine((2|4).Numerator)", "1\n")]
+    [TestCase("Console.WriteLine((2|4).Denominator)", "2\n")]
+
+    // A whole number held as a fraction is over one, and zero is 0|1 rather than 0|0.
+    [TestCase("Console.WriteLine((5|1).Denominator)", "1\n")]
+    [TestCase("Console.WriteLine((0|5).Numerator)", "0\n")]
+    [TestCase("Console.WriteLine((0|5).Denominator)", "1\n")]
+
+    // The sign is kept above the line, so a denominator is never negative.
+    [TestCase("Console.WriteLine(Fraction.Create(2, -3).Numerator)", "-2\n")]
+    [TestCase("Console.WriteLine(Fraction.Create(2, -3).Denominator)", "3\n")]
+
+    // The two halves put back together are the fraction again.
+    [TestCase("Console.WriteLine(Fraction.Create((2|6).Numerator, (2|6).Denominator) == 1|3)",
+              "true\n")]
     public void EveryValueMemberProducesItsAnswer(string body, string expected) =>
         Assert.That(Run(body), Is.EqualTo(expected));
 
@@ -879,6 +899,7 @@ public sealed class BuiltInCatalogTests
         BuiltInId.TimeFormat,
         BuiltInId.OptionalHasValue, BuiltInId.OptionalOr, BuiltInId.OptionalValue,
         BuiltInId.FractionToReal, BuiltInId.FractionReciprocal,
+        BuiltInId.FractionNumerator, BuiltInId.FractionDenominator,
         BuiltInId.EnumerationToInteger,
         BuiltInId.ExceptionMessage, BuiltInId.ModelToString, BuiltInId.ModelEquals,
     ];

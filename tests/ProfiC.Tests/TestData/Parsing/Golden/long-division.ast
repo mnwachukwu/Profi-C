@@ -1,0 +1,410 @@
+CompilationUnit
+  ModelDecl 'Program' [shared]
+    FunctionDecl 'Spaces'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'count'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'made'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      ForStmt '_' to
+        LiteralExpr 1 [Integer]
+        IdentifierExpr 'count'
+        AssignmentStmt
+          IdentifierExpr 'made'
+          BinaryExpr '+'
+            IdentifierExpr 'made'
+            LiteralExpr " " [String]
+      YieldStmt
+        IdentifierExpr 'made'
+    FunctionDecl 'EndingAt'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'text'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'column'
+        NamedTypeSyntax 'integer'
+      YieldStmt
+        BinaryExpr '+'
+          CallExpr
+            MemberExpr 'Spaces'
+              IdentifierExpr 'Program'
+            BinaryExpr '+'
+              BinaryExpr '-'
+                IdentifierExpr 'column'
+                MemberExpr 'Count'
+                  IdentifierExpr 'text'
+              LiteralExpr 1 [Integer]
+          IdentifierExpr 'text'
+    FunctionDecl 'RuleEndingAt'
+      NamedTypeSyntax 'string'
+      ParameterDecl 'width'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'column'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'rule'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      ForStmt '_' to
+        LiteralExpr 1 [Integer]
+        IdentifierExpr 'width'
+        AssignmentStmt
+          IdentifierExpr 'rule'
+          BinaryExpr '+'
+            IdentifierExpr 'rule'
+            LiteralExpr "-" [String]
+      YieldStmt
+        CallExpr
+          MemberExpr 'EndingAt'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'rule'
+          IdentifierExpr 'column'
+    FunctionDecl 'DigitsOf'
+      SetTypeSyntax
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'whole'
+        NamedTypeSyntax 'integer'
+      VarDeclStmt 'place'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 1 [Integer]
+      WhileStmt
+        BinaryExpr '<='
+          IdentifierExpr 'place'
+          BinaryExpr '/'
+            IdentifierExpr 'whole'
+            LiteralExpr 10 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'place'
+          BinaryExpr '*'
+            IdentifierExpr 'place'
+            LiteralExpr 10 [Integer]
+      VarDeclStmt 'digits'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CollectionExpr
+      VarDeclStmt 'left'
+        NamedTypeSyntax 'integer'
+        IdentifierExpr 'whole'
+      WhileStmt
+        BinaryExpr '>='
+          IdentifierExpr 'place'
+          LiteralExpr 1 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'digits'
+            BinaryExpr '/'
+              IdentifierExpr 'left'
+              IdentifierExpr 'place'
+        AssignmentStmt
+          IdentifierExpr 'left'
+          BinaryExpr '%'
+            IdentifierExpr 'left'
+            IdentifierExpr 'place'
+        AssignmentStmt
+          IdentifierExpr 'place'
+          BinaryExpr '/'
+            IdentifierExpr 'place'
+            LiteralExpr 10 [Integer]
+      YieldStmt
+        IdentifierExpr 'digits'
+    FunctionDecl 'Divide'
+      ParameterDecl 'dividend'
+        NamedTypeSyntax 'integer'
+      ParameterDecl 'divisor'
+        NamedTypeSyntax 'integer'
+      IfStmt
+        BinaryExpr 'or'
+          BinaryExpr '<='
+            IdentifierExpr 'divisor'
+            LiteralExpr 0 [Integer]
+          BinaryExpr '<'
+            IdentifierExpr 'dividend'
+            LiteralExpr 0 [Integer]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "This writes out whole numbers: a dividend of zero or more, " [String]
+              LiteralExpr "and a divisor of one or more." [String]
+        YieldStmt
+      VarDeclStmt 'digits'
+        SetTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'DigitsOf'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'dividend'
+      VarDeclStmt 'lead'
+        NamedTypeSyntax 'integer'
+        BinaryExpr '+'
+          MemberExpr 'Count'
+            ParenthesizedExpr
+              BinaryExpr '+'
+                LiteralExpr "" [String]
+                IdentifierExpr 'divisor'
+          LiteralExpr 3 [Integer]
+      VarDeclStmt 'last'
+        NamedTypeSyntax 'integer'
+        BinaryExpr '-'
+          BinaryExpr '+'
+            IdentifierExpr 'lead'
+            MemberExpr 'Count'
+              IdentifierExpr 'digits'
+          LiteralExpr 1 [Integer]
+      VarDeclStmt 'steps'
+        SetTypeSyntax
+          NamedTypeSyntax 'string'
+        CollectionExpr
+      VarDeclStmt 'quotient'
+        NamedTypeSyntax 'string'
+        LiteralExpr "" [String]
+      VarDeclStmt 'working'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 0 [Integer]
+      VarDeclStmt 'started'
+        NamedTypeSyntax 'boolean'
+        LiteralExpr false [Boolean]
+      ForStmt 'i' to
+        LiteralExpr 0 [Integer]
+        BinaryExpr '-'
+          MemberExpr 'Count'
+            IdentifierExpr 'digits'
+          LiteralExpr 1 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'working'
+          BinaryExpr '+'
+            BinaryExpr '*'
+              IdentifierExpr 'working'
+              LiteralExpr 10 [Integer]
+            IndexExpr
+              IdentifierExpr 'digits'
+              IdentifierExpr 'i'
+        VarDeclStmt 'figure'
+          NamedTypeSyntax 'integer'
+          BinaryExpr '/'
+            IdentifierExpr 'working'
+            IdentifierExpr 'divisor'
+        VarDeclStmt 'taken'
+          NamedTypeSyntax 'integer'
+          BinaryExpr '*'
+            IdentifierExpr 'figure'
+            IdentifierExpr 'divisor'
+        IfStmt
+          BinaryExpr 'and'
+            BinaryExpr '=='
+              IdentifierExpr 'figure'
+              LiteralExpr 0 [Integer]
+            UnaryExpr 'not'
+              IdentifierExpr 'started'
+          ContinueStmt
+        IfStmt
+          IdentifierExpr 'started'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'Insert'
+                IdentifierExpr 'steps'
+              CallExpr
+                MemberExpr 'EndingAt'
+                  IdentifierExpr 'Program'
+                BinaryExpr '+'
+                  LiteralExpr "" [String]
+                  IdentifierExpr 'working'
+                BinaryExpr '+'
+                  IdentifierExpr 'lead'
+                  IdentifierExpr 'i'
+        AssignmentStmt
+          IdentifierExpr 'started'
+          LiteralExpr true [Boolean]
+        AssignmentStmt
+          IdentifierExpr 'quotient'
+          BinaryExpr '+'
+            IdentifierExpr 'quotient'
+            IdentifierExpr 'figure'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'steps'
+            CallExpr
+              MemberExpr 'EndingAt'
+                IdentifierExpr 'Program'
+              BinaryExpr '+'
+                LiteralExpr "" [String]
+                IdentifierExpr 'taken'
+              BinaryExpr '+'
+                IdentifierExpr 'lead'
+                IdentifierExpr 'i'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Insert'
+              IdentifierExpr 'steps'
+            CallExpr
+              MemberExpr 'RuleEndingAt'
+                IdentifierExpr 'Program'
+              MemberExpr 'Count'
+                ParenthesizedExpr
+                  BinaryExpr '+'
+                    LiteralExpr "" [String]
+                    IdentifierExpr 'working'
+              BinaryExpr '+'
+                IdentifierExpr 'lead'
+                IdentifierExpr 'i'
+        AssignmentStmt
+          IdentifierExpr 'working'
+          BinaryExpr '-'
+            IdentifierExpr 'working'
+            IdentifierExpr 'taken'
+      IfStmt
+        UnaryExpr 'not'
+          IdentifierExpr 'started'
+        AssignmentStmt
+          IdentifierExpr 'quotient'
+          LiteralExpr "0" [String]
+      VarDeclStmt 'answer'
+        NamedTypeSyntax 'string'
+        CallExpr
+          MemberExpr 'EndingAt'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'quotient'
+          IdentifierExpr 'last'
+      IfStmt
+        BinaryExpr '>'
+          IdentifierExpr 'working'
+          LiteralExpr 0 [Integer]
+        AssignmentStmt
+          IdentifierExpr 'answer'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              IdentifierExpr 'answer'
+              LiteralExpr " r " [String]
+            IdentifierExpr 'working'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          IdentifierExpr 'answer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          CallExpr
+            MemberExpr 'RuleEndingAt'
+              IdentifierExpr 'Program'
+            MemberExpr 'Count'
+              IdentifierExpr 'digits'
+            IdentifierExpr 'last'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            BinaryExpr '+'
+              IdentifierExpr 'divisor'
+              LiteralExpr " | " [String]
+            IdentifierExpr 'dividend'
+      ForEachStmt 'step'
+        IdentifierExpr 'steps'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'step'
+      IfStmt
+        IdentifierExpr 'started'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'EndingAt'
+                IdentifierExpr 'Program'
+              BinaryExpr '+'
+                LiteralExpr "" [String]
+                IdentifierExpr 'working'
+              IdentifierExpr 'last'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+    FunctionDecl 'Ask'
+      NamedTypeSyntax 'integer'
+      ParameterDecl 'question'
+        NamedTypeSyntax 'string'
+      ParameterDecl 'instead'
+        NamedTypeSyntax 'integer'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          IdentifierExpr 'question'
+      VarDeclStmt 'typed'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'ToInteger'
+            CallExpr
+              MemberExpr 'Trim'
+                CallExpr
+                  MemberExpr 'Or'
+                    CallExpr
+                      MemberExpr 'Read'
+                        IdentifierExpr 'Console'
+                  LiteralExpr "" [String]
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'typed'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            CallExpr
+              MemberExpr 'Value'
+                IdentifierExpr 'typed'
+        YieldStmt
+          CallExpr
+            MemberExpr 'Value'
+              IdentifierExpr 'typed'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            IdentifierExpr 'instead'
+            LiteralExpr "   (nothing readable was typed)" [String]
+      YieldStmt
+        IdentifierExpr 'instead'
+    FunctionDecl 'Main'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "Long division, worked out." [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      VarDeclStmt 'dividend'
+        NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Ask'
+            IdentifierExpr 'Program'
+          LiteralExpr "What are you dividing?    " [String]
+          LiteralExpr 327 [Integer]
+      VarDeclStmt 'divisor'
+        NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Ask'
+            IdentifierExpr 'Program'
+          LiteralExpr "And what by?              " [String]
+          LiteralExpr 12 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Divide'
+            IdentifierExpr 'Program'
+          IdentifierExpr 'dividend'
+          IdentifierExpr 'divisor'

@@ -87,6 +87,16 @@ public sealed partial class CilEmitter
                 _il.Emit(OpCodes.Call, FractionMember(nameof(Fraction.Reciprocal)));
                 return;
 
+            // Read rather than worked out: both are already what a fraction is kept in, and both
+            // are the width an integer is, so nothing is converted on the way back.
+            case BuiltInId.FractionNumerator:
+                _il.Emit(OpCodes.Call, FractionMember($"get_{nameof(Fraction.Numerator)}"));
+                return;
+
+            case BuiltInId.FractionDenominator:
+                _il.Emit(OpCodes.Call, FractionMember($"get_{nameof(Fraction.Denominator)}"));
+                return;
+
             // Formatted through its real value, which is what a pattern describes: there is no
             // pattern language for a ratio, and "0.75" is what a reader asking for two places
             // after the point meant by it.

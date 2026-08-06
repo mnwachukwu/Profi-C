@@ -185,6 +185,8 @@ public static class BuiltInDocs
             [BuiltInId.FractionCreate] = "A fraction from a numerator and a denominator",
             [BuiltInId.FractionCreateWhole] = "A whole number as a fraction",
             [BuiltInId.FractionReciprocal] = "The fraction turned upside down",
+            [BuiltInId.FractionNumerator] = "The number above the line, once reduced",
+            [BuiltInId.FractionDenominator] = "The number below the line, once reduced",
 
             // ---- Conversions between numbers -------------------------------------------------
             [BuiltInId.FractionToReal] = "The fraction as a real, which may not be exact",

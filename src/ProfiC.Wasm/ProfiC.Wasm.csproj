@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The compiler, built to run in a browser.
+
+    The front end and the interpreter are plain C# that emit nothing, so both come here unchanged.
+    The CIL emitter does not, and cannot: it is System.Reflection.Emit, which WebAssembly has no
+    answer for. Nothing is lost by that — running a program in a page is the interpreter's job,
+    and it is the same interpreter the command line runs, which is the whole reason for building
+    this rather than writing the language a second time in JavaScript.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <OutputType>Exe</OutputType>
+    <WasmMainJSPath>main.js</WasmMainJSPath>
+
+    <!-- Nothing here is a package, and it is published rather than referenced. -->
+    <IsPackable>false</IsPackable>
+
+    <!--
+      Required by the generated half of [JSExport]: marshalling between C# and JavaScript is
+      pointer work, and the generator writes it. None of the code in this project is unsafe.
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!--
+      Trimmed, which is safe here and worth checking before believing. Neither the front end nor
+      the interpreter reflects over members: the standard library is a catalog the compiler holds
+      in code, dispatched by a switch, and the only reflection anywhere in either is
+      GetType().Name for the wording of a message. So there is nothing a trimmer could remove
+      that something later looks up by name.
+
+      Worth re-testing rather than re-assuming if either ever gains a lookup by string — a trimmed
+      build fails at the moment somebody uses the missing member, which on a teaching site is
+      somebody's first program.
+    -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProfiC.Compiler\ProfiC.Compiler.csproj" />
+    <ProjectReference Include="..\ProfiC.Interpreter\ProfiC.Interpreter.csproj" />
+    <ProjectReference Include="..\ProfiC.Runtime\ProfiC.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>

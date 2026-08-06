@@ -64,6 +64,9 @@ public sealed class DebugAdapter : IDisposable
     private Thread? _program;
     private bool _running;
 
+    /// <summary>Where the running program's input comes from, once there is one running.</summary>
+    private Asking? _asking;
+
     /// <summary>
     /// <para>Reads requests until the editor disconnects or the stream ends.</para>
     /// <para>One thread reads and answers; the program, once started, runs on another. A stop is
@@ -141,9 +144,31 @@ public sealed class DebugAdapter : IDisposable
                 _session.StepOut();
                 return true;
 
+            // The line at the foot of the Debug Console, which is where somebody watching a
+            // program would type an answer to it.
+            //
+            // That box is meant for evaluating an expression, and this adapter evaluates none —
+            // so while a program is waiting to read, what is typed there is what it reads. It is
+            // the same box a terminal would have put in the same place, and it means answering a
+            // program is typing where the program's question already is.
+            case "evaluate":
+                Evaluate(request);
+                return true;
+
+            // A line from somewhere other than the console, for anything that would rather ask
+            // its own way. Nothing in it is the end of the program's input.
+            case "profi-c/answer":
+                _wire.Respond(request);
+                _asking?.Answer((string?)request["arguments"]?["text"]);
+                return true;
+
             case "disconnect":
             case "terminate":
                 _wire.Respond(request);
+
+                // Before detaching, since a program stopped while it is waiting to be asked is
+                // waiting on a thread nothing else will release.
+                _asking?.Done();
                 _session.Detach();
                 return false;
 
@@ -305,8 +330,12 @@ public sealed class DebugAdapter : IDisposable
         {
             try
             {
+                Reporting printed = new(_wire);
+
+                _asking = new Asking(_wire, printed);
+
                 ProfiC.Interpreter.Interpreter.Run(
-                    _lowered, _model, new Reporting(_wire), TextReader.Null, _session);
+                    _lowered, _model, printed, _asking, _session);
             }
             catch (Exception failure)
             {
@@ -435,22 +464,172 @@ public sealed class DebugAdapter : IDisposable
     /// has already shown what it printed on the way there — which is most of how anybody
     /// actually debugs.</para>
     /// </summary>
+    /// <summary>
+    /// <para>What to do with a line typed into the Debug Console.</para>
+    /// <para>Given to a program waiting to read one, and otherwise refused with the reason. This
+    /// adapter has no expressions to evaluate — there is no place in Profi-C where a reader writes
+    /// one against a stopped program — so the box is free to be what it is more useful as.</para>
+    /// <para>Refused rather than swallowed when nothing is waiting, because a line typed into a
+    /// box that accepts everything and does nothing is worse than one that says it went
+    /// nowhere.</para>
+    /// </summary>
+    private void Evaluate(JsonObject request)
+    {
+        if (_asking is { Waiting: true } asking)
+        {
+            asking.Answer((string?)request["arguments"]?["expression"] ?? string.Empty);
+
+            _wire.Respond(request, new JsonObject
+            {
+                ["result"] = string.Empty,
+                ["variablesReference"] = 0,
+            });
+
+            return;
+        }
+
+        _wire.Refuse(
+            request,
+            _running
+                ? "nothing is waiting to read a line just now"
+                : "this is where a running program is answered, and nothing is running");
+    }
+
     private sealed class Reporting(DapConnection wire) : TextWriter
     {
+        private readonly Lock _pen = new();
+        private string _sinceTheLastLine = string.Empty;
+
         public override Encoding Encoding => Encoding.UTF8;
 
-        public override void Write(string? value)
+        /// <summary>
+        /// <para>What has been printed since the last line ended, which is nearly always the
+        /// question a program is about to wait for an answer to.</para>
+        /// <para><c>Console.Write("your name? ")</c> and then <c>Console.Read()</c> is how asking
+        /// is written, so by the time anything waits, the question is sitting here unterminated.
+        /// Handing it to whatever prompts the reader means they are asked what the program asked
+        /// rather than for "input".</para>
+        /// </summary>
+        public string Pending
         {
-            if (!string.IsNullOrEmpty(value))
+            get
             {
-                wire.Event("output", new JsonObject
+                lock (_pen)
                 {
-                    ["category"] = "stdout",
-                    ["output"] = value,
-                });
+                    return _sinceTheLastLine;
+                }
             }
         }
 
+        public override void Write(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+
+            lock (_pen)
+            {
+                int ended = value.LastIndexOf('\n');
+
+                _sinceTheLastLine = ended < 0
+                    ? _sinceTheLastLine + value
+                    : value[(ended + 1)..];
+            }
+
+            wire.Event("output", new JsonObject
+            {
+                ["category"] = "stdout",
+                ["output"] = value,
+            });
+        }
+
         public override void Write(char value) => Write(value.ToString());
+    }
+
+    /// <summary>
+    /// <para>Where a program being debugged gets what it reads: from the person watching it.</para>
+    /// <para><b>It cannot come from this process's own input.</b> That stream is the debug
+    /// protocol — it is how the editor and this adapter talk — and a program reading a line from
+    /// it would swallow a request and take the session down with it. So the question goes out to
+    /// the editor as an event, and the answer comes back as a request, over the conversation that
+    /// already exists.</para>
+    /// <para>The program's thread waits here while it happens. That is the whole reason the
+    /// adapter reads requests on a thread of its own: this blocks, and the wire must not — which
+    /// is the same arrangement a breakpoint already uses.</para>
+    /// <para>Nothing typed is end of input, and so is a session that ends while somebody is being
+    /// asked. Both give the program an empty optional, which is what <c>Console.Read</c> yields
+    /// wherever there is nothing to read, and is a case every program that reads has to handle
+    /// anyway.</para>
+    /// </summary>
+    private sealed class Asking(DapConnection wire, Reporting printed) : TextReader
+    {
+        private readonly SemaphoreSlim _answered = new(0, 1);
+        private string? _line;
+        private volatile bool _over;
+
+        /// <summary>Whether a program is sitting here now, which is what decides where a line
+        /// typed into the console goes.</summary>
+        public volatile bool Waiting;
+
+        public override string? ReadLine()
+        {
+            if (_over)
+            {
+                return null;
+            }
+
+            Waiting = true;
+            wire.Event("profi-c/read", new JsonObject { ["prompt"] = printed.Pending });
+
+            try
+            {
+                _answered.Wait();
+            }
+            finally
+            {
+                Waiting = false;
+            }
+
+            return _over ? null : _line;
+        }
+
+        /// <summary>
+        /// A line from the editor, or nothing where somebody dismissed the question. Released
+        /// whether or not anything is waiting: an answer to a question nobody asked is dropped by
+        /// the semaphore's own count rather than by a check that could race with one arriving.
+        /// </summary>
+        public void Answer(string? line)
+        {
+            _line = line;
+
+            if (line is null)
+            {
+                _over = true;
+            }
+
+            Release();
+        }
+
+        /// <summary>Ends the waiting, for a session that is over while somebody is being asked.
+        /// </summary>
+        public void Done()
+        {
+            _over = true;
+            Release();
+        }
+
+        private void Release()
+        {
+            try
+            {
+                _answered.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+                // Nothing was waiting. Answering twice is the editor's business rather than a
+                // fault here, and the second answer has nothing to be given to.
+            }
+        }
     }
 }

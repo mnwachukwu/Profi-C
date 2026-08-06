@@ -773,6 +773,10 @@ public sealed partial class Interpreter
             BuiltInId.FractionToReal => new StrongBox<object?>(((Fraction)target!).ToReal()),
             BuiltInId.FractionReciprocal =>
                 new StrongBox<object?>(((Fraction)target!).Reciprocal()),
+            BuiltInId.FractionNumerator =>
+                new StrongBox<object?>(((Fraction)target!).Numerator),
+            BuiltInId.FractionDenominator =>
+                new StrongBox<object?>(((Fraction)target!).Denominator),
             BuiltInId.FloatToFraction => new StrongBox<object?>(
                 Fraction.FromFloat(target is double f ? f : 0)),
             BuiltInId.RealToFloat => new StrongBox<object?>(

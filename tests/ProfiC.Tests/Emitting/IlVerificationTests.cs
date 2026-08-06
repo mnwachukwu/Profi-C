@@ -109,22 +109,72 @@ public sealed class IlVerificationTests : LexerTestBase
             "sample files no build in this fixture reaches, so nothing ever emits them");
     }
 
+    /// <summary>
+    /// <para>Whether to leave the assemblies where somebody can open them.</para>
+    /// <para>Set <c>PROFIC_KEEP_ASSEMBLIES=1</c> and every compilation below is written under
+    /// <c>samples/bin</c> instead of a temporary folder, named after the sample it came from.
+    /// What lands there is byte for byte what was verified — the same emit, not a second one
+    /// arranged for reading — which is the whole reason this is a switch on these tests rather
+    /// than a script that builds the corpus again.</para>
+    /// <para>Off by default, because a test suite that writes into the repository every run is
+    /// one whose results depend on what the last run left behind.</para>
+    /// </summary>
+    private static bool Keeping =>
+        Environment.GetEnvironmentVariable("PROFIC_KEEP_ASSEMBLIES") == "1";
+
+    /// <summary>Where kept assemblies go, which is where <c>pc build</c> would put one.</summary>
+    private static string KeptIn => Path.Combine(RepositoryRoot, "samples", "bin");
+
+    /// <summary>
+    /// <para>Empties the folder before filling it, so that a run leaves what this run built and
+    /// nothing else.</para>
+    /// <para>Otherwise a sample renamed, removed, or newly failing to build leaves its last
+    /// assembly sitting there looking current — and an assembly nothing produced today is worse
+    /// than no assembly at all, because it is the one somebody opens and believes. The whole
+    /// point of keeping these is to read what the compiler just emitted.</para>
+    /// <para>Only when they are being kept. A run that was not asked to write into the repository
+    /// does not delete from it either.</para>
+    /// </summary>
+    [OneTimeSetUp]
+    public void ClearWhatTheLastRunLeft()
+    {
+        if (Keeping && Directory.Exists(KeptIn))
+        {
+            Directory.Delete(KeptIn, recursive: true);
+        }
+    }
+
+    /// <summary>A sample's name as a folder: 'library/books/books.pcp' becomes 'library-books'.
+    /// </summary>
+    private static string Kept(string name) =>
+        Path.ChangeExtension(name, null)!
+            .Replace(Path.DirectorySeparatorChar, '-')
+            .Replace(Path.AltDirectorySeparatorChar, '-');
+
     private static void AssertVerifies(
         string name, Func<(IReadOnlyList<CompilationUnit> Units, SemanticModel Model)> frontEnd)
     {
         (IReadOnlyList<CompilationUnit> units, SemanticModel model) = frontEnd();
 
-        string folder = Path.Combine(Path.GetTempPath(), $"profi-c-ilverify-{Guid.NewGuid():N}");
+        bool keeping = Keeping;
+
+        string folder = keeping
+            ? Path.Combine(KeptIn, Kept(name))
+            : Path.Combine(Path.GetTempPath(), $"profi-c-ilverify-{Guid.NewGuid():N}");
+
         Directory.CreateDirectory(folder);
 
         try
         {
-            string assembly = Path.Combine(folder, "Emitted.dll");
+            // Named after the sample when it is being kept, since a folder of files all called
+            // Emitted.dll is a folder nobody can read.
+            string assembly = Path.Combine(
+                folder, keeping ? $"{Kept(name)}.dll" : "Emitted.dll");
 
             CilEmitter.Emit(
                 ClosureConversion.Convert(Lowering.Lower(units, model), model),
                 model,
-                "Emitted",
+                keeping ? Kept(name) : "Emitted",
                 assembly);
 
             Assert.That(
@@ -134,7 +184,10 @@ public sealed class IlVerificationTests : LexerTestBase
         }
         finally
         {
-            Directory.Delete(folder, recursive: true);
+            if (!keeping)
+            {
+                Directory.Delete(folder, recursive: true);
+            }
         }
     }
 

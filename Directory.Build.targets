@@ -14,9 +14,16 @@
     One folder means one configuration at a time: publishing Debug over Release replaces what
     is there rather than sitting beside it. Publishing defaults to Release, which is what
     belongs in a folder a reader runs from.
+
+    The browser build is left out of it. It is an Exe because a .NET WebAssembly build must
+    have an entry point, not because anybody runs it — it is a folder of files a page fetches,
+    and sending it here would overwrite the commands with something nobody can type. It keeps
+    the ordinary publish folder inside its own project instead.
   -->
 
-  <PropertyGroup Condition="'$(OutputType)' == 'Exe' and '$(IsTestProject)' != 'true'">
+  <PropertyGroup Condition="'$(OutputType)' == 'Exe'
+                            and '$(IsTestProject)' != 'true'
+                            and '$(RuntimeIdentifier)' != 'browser-wasm'">
     <PublishDir>$(MSBuildThisFileDirectory)dist\</PublishDir>
   </PropertyGroup>
 

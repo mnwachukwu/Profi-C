@@ -750,6 +750,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [documenting.pc](samples/documenting.pc) | **Writing down what a thing is.** `@summary:` and the labels beside it, how a summary runs to several paragraphs, and why a remark above a declaration stays a remark |
 | [visibility.pc](samples/visibility.pc) | **`shared` and `public` answer different questions.** One asks how many there are, the other who can reach it — a shared model's members are private until they say otherwise |
 | [mathematics.pc](samples/mathematics.pc) | **Every member of `Math`.** Constants, roots, logarithms, angles, rounding, and why `Log` is the natural one |
+| [long-division.pc](samples/long-division.pc) | **A worked solution, laid out in columns.** Asks for two numbers and divides one by the other the way it is taught, with `r` for the remainder — the arithmetic is the easy half |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, holding any of them as a `Function`, and keeping one in a field |
 | [defaults.pc](samples/defaults.pc) | **What a field holds before anybody writes to it.** Every primitive at its own zero, an optional starting empty, and the constructor settling the one field that has no zero to start at |
