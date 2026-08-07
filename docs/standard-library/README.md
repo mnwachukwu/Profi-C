@@ -364,11 +364,11 @@ where one is expected.
 
 **A member written without parentheses is a value rather than something to call.** `Math.Pi` and
 `landing.Year` are read; `word.ToUpper()` is called. Writing parentheses on a value is reported,
-as is leaving them off a function — the two mistakes are each other's mirror.
+as is leaving them off a function.
 
 ## Two kinds of member
 
-The distinction runs through the whole library, and it is the one to have straight:
+The distinction runs through the whole library:
 
 **Reached through a value.** `word.ToUpper()`, `scores.Count`, `landing.Year`. These are found
 by the *type* of what is on the left, so every `string` answers the same members and every set

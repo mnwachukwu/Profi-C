@@ -3,9 +3,9 @@
 Profi-C's documentation is four documents and a folder. This page says what each is for and which
 one holds the answer to what, so nothing has to be searched for twice.
 
-**Profi-C is a teaching language.** It aims to make concepts legible to a beginner while staying
-close enough to C# that what a student learns transfers. That single goal is behind most of what
-looks unusual here, and the [README](../README.md#what-it-is-for) says why.
+**Profi-C is an introductory language.** It aims to make concepts legible to a beginner while
+staying close enough to C# that what a student learns transfers. That single goal is behind most
+of what looks unusual here, and the [README](../README.md#what-it-is-for) says why.
 
 ## The four documents
 
@@ -69,14 +69,12 @@ namespaces and `using`:
 
 Read [side-by-side.md](side-by-side.md) rather than this page — it writes every construct out both
 ways and ends with three sections keeping score: what Profi-C does better, what C# does better, and
-what C# has that Profi-C has no form for at all. That last one is the longest, which is the honest
-shape of a young language against one twenty-four years old.
+what C# has that Profi-C has no form for at all. The third is the longest of them.
 
-Four differences are worth knowing before you read anything else, and
-[specification §0.4](language-spec.md#04-relationship-to-c) states them:
+Four differences to know before anything else, stated in
+[specification §0.4](language-spec.md#04-relationship-to-c):
 
-- **`yield` means return.** The most dangerous word here for a C# reader, since C# spends it on
-  iterators.
+- **`yield` means return.** C# uses the word for iterators; Profi-C's has nothing to do with them.
 - **There is no `null`.** Optionals replace it, and reading one the compiler cannot prove present
   does not compile.
 - **`==` is deep by default** on models and sets, comparing structurally rather than by identity.

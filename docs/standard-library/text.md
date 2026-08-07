@@ -25,8 +25,8 @@ it are the same questions in both places.
 **Text that is empty changes nothing.** Asked to replace nothing, remove nothing, or trim nothing
 from an end, a string comes back as it was — and the questions answer the way an empty argument
 should: `"ab".Contains("")` is `true`, `"ab".IndexOf("")` is `0`, and `"ab".Split("")` is one
-piece holding the whole string. One rule covers the family, so nothing here raises for an empty
-argument and nothing quietly does something surprising with one:
+piece holding the whole string. One rule covers the family, so no member here raises on an empty
+argument and none treats one as a special case:
 
 ```
 string pair = "ab";
@@ -68,8 +68,8 @@ Console.WriteLine(greeting.IndexOf("moon"));    # -1
 | `Subset(integer start, integer end)` | `string` | From `start` up to but not including `end` |
 
 **`Substring` and `Subset` do the same job and differ only in their second number.** `Substring`
-takes *how many*; `Subset` takes *where to stop*. Whichever number you already have is the one to
-write, and `Substring` is there because it is what a reader arriving from C# will type.
+takes *how many*; `Subset` takes *where to stop*. Use whichever matches the number already at
+hand. `Substring` exists because it is the name a reader arriving from C# will type.
 
 `Subset`'s end is exclusive — the same reading `until` has in a loop — so `Subset(0, n)` and
 `Subset(n, count)` put the whole string back together.
@@ -114,8 +114,8 @@ of *its* characters go; written with a set of characters, any in the set goes.
 | `TrimStart()` · `TrimStart(string)` · `TrimStart(character[])` | `string` | The front only |
 | `TrimEnd()` · `TrimEnd(string)` · `TrimEnd(character[])` | `string` | The end only |
 
-The string form is the one people reach for. The set form is there because a set of characters is
-what you already have when the characters were worked out rather than typed.
+The string form is the common one. The set form takes a `character[]`, which is what a program
+already holds when the characters were computed rather than written literally.
 
 ```
 Console.WriteLine("  spaced  ".Trim());          # spaced
@@ -132,8 +132,7 @@ Console.WriteLine("xxhellox".TrimStart("x"));    # hellox
 | `Capitalize()` | `string` | The first letter raised, the rest left exactly as it was |
 
 **`Capitalize` is the language's own** rather than .NET's. .NET's title-casing also *lowers*
-everything it did not raise, which is wrong for a name somebody typed — `capitalize` on
-`"McDonald"` should not give back `"Mcdonald"`.
+everything it did not raise, so `"McDonald"` would come back as `"Mcdonald"`.
 
 ```
 Console.WriteLine("hello".ToUpper());        # HELLO

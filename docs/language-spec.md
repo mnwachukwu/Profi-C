@@ -124,7 +124,7 @@ This document is the normative one: where they disagree, this is right.
 
 ### 0.2 Purpose
 
-Profi-C is a **teaching language**. Its goal is to make programming concepts legible to a
+Profi-C is an **introductory language**. Its goal is to make programming concepts legible to a
 beginner while staying faithful to the patterns a C# developer uses daily, so that what a
 student learns transfers rather than has to be unlearned.
 
@@ -153,12 +153,10 @@ out; anything it borrows is written the way its source writes it, so a name a re
 knows is the name they type.
 
 **Keywords are lowercase and everything the library provides is PascalCase**, so the casing says
-at a glance what is language and what is library. Two pairs sit either side of that line and are
-worth knowing before they are met: `model` declares a type while `Model` is the root type, and
-`or` is the boolean operator while `Or` is the optional's fallback. The second pair is the
-confusable one, since both live near the idea of *otherwise* — `a or b` and `a.Or(b)` are
-different things. The language is case-sensitive, so they never collide; they are worth a look in
-review all the same.
+at a glance what is language and what is library. Two pairs sit either side of that line:
+`model` declares a type while `Model` is the root type, and `or` is the boolean operator while
+`Or` is the optional's fallback. The language is case-sensitive, so `a or b` and `a.Or(b)` are
+different expressions and never collide.
 
 **Every construct says what it closes.** `end if`, `end loop`, `end model`. The compiler
 verifies the qualifier and reports a mismatch by name, so a beginner who loses track of
@@ -170,7 +168,7 @@ rendered with a full stop for the decimal point and no digit grouping; a moment 
 year first, `2026-07-29`, and a time in twenty-four hours. None of this is the machine's
 default — every rendering names the invariant form deliberately.
 
-This matters more for a teaching language than for most. A student comparing output with a
+This matters more for an introductory language than for most. A student comparing output with a
 classmate or a book should be comparing the program, not the two computers' idea of how a date
 is written; and `07/08/2026` means two different days depending on who is reading it, which is
 not something anyone should have to think about while learning what a loop is.
@@ -228,7 +226,7 @@ clear, intended, and correct, and the language would still write it differently.
 opinion says that some written token has no effect — the exception is a `loop` with no condition
 that nothing inside can break, yield, or throw out of, where nothing written is redundant and
 something is missing instead. It is an opinion rather than a warning because a program meaning to
-run until it is stopped from outside is one somebody may write.
+run until it is stopped from outside is legitimate.
 
 Nothing is wrong with a program that has an opinion against it, and reading them in order is a
 reasonable way to learn what the language expects.
@@ -240,8 +238,7 @@ depends on them yet.
 **A warning or an opinion may be silenced. An error may not**, ever and by any means, because
 the mechanism that quiets a compiler must not be able to make it lie. Nothing about silencing
 one stops compilation either: a directive that cannot work is reported and the program builds,
-since a feature reached for to make the compiler quieter would be worse than useless if getting
-it slightly wrong made the compiler fatal.
+since a mechanism for quieting the compiler should not itself be able to stop a build.
 
 A **line comment** carries the directive, in one of three forms. The word after `ignore` is
 never absent:
@@ -271,12 +268,11 @@ project Library
 end project
 ```
 
-**Prose beginning with the word `ignore` is prose.** `# ignore the sign for now` is a remark a
-reader writes, and a language that turned it into a diagnostic would be worse than one that
-occasionally passes over a typo. A directive is therefore recognized only once `warning`,
-`opinion`, or something shaped like an identifier follows; anything else is a comment and draws
-nothing. Words after the target are prose too, so a directive may say why it is there. A `##`
-block is always prose: a directive nobody sees is not one.
+**Prose beginning with the word `ignore` is prose.** `# ignore the sign for now` is an ordinary
+remark, so a directive is recognized only once `warning`, `opinion`, or something shaped like an
+identifier follows; anything else is a comment and draws nothing. Words after the target are prose
+too, so a directive may say why it is there. A `##` block is always prose, since a directive
+inside one would not be visible where it applies.
 
 Naming an identifier asserts that a particular diagnostic is there, so one that reaches nothing
 reporting it is itself reported (`PC0024`). Naming a severity claims nothing, and stays silent
@@ -285,7 +281,7 @@ a diagnostic that stops compilation is `PC0023`, which exists so that a reader w
 error and meets it anyway is told why rather than concluding the mechanism is broken.
 
 **A comment may document a declaration**, and one that does opens with `@summary:`. Both comment
-forms carry documentation, since a one-line summary is worth writing on one line:
+forms carry documentation, so a one-line summary fits on one line:
 
 ```
 ##
@@ -323,9 +319,8 @@ than a help.
 
 **`@throws:` is carried and not checked.** What a function can raise is not something v1 works
 out — there are no checked exceptions and no inference of what a body may throw — so an
-implementation has nothing to compare the claim against. A check that guessed would be worse
-than none, and one that demanded the label would demand it everywhere. The text is kept and
-shown, and its accuracy is the author's. This is a limit of v1 rather than a design principle:
+implementation has nothing to compare the claim against. The text is kept and shown, and its
+accuracy is the author's. This is a limit of v1 rather than a design principle:
 should what a function raises ever become something the language tracks, the claim becomes
 checkable and this stops being true.
 
@@ -385,8 +380,8 @@ line with it**:
 ```
 
 The body is indented under the marks by convention rather than by rule — the compiler reads a
-block the same either way. It is worth writing because an editor folds by indentation with
-nothing told to it, so a long comment collapses out of the way.
+block the same either way. Indenting it lets an editor fold the comment, since editors fold by
+indentation without being configured.
 
 That closing rule settles two things at once.
 
@@ -440,12 +435,11 @@ with `start`, `base` pairs with `height`, `to` pairs with `from`, and `each` is 
 for what a loop is given. Renaming every such keyword would cost the vocabulary and still leave
 the rest taken, so the language keeps its words and hands one back on request.
 
-Where a keyword is only ever written in one position, a compound word costs nothing and the
-plain word is worth more free than reserved. `stepby` is that case, as `shiftleft` and
-`shiftright` are: it can appear nowhere but after a range loop's bound, so lengthening it takes
-away no clarity and gives `step` back as a name. `each` is not that case, despite only
-following `for` — a `foreach` opener would want `end foreach` to close it, and renaming one word
-to keep `end` honest would reach every loop in every program.
+Where a keyword is only ever written in one position, lengthening it costs no clarity and frees
+the plain word as a name. `stepby`, `shiftleft` and `shiftright` are those cases: `stepby` can
+appear nowhere but after a range loop's bound, so the longer spelling gives `step` back as a
+name. `each` is not, despite only following `for` — a `foreach` opener would require
+`end foreach` to close it, which would change every loop in every program.
 
 An `@` before a word that is not reserved does nothing, and is reported as such. An `@`
 followed by no name at all is an error.
@@ -628,7 +622,7 @@ Words a C# author might expect to be reserved and which are **not**: `private`, 
 is no `null`; and nothing the language defines is abbreviated — `enumeration` rather than
 `enum`, `constant` rather than `const`, `boolean` rather than `bool`.
 
-**Every one of the 63 is reserved everywhere**, which is the whole of the rule. C# has a second
+**Every one of the 63 is reserved everywhere.** C# has a second
 kind: `value`, `var`, `record`, `await` and forty-odd others are keywords in one position and
 ordinary names in every other, so whether a word is reserved there depends on where it sits.
 Profi-C has none of those, and `@` takes any of the 63 back as a name — one rule, written at the
@@ -686,7 +680,7 @@ Scanning never stops at the first error. Each lexical diagnostic — `PC0001` th
 listed in [Appendix A](#appendix-a-diagnostics) — has a defined recovery, so a file containing
 several mistakes reports all of them in one pass and still yields a usable token stream.
 
-Two recoveries are worth naming, because they change what the parser then sees.
+Two recoveries change what the parser then sees.
 
 **An unterminated string ends at the newline, not at the end of the file.** A missing close
 quote almost always means a missing quote on that line, and scanning to the end of the file
@@ -868,9 +862,9 @@ are **value types**: assigning one copies it. Every model, every set, and `strin
 `string` is a reference type whose value never changes, so the distinction is not observable
 for it — every operation that appears to modify a string returns a new one.
 
-A structure holding a model copies the reference, not the model, so two copies of the
-structure see the same model. This is the one place the split is worth stopping over, and it
-is why [§4.2](#42-constants)'s `constant` does not yet accept a structure that can reach a model.
+A structure holding a model copies the reference, not the model, so two copies of the structure
+see the same model. That is why [§4.2](#42-constants)'s `constant` does not yet accept a structure
+that can reach a model.
 
 ### 3.5 Conversions
 
@@ -906,7 +900,7 @@ yields a plain value rather than an optional. An enumeration is the exception in
 direction: an integer names one of its members, so `n as Suit` is a genuine question with a
 "no" answer, and it yields `Suit?`.
 
-Three of these are worth the reasoning.
+Three of these have reasoning behind them.
 
 **Between `fraction` and `real`, neither direction is automatic.** One third as a real is
 0.33333333333333331, and one tenth as a fraction is 3602879701896397 over 36028797018963968.
@@ -927,7 +921,7 @@ Model held = new Thing();           either spelling of Thing reaches Model
 
 **A value type never does.** That conversion is boxing, which the language does not have — so
 `Model m = 1;`, and the same with a structure or an enumeration member, is rejected rather than
-quietly allocating. Every type still *inherits* `Model`'s members, including `ToString` and
+allocating silently. Every type still *inherits* `Model`'s members, including `ToString` and
 `Equals`; inheriting them and converting to it are different things. `string` is a reference
 type and converts, needing no boxing to do it.
 
@@ -1064,8 +1058,8 @@ end loop
 ```
 
 **Nowhere else takes one** (`PC0256`), because nowhere else is a name obliged. Any expression is
-already a statement, so a value is dropped by writing it on its own — and a throwaway written to
-drop the same value spends a line agreeing:
+already a statement, so a value is dropped by writing it on its own. A throwaway written to drop
+the same value adds nothing:
 
 ```text
 Announce();                     drops what it yields
@@ -1076,7 +1070,7 @@ integer _;                      PC0256 — and this one does nothing at all
 
 That reasoning reaches a shape the language does not have yet. Destructuring several values at
 once would be a fourth place a name is obliged, so a throwaway would belong there for the parts
-nobody wants — but not for *all* of them, since a left side that keeps nothing is a call written
+not wanted — but not for *all* of them, since a left side that keeps nothing is a call written
 the long way round.
 
 Because it binds nothing, **it cannot be read** (`PC0254`), and it cannot name anything that is
@@ -1084,9 +1078,9 @@ reached by writing its name — a field, a function, a type, an enumeration memb
 (`PC0255`).
 
 **A parameter is not a place for one** (`PC0257`), and it is the one receiving position that is
-not. Every other is invisible outside the body it sits in; a parameter is part of a signature
-somebody else reads to work out what to pass, and is shown to them at every call. A function
-with no use for an argument should not ask for one.
+not. Every other is invisible outside the body it sits in; a parameter is part of a signature a
+caller reads to work out what to pass, and is shown at every call. A function with no use for an
+argument should not ask for one.
 
 Only the bare underscore. `_count` and `_x` are names like any other, read and written like any
 other.
@@ -1233,10 +1227,9 @@ integer written = 1;
 written = 2;                    PC0409 as well — assigning is not reading
 ```
 
-It is a warning rather than a refusal because the program runs either way. It is worth saying
-because a result worked out and then forgotten looks exactly like one meant to be dropped, and
-[a throwaway](#41-variables) is how a program says which it is — so `_` is exempt, having
-already said nothing will read it.
+It is a warning rather than a refusal because the program runs either way. It is reported because
+a result worked out and then forgotten is indistinguishable from one meant to be dropped, and
+[a throwaway](#41-variables) is how a program says which it is. `_` is therefore exempt.
 
 **A private member nothing reaches is reported the same way** (`PC0410`), for fields and
 functions alike. Private is the only visibility this can be asked about: a private member is
@@ -1264,14 +1257,14 @@ program may be written to do exactly that. So the test is what the compiler can 
 the line looks like.
 
 **Where the statement is a call that yields something, only the answer goes unheld** (`PC0412`),
-and that is an opinion rather than a warning: the call runs and does its job. What it points at
-is the function — one that both acts and answers, called for half of itself, is usually two
-functions. Where it is not yours to split, keeping the value is the other fix;
-`Directory.Delete` answers whether there was a folder to remove, which is worth having.
+and that is an opinion rather than a warning, since the call still runs. It points at the
+function: one that both acts and answers, called for only half of that, is usually two functions.
+Where the function cannot be split, holding the value is the other fix — `Directory.Delete`
+answers whether there was a folder to remove.
 
 An editor shows the unused ones faded rather than underlined, keeping the color the name already
-had — so a name still reads as the field or the local it is, and reads as one nothing reaches.
-A dropped call result is not faded: the call is not spare.
+had, so a name still reads as the field or the local it is. A dropped call result is not faded,
+since the call itself is not spare.
 
 ### 4.6 Visibility
 
@@ -1289,8 +1282,8 @@ smallest thing that could own it.** A member's owner is its type, so silence mea
 type's owner is its project, so silence means internal. Nothing has to be memorized separately
 — what is written down is always a widening of what silence already said.
 
-There is no `private` keyword: private is what writing nothing gets you. Writing `internal` on
-a type is legal and says what silence says, which is worth writing where a reader might wonder.
+There is no `private` keyword: a member with no visibility word is private. Writing `internal` on
+a type is legal and states what silence already says.
 
 `protected` may not be written on a type (`PC0220`). It means "and anything extending the type
 that declares this", which is a sentence about a member; a type has no declaring type, so the
@@ -1301,10 +1294,11 @@ type — reported where the name is written. A constructor is a member like any 
 private one is how a type says it makes its own instances.
 
 **Where a project comes from.** A project is a `.pcp` file and the files it lists ([§12.1](#121-what-a-compilation-is-made-of)). A
-compilation nobody divided is **one project**, so `internal` reaches everything in it and the
-rule costs a single-file program nothing. Projects only start to matter once one references
-another, which is exactly when a boundary is worth having: without `internal`, a project
-reference would be nothing but a shorter way to list somebody else's folders.
+compilation not divided into projects is **one project**, so `internal` reaches everything in it
+and the
+rule costs a single-file program nothing. Projects begin to matter once one references another,
+which is where the boundary applies: without `internal`, a project reference would expose every
+type in the referenced project.
 
 ```text
 public model Book                       Library, which references Books, may use this
@@ -1400,7 +1394,7 @@ is a deliberate divergence from C#, whose `^` covers both.
 **A shift of fewer than zero places, or of 64 or more, is an error** (`PC0343`) — an integer
 holds 64 bits and a shift past all of them has nothing left to move. A literal amount is caught
 while compiling; one that arrives in a variable raises `ArgumentException`. C# folds the amount
-into range instead, so `x << 64` quietly means `x << 0` there.
+into range instead, so `x << 64` means `x << 0` there, with nothing reported.
 
 ### 5.3 Raising to a power
 
@@ -1548,7 +1542,7 @@ switched on must be one a case can name (`PC0315`).
 **A `switch` over an enumeration that leaves members out and writes no `default` is a
 warning** (`PC0337`), naming the ones with no case. This is what makes adding a member to an
 enumeration safe: every switch that has to change says so, at the place it has to change,
-rather than the new member falling quietly through all of them.
+rather than the new member falling through all of them unreported.
 
 Writing a `default` silences it, because a default handles the rest and saying so is the
 point of writing one. Members are compared by the value each carries rather than by name, so
@@ -1597,13 +1591,11 @@ nothing in the line would say so.
 
 **A `loop` closed by `end loop` has no condition anywhere**, and is for the case where the
 reason to stop is not a question that can be asked at the top or the bottom but something that
-happens partway through. Saying that plainly beats writing a condition that is always true and
-leaving a reader to work out what it stood in for.
+happens partway through, rather than as a condition that is always true.
 
 Something inside still has to end it — a `break`, a `yield`, or a `throw`. One with none of the
-three is `PC0406`, an **opinion** rather than an error: a program that means to run until it is
-stopped from outside is one somebody may legitimately write, and the language cannot tell which
-it has.
+three is `PC0406`, an **opinion** rather than an error: a program meant to run until stopped from
+outside is legitimate, and the language cannot tell the two apart.
 
 **The opinion suppresses nothing.** A function that yields a value and holds a loop nothing can
 end still gets `PC0404`, because that is not a question about the loop — it is a function
@@ -1642,9 +1634,8 @@ its length is read once, when the loop begins. Modifying the sequence inside its
 refused (`PC0243`) rather than left to mean something subtle.
 
 **A loop variable is fresh on every turn.** A function made inside a loop closes over that
-turn's variable, so three functions made in three turns report three values. This is the trap
-that catches people in languages where the variable is shared and every function reports the
-last value.
+turn's variable, so three functions made in three turns report three values. In a language where
+the loop variable is shared, all three would report the last value.
 
 `break` leaves the innermost loop and `continue` goes to its next turn. Neither may appear
 outside one, and writing one where there is no loop is refused (`PC0407`) rather than given a
@@ -1668,9 +1659,8 @@ end loop
 This is the one place the language deliberately reads differently from C#, where a `break` is
 required at the end of every case and ends the switch. It is required there because a case falls
 through into the next one without it; a Profi-C case never does, so the word was free to keep the
-single meaning it has everywhere else. A `break` written at the end of a case out of habit is not
-harmless — it leaves the loop — which is why a `break` with no loop around it at all is refused
-rather than quietly given one.
+single meaning it has everywhere else, so a `break` written at the end of a case leaves the
+enclosing loop. A `break` with no loop around it at all is refused rather than given a meaning.
 
 ### 6.4 Other statements
 
@@ -1685,7 +1675,7 @@ statement rather than an expression, so `if x = 5` cannot be written.
 
 **An expression statement may not begin with `(` or `-`.** A construct's body has no opening token, so a
 condition ends at the first token that cannot continue an expression — and those two can,
-which would otherwise let a condition swallow the first statement of its own body. The
+which would otherwise let a condition consume the first statement of its own body. The
 restriction applies only to a bare expression statement; `(x as Dog).Value()` remains legal
 as an assignment's right side, as an argument, after `yield`, and within a condition. See
 [grammar.ebnf](grammar.ebnf) for the full reasoning.
@@ -1741,12 +1731,12 @@ constructing.
   rather than a mistake; where the parent declares several constructors, `base()` says which one
   builds it and nothing is reported.
 - **A constructor must be able to reach one** (`PC0250`). Where the parent declares constructors
-  and none of them takes nothing, the child has to write `base(...)` — nobody else knows what to
-  hand over. A parent that declares no constructor at all takes nothing, so nothing is required.
+  and none of them takes nothing, the child has to write `base(...)`, since only the child knows
+  what to pass. A parent that declares no constructor takes nothing, so nothing is required.
 - **Field initializers run before any constructor body**, nearest type first: a child's starting
   values, then its parent's, then the parent's constructor, then the child's. Which of the two
-  sets ran first is observable only through a side effect, and the order is fixed so that it is
-  fixed rather than incidental.
+  sets ran first is observable only through a side effect, and the order is specified rather than
+  left to the implementation.
 
 **`this` is not available in a field's starting value** (`PC0249`). Nothing is built yet — the
 fields hold nothing until their own initializers have run — so a name reached through `this`
@@ -1769,7 +1759,7 @@ It closes no block, so it takes no `end function`, and it is asked for no result
 is the obligation of whatever writes it. Four rules follow, each with its own diagnostic:
 
 - Only an **abstract model** may carry one (`PC0240`). An instance of a model that could be
-  constructed would reach a function nobody wrote.
+  constructed would reach a function with no body.
 - A model that **can** be constructed must write every function still open above it
   (`PC0241`), reported once on the model and naming each. An abstract descendant passes the
   obligation down instead; a descendant that writes one discharges it for everything below.
@@ -1813,9 +1803,9 @@ repeating it. Four ways it can fail, and each is an error:
 | A function redeclaring one above without `override` | `PC0224` |
 | An `override` yielding something else | `PC0225` |
 
-An unchecked `override` fails quietly, which is why it is checked: a base function renamed, or
-a parameter type that drifted, leaves a function still marked `override` and overriding
-nothing. It compiles, it runs, and every call through the base type reaches the base's.
+An unchecked `override` fails silently, which is why it is checked: a base function renamed, or a
+parameter type that changed, leaves a function still marked `override` and overriding nothing.
+The program compiles and runs, and every call through the base type reaches the base's version.
 
 A function differing in **parameter types** is an overload rather than an override, and
 overloading across a base and a derived model is ordinary. `PC0222` is what tells the two apart
@@ -1994,8 +1984,7 @@ written directly. **The reverse is never automatic** — that strictness is the 
 Reading a `T?` where a `T` is wanted is rejected by `PC0329`, whose message names all three
 ways out rather than only reporting the mismatch.
 
-`Or` is the one to reach for. `Value` is for when absence is genuinely impossible and you are
-willing to say so.
+`Or` is the usual choice. `Value` is for where absence is impossible and the program says so.
 
 ### 8.2 Narrowing
 
@@ -2205,14 +2194,14 @@ shared.
 
 Overloads are chosen by argument count first, then by exact match, then by what the arguments
 can convert to. Two versions reachable only by conversion is a tie, and a tie is reported
-(`PC0310`) rather than broken by a rule nobody remembers.
+(`PC0310`) rather than broken by a further rule.
 
 **A name belongs to one member** (`PC0253`). Two members of a type share a name only when they
 are versions of one function, told apart by what they take — so two fields cannot, a field and a
 function cannot, and neither can two functions taking the same types. Without the rule the second
-declaration is simply unreachable: every use of the name finds the first, and the reader who
-wrote the second watches their code run somebody else's. It is reported where the second is
-written, and names the line the first is on.
+declaration is simply unreachable: every use of the name finds the first, so calls intended for
+the second run the first instead. It is reported where the second is written, and names the line
+the first is on.
 
 ### 9.1 Writing a function as a value
 
@@ -2304,11 +2293,9 @@ because the two come from one list — so nothing can be thrown that cannot be n
 `RecursionTooDeepException` is the one that can be named and not caught
 ([§10.1b](#101b-calling-too-deeply)).
 
-Eight of the eleven are the names .NET uses, unchanged. That is deliberate: a reader who learns
-what `DivideByZeroException` means here already knows what it means in C#, Java, and near
-enough in Python, and a name that transfers is worth more than one tuned to this language
-alone. The wording each carries is *not* .NET's — a message is read once and never carried
-anywhere, so it is written here to say what happened and what to do about it.
+Eight of the eleven are the names .NET uses, unchanged, so a reader who learns what
+`DivideByZeroException` means here already knows what it means in C# and Java. The wording each
+carries is *not* .NET's: a message is written here to say what happened and what to do about it.
 
 ### 10.1a What a `catch` does not take
 
@@ -2328,11 +2315,10 @@ that stops it — raises `RecursionTooDeepException`. **It is the one exception 
 `catch Exception` included.**
 
 Being nameable and being catchable are separate things, and this is the one place they come
-apart. The name exists so a reader can be told what stopped their program. Catching it would
-help nobody: the depth is the implementation's number rather than a property of the program, so
-a handler would run at an arbitrary point with every frame beneath it abandoned half-finished,
-and a program that has run away is not one more code recovers from. Naming it in a `catch` is
-reported as `PC0344` rather than left as a clause that looks like a handler and never runs.
+apart. The name exists so a reader can be told what stopped their program. It is not catchable:
+the depth is the implementation's number rather than a property of the program, so a handler
+would run at an arbitrary point with every frame beneath it abandoned part-way. Naming it in a
+`catch` is reported as `PC0344` rather than left as a clause that never runs.
 
 **It is not a stack overflow, which is why it does not carry that name.** The limit is a count
 the language keeps, and it is reached long before the machine is near the end of its stack —
@@ -2386,9 +2372,9 @@ end model
 Extending is not redeclaring: the names above cannot be declared, but they can be extended, and
 a declared exception is caught by a `catch` naming any of its ancestors.
 
-**There are no checked exceptions.** A function does not declare what it may throw, and
-nothing forces a caller to handle it. That choice follows the same reasoning as the rest of
-the language: the alternative teaches people to write `catch` clauses that swallow.
+**There are no checked exceptions.** A function does not declare what it may throw, and nothing
+forces a caller to handle it. The alternative pushes callers toward `catch` clauses written to
+satisfy the compiler rather than to handle the failure.
 
 ## 11. The standard library
 
@@ -2407,12 +2393,11 @@ without importing anything, and `Standard.Math` is legal without a `using` too �
 name never needed one. Writing `using Standard;` is legal and reported (`PC0230`, an opinion):
 it brings nothing that is not already there.
 
-It sits at the same rank a `using` would put it at, rather than beneath. That matters only
-once a second namespace can offer one of these names — .NET interop, in a later version —
-and then it matters a great deal: at equal rank a bare `DateTime` with both in scope is
-**ambiguous** (`PC0226`) and the program says which it meant, where a lower rank would have
-let the import quietly take the name. Nothing collides with `Standard` today, which is why
-the rule is worth fixing now: it costs nothing until it costs everything.
+It sits at the same rank a `using` would put it at, rather than beneath. That matters once a
+second namespace can offer one of these names — .NET interop, in a later version. At equal rank a
+bare `DateTime` with both in scope is **ambiguous** (`PC0226`) and the program says which it
+meant; at a lower rank the import would take the name silently. Nothing collides with `Standard`
+today, so the rule is settled now rather than once a program depends on the other behavior.
 
 **A program may declare these names.** A `Math` of your own is legal, wins over the library's
 by the ordinary nearest-name rule, and is warned about (`PC0203`) because losing `Math.Sqrt`
@@ -2475,15 +2460,14 @@ which is what the member tables here had begun to do.
 
 **A test holds the two together.** Every member the compiler provides must have a row in that
 index, nothing may be listed there that the compiler does not provide, every page must be
-reachable, and every link must land on a heading that is there — so a member added to the
-language and left undocumented fails the build rather than going quietly unlearned.
+reachable, and every link must land on a heading that is there, so a member added to the language
+and left undocumented fails the build.
 
 ### 11.2 Two rules the reference relies on
 
 **A member written without parentheses is a value rather than something to call.** `Math.Pi` and
 `landing.Year` are read; `word.ToUpper()` is called. Writing parentheses on a value is reported
-(`PC0338`), as is naming a function without them (`PC0330`) — the two diagnostics are a pair, so
-whichever a reader guesses, the compiler says which it is.
+(`PC0338`), as is naming a function without them (`PC0330`), so either mistake is reported.
 
 **A member that may have no answer yields an optional** rather than raising: `File.Read` yields
 `string?`, `"12".ToInteger()` yields `integer?`, `Console.Read` yields `string?`. Absence is an
@@ -2503,8 +2487,8 @@ strings printed. So `{"a, b"}` and `{"a", "b"}` are distinct, and `"a, b".ToChar
 prints `{'a', ',', ' ', 'b'}`.
 
 A value printed on its own is not quoted, since nothing sits beside it to be confused with:
-`Console.WriteLine("plain")` prints `plain`. A quote inside quotes is left as it is, which
-reads a little oddly and is much the smaller of the two problems.
+`Console.WriteLine("plain")` prints `plain`. A quotation mark inside a quoted string is printed
+as it is, without escaping.
 
 ## 12. Execution and entry point
 
@@ -2642,23 +2626,22 @@ declaration is.
 
 **Imports that form a circle are warned about.** A warning rather than an error, because
 nothing about a circle is unbuildable: a compilation reads every file it gathers together, and
-reaching one twice adds nothing the first reach did not. What a circle costs is a reader, who
-has no file to open first — and one drawn across four files is a circle nobody meant to draw.
-The compiler reports it at the import that closes the circle and reads the circle back as a
-sentence: `A.pc imports B.pc, which imports A.pc`. A file importing itself is the same rule
-with one file in it.
+reaching one twice adds nothing the first reach did not. The cost is to a reader, who has no file
+to open first. The compiler reports it at the import that closes the circle and reads the circle
+back as a sentence: `A.pc imports B.pc, which imports A.pc`. A file importing itself is the same
+rule with one file in it.
 
-The fix is usually to write less. A circle can only ever be drawn across folders, because files
-beside one another are already compiled together and need no import between them — so mutually
-recursive types in one folder are written with nothing said. Across folders, a project file
-names every file in the build without one of them importing another.
+A circle can only be drawn across folders, since files beside one another are already compiled
+together and need no import between them — so mutually recursive types in one folder need no
+import at all. Across folders, a project file names every file in the build without one of them
+importing another.
 
 Contrast this with a circle between *projects*, which is an error: see above.
 
 `import` and `using` do different jobs and neither does the other's. **An import decides which
 files are compiled and affects no name; a using decides which names are reachable unqualified
-and brings in no file.** Which to reach for follows the scale of what is wanted: one file, an
-import; a group of related types, a namespace; a whole build across folders, a project.
+and brings in no file.** Which to use follows the scale: one file, an import; a group of related
+types, a namespace; a whole build across folders, a project.
 
 #### Which program starts
 
@@ -2705,9 +2688,9 @@ different questions, and a library is a good answer to the first and no answer t
 
 **A loose source file builds into a `bin` beside it.** The folder is relative to the file rather
 than to where the reader is standing, so building the same file from two directories puts the
-result in one place. It is a folder of its own rather than files dropped next to the source,
-because a build writes four things — the assembly, its configuration, the runtime, and a
-launcher — and mixing those with what somebody wrote makes neither easy to see.
+result in one place. It is a folder of its own rather than files written beside the source,
+since a build produces four things — the assembly, its configuration, the runtime, and a
+launcher — and mixing those with the source makes both harder to read.
 
 **A project says where its build goes**, and is the only way to say so:
 
@@ -2728,8 +2711,8 @@ record the answer, so a folder holding several programs fills one `bin` with all
 a build goes is a thing a build says about itself, and a project file is what a build says about
 itself. Wanting to say it is a reason to write one.
 
-`--out` on the command line beats both, because somebody typed it just now for this one build
-while a project file holds for every run of it.
+`--out` on the command line beats both, since it applies to the one build it was typed for while
+a project file holds for every run.
 
 ### 12.2 A name belongs to one type
 

@@ -129,9 +129,9 @@ Console.WriteLine(Math.Max(2.5, 2.75));    # 2.75
 | `Math.Round(real x, integer places)` · `Math.Round(float x, integer places)` | the type given | To that many decimal places |
 
 **Rounding lands on a whole number**, so each yields an `integer` and can be used as a count, an
-index or a bound. Between them these are the three honest ways from a `real`, a `float` or a
-`fraction` to an `integer`, which is why no single `ToInteger` exists — it would have to pick one
-of the three silently, and which one is the question being asked.
+index or a bound. These are the three ways from a `real`, a `float` or a `fraction` to an
+`integer`, which is why no single `ToInteger` exists: it would have to pick one of the three
+without being told which.
 
 **A half goes away from zero.** `Math.Round(2.5)` is `3` — the rule taught in school, rather than
 .NET's default of rounding to the even neighbor.

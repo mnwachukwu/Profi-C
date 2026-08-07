@@ -83,8 +83,8 @@ cannot.
 | `File.WriteLines(string path, string[] lines)` | nothing | The same, one line each |
 | `File.Append(string path, string text)` | nothing | Adds to the end |
 
-All three make the file when there is none. **None of them makes the folder it sits in** — a path
-with a typo in it should fail rather than quietly build somewhere new.
+All three make the file when there is none. **None of them makes the folder it sits in**, so a
+path with a typo in it fails rather than creating a new folder.
 
 ### Managing
 

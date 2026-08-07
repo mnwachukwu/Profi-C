@@ -194,8 +194,8 @@ are the same.
 ### Writing one too large
 
 A number written past its type's edge is reported (`PC0026`) rather than wrapping, saturating or
-quietly becoming something else. The digits are a fine number to read — it is only holding them
-that fails — so the scanner is content and the refusal comes later.
+converting to something else. The digits scan as a number; only storing them fails, so the
+refusal comes after scanning rather than during it.
 
 ```text
 integer counted = 9223372036854775808;   # PC0026 — one past Integer.MaxValue
@@ -228,18 +228,16 @@ Read a row as *from*, a column as *to*. **Bold** happens on its own; anything el
 | **`fraction`** | `Math.Round(x)` | `.ToReal()` | `.ToFloat()` | — |
 
 [`Math.Floor` and `Math.Ceiling`](math.md#rounding) reach an `integer` the same way `Math.Round`
-does; each takes a real, a float or a fraction and answers with a whole number, which is what
-makes them the honest spelling of that conversion rather than a cast that silently picks a
-direction.
+does; each takes a real, a float or a fraction and answers with a whole number, naming the
+direction rather than leaving a cast to pick one.
 
 ### One rule, and its two exceptions
 
-**A conversion that loses nothing happens on its own.** That is the whole of the bold column
-group: every whole number is a real and is a ratio over one, and a real counts in tens so it
-already *is* a ratio over a power of ten.
+**A conversion that loses nothing happens on its own.** That is the bold column group: every
+whole number is a real and is a ratio over one, and a real counts in tens, so it already *is* a
+ratio over a power of ten.
 
-Two conversions lose nothing and are still written out, because each answer is surprising enough
-to be worth asking for:
+Two conversions lose nothing and are still written out, because each answer is surprising:
 
 - **`fraction.ToReal()`** — a third has no decimal that ends, so `1|3` becomes `0.3333…` and
   does not multiply back to one.
@@ -265,13 +263,13 @@ happens, and a float is asked for by name.
 
 ## Crossing between a `real` and a `float`
 
-Both directions are written out, and neither is because it loses accuracy in the ordinary sense
-— it is because each answer is worth a reader's attention.
+Both directions are written out. Neither loses accuracy in the ordinary sense; each changes the
+value in a way the table below states.
 
 | Member | Yields | What it does |
 |---|---|---|
 | `real.ToFloat()` | `float` | The same number in binary. **Always answers**: every real fits well inside a float's range. What is lost is digits — a real holds about twenty-eight and a float sixteen |
-| `float.ToReal()` | `real` | The same number in tens. **Can fail three ways**, and quietly changes what it does convert |
+| `float.ToReal()` | `real` | The same number in tens. **Can fail three ways**, and silently changes what it does convert |
 | `float.ToFraction()` | `fraction` | The ratio the float is really holding, which is the clearest look at what binary floating point does |
 
 A `real` needs no `ToFraction()`: it counts in tens, so it already is a fraction over a power of
@@ -288,9 +286,9 @@ Console.WriteLine((0.1f).ToReal());         # 0.1
 ```
 
 The last two lines are one value. Asked for its fraction it gives what it is really holding;
-asked for a real it gives `0.1`, the shortest decimal it rounds to. **Nothing is reported** —
-the mess simply disappears, and the number that comes back is not the number that went in. That
-is the strongest reason this conversion is written rather than done quietly.
+asked for a real it gives `0.1`, the shortest decimal it rounds to. **Nothing is reported**, and
+the number that comes back is not the number that went in. That is why the conversion is written
+out rather than applied automatically.
 
 The three failures are ordinary by comparison: a float larger than a real can hold, an infinity,
 and a value that is not a number. A real has no form for any of them, so each stops.

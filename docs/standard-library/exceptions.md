@@ -102,7 +102,7 @@ program's. `RecursionTooDeepException` above is the same reasoning as C#'s uncat
 `StackOverflowException`, applied the same way — and it does not borrow that name, since a name
 shared with C# should behave as C#'s does.
 
-## Two that are worth reading twice
+## Two with non-obvious behavior
 
 **`OverflowException` on a fraction rarely names the culprit.** Denominators multiply every time
 two unlike fractions are added, so a long chain of them can outgrow an integer even where no
@@ -114,11 +114,11 @@ for the cases it cannot see — a set reached through a parameter, for instance.
 
 ## When to throw and when to yield an optional
 
-The library's own answer, worth copying: **throw when the caller has made a claim that turned out
-false; yield an optional when the answer genuinely might not exist.**
+The rule the library follows: **throw when the caller has made a claim that turned out false;
+yield an optional when the answer may not exist.**
 
-`Value()` on an empty optional throws, because reaching that line meant telling the compiler the
-value was there. `File.Read` on a missing file yields nothing, because nobody claimed the file
+`Value()` on an empty optional throws, since reaching that line meant telling the compiler the
+value was there. `File.Read` on a missing file yields nothing, since nothing claimed the file
 existed.
 
 ## Also on every exception

@@ -3,7 +3,7 @@
 [![CI (Windows)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-windows.yml)
 [![CI (Linux)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/mnwachukwu/Profi-C/actions/workflows/ci-linux.yml)
 
-A teaching language that compiles to CIL and runs on .NET.
+An introductory language that compiles to CIL and runs on .NET.
 
 The name is a nod to Profisee, the company I work for. It is pronounced "prophecy" — so
 "Profi-C" reads the same way out loud. It is also a pun, because I put a "C" in it. Har, har.
@@ -83,7 +83,7 @@ Keeping a line readable on its own:
   replace it. The C-style header carried the worst teaching problem in the language: an
   increment written before the body and executed after it.
 
-None of this makes the language small. Profi-C has single inheritance with virtual dispatch,
+Introductory does not mean limited. Profi-C has single inheritance with virtual dispatch,
 structures with value semantics, exceptions, optionals, exact rational arithmetic, first-class
 functions with closures, and compile-time definite assignment.
 
@@ -381,8 +381,8 @@ pc sample hello
 ```
 
 Either form takes `--project`, which writes a folder holding a `.pcp` and the program it builds,
-and neither writes over anything already there. This is what `sample` leaves you — the same rules
-as above, doing something worth watching:
+and neither writes over anything already there. This is what `sample` leaves, under the same
+rules as above:
 
 ```
 shared model Program
@@ -642,8 +642,8 @@ Five more exist for editors rather than for reading:
 - **`pc debug`** speaks the Debug Adapter Protocol over its own standard input and output, so
   every decision about where to stop and what to show lives here rather than in an editor plugin.
 - **`pc lsp`** speaks the Language Server Protocol, and is the only one of the five that stays
-  open. The others read a file, answer, and exit — which is the only thing a separate process
-  can do, and it means none of them can say anything about the buffer somebody is typing into.
+  open. The others read a file, answer, and exit, so none of them can see an editor buffer that
+  has not been saved.
   This holds what the editor holds, so diagnostics arrive as the code is written rather than when
   a button is pressed, and hover, go-to-definition, renaming, coloring and the outline answer
   about what is on screen rather than what was last saved.
@@ -676,9 +676,9 @@ every use of the name under the caret, **finding every use of it across the whol
 It also manages `.pcp` projects: starting one, listing a file in it or taking it out, and saying
 which program it starts at. Installing it, and the rest of what it does, is covered there.
 
-**Almost none of the debugger is over there**, which is the point. `pc debug` is the whole of it;
-the extension only says which command to start. Two implementations of one set of rules about
-where to stop would be two answers to every question about them.
+**Almost none of the debugger is in the extension.** `pc debug` is all of it; the extension only
+says which command to start. Two implementations of the rules about where to stop would give
+two answers to every question about them.
 
 It is a separate repository because it answers to a different clock. The extension is
 declarative and ships whenever it is ready; the compiler is on a phase plan. Keeping them apart
@@ -686,9 +686,8 @@ means neither waits for the other.
 
 **One thing here serves it.** `pc vocabulary` prints every reserved word and every built-in type
 name as JSON, and the result is committed as [docs/vocabulary.json](docs/vocabulary.json). The
-grammars over there are tested against that file, so a keyword added here cannot quietly stop
-being colored — which it did, three times, before the file existed. Regenerate it whenever the
-language gains or loses a word:
+grammars over there are tested against that file, so a keyword added here cannot stop being
+colored without a test failing. Regenerate it whenever the language gains or loses a word:
 
 ```bash
 pc vocabulary > docs/vocabulary.json
@@ -700,9 +699,9 @@ A test fails if you forget.
 
 Requires the .NET 10 SDK.
 
-There is no `global.json`, deliberately. The build uses whichever SDK is newest on your
-machine, so that a break caused by a new SDK shows up as a break rather than being hidden
-behind a pin nobody remembers to revisit.
+There is no `global.json`, deliberately. The build uses whichever SDK is newest on your machine,
+so a break caused by a new SDK surfaces immediately rather than being hidden behind a pinned
+version.
 
 ```bash
 dotnet build
@@ -741,7 +740,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [equality.pc](samples/equality.pc) | **When two values are equal.** Deep and structural without either value saying how — through a set, through a model holding models, and around a ring that points back at itself — against `Reference.Equals`, which asks whether there is one of them |
 | [numbers.pc](samples/numbers.pc) | **The four kinds of number, and which conversions the language makes for you.** One rule decides all of it — what loses nothing happens on its own — and `float` is where you meet an infinity, and a value not equal to itself |
 | [structures.pc](samples/structures.pc) | **Values against references.** What copying changes, and what a structure holding a model shares |
-| [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` nobody checks |
+| [binary-search.pc](samples/binary-search.pc) | **Optionals.** Yields `integer?` rather than a `-1` sentinel |
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
 | [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
 | [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
@@ -753,7 +752,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [long-division.pc](samples/long-division.pc) | **A worked solution, laid out in columns.** Asks for two numbers and divides one by the other the way it is taught, with `r` for the remainder — the arithmetic is the easy half |
 | [conversions.pc](samples/conversions.pc) | **Getting between types.** What converts on its own, what you must ask for, and `is` / `as` |
 | [lambdas.pc](samples/lambdas.pc) | **Functions as values.** Both ways to write one, leaving the parameter types out, passing and returning them, what they remember, holding any of them as a `Function`, and keeping one in a field |
-| [defaults.pc](samples/defaults.pc) | **What a field holds before anybody writes to it.** Every primitive at its own zero, an optional starting empty, and the constructor settling the one field that has no zero to start at |
+| [defaults.pc](samples/defaults.pc) | **What a field holds before it is written to.** Every primitive at its own zero, an optional starting empty, and the constructor settling the one field that has no zero to start at |
 | [overloads.pc](samples/overloads.pc) | **One name, several versions.** Count before kind, exact before widening, the nearest model, an optional as its own type, versions across a parent and its child, and why an override is not a second version |
 | [nesting.pc](samples/nesting.pc) | **A type declared inside another.** Named from outside by writing the container first, reached unqualified from within it, private unless it says otherwise — and two containers each holding a `Node` without either giving way |
 | [throwaway.pc](samples/throwaway.pc) | **A name for the value you do not want.** A bare `_` in the three places a name is obliged — a loop that only counts, a walk that ignores its element, a `catch` that goes by type alone — with a result dropped by saying nothing about it, and two throwaways nested without clashing |
@@ -763,7 +762,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [bank.pc](samples/bank.pc) | Exceptions, including one the program declares — and when to yield an optional instead |
 | [exceptions.pc](samples/exceptions.pc) | **Everything about going wrong.** A hierarchy the program declares, catching by ancestor, which clause wins, `finally`, throwing again, the ones the language raises — and when an optional is the right answer instead |
 | [files.pc](samples/files.pc) | **Keeping things in files.** Whole files out and back, a line at a time, what is not there against what went wrong — and it removes the folder it made |
-| [asking.pc](samples/asking.pc) | **Reading what somebody typed.** `Console.Read` and the two questions it forces — was anything typed, and did it read as what you wanted |
+| [asking.pc](samples/asking.pc) | **Reading typed input.** `Console.Read` and the two questions it forces — was anything typed, and did it parse as the type wanted |
 | [sets.pc](samples/sets.pc) | **Rows of things.** Building, asking, taking a run out, `Union`/`Intersect`/`Except` — and the same words on a string, where the difference is that a set changes and a string does not |
 | [text.pc](samples/text.pc) | **Building text.** Values written into a sentence with `{{ }}`, a pattern after the colon saying how, block strings that read nothing they hold, and taking a string apart with `Split` and `Join` |
 | [dates-and-times.pc](samples/dates-and-times.pc) | **Four types, four questions.** Which day, what time of day, how long, which moment — why 23:30 plus an hour is 00:30 on a clock but the next day as a moment, and writing one out by a pattern and reading it back |

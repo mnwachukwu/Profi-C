@@ -20,8 +20,8 @@ from `Model`, which every type descends from.
 | `ToString()` | `string` | The value written out the way `Console.WriteLine` would write it |
 | `Equals(anything)` | `boolean` | Whether two values are the same, compared by what they hold |
 
-`Equals` accepts a value of **any** type. Comparing two things that could never be equal is not a
-mistake worth refusing — it answers `false`, which is the truthful answer.
+`Equals` accepts a value of **any** type. Comparing two values that could never be equal is not
+refused; it answers `false`.
 
 Both are `virtual`, so any type may write its own — a structure as freely as a model. Calling
 either on a value does not box: it compiles to a direct call, the way `5.ToString()` does in C#.

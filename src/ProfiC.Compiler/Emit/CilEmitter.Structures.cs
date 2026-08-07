@@ -41,7 +41,7 @@ namespace ProfiC.Compiler.Emit;
 /// where it was promised a copy, which shows up as a value changing behind a reader's back rather
 /// than as anything that fails. Against that: the interpreter already enumerates the same places,
 /// the two are compared on every sample, and a structure is not allocated often enough for the
-/// extra object to matter in a teaching language.</para>
+/// extra object to matter in an introductory language.</para>
 ///
 /// <para>Two alternatives were weighed and are recorded so they are not re-derived. Giving
 /// <c>ProfiCSet</c> a <c>ref</c> accessor fixes the index case and not identity. Rewriting

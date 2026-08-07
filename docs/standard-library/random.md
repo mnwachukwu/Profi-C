@@ -18,10 +18,9 @@ the same questions asked through the name, drawing from one the language keeps.
 | `new Random()` | `Random` | Seeded from the clock; a different run each time |
 | `new Random(integer seed)` | `Random` | Seeded by hand; the same run every time |
 
-**Seed it by hand to make a program repeatable**, which is what a test wants and what makes a
-shuffle worth debugging. There is no way to seed the shared generator, as in .NET: a program that
-needs the same sequence twice holds its own, and holding it is the thing that makes it
-reproducible.
+**Seed it by hand to make a program repeatable**, which is what a test needs. The shared generator
+cannot be seeded, as in .NET: a program that needs the same sequence twice holds its own
+generator.
 
 ```
 Random dice = new Random(42);

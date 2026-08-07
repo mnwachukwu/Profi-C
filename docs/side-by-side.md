@@ -13,18 +13,15 @@ so most would not compile as written — a model with no enclosing file, a state
 function around it. Where a whole program is wanted, [the samples](../samples) are all runnable
 and recorded.
 
-**The C# is the nearest equivalent rather than the best C#.** Where an idiomatic C# author would
-reach for something Profi-C has no counterpart to, the comparison shows the same job being done
-rather than the same style — and where that costs C# something real, it is said.
+**The C# is the nearest equivalent rather than the best C#.** Where idiomatic C# would use a
+construct Profi-C has no counterpart to, the comparison shows the same job done rather than the
+same style, and notes what that costs.
 
-**The last three sections keep score.** A comparison that only listed the ways one language is
-tidier would be advertising, in either direction.
+**The last three sections keep score.**
 [§9](#9-where-profi-c-does-it-better) covers what both have and Profi-C does better;
 [§10](#10-where-c-does-it-better) covers what both have and C# does better; and
 [§11](#11-c-with-no-profi-c-equivalent) covers what C# has and Profi-C has no form for at all.
-That last one is the longest, which is the honest shape of a young language against one
-twenty-four years old — and the reason it is last rather than first is that a reader who stops
-before it has still read the trades.
+The third is the longest of them.
 
 ## Contents
 
@@ -120,8 +117,8 @@ static class Program
 A `shared model`'s members are shared already, so writing `shared function Main()` adds nothing.
 `Main` takes no arguments and yields nothing.
 
-C# can drop the ceremony entirely with top-level statements — `Console.WriteLine("Hello");` in a
-file by itself is a whole program. Profi-C cannot, and for a first lesson that is a real cost.
+C# has top-level statements, so `Console.WriteLine("Hello");` in a file by itself is a whole
+program. Profi-C has no equivalent.
 
 ### A structure, which is a value
 
@@ -219,8 +216,8 @@ class Account
 ```
 
 **`this.` is not optional.** A bare name reaches locals and parameters only, so every line
-touching object state says so. There is no `private` keyword — private is what writing nothing
-gets you.
+touching object state says so. There is no `private` keyword: a member with no visibility word is
+private.
 
 The `+=` on the C# side is not stylistic: Profi-C has no compound assignment, so accumulation is
 always written out. See [§9](#10-where-c-does-it-better).
@@ -327,9 +324,8 @@ void Announce(string text)
 }
 ```
 
-**`yield` means return.** This is the single most dangerous word for a C# reader, since C# uses
-`yield return` for iterators; here it has nothing to do with them. A function yielding nothing
-writes no type at all rather than `void`.
+**`yield` means return.** C# uses `yield return` for iterators; Profi-C's `yield` has nothing to
+do with them. A function yielding nothing writes no type at all rather than `void`.
 
 ### A function declared among statements
 
@@ -391,10 +387,10 @@ Action<string> announce = text =>
 Console.WriteLine(add(2, 3));
 ```
 
-**`delegate` writes the type; `function` writes the thing.** One word, one job — where C# needs
-`Func<>` for something yielding a value and `Action<>` for something not, Profi-C writes the
-result type in front or leaves it off. `Function` is the root every function type descends from,
-and says a value is a function without saying what shape.
+**`delegate` writes the type; `function` writes the thing.** Where C# needs `Func<>` for something
+yielding a value and `Action<>` for something not, Profi-C writes the result type in front or
+leaves it off. `Function` is the root every function type descends from, and types a value as a
+function without fixing its shape.
 
 ---
 
@@ -501,12 +497,11 @@ while (true)
 }
 ```
 
-Three things to notice. **`until` is the opposite sense of `while`** — it names the condition to
-stop on, so the C# `while (guess != secret)` becomes `until guess == secret`. **It is also the
-only construct `end` does not close**, because the word carrying the condition is doing the
-closing. And **a loop with no condition is written with none**, rather than as a `while` whose
-condition is a constant standing in for a statement the writer could simply make; one that
-nothing inside can break, yield, or throw out of is `PC0406`.
+**`until` is the opposite sense of `while`**: it names the condition to stop on, so C#'s
+`while (guess != secret)` becomes `until guess == secret`. **It is the only construct `end` does
+not close**, since the word carrying the condition closes it. **A loop with no condition is
+written with none**, rather than as a `while` over a constant; one that nothing inside can break,
+yield, or throw out of is `PC0406`.
 
 ---
 
@@ -560,8 +555,8 @@ string verdict = if score >= 60 then "pass" else "fail";
 string verdict = score >= 60 ? "pass" : "fail";
 ```
 
-The ternary is absent because `a ? b : c` has no reading-aloud form. The `else` is required — an
-`if` expression with no `else` has nothing to yield when the condition fails.
+There is no ternary; `if ... then ... else` is the expression form. The `else` is required, since
+an `if` expression with no `else` has nothing to yield when the condition fails.
 
 ### Switching
 
@@ -597,9 +592,8 @@ switch (grade)
 }
 ```
 
-**There is no fallthrough, so there is no `break` to forget.** Labels stack to handle two values
-alike, which is the only thing fallthrough was reliably used for. A `switch` over an enumeration
-that omits a member is a warning.
+**There is no fallthrough.** Labels stack to handle two values alike, which covers what
+fallthrough was used for. A `switch` over an enumeration that omits a member is a warning.
 
 C# switches on far more: type patterns, property patterns, ranges, `when` guards, and a switch
 *expression* yielding a value. Profi-C switches on a constant. See
@@ -640,9 +634,8 @@ Console.WriteLine(nickname ?? "stranger");
 reading one the compiler cannot prove is present does not compile. `HasValue()` narrows the
 optional for the rest of the guarded block.
 
-This is the one place Profi-C is straightforwardly stricter rather than merely different: C#'s
-nullable reference types are warnings over a runtime that still permits null, so the guarantee is
-advisory. Profi-C has no null to permit.
+C#'s nullable reference types are warnings over a runtime that still permits null, so the
+guarantee is advisory. Profi-C has no null to permit.
 
 ### Sets, which are the one collection
 
@@ -668,9 +661,9 @@ Console.WriteLine(scores.Count);
 
 One collection type, ordered and growable, with no array/list distinction to learn.
 
-That is also the loss: C# has arrays, `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Queue<T>`,
-`Stack<T>` and the interfaces behind them, and a program that wants a key-to-value lookup has
-one. Profi-C has a set and no way to write another. See
+The cost is the rest of C#'s collections: arrays, `List<T>`, `Dictionary<K,V>`, `HashSet<T>`,
+`Queue<T>`, `Stack<T>` and the interfaces behind them. A program wanting a key-to-value lookup has
+one in C#; Profi-C has a set and no way to write another. See
 [§10.2](#112-data).
 
 ### A set of sets
@@ -719,8 +712,8 @@ Console.WriteLine(third + third + third);
 ```
 
 The Profi-C line prints exactly `1|1`. The C# prints `0.9999999999999999999999999999`. A fraction
-is a numerator and a denominator kept reduced, and arithmetic on it is exact — one of the few
-places Profi-C has something C# has no form for at all.
+is a numerator and a denominator kept reduced, and arithmetic on it is exact. C# has no
+equivalent type.
 
 ---
 
@@ -763,9 +756,9 @@ finally
 }
 ```
 
-The exception names are .NET's on purpose, so what a reader learns here carries over. What they
-*say* is written for this language. And `catch Exception` takes less than C#'s: it takes what the
-program caused, never a failure in the implementation.
+The exception names are .NET's, so what a reader learns here carries over; the messages are
+written for this language. `catch Exception` takes less than C#'s: it takes what the program
+caused, never a failure in the implementation.
 
 C# has exception filters — `catch (IOException e) when (e.HResult == 32)` — which decide without
 catching, so an unmatched exception keeps its original stack. Profi-C has no equivalent.
@@ -795,10 +788,10 @@ class InsufficientFunds : Exception
 throw new InsufficientFunds("short by 150");
 ```
 
-There is no bare `throw` to re-raise: the caught exception is a value with a name, so it is
-thrown the way anything is. That costs something — C#'s bare `throw` preserves the original stack
-trace where `throw problem;` in C# resets it. Profi-C sidesteps the trap by not having the pair,
-rather than by solving it.
+There is no bare `throw` to re-raise: the caught exception is a value with a name, so it is thrown
+the way anything is. C# has both forms, and which one is written decides whether the original
+stack trace survives. That choice does not arise here — an `Exception` carries a `Message` and
+nothing else, so there is no stack trace for a program to read, keep or lose.
 
 ---
 
@@ -899,22 +892,22 @@ end function
 int Doubled(int score) => score * 2;
 ```
 
-Documentation is labels rather than markup — no angle brackets to balance. **The compiler holds a
-doc to what it documents**: naming a parameter that is not there, or a `@yields:` on a function
-yielding nothing, is reported. A missing doc never is.
+Documentation is labels rather than markup, so there are no angle brackets to balance. **The
+compiler holds a doc to what it documents**: naming a parameter that is not there, or a
+`@yields:` on a function yielding nothing, is reported. A missing doc never is.
 
-What C#'s markup buys is a toolchain: `<see cref="Other"/>` is a checked link, and the whole
-comment compiles to an XML file that IDEs and doc generators read. Profi-C's labels are read by
-its own compiler and nothing else, so far.
+C#'s markup has a toolchain behind it: `<see cref="Other"/>` is a checked link, and the whole
+comment compiles to an XML file that IDEs and documentation generators read. Profi-C's labels are
+read by its own compiler and nothing else.
 
 ---
 
 ## 9. Where Profi-C does it better
 
-Both languages have these. Profi-C's version is better, and in several rows the difference is
-between a mistake the compiler refuses and one it lets you find at run time.
+Both languages have these. In several rows the difference is between a mistake the compiler
+refuses and one that surfaces at run time.
 
-**Start with how many words there are to learn.**
+**Reserved words.**
 
 | | Profi-C | C# |
 |---|---|---|
@@ -926,39 +919,38 @@ C#'s figures are Roslyn's own, from `SyntaxFacts.GetReservedKeywordKinds` and
 `GetContextualKeywordKinds`, minus four undocumented `__`-prefixed ones it also counts. Profi-C's
 is asserted by a test, so the number above cannot drift from the compiler.
 
-**The second row is the difference that shows up while writing.** In C#, `value`, `var`, `record`,
-`await` and forty-odd others are keywords in one position and ordinary names everywhere else, so
-whether a word is reserved depends on where it sits. In Profi-C a word is reserved everywhere or
-nowhere, and `@` takes one back as a name — one rule, written at the point it applies. The list
-itself is [§2.1 of the specification](language-spec.md#21-reserved-words).
+The second row is the one that shows up while writing. In C#, `value`, `var`, `record`, `await`
+and forty-odd others are keywords in one position and ordinary names everywhere else, so whether a
+word is reserved depends on where it sits. In Profi-C a word is reserved everywhere or nowhere,
+and `@` takes one back as a name. The list is
+[§2.1 of the specification](language-spec.md#21-reserved-words).
 
 | | Profi-C | C# | Why it is better |
 |---|---|---|---|
 | **A value that may be absent** | `string?`, and reading one unproven does not compile | `string?`, and reading one unproven is a warning | There is no `null` to permit. C#'s nullable reference types are analysis over a runtime that still allows it, so the guarantee is advice; here it is the type system |
 | **Arithmetic that will not fit** | checked always — `OverflowException`, naming the bound | wraps silently unless `checked` is written | The default is the safe one. A C# program that overflows carries on with a plausible wrong number, and nothing says so |
-| **Changing a set mid-walk** | refused while compiling (`PC0243`), naming the member that would change it | `InvalidOperationException`, partway through, at run time | Moved from run time to build time, which is the language's whole premise. The same rule reaches a set held under a second name at run time, so nothing slips through |
-| **Comparing two values** | `==` is deep and structural, cycle-safe, for nothing | reference identity unless you write `Equals`/`GetHashCode` or reach for a `record` | Two models holding equal contents are equal, without generating anything. A cyclic graph compares without looping forever |
-| **A `switch` missing an enumeration member** | a warning naming what was left out | silence | The commonest way a `switch` rots is a member added later. C# says nothing until something behaves oddly |
-| **Falling through a case** | impossible; labels stack instead | `break` required on every case, or it will not compile — except where it silently may | Nothing to forget. C#'s rule has an exception for empty labels, which is exactly the case a reader misreads |
+| **Changing a set mid-walk** | refused while compiling (`PC0243`), naming the member that would change it | `InvalidOperationException`, partway through, at run time | Moved from run time to build time. The same rule reaches a set held under a second name at run time, so nothing slips through |
+| **Comparing two values** | `==` is deep and structural, and cycle-safe | reference identity unless `Equals`/`GetHashCode` is written, or the type is a `record` | Two models holding equal contents are equal, with nothing declared and nothing generated. A cyclic graph compares without looping forever |
+| **A `switch` missing an enumeration member** | a warning naming what was left out | silence | The usual cause is a member added to the enumeration later. C# reports nothing |
+| **Falling through a case** | impossible; labels stack instead | `break` required on every case, or it will not compile — except where it silently may | C#'s rule has an exception for empty labels, which is the case a reader is most likely to misread |
 | **Closing a block** | `end if`, `end loop`, `end model` — the compiler checks the word | one `}` closes whatever is open | A misplaced `end` is reported where it is written, naming both what was expected and what was found, rather than as a cascade at the end of the file |
 | **Loops** | one `loop` opener, five forms, `end loop` closing all but one | `for`, `foreach`, `while`, `do` — four keywords, and `do`'s condition sits past the closing brace | One thing to learn and one shape to recognize |
 | **A field against a local** | `this.` is required, so every line touching state says so | a bare name may be either | A reader never has to look elsewhere to know what a name reaches |
 | **Reusing a name** | refused if a scope around it is using the name, lambdas included | permitted in a lambda, and permitted for a field | Reading a name is never a search for which one is meant |
 | **A field left unset** | an error before the constructor ends (`PC0402`) | a warning for non-nullable references (`CS8618`), and only where nullable analysis is switched on | An error rather than a warning, and on by default rather than opted into |
-| **Exact fractions** | `1\|3 + 1\|3 + 1\|3` is exactly `1\|1` | no form at any price — `decimal` is still base ten | The one place Profi-C has a type C# cannot express. A third is a third |
+| **Exact fractions** | `1\|3 + 1\|3 + 1\|3` is exactly `1\|1` | no equivalent type; `decimal` is base ten | The one type C# cannot express. A third is exact rather than rounded |
 
-Two of these — checked arithmetic and no `null` — are cases where C# knows the better default and
-could not take it without breaking every program ever written. Starting later is worth something,
-and this is most of what it is worth.
+Two of these — checked arithmetic and no `null` — are defaults C# cannot change without breaking
+existing programs. A language starting later can take them.
 
 ## 10. Where C# does it better
 
-Both languages have these. C#'s version is better, and the Profi-C choice was made knowing it.
+Both languages have these, and C#'s version is better.
 
 | | Profi-C | C# | The trade |
 |---|---|---|---|
 | **Accumulating** | `total = total + n;` | `total += n;` | Absent so that a beginner reads one form of assignment rather than eleven. It costs every counter and every accumulator an extra reading of the name |
-| **Counting up** | `n = n + 1;` | `n++;` | Same reasoning, and `++` carries the pre/post distinction that is a classic first-year trap. The cost is that the commonest statement in programming is the long one |
+| **Counting up** | `n = n + 1;` | `n++;` | Same reasoning, and `++` carries a pre/post distinction that is a common source of error. The cost is that a very common statement is the longer one |
 | **Reading a member** | `scores.Count` | `scores.Count` | The same. A program cannot declare a property, but the library provides them, and a member that is a value is read rather than called |
 | **Matching a shape** | `if x is Dog` then `x as Dog` | `if (x is Dog d)` | No pattern variables, so a test and a cast are written separately. C#'s form cannot get them out of step |
 | **Choosing on a value** | `switch` over constants | switch expressions, type and property patterns, `when` guards | Profi-C's switch is a jump table with better defaults. C#'s is a small pattern language, and for anything past equality it is far less code |
@@ -971,8 +963,8 @@ Both languages have these. C#'s version is better, and the Profi-C choice was ma
 
 ## 11. C# with no Profi-C equivalent
 
-Not "worse" — absent. There is no way to write these, and a program that needs one needs a
-different approach.
+These are absent rather than worse. There is no way to write them, and a program that needs one
+needs a different approach.
 
 ### 11.1 Shape and abstraction
 
@@ -990,13 +982,12 @@ different approach.
 
 | C# | What it does | Profi-C |
 |---|---|---|
-| `Dictionary<K, V>` | Key-to-value lookup | Absent, and the most-missed of these. On the v2 list |
+| `Dictionary<K, V>` | Key-to-value lookup | Absent. On the v2 list |
 | `HashSet<T>`, `Queue<T>`, `Stack<T>` | Containers with their own guarantees | One set type, ordered and growable |
 | `int[,]` | A rectangle, fixed in shape | A set of sets, whose rows may differ in length. On the v2 list |
 | `(int, string)` | An anonymous pair | Declare a structure |
 | `new { Name = n }` | An anonymous type | Declare a structure |
 | `arr[^1]`, `arr[1..3]` | Index from the end, and ranges | `Subset(from, to)` and arithmetic |
-| `decimal` | Base-ten money arithmetic | `fraction` is exact but not base ten; `real` is neither |
 | `IEnumerable<T>` and LINQ | Query, project, and filter as expressions | Loops |
 
 ### 11.3 Control and sequence
@@ -1005,7 +996,7 @@ different approach.
 |---|---|---|
 | `async` / `await` | Work that waits without blocking | Absent entirely. There is no concurrency story |
 | `yield return` | A sequence produced as it is read | A function builds a set and hands it back |
-| `goto`, `goto case` | Jump to a label | Absent, and not missed |
+| `goto`, `goto case` | Jump to a label | Absent |
 | `checked` / `unchecked` blocks | Choose overflow behavior per block | Integer arithmetic is always checked |
 | `ref` / `out` / `in` parameters | Pass a variable rather than its value | Parameters are by value; a model is a reference already |
 | `catch (E e) when (...)` | Decide without catching | A `catch` takes or does not |
@@ -1019,8 +1010,8 @@ different approach.
 | `public static Money operator +(...)` | Give a user type an operator | Operators work on built-in types only |
 | `event EventHandler Changed` | Multicast subscription | A function value holds one function |
 | `[Obsolete]` and reflection | Metadata read at run time | Absent |
-| `unsafe`, `Span<T>`, `stackalloc` | Memory without a safety net | Absent, deliberately |
-| A NuGet package | Any library at all | The standard library, and nothing else yet |
+| `unsafe`, `Span<T>`, `stackalloc` | Unmanaged memory | Absent |
+| A NuGet package | Any library at all | The standard library only |
 
 ### 11.5 What is scheduled, and what is not
 
@@ -1029,8 +1020,8 @@ properties, together with a key-to-value type and rectangular sets. They are the
 for binding directly to .NET, which is what would turn the last row of
 [§10.4](#114-reaching-other-code) from "nothing" into "everything".
 
-Direct binding arrives over several versions, and each stage is worth having as a language
-improvement on its own — none is justified only by the binder:
+Direct binding arrives over several versions. Each stage stands on its own as a language feature
+rather than being justified only by the binder:
 
 | Stage | Contents | Lift |
 |---|---|---|
@@ -1047,26 +1038,26 @@ member using one is unreachable however the call is made. That is why those thre
 **Planned, but not yet placed in a version:** events, iterators, pattern matching, tuples, and
 partial types.
 
-Two of the absences are **present under another name.** A `structure` is what C# spells `struct`.
-And an optional covers a value type, so `integer?`, `boolean?` and `fraction?` each hold a number or
-nothing — nullable value types are not missing, they are the same feature reached through
+Three of the absences are **present under another name.** A `structure` is what C# spells
+`struct`. `real` is C#'s `decimal` and `float` is C#'s `double`, so base-ten money arithmetic and
+binary floating point are both here — see the numbers row in
+[§10](#10-where-c-does-it-better). And an optional covers a value type, so `integer?`, `boolean?`
+and `fraction?` each hold a number or nothing: nullable value types are reached through
 [§6](#6-optionals-sets-and-fractions) rather than through a second kind of type.
 
 The rest are **decisions**. No `null`, no ternary, no fallthrough, no compound assignment, no
 `++`, no truthiness, no `unsafe`: each was weighed against a beginner reading a line and getting
-it right, and each cost something a working developer would miss. That trade is the language's
-whole premise — see the specification's
-[design principles](language-spec.md#03-design-principles) and the
+it right, and each costs something a working developer would use. The reasoning is in the
+specification's [design principles](language-spec.md#03-design-principles) and the
 [README](../README.md#what-it-is-for).
 
 ---
 
 ## 12. The same code, a different answer
 
-Every other section here compares two ways of writing a thing. This one is the short list of
-places where **the same source is legal in both languages and means something different**. None
-of them is reported, because each is a correct program — just not the one a C# reader would
-predict.
+Every other section compares two ways of writing the same thing. This one lists the places where
+**the same source is legal in both languages and means something different**. None is reported,
+since each is a correct program in both.
 
 | Written | Profi-C | C# |
 |---|---|---|
@@ -1075,11 +1066,9 @@ predict.
 | `a == b` on two models holding equal fields | `true` — equality is deep and structural | `false` — reference identity, unless `Equals` was written |
 | arithmetic that overflows | `OverflowException`, naming the bound | wraps silently, unless `checked` was written |
 
-The first row is the one to watch, because writing it is a C# habit rather than a decision. A
-case here cannot fall through, so a `break` has nothing to end and keeps the meaning it has
-everywhere else in the language — which means a habitual one at the end of a case quietly ends
-the loop instead. Nothing warns about it: it is a legal statement, and the program that meant it
-is as ordinary as the program that did not.
+The first row is the one to watch, since writing it is a C# habit. A case here cannot fall
+through, so a `break` has nothing to end and keeps the meaning it has everywhere else in the
+language: a `break` written at the end of a case ends the enclosing loop. Nothing reports it,
+since it is a legal statement and both readings are correct programs.
 
-A `break` with no loop around it at all is a different matter, and that one **is** refused —
-there is nothing it could mean.
+A `break` with no loop around it at all **is** refused, since there is nothing it could mean.

@@ -3,7 +3,7 @@
 [← Back to the index](README.md)
 
 A `T?` holds a `T` or holds nothing. **There are three members and there are only three**, which
-is the whole of the feature that replaces `null`.
+is the feature that replaces `null`.
 
 The important part is not the members but the rule around them: **the compiler will not let you
 read an optional it cannot prove is present.** Reaching for a value that might be absent stops
@@ -42,12 +42,12 @@ else
 end if
 ```
 
-Written without the guard, `typed.Value()` is `PC0401` — a compile error, not a crash. That is the
-whole point: the mistake moved from run time to build time.
+Written without the guard, `typed.Value()` is `PC0401` — a compile error, not a crash. The mistake
+moves from run time to build time.
 
 ## `Or` supplies a fallback
 
-Usually the shorter answer, and the one to reach for when there is a sensible default.
+The shorter form, and the one to use where there is a sensible default.
 
 ```
 string name = Console.Read().Or("stranger");
@@ -73,15 +73,15 @@ string chosen = fromFile.Or(fromInput).Or("a built-in default");
 `fromFile.Or(fromInput)` is still a `string?`, because both might be absent. `.Or("...")` is a
 `string`, because that one cannot be.
 
-## When there is genuinely nothing to fall back on
+## When there is nothing to fall back on
 
-`Value()` on an optional that turns out empty raises `EmptyOptionalException` — but reaching that
-line means the compiler was told the value was there, so it is a claim that turned out false
-rather than a check somebody forgot. See [exceptions](exceptions.md).
+`Value()` on an optional that turns out empty raises `EmptyOptionalException`. Reaching that line
+means the compiler was told the value was there, so it is a claim that turned out false rather
+than a missing check. See [exceptions](exceptions.md).
 
 ## Where optionals come from
 
-The library hands one back wherever an answer may genuinely not exist:
+The library yields one wherever an answer may not exist:
 
 | From | Yields | Absent when |
 |---|---|---|

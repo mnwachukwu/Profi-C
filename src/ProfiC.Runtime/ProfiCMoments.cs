@@ -12,8 +12,8 @@ namespace ProfiC.Runtime;
 /// neither can round a fraction of a second differently from the other.</para>
 /// <para><b>Everything reads and writes invariantly.</b> A moment printed on one machine reads
 /// back on another, and a pattern is the only thing that says otherwise. Anything else would make
-/// a program's output depend on where it ran, which is not a thing a teaching language should
-/// spring on a reader.</para>
+/// a program's output depend on where it ran, which is not a thing an introductory language
+/// should spring on a reader.</para>
 /// <para><b>Text that does not read is an absence, not a failure.</b> Every <c>Parse</c> answers
 /// with an optional, because text arriving in a shape nobody promised is the ordinary case rather
 /// than a fault — and the two forms of each are the same split every member here that can answer
