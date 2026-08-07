@@ -6,8 +6,8 @@
     next, so nothing has to be written to prevent it.
 
     Over an enumeration, a switch that leaves members out and writes no 'default' is warned
-    about, naming the ones with no case. That is what makes adding a member safe: every switch
-    that has to change says so, where it has to change.
+    about, naming the ones with no case. That is what makes adding a member safe: the compiler
+    reports every switch that has to be updated.
 ##
 
 # @summary: The four suits of a deck of cards.

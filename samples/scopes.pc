@@ -5,8 +5,8 @@
     exists only to bound a name, a function declared inside another and able to see what
     surrounds it, and the word that says how far a type can be seen.
 
-    Nothing here is exotic. It is the machinery every other sample sits on, gathered in one
-    place so it can be watched.
+    None of it is unusual. It is what every other sample is built on, gathered in one place so
+    it can be seen on its own.
 ##
 
 ##
@@ -89,8 +89,8 @@ shared model Program
         @summary: A function declared inside another.
 
         @remarks: Its name is reachable only within the function that holds it, which is what
-        to reach for when a helper is meaningful to one caller and to nothing else. Both forms
-        are here: one that yields a result, and one that yields nothing.
+        to write when a helper is meaningful to one caller and to nothing else. Both forms are
+        here: one that yields a result, and one that yields nothing.
     ##
     function NestedFunctions()
         Console.WriteLine("== a function inside a function ==");

@@ -690,19 +690,32 @@ public static class Completion
         return false;
     }
 
+    /// <summary>
+    /// <para>What a function yields, written after its parameters — and nothing at all where it
+    /// yields nothing.</para>
+    /// <para><c>PrimitiveType.Void</c> spells itself "call that yields nothing", which is written
+    /// to sit inside a sentence and reads as a remark when a row holds it up alone. A row with
+    /// nothing to say says nothing, and the missing result type is what says it. The same guard
+    /// <c>Answers.WorthSaying</c> makes for a hover.</para>
+    /// </summary>
+    private static string Yielding(TypeSymbol? result) =>
+        result is null || result.IsError || ReferenceEquals(result, PrimitiveType.Void)
+            ? string.Empty
+            : $" {result}";
+
     /// <summary>What is shown beside a name: enough to choose between two of them.</summary>
     private static string Describe(BuiltInMember member) =>
         member.IsValue
             ? member.ReturnType?.ToString() ?? string.Empty
             : $"({string.Join(", ", member.ParameterTypes.Select(p => p?.ToString() ?? "anything"))})"
-              + $" {member.ReturnType?.ToString() ?? "nothing"}";
+              + Yielding(member.ReturnType);
 
     private static string Describe(Symbol member) => member switch
     {
         FieldSymbol field => field.Type.ToString() ?? string.Empty,
         FunctionSymbol function =>
             $"({string.Join(", ", function.Parameters.Select(p => $"{p.Type} {p.Name}"))})"
-            + $" {function.ReturnType?.ToString() ?? "nothing"}",
+            + Yielding(function.ReturnType),
         EnumMemberSymbol member2 => member2.Owner.Name,
         LocalSymbol local => local.Type.ToString() ?? string.Empty,
         ParameterSymbol parameter => parameter.Type.ToString() ?? string.Empty,

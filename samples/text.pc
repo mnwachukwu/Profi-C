@@ -1,9 +1,9 @@
 ##
     Building text.
 
-    Three things that all end up as a string, each worth reaching for at a different
-    moment: joining values into a sentence, writing a block out as it stands, and taking a
-    string apart to put it back together differently.
+    Three things that all end up as a string, each written for a different job: joining
+    values into a sentence, writing a block out as it stands, and taking a string apart to
+    put it back together differently.
 ##
 
 shared model Program
@@ -83,7 +83,7 @@ shared model Program
     ##
         Three quotes open a block, and three close it. Nothing inside is read: no escape, no
         hole, no end of string. A backslash is a backslash and a quote is a quote, which is
-        what makes this the one to reach for when pasting something in.
+        what makes this the form to use when pasting something in.
 
         Where the block spans lines, the indentation of the closing quotes is removed from
         every line — so a block can sit at the indentation of the code around it without

@@ -2,9 +2,9 @@
     Keeping things in files.
 
     A file is somewhere a program puts text and takes it back later. There is no
-    opening and no closing here: a file is read whole or written whole, which is what a program
-    being learned on wants, and it avoids the mistake every beginner makes with the other kind
-    — forgetting to close it.
+    opening and no closing here: a file is read whole or written whole, which is what a first
+    program needs, and it avoids the mistake every beginner makes with the other kind —
+    forgetting to close it.
 
     Two questions run through all of it, and they are different questions:
 

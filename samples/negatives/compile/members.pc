@@ -44,6 +44,19 @@ shared model Program
         # 'count' belongs to each Counter, not to the Counter type.
         Console.WriteLine(Counter.count);
 
+        # The same rule reaches the members the language provides. 'ToString' and 'Equals'
+        # come from Model and belong to each value; 'Year' belongs to each moment. None of
+        # the three can be marked 'shared', so each says what would work instead: a value
+        # on the left of the dot.
+        Console.WriteLine(Counter.ToString());
+        Console.WriteLine(Program.Equals("anything"));
+        Console.WriteLine(DateTime.Year);
+
+        # And a member of the type read off a value is the same mistake the other way round:
+        # 'Now' is a moment DateTime produces rather than a part of one it already has.
+        DateTime moment = DateTime.Now;
+        Console.WriteLine(moment.Now);
+
         # Report yields nothing, so there is no result to assign.
         integer answer = Program.Report();
 

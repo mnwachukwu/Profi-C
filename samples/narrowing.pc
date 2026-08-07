@@ -6,11 +6,11 @@
     and it is why a guarded block does not have to unwrap the same name twice.
 
     A proof lasts until control reaches a point that could have been reached another way. This
-    file is mostly about where those points are, because that is the part worth knowing: the
-    proof itself is one line, and where it stops is the rest.
+    file is mostly about where those points are, because that is the part to learn: the proof
+    itself is one line, and where it stops is the rest.
 
     The refusals are in samples/negatives/compile/narrowing.pc, which is the same list written
-    the other way up.
+    from the other side.
 ##
 
 shared model Program

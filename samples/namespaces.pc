@@ -2,8 +2,8 @@
     Namespaces, and what they are for.
 
     A namespace is a place a name sits in. Two of them may each hold a Circle, and the two are
-    different types that never have to know about each other. That is most of what a namespace
-    is for and very nearly all of what it does.
+    different types that never have to know about each other. That is what a namespace is for,
+    and nearly all of what it does.
 
     Everything else follows from one rule: a bare name is read from where it is written, then
     outward, ending at the global namespace. Nearest wins.
@@ -34,8 +34,9 @@ namespace Geometry;
     Declared in Geometry itself, so both namespaces below reach it with nothing written: the
     walk outward from each of them passes through here.
 
-    This is what keeps a namespace a place to put things rather than a wall around them. A
-    child reaches its parent for free; a parent reaches into a child only by saying so.
+    This is what keeps a namespace a place to put things rather than a barrier around them. A
+    child reaches its parent with nothing written; a parent reaches into a child only by
+    naming it.
 ##
 public abstract model Shape
 

@@ -326,6 +326,39 @@ public static partial class Playground
         return new Around(model, unit);
     }
 
+    /// <summary>
+    /// <para>Which stretches of the program fold away, and what each one holds.</para>
+    /// <para><b>Parsed and nothing more.</b> Folding is wanted most in a long program being worked
+    /// on, which is exactly when it does not compile — so this stops at the parse, which recovers,
+    /// and the blocks around a mistake still fold.</para>
+    /// <para>Each range carries what an editor can show in place of what it hid, since an editor
+    /// left to itself draws a mark saying only that something is there.</para>
+    /// </summary>
+    [JSExport]
+    public static string Fold(string source)
+    {
+        SourceText text = new(source, FileName);
+        DiagnosticBag aside = new();
+
+        JsonArray folded = [];
+
+        foreach (Folding.Range range in Folding.Of(Parser.Parse(text, aside), text))
+        {
+            JsonObject one = new()
+            {
+                // Counted from zero, as everything else crossing this boundary is.
+                ["line"] = range.Line - 1,
+                ["endLine"] = range.EndLine - 1,
+                ["kind"] = range.Kind,
+                ["held"] = range.Held,
+            };
+
+            folded.Add((JsonNode)one);
+        }
+
+        return folded.ToJsonString();
+    }
+
     /// <summary>The compiler's version, so a page can say which one it is running.</summary>
     [JSExport]
     public static string Version() =>

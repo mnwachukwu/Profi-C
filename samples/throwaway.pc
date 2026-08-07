@@ -11,8 +11,8 @@
     tell the difference either, says nothing.
 
     Nowhere else takes one, because nowhere else is a name obliged. Any expression is already a
-    statement, so a value is dropped by writing it on its own and 'let _ = ...' only spends a
-    line agreeing. samples/negatives/compile/throwaway.pc holds that side.
+    statement, so a value is dropped by writing it on its own, and 'let _ = ...' would add a
+    line that says nothing more. samples/negatives/compile/throwaway.pc holds that side.
 
     Because it binds nothing, several in one body are ordinary and none of them can be read.
     Only the bare underscore: '_count' and '_x' are names like any other.

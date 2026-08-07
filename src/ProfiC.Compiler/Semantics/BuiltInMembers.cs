@@ -18,12 +18,45 @@ namespace ProfiC.Compiler.Semantics;
 /// without parentheses, and writing them is reported, which is the mirror of the diagnostic
 /// that reports a function named without them.
 /// </param>
+/// <param name="Reach">
+/// <para>What may be written to the left of the dot: the type's own name, a value of it, or
+/// either.</para>
+/// <para>Only asked of a model that has instances, since one that has none has nothing but
+/// its name to reach a member through and every member of it is reached that way by
+/// construction. Without the distinction the two questions share one list, and a type's name
+/// answers about a value that was never made — which the interpreter reads as a default and
+/// the emitter cannot load at all.</para>
+/// </param>
 public sealed record BuiltInMember(
     string Name,
     TypeSymbol? ReturnType,
     IReadOnlyList<TypeSymbol?> ParameterTypes,
     BuiltInId? Id = null,
-    bool IsValue = false);
+    bool IsValue = false,
+    Reached Reach = Reached.ThroughAValue)
+{
+    /// <summary>Whether the type's own name may be written to the left of the dot.</summary>
+    public bool IsShared => Reach is Reached.ThroughTheName or Reached.EitherWay;
+
+    /// <summary>Whether a value of the type may be.</summary>
+    public bool IsOnValues => Reach is Reached.ThroughAValue or Reached.EitherWay;
+}
+
+/// <summary>How a built-in member is reached.</summary>
+public enum Reached
+{
+    /// <summary>Through a value: <c>moment.Year</c>, <c>span.Hours</c>, <c>word.ToUpper()</c>.</summary>
+    ThroughAValue,
+
+    /// <summary>Through the type's name: <c>DateTime.Now</c>, <c>TimeSpan.FromHours</c>.</summary>
+    ThroughTheName,
+
+    /// <summary>
+    /// Both. <c>Random</c>'s <c>Next</c> is the case: through the name it asks the generator
+    /// the language keeps, and through a value it asks one somebody made with <c>new</c>.
+    /// </summary>
+    EitherWay,
+}
 
 /// <summary>
 /// <para>The members the language provides on types it owns.</para>
@@ -63,6 +96,17 @@ public static class BuiltInMembers
 
         return matches;
     }
+
+    /// <summary>
+    /// <para>The same, restricted to what a <em>value</em> of the type answers.</para>
+    /// <para>What the name reaches and what a value reaches are different questions, and the
+    /// catalog holds both: a moment answers <c>Year</c>, while <c>Now</c> is a moment the type
+    /// produces and belongs to the type. The path that starts at a value asks this one; the
+    /// path that starts at a type name asks <see cref="FindAll"/> whole, so that a member
+    /// belonging to each value is found and refused by name rather than reported missing.</para>
+    /// </summary>
+    public static IReadOnlyList<BuiltInMember> FindAllOnValues(TypeSymbol receiver, string name) =>
+        [.. FindAll(receiver, name).Where(m => m.IsOnValues)];
 
     /// <summary>
     /// <para>Everything the language provides on a receiver of this type.</para>

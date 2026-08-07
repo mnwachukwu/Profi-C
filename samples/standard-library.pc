@@ -68,9 +68,9 @@ shared model Program
 
         ##
             Rounding lands on a whole number, so each of these yields an integer and can be
-            used as a count or an index. Between them they are the three honest ways to get
-            from a real to an integer, which is why there is no single 'ToInteger' that would
-            have to pick one of the three silently.
+            used as a count or an index. All three are correct ways to get from a real to an
+            integer, which is why there is no single 'ToInteger' that would have to pick one of
+            them without saying so.
         ##
         Console.WriteLine("  Floor(3.7)     = " + Math.Floor(3.7));
         Console.WriteLine("  Ceiling(3.2)   = " + Math.Ceiling(3.2));
@@ -178,8 +178,8 @@ shared model Program
         ##
             Each of the three trims takes from a different end, and each takes nothing (so
             whitespace goes), a string (so any of its characters go), or a set of characters.
-            The last form is the one to reach for when the characters were worked out rather
-            than typed.
+            The last form is the one to write when the characters were worked out rather than
+            typed.
         ##
         Console.WriteLine("  Trim() on \"  hi  \" = [" + "  hi  ".Trim() + "]");
         Console.WriteLine("  Trim(\"x\")          = [" + "xxhixx".Trim("x") + "]");
@@ -230,13 +230,13 @@ shared model Program
     ##
         @summary: Random, in the two shapes a program can reach it.
 
-        @remarks: A generator a program holds disturbs nothing of anyone else's,
+        @remarks: A generator a program holds affects no other part of the program,
         and seeding one makes two runs agree — which is what makes a program that uses chance
         testable. The same questions asked through the name draw from one the language keeps,
         which is what most programs want and cannot be seeded, exactly as in C#.
 
-        Next excludes its upper bound, so a die is Next(1, 7). Everyone reads that wrong once;
-        reading it the other way here would mean reading it wrong a second time later.
+        Next excludes its upper bound, so a die is Next(1, 7). Reading it as including the
+        bound is a common mistake, and C# does the same thing.
     ##
     function ShowRandom()
         Console.WriteLine("== Random ==");

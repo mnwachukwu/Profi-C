@@ -53,7 +53,7 @@ end model
 ##
     @summary: A place and the marker standing on it.
 
-    @remarks: A structure may hold a model, and this is the case worth stopping over: copying
+    @remarks: A structure may hold a model, and this is the case to look at closely: copying
     the structure copies the reference, not the model. Both copies then see one marker.
 ##
 structure Pin

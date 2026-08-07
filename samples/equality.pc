@@ -3,12 +3,12 @@
 
     '==' compares what a value holds, not where it lives. Two models built separately, holding
     the same things, are equal — and nothing had to be written on either of them to make that
-    so. There is no Equals to override and no GetHashCode to keep in step with it.
+    so. There is no Equals to override and no GetHashCode to keep matching it.
 
-    That goes all the way down. A model holding a set holding models compares by walking the
-    whole of it, and a graph that points back at itself is compared without going round forever.
+    That goes all the way down. A model holding a set holding models compares by walking all of
+    it, and a graph that points back at itself is compared without going round forever.
 
-    Two things it is not. Two different types are never equal however well their fields line up,
+    Two things it is not. Two different types are never equal however well their fields match,
     which is the rule a C# record follows. And a model is still a reference: two names for one
     model are one model, so changing it through either changes it for both. Equality asks what
     they hold; it does not say there is one of them.

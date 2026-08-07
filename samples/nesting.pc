@@ -57,7 +57,7 @@ shared model Program
 
     ##
         Two Nodes, and nothing between them. Each belongs to the type that declares it, so
-        neither name has to give way — which is the whole of what a flat pool of names cannot do.
+        neither name has to be changed — which is what one flat pool of names cannot offer.
     ##
     function TwoContainersEachWithANode()
         Console.WriteLine("One name, two types:");

@@ -5,8 +5,8 @@
     nothing", which is an optional, but "there is no answer and I cannot go on". Telling those
     two apart is most of using exceptions well, and the last section is about that.
 
-    Everything else is small. A program declares an exception by extending one, throws it, and
-    catches it by naming it or any of its ancestors.
+    The rest is short. A program declares an exception by extending one, throws it, and catches
+    it by naming it or any of its ancestors.
 ##
 
 # ---- Declaring some ------------------------------------------------------------------
@@ -29,9 +29,9 @@ end model
 ##
     @summary: A kitchen problem where something has run out.
 
-    @remarks: Exceptions form a hierarchy like any other model, and it is worth one: a caller
-    who cares which thing went wrong names the exact one, and a caller who only cares that
-    something did names the parent. Neither has to know about the other.
+    @remarks: Exceptions form a hierarchy like any other model, and the hierarchy is what makes
+    them useful: a caller who cares which thing went wrong names the exact one, and a caller who
+    only cares that something did names the parent. Neither has to know about the other.
 ##
 model OutOfIngredient extends KitchenProblem
     # @summary: Which ingredient ran out, for a caller that wants to know.
@@ -102,8 +102,8 @@ shared model Program
         or not.
 
         What it does not take is a fault in the language itself. Those are not the program's to
-        answer for, and a clause that swallowed one would report a bug here as something the
-        program did.
+        answer for, and a clause that caught one would report a bug in the compiler as something
+        the program did.
     ##
     function CatchingByAncestor()
         Console.WriteLine("== catching a parent ==");
@@ -210,7 +210,8 @@ shared model Program
         goes wrong that it could not see while compiling. Each is caught the same way.
 
         A function never declares what it may throw, and nothing forces a caller to handle it.
-        That is deliberate: the alternative teaches people to write a catch that swallows.
+        That is deliberate: the alternative teaches people to write a catch that does nothing
+        with what it caught.
     ##
     function TheOnesTheLanguageRaises()
         Console.WriteLine("== the ones the language raises ==");

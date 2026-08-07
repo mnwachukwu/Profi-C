@@ -217,6 +217,52 @@ public sealed class LanguageServerTests
             Assert.That(answered, Does.Contain("\"id\":1"));
             Assert.That(answered, Does.Contain("\"openClose\":true"));
             Assert.That(answered, Does.Contain("\"name\":\"profi-c\""));
+            Assert.That(answered, Does.Contain("\"foldingRangeProvider\":true"));
+        });
+    }
+
+    /// <summary>
+    /// <para>Which blocks fold, answered for the program the editor is holding.</para>
+    /// <para>An editor that is told nothing folds by indentation instead, which is a guess. What
+    /// is held here is that the answer arrives at all and is about the blocks — the ranges
+    /// themselves are held against the whole corpus in <c>FoldingTests</c>.</para>
+    /// </summary>
+    [Test]
+    public void ItSaysWhichBlocksFold()
+    {
+        using Workspace workspace = new();
+
+        string uri = workspace.UriOf("Program.pc");
+
+        string answered = Answering(
+            Framed(
+                new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = 1,
+                    ["method"] = "initialize",
+                    ["params"] = new JsonObject(),
+                },
+                Open(uri, File.ReadAllText(workspace.At("Program.pc"))),
+                new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = 11,
+                    ["method"] = "textDocument/foldingRange",
+                    ["params"] = new JsonObject
+                    {
+                        ["textDocument"] = new JsonObject { ["uri"] = uri },
+                    },
+                }),
+            text => text.Contains("\"id\":11", StringComparison.Ordinal));
+
+        Assert.Multiple(() =>
+        {
+            // The model opens on the first line and the function on the second, both counted
+            // from zero for an editor.
+            Assert.That(answered, Does.Contain("\"startLine\":0"));
+            Assert.That(answered, Does.Contain("\"startLine\":1"));
+            Assert.That(answered, Does.Contain("\"kind\":\"region\""));
         });
     }
 
@@ -230,10 +276,11 @@ public sealed class LanguageServerTests
                 ["jsonrpc"] = "2.0",
                 ["id"] = 7,
 
-                // Something this genuinely does not do. Worth choosing carefully: the first
-                // version of this named a method that was later implemented, and the test then
-                // failed for having come true.
-                ["method"] = "textDocument/foldingRange",
+                // Something this genuinely does not do. Worth choosing carefully: a method
+                // named here that is later implemented makes this fail for having come true.
+                // Colors are safe — there is no color in the language for a picker to open on,
+                // and nothing in the plan puts one there.
+                ["method"] = "textDocument/colorPresentation",
                 ["params"] = new JsonObject(),
             }),
             text => text.Contains("error", StringComparison.Ordinal));

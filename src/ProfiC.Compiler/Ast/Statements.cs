@@ -9,7 +9,7 @@ namespace ProfiC.Compiler.Ast;
 /// <summary>
 /// <para>A loop marked as walking a sequence, so the sequence can refuse to be changed while
 /// it runs.</para>
-/// <para>Built by lowering and never by the parser. A <c>for each</c> becomes an index loop
+/// <para>Built by lowering and never by the parser. A <c>loop each</c> becomes an index loop
 /// over a held count, and by the time it does nothing left in the tree says a walk is
 /// happening — this is what says it. Most changes to a walked sequence are refused while
 /// compiling (`PC0243`); this is what catches the rest, where the set was reached under
@@ -238,7 +238,7 @@ public sealed class ForStmt(
     /// <para>The counter's name. It has no written type: a range loop counts, and counting is
     /// done with integers.</para>
     /// <para>This is not inference — nothing is worked out from the bounds. The type is fixed
-    /// by the construct, the way <c>for each</c> takes its element's type from the sequence.
+    /// by the construct, the way <c>loop each</c> takes its element's type from the sequence.
     /// </para>
     /// </summary>
     public string VariableName { get; } = variableName;
@@ -264,7 +264,7 @@ public sealed class ForStmt(
 }
 
 /// <summary>
-/// <c>for each</c> over a sequence. The bound variable has no written type, unlike the range
+/// <c>loop each</c> over a sequence. The bound variable has no written type, unlike the range
 /// form.
 /// </summary>
 public sealed class ForEachStmt(

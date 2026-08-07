@@ -42,7 +42,7 @@ shared model Program
         # The arithmetic a reader expects, from the type that measures in tens.
         Console.WriteLine("  0.1 + 0.2 == 0.3   -> " + ((0.1 + 0.2) == 0.3));
 
-        # And the same sum in binary, which is the surprise this language moves out of the way.
+        # And the same sum in binary, which is why float is a type of its own here.
         Console.WriteLine("  0.1f + 0.2f == 0.3f -> " + ((0.1f + 0.2f) == 0.3f));
     end function
 

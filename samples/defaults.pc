@@ -6,10 +6,10 @@
     one where the field is declared or in a constructor, and says so if it does not get it —
     samples/negatives/compile/definite-assignment.pc holds that side.
 
-    The line is not a matter of taste. A number that starts at nought and a string that starts
+    The two are not chosen arbitrarily. A number that starts at nought and a string that starts
     empty mean what a reader expects them to mean. A set or a function that started at "nothing"
-    would be the null this language does without, arriving through a door the type system was
-    supposed to have closed.
+    would be the null this language does without, reappearing in the one place the type system
+    was meant to rule it out.
 ##
 
 shared model Program

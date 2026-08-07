@@ -5,14 +5,13 @@
     sets — a grid — and 'integer[][][]' is a set of grids, which is a cube. No feature was
     added for either: '[]' means "a set of", and it can be said twice.
 
-    That is worth two brackets of explanation and then a great deal of arithmetic, because a
-    grid of numbers is a matrix, and a matrix is how a turn, a stretch, or a reflection is
-    written down. The second half of this program is that: multiplying grids, and using one to
-    move a point.
+    Two brackets are most of the explanation; the rest is arithmetic. A grid of numbers is a
+    matrix, and a matrix is how a turn, a stretch, or a reflection is written down. The second
+    half of this program is that: multiplying grids, and using one to move a point.
 
-    What a grid here is not is a rectangle. Every row is its own set and may be its own
-    length, so nothing but care keeps them square. A fixed-shape kind is a later version's
-    work; until then, the third section is the one to read twice.
+    A grid here is not a rectangle. Every row is its own set and may be its own length, so
+    nothing but care keeps them square. A fixed-shape kind is a later version's work; until
+    then, read the third section carefully.
 ##
 
 shared model Program
@@ -108,8 +107,8 @@ shared model Program
         Transposing is the simplest thing that can be done to a grid: what was a row becomes a
         column.
 
-        Doing it twice gives back what was started with, which is the check worth running on
-        any transform — and the reason it is the first one here.
+        Doing it twice gives back what was started with, which is a good check on any
+        transform — and the reason it is the first one here.
     ##
     function Transposing()
         Console.WriteLine("== transposing ==");
@@ -125,7 +124,7 @@ shared model Program
     ##
         Multiplying two grids: each number in the answer is one row met with one column.
 
-        The rule reads worse than it works. To fill row r and column c of the answer, walk
+        The rule is easier to use than to state. To fill row r and column c of the answer, walk
         along row r of the left and down column c of the right, multiplying the pairs and
         adding them up. That single sentence is the whole operation.
 
@@ -158,8 +157,8 @@ shared model Program
 
         These four numbers are a quarter turn about the origin. Applying them to a point gives
         the point moved; applying them four times gives the point back, because four quarter
-        turns is a whole one. That is the payoff for everything above: a transform is data, so
-        it can be stored, passed, and combined.
+        turns is a whole one. That is what everything above was for: a transform is data, so it
+        can be stored, passed, and combined.
     ##
     function TurningAPoint()
         Console.WriteLine("== turning a point ==");
@@ -211,9 +210,9 @@ shared model Program
     ##
         Turning a whole cube, by turning each of its layers.
 
-        A grid has one transpose; a cube has a choice of which two axes to swap, which is the
-        thing a third bracket really buys. This one leaves the layers where they are and turns
-        the contents of each, so the cube spins about the axis running through them.
+        A grid has one transpose; a cube has a choice of which two axes to swap, which is what
+        a third bracket adds. This one leaves the layers where they are and turns the contents
+        of each, so the cube spins about the axis running through them.
     ##
     function TurningTheCube()
         Console.WriteLine("== turning the cube ==");

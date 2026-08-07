@@ -435,12 +435,6 @@ with `start`, `base` pairs with `height`, `to` pairs with `from`, and `each` is 
 for what a loop is given. Renaming every such keyword would cost the vocabulary and still leave
 the rest taken, so the language keeps its words and hands one back on request.
 
-Where a keyword is only ever written in one position, lengthening it costs no clarity and frees
-the plain word as a name. `stepby`, `shiftleft` and `shiftright` are those cases: `stepby` can
-appear nowhere but after a range loop's bound, so the longer spelling gives `step` back as a
-name. `each` is not, despite only following `for` — a `foreach` opener would require
-`end foreach` to close it, which would change every loop in every program.
-
 An `@` before a word that is not reserved does nothing, and is reported as such. An `@`
 followed by no name at all is an error.
 
@@ -743,9 +737,9 @@ Which conversions among the four happen on their own and which are written out i
 | **`float`** | `Math.Round(x)` | `.ToReal()` | — | `.ToFraction()` |
 | **`fraction`** | `Math.Round(x)` | `.ToReal()` | `.ToFloat()` | — |
 
-`Math.Floor` and `Math.Ceiling` reach an `integer` the same way `Math.Round` does. No single
-`ToInteger` exists, because it would have to choose among the three silently and which one is
-the question being asked.
+The table names `Math.Round`, but `Math.Floor` and `Math.Ceiling` also yield an `integer` and
+any of the three may be written. All three are correct answers to different questions, which is
+why there is no single `ToInteger`: it would have to pick one of them without being asked.
 
 Two conversions lose nothing and are still written out, because the answer is surprising rather
 than lossy: `fraction.ToReal()`, since a third has no decimal that ends, and
@@ -2970,7 +2964,7 @@ is one somebody may write.
 | `PC0240` | error | Only an abstract model may leave a function open | '{0}' is abstract, but '{1}' can be constructed â€” so an instance of it would reach a function nothing ever wrote. Mark '{1}' abstract too. |
 | `PC0241` | error | An inherited function is still open | '{0}' can be constructed, so it must write every function left open above it. Still open: {1}. Override each, or mark '{0}' abstract. |
 | `PC0242` | opinion | An abstract function is already virtual | '{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing further. Remove it. |
-| `PC0243` | error | This changes the sequence being walked | '{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Collect the changes into another set, or count with a range loop. |
+| `PC0243` | error | This changes the sequence being walked | '{0}' is the sequence this 'loop each' is walking, and '{1}' changes it. Collect the changes into another set, or count with a range loop. |
 | `PC0244` | warning | This documentation has nothing to document | Nothing follows this that an '@summary:' can document, so nothing will show it. Move it directly above a declaration, or make it an ordinary comment. |
 | `PC0245` | warning | This documents a parameter that is not there | '{0}' is documented, but '{1}' takes {2}. Rename the line or take it out. |
 | `PC0246` | warning | This describes a value that is never given back | '{0}' yields nothing, so there is no value for '@yields:' to describe. |
@@ -3007,7 +3001,7 @@ is one somebody may write.
 | `PC0313` | error | Cannot infer the type of an empty set | The type of an empty set cannot be worked out from the set alone. Write the type, as in 'integer[] values = {};'. |
 | `PC0314` | error | Set elements have different types | The elements of a set must have one type, and these are {0} and {1}. Write the set's type, as in 'Shape[] values = {{...}};'. |
 | `PC0315` | error | Cannot switch on this type | A switch cannot examine {0}. Equality on it is unreliable, so a case label could never be trusted to match. |
-| `PC0316` | error | Cannot iterate this type | 'for each' needs a set or a string, and this is {0}. Ask it for one, or count with 'loop for'. |
+| `PC0316` | error | Cannot iterate this type | 'loop each' needs a set or a string, and this is {0}. Ask it for one, or count with 'loop for'. |
 | `PC0317` | error | Range loop needs integers | A range loop counts with integers, and this is {0}. Count with whole numbers, or walk it with 'loop each'. |
 | `PC0318` | error | This function yields nothing | '{0}' declares no result, so 'yield' cannot carry a value. Declare a result, or write 'yield;'. |
 | `PC0319` | error | Missing value to yield | '{0}' yields a {1}, so 'yield' needs a value. Give it one, or drop the result type. |
@@ -3039,6 +3033,7 @@ is one somebody may write.
 | `PC0345` | error | Optional is changed by something that captured it | This is {0}, and checking it proves nothing because a function that captured '{1}' may assign it at any point. Copy it into a local and check that, or use 'Or(...)'. |
 | `PC0346` | error | This real has no fraction to become | {0} needs a numerator or denominator larger than an integer holds. Up to eighteen places after the point will convert. |
 | `PC0347` | error | A value has no identity to compare | {0} is a value, so asking whether two of them are the same object has no answer. Use '==' to compare what they hold. |
+| `PC0348` | error | This member needs a value | '{0}' needs a value on the left of the dot, not the type name '{1}'. |
 
 ### PC0400 to PC0499
 

@@ -2,8 +2,8 @@
     Dates, times, moments, and how long things last.
 
     Four types, because there are four different questions. Which day? What time of
-    day? How long? Which exact moment? A language with only the last one answers the other
-    three by pretending, and the pretending is where the bugs come from.
+    day? How long? Which exact moment? In a language with only the last one, that type has to
+    stand in for the other three, and standing in is where the bugs come from.
 
     A birthday is a Date. It is the fifteenth of August wherever you are and whatever the
     clock says, and holding it as a moment forces a midnight onto it that nobody meant.
@@ -41,8 +41,8 @@ shared model Program
         says something else instead, using .NET's patterns unchanged — so what is learned here
         is what you will type in C# later.
 
-        Everything is invariant unless the pattern says otherwise, which is what makes a
-        program print the same on a machine in Lagos as on one in Lisbon.
+        Everything is invariant unless the pattern says otherwise, so a program prints the
+        same moment the same way on every machine, in every country.
     ##
     function WritingThemDown()
         Console.WriteLine("== writing one down ==");
@@ -120,8 +120,8 @@ shared model Program
     ##
         @summary: Taking a moment apart, and putting one together.
 
-        @remarks: This is what keeps the four types from being a burden:
-        nothing is trapped in the type you first wrote it as.
+        @remarks: This is what keeps the four types from being a burden: a value can be moved
+        from the type it was first written as into any of the others.
     ##
     function PuttingThemTogether()
         Console.WriteLine("== together and apart ==");
@@ -141,10 +141,10 @@ shared model Program
     ##
         @summary: How far apart two moments are.
 
-        @remarks: Components against totals, which is the thing to read twice. An hour and a half has
-        Hours of 1 and Minutes of 30 — that is how you would say it aloud. Its TotalMinutes is
-        90 — that is how you would measure it. Reaching for the wrong pair is the most common
-        mistake this type invites, so both are printed side by side.
+        @remarks: Components against totals, which is the part to read carefully. An hour and a
+        half has Hours of 1 and Minutes of 30 — that is how you would say it aloud. Its
+        TotalMinutes is 90 — that is how you would measure it. Using the wrong pair is the most
+        common mistake with this type, so both are printed side by side.
     ##
     function HowFarApart()
         Console.WriteLine("== how far apart ==");

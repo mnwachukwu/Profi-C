@@ -33,6 +33,29 @@ public static class Answers
         return [.. Outline.Of(unit, source).Select(AsSymbol)];
     }
 
+    /// <summary>
+    /// <para>Which stretches of a file fold away.</para>
+    /// <para>Answered so that an editor folds the language's blocks rather than guessing from
+    /// indentation, which is what it does for a language nothing told it about — and which gets a
+    /// block wrong wherever a line is wrapped or a continuation is indented.</para>
+    /// <para>The protocol carries no room for what a folded block holds, so what arrives here is
+    /// the range and its kind. Saying what was hidden is the editor's to draw.</para>
+    /// </summary>
+    public static JsonArray Folds(CompilationUnit unit, SourceText source)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        return
+        [
+            .. Folding.Of(unit, source).Select(range => (JsonNode)new JsonObject
+            {
+                ["startLine"] = Math.Max(0, range.Line - 1),
+                ["endLine"] = Math.Max(0, range.EndLine - 1),
+                ["kind"] = range.Kind,
+            }),
+        ];
+    }
+
     private static JsonNode AsSymbol(Outline.Entry entry)
     {
         JsonObject range = new()
@@ -123,9 +146,12 @@ public static class Answers
         // hovered a name wanted to know what it is; which namespace it sits in is what they turn
         // to next, on the rare occasion two things share a name. The rule is the whole of what
         // marks it as a footer — a hover is markdown, and markdown has no smaller.
+        // Written as code rather than as prose. What it holds is a namespace and a type name —
+        // the very words the signature above it is colored for — so leaving it bare made the one
+        // line of a hover that names types the one line that did not look like any.
         if (Whence(model, node) is { Length: > 0 } from)
         {
-            written += $"\n\n---\n\n{from}";
+            written += $"\n\n---\n\n`{from}`";
         }
 
         // The name rather than the whole node, so hovering a local underlines the local and not

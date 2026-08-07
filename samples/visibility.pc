@@ -82,7 +82,7 @@ shared model Tally
         Tally.counted = 0;
     end function
 
-    # @summary: Resets the count from outside, which is what a public door looks like.
+    # @summary: Resets the count from outside, which is what 'public' allows.
     public function Restart()
         Tally.Reset();
     end function

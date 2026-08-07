@@ -70,9 +70,9 @@ shared model Program
     ##
         @summary: Saying what to do instead, in one line.
 
-        @remarks: Or gives a value to fall back on, which collapses both questions where a
-        sensible default exists. What it must not do is hide a mistake worth reporting — here
-        an unreadable answer really does mean "take none".
+        @remarks: Or gives a value to use instead, which answers both questions at once where a
+        sensible default exists. It must not hide a mistake that should be reported — here an
+        unreadable answer really does mean "take none".
     ##
     function WhenNothingComes()
         Console.Write("how many? ");

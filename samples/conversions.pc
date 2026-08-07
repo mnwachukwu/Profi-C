@@ -5,8 +5,8 @@
     surprise a reader. Everywhere else it is asked for, and the asking is a member call that
     can be read.
 
-    The rule to carry away: a conversion that could lose information or change what a value
-    means is written down.
+    The rule: a conversion that could lose information or change what a value means is written
+    down.
 ##
 
 # @summary: The four suits, for showing what an enumeration converts to.
@@ -88,8 +88,8 @@ shared model Program
         changes nothing about it — 255, 0xFF and 0b1111_1111 are the same number, and comparing
         them says so.
 
-        Format is the way out and a prefix is the way back, which is the pair worth knowing:
-        anything printed in hexadecimal can be written down again as it was printed.
+        Format writes a number in another base and a prefix reads one back, so anything
+        printed in hexadecimal can be written down again as it was printed.
 
         An underscore groups digits for whoever reads the line and is not part of the number.
     ##

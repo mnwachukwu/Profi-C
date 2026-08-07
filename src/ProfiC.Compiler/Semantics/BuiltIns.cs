@@ -468,6 +468,30 @@ public static class BuiltIns
         new(name, type, [], id, IsValue: true);
 
     /// <summary>
+    /// <para>A member of a model that has instances, reached through its name rather than
+    /// through one of them: <c>DateTime.Now</c>, <c>TimeSpan.FromHours</c>.</para>
+    /// <para>Needed only where a model has both kinds. A model with no instances has nothing
+    /// but its name to reach a member through, so every member of one is shared without
+    /// saying so.</para>
+    /// </summary>
+    private static BuiltInMember Shared(
+        BuiltInId id, string name, TypeSymbol? returns, params TypeSymbol?[] parameters) =>
+        new(name, returns, parameters, id, Reach: Reached.ThroughTheName);
+
+    /// <summary>The same, for one that is a value rather than something to call.</summary>
+    private static BuiltInMember SharedValue(BuiltInId id, string name, TypeSymbol type) =>
+        new(name, type, [], id, IsValue: true, Reach: Reached.ThroughTheName);
+
+    /// <summary>
+    /// A member reached either way — through the type's name, and through a value of it.
+    /// <c>Random</c>'s are the only ones: the name asks the generator the language keeps, and
+    /// a value asks the one it is.
+    /// </summary>
+    private static BuiltInMember Either(
+        BuiltInId id, string name, TypeSymbol? returns, params TypeSymbol?[] parameters) =>
+        new(name, returns, parameters, id, Reach: Reached.EitherWay);
+
+    /// <summary>
     /// <para>Models a program may name but never declare.</para>
     /// <para><c>Model</c> and <c>Exception</c> carry no members of their own here: what they
     /// contribute is inherited by every type and by every exception respectively, and is
@@ -825,11 +849,11 @@ public static class BuiltIns
         // same sequence twice holds its own, which is the thing that makes it reproducible.
         new("Random", "Standard", MayBeExtended: false,
         [
-            Member(BuiltInId.RandomNext, "Next", PrimitiveType.Integer),
-            Member(BuiltInId.RandomNextBelow, "Next", PrimitiveType.Integer, PrimitiveType.Integer),
-            Member(BuiltInId.RandomNextBetween, "Next", PrimitiveType.Integer,
+            Either(BuiltInId.RandomNext, "Next", PrimitiveType.Integer),
+            Either(BuiltInId.RandomNextBelow, "Next", PrimitiveType.Integer, PrimitiveType.Integer),
+            Either(BuiltInId.RandomNextBetween, "Next", PrimitiveType.Integer,
                    PrimitiveType.Integer, PrimitiveType.Integer),
-            Member(BuiltInId.RandomNextDouble, "NextDouble", PrimitiveType.Real),
+            Either(BuiltInId.RandomNextDouble, "NextDouble", PrimitiveType.Real),
         ],
         [
             Member(BuiltInId.RandomNew, "Random", RandomType),
@@ -844,8 +868,8 @@ public static class BuiltIns
         // is everywhere else.
         new("DateTime", "Standard", MayBeExtended: false,
         [
-            Value(BuiltInId.DateTimeNow, "Now", DateTimeType),
-            Value(BuiltInId.DateTimeToday, "Today", DateTimeType),
+            SharedValue(BuiltInId.DateTimeNow, "Now", DateTimeType),
+            SharedValue(BuiltInId.DateTimeToday, "Today", DateTimeType),
 
             Value(BuiltInId.DateTimeYear, "Year", PrimitiveType.Integer),
             Value(BuiltInId.DateTimeMonth, "Month", PrimitiveType.Integer),
@@ -882,9 +906,9 @@ public static class BuiltIns
             Member(BuiltInId.DateTimeSubtractSpan, "Subtract", DateTimeType, TimeSpanType),
             Member(BuiltInId.DateTimeAdd, "Add", DateTimeType, TimeSpanType),
             Member(BuiltInId.DateTimeFormat, "Format", PrimitiveType.String, PrimitiveType.String),
-            Member(BuiltInId.DateTimeParse, "Parse", new OptionalType(DateTimeType),
+            Shared(BuiltInId.DateTimeParse, "Parse", new OptionalType(DateTimeType),
                    PrimitiveType.String),
-            Member(BuiltInId.DateTimeParseExact, "Parse", new OptionalType(DateTimeType),
+            Shared(BuiltInId.DateTimeParseExact, "Parse", new OptionalType(DateTimeType),
                    PrimitiveType.String, PrimitiveType.String),
         ],
         [
@@ -909,12 +933,12 @@ public static class BuiltIns
         // would say it aloud, the second is how you would measure it.
         new("TimeSpan", "Standard", MayBeExtended: false,
         [
-            Value(BuiltInId.TimeSpanZero, "Zero", TimeSpanType),
+            SharedValue(BuiltInId.TimeSpanZero, "Zero", TimeSpanType),
 
-            Member(BuiltInId.TimeSpanFromDays, "FromDays", TimeSpanType, PrimitiveType.Real),
-            Member(BuiltInId.TimeSpanFromHours, "FromHours", TimeSpanType, PrimitiveType.Real),
-            Member(BuiltInId.TimeSpanFromMinutes, "FromMinutes", TimeSpanType, PrimitiveType.Real),
-            Member(BuiltInId.TimeSpanFromSeconds, "FromSeconds", TimeSpanType, PrimitiveType.Real),
+            Shared(BuiltInId.TimeSpanFromDays, "FromDays", TimeSpanType, PrimitiveType.Real),
+            Shared(BuiltInId.TimeSpanFromHours, "FromHours", TimeSpanType, PrimitiveType.Real),
+            Shared(BuiltInId.TimeSpanFromMinutes, "FromMinutes", TimeSpanType, PrimitiveType.Real),
+            Shared(BuiltInId.TimeSpanFromSeconds, "FromSeconds", TimeSpanType, PrimitiveType.Real),
 
             // The parts, as you would say them.
             Value(BuiltInId.TimeSpanDays, "Days", PrimitiveType.Integer),
@@ -935,9 +959,9 @@ public static class BuiltIns
             Member(BuiltInId.TimeSpanDuration, "Duration", TimeSpanType),
             Member(BuiltInId.TimeSpanCompareTo, "CompareTo", PrimitiveType.Integer, TimeSpanType),
             Member(BuiltInId.TimeSpanFormat, "Format", PrimitiveType.String, PrimitiveType.String),
-            Member(BuiltInId.TimeSpanParse, "Parse", new OptionalType(TimeSpanType),
+            Shared(BuiltInId.TimeSpanParse, "Parse", new OptionalType(TimeSpanType),
                    PrimitiveType.String),
-            Member(BuiltInId.TimeSpanParseExact, "Parse", new OptionalType(TimeSpanType),
+            Shared(BuiltInId.TimeSpanParseExact, "Parse", new OptionalType(TimeSpanType),
                    PrimitiveType.String, PrimitiveType.String),
         ],
         [
@@ -957,8 +981,8 @@ public static class BuiltIns
         // name that says what it is.
         new("Date", "Standard", MayBeExtended: false,
         [
-            Value(BuiltInId.DateToday, "Today", DateType),
-            Member(BuiltInId.DateFromMoment, "FromDateTime", DateType, DateTimeType),
+            SharedValue(BuiltInId.DateToday, "Today", DateType),
+            Shared(BuiltInId.DateFromMoment, "FromDateTime", DateType, DateTimeType),
 
             Value(BuiltInId.DateYear, "Year", PrimitiveType.Integer),
             Value(BuiltInId.DateMonth, "Month", PrimitiveType.Integer),
@@ -974,8 +998,8 @@ public static class BuiltIns
             Member(BuiltInId.DateAtTime, "ToDateTime", DateTimeType, TimeType),
             Member(BuiltInId.DateCompareTo, "CompareTo", PrimitiveType.Integer, DateType),
             Member(BuiltInId.DateFormat, "Format", PrimitiveType.String, PrimitiveType.String),
-            Member(BuiltInId.DateParse, "Parse", new OptionalType(DateType), PrimitiveType.String),
-            Member(BuiltInId.DateParseExact, "Parse", new OptionalType(DateType),
+            Shared(BuiltInId.DateParse, "Parse", new OptionalType(DateType), PrimitiveType.String),
+            Shared(BuiltInId.DateParseExact, "Parse", new OptionalType(DateType),
                    PrimitiveType.String, PrimitiveType.String),
         ],
         [
@@ -991,8 +1015,8 @@ public static class BuiltIns
         // clock and always sits between midnight and the next.
         new("Time", "Standard", MayBeExtended: false,
         [
-            Value(BuiltInId.TimeNow, "Now", TimeType),
-            Member(BuiltInId.TimeFromMoment, "FromDateTime", TimeType, DateTimeType),
+            SharedValue(BuiltInId.TimeNow, "Now", TimeType),
+            Shared(BuiltInId.TimeFromMoment, "FromDateTime", TimeType, DateTimeType),
 
             Value(BuiltInId.TimeHour, "Hour", PrimitiveType.Integer),
             Value(BuiltInId.TimeMinute, "Minute", PrimitiveType.Integer),
@@ -1006,8 +1030,8 @@ public static class BuiltIns
             Member(BuiltInId.TimeToTimeSpan, "ToTimeSpan", TimeSpanType),
             Member(BuiltInId.TimeCompareTo, "CompareTo", PrimitiveType.Integer, TimeType),
             Member(BuiltInId.TimeFormat, "Format", PrimitiveType.String, PrimitiveType.String),
-            Member(BuiltInId.TimeParse, "Parse", new OptionalType(TimeType), PrimitiveType.String),
-            Member(BuiltInId.TimeParseExact, "Parse", new OptionalType(TimeType),
+            Shared(BuiltInId.TimeParse, "Parse", new OptionalType(TimeType), PrimitiveType.String),
+            Shared(BuiltInId.TimeParseExact, "Parse", new OptionalType(TimeType),
                    PrimitiveType.String, PrimitiveType.String),
         ],
         [

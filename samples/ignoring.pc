@@ -6,10 +6,10 @@
     probably not what was intended. An opinion means the meaning is clear, intended and
     correct, and the language would still write it differently.
 
-    Only the last two can be silenced. An error never can — the whole point of a mechanism that
-    quiets the compiler is that it must not be able to make it lie. And nothing here stops a
-    build: getting one of these lines wrong is itself only a warning, because a feature reached
-    for to hear less would be worse than useless if a typo in it were fatal.
+    Only the last two can be silenced. An error never can: a way of quieting the compiler must
+    not be able to make it say a broken program is a working one. And nothing here stops a
+    build — getting one of these lines wrong is itself only a warning, since a feature used to
+    see fewer diagnostics would be no help at all if a typo in it stopped the build.
 
     This program compiles with nothing said about it. Delete any of the 'ignore' lines and the
     thing below it has something to say.
@@ -33,15 +33,15 @@ shared model Program
 
         ##
             Naming the identifier instead says which one is expected. It is the narrower of the
-            two, and the one to reach for where a line might grow a second diagnostic later
-            that should still be heard.
+            two, and the one to write where a line might grow a second diagnostic later that
+            should still be reported.
         ##
         # ignore PC0340
         Console.WriteLine("");
 
         ##
             Words after the target are prose, so a directive can say why it is there. This is
-            the form worth writing: a reader who meets it a year later learns the reason
+            the form worth writing: a reader who finds it a year later learns the reason
             without having to guess it.
         ##
         # ignore opinion deliberate, to show the blank line above the total

@@ -29,7 +29,7 @@ shared model Program
         @summary: Putting a set together and taking things out of it.
 
         @remarks: Insert, InsertAt, RemoveAt and Clear yield nothing, because they change the
-        set in front of you rather than handing back a new one. Remove is the exception: it
+        set they were called on rather than handing back a new one. Remove is the exception: it
         yields whether there was anything to remove.
     ##
     function BuildingOne()

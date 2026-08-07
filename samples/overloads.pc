@@ -110,8 +110,8 @@ shared model Program
         is the type the argument was written as, not what the value turned out to be — so an
         Animal holding a Dog reaches the Animal version, and the Dog reaches the Dog version.
 
-        That is the opposite of how an override behaves, and the difference is worth holding on
-        to: an override is chosen by the value, an overload by the type.
+        That is the opposite of how an override behaves, and the difference matters: an override
+        is chosen by the value, an overload by the type.
     ##
     function TheNearestModelWins()
         Dog rex = new Dog();

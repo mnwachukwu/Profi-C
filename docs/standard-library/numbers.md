@@ -227,9 +227,9 @@ Read a row as *from*, a column as *to*. **Bold** happens on its own; anything el
 | **`float`** | `Math.Round(x)` | `.ToReal()` | — | `.ToFraction()` |
 | **`fraction`** | `Math.Round(x)` | `.ToReal()` | `.ToFloat()` | — |
 
-[`Math.Floor` and `Math.Ceiling`](math.md#rounding) reach an `integer` the same way `Math.Round`
-does; each takes a real, a float or a fraction and answers with a whole number, naming the
-direction rather than leaving a cast to pick one.
+The table names `Math.Round`, but [`Math.Floor` and `Math.Ceiling`](math.md#rounding) also yield
+an `integer`. Each of the three takes a real, a float or a fraction and answers with a whole
+number, and each names the direction it rounds — which is what a cast could not do.
 
 ### One rule, and its two exceptions
 

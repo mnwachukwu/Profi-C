@@ -180,8 +180,8 @@ shared model Program
         @remarks: Reading gives a string? — there may be nothing there to read at all — and
         reading a number out of text gives an integer?, since not every text is one. Both have
         to be dealt with, and this deals with them the same way: say what is being used
-        instead, and carry on. A program that stops because nobody typed anything teaches
-        nothing to the person who ran it to watch it work.
+        instead, and carry on. Someone who runs this to see what it does learns nothing from a
+        program that stops because they typed nothing.
 
         @question: What to write before waiting.
         @instead: What to use when nothing readable was typed.

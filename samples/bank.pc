@@ -1,14 +1,14 @@
 ##
-    Exceptions, and when to reach for one.
+    Exceptions, and when to use one.
 
     An exception is for a case the caller cannot reasonably be asked to check first,
-    or one that must not be quietly ignored. Overdrawing an account is both: the balance may
-    change between the check and the withdrawal, and silently doing nothing would be worse than
-    stopping.
+    or one that must not be ignored without anyone noticing. Overdrawing an account is both:
+    the balance may change between the check and the withdrawal, and doing nothing at all would
+    be worse than stopping.
 
     Compare that with looking up an account by name, at the bottom. A name that is not there is
     ordinary rather than exceptional, so that one yields an optional. Choosing between the two
-    is most of what there is to learn here.
+    is what this program is about.
 ##
 
 ##

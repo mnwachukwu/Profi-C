@@ -175,6 +175,10 @@ public sealed class LanguageServer : IDisposable
                 _wire.Respond(id, DocumentSymbols(parameters));
                 break;
 
+            case "textDocument/foldingRange":
+                _wire.Respond(id, FoldingRanges(parameters));
+                break;
+
             case "textDocument/hover":
                 _wire.Respond(id, HoverAt(parameters));
                 break;
@@ -264,6 +268,11 @@ public sealed class LanguageServer : IDisposable
                 ["save"] = true,
             },
             ["documentSymbolProvider"] = true,
+
+            // Which blocks fold, from the parse rather than from indentation. An editor guesses
+            // from indentation for a language nothing told it about, and the guess is wrong
+            // wherever a line is continued onto the next one.
+            ["foldingRangeProvider"] = true,
             ["hoverProvider"] = true,
             ["definitionProvider"] = true,
             ["documentHighlightProvider"] = true,
@@ -437,6 +446,19 @@ public sealed class LanguageServer : IDisposable
         SourceText source = _documents.Reader(document.Path);
 
         return Answers.Symbols(Parser.Parse(source, aside), source);
+    }
+
+    private JsonArray? FoldingRanges(JsonObject? parameters)
+    {
+        if (Document(parameters) is not { } document)
+        {
+            return null;
+        }
+
+        DiagnosticBag aside = new();
+        SourceText source = _documents.Reader(document.Path);
+
+        return Answers.Folds(Parser.Parse(source, aside), source);
     }
 
     private JsonObject? HoverAt(JsonObject? parameters)

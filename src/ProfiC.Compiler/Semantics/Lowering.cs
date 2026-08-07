@@ -7,7 +7,7 @@ namespace ProfiC.Compiler.Semantics;
 /// <para>Rewrites a checked tree into a simpler one, so that later phases have fewer shapes
 /// to handle.</para>
 /// <para>Two jobs. Conversions the program did not write become real nodes, because the type
-/// checker is the only pass that ever knew where they belonged. And <c>for each</c> becomes an
+/// checker is the only pass that ever knew where they belonged. And <c>loop each</c> becomes an
 /// index loop, so that iteration is implemented once here rather than separately in the
 /// interpreter and again in the emitter.</para>
 /// <para>Anything this pass builds is registered in the same semantic model as the tree it
@@ -193,7 +193,7 @@ public sealed class Lowering
     }
 
     /// <summary>
-    /// <para>Rewrites <c>for each x in sequence</c> as an index loop.</para>
+    /// <para>Rewrites <c>loop each x in sequence</c> as an index loop.</para>
     /// <para>The sequence is evaluated once into a temporary, which matters because the
     /// expression may have effects and must not run per iteration. The element is declared
     /// <em>inside</em> the loop body, which is what gives each iteration a fresh binding and
@@ -233,7 +233,7 @@ public sealed class Lowering
         // let <count> = <source>.Count();
         //
         // Held rather than asked for again on every turn. A range loop reads its bound each
-        // time, and leaving the call there would make "for each" follow whatever the sequence
+        // time, and leaving the call there would make "loop each" follow whatever the sequence
         // grew to mid-loop; a sequence is taken as it stands when the loop begins. Writing the
         // snapshot into the lowered tree is what makes that visible rather than a rule.
         LocalSymbol limit = NewTemporary("count", PrimitiveType.Integer);
@@ -245,7 +245,7 @@ public sealed class Lowering
 
         // let x = <source>[<index>];
         //
-        // Inferred rather than written, because "for each" never states the element type;
+        // Inferred rather than written, because "loop each" never states the element type;
         // the type it infers is the one the checker already worked out.
         IndexExpr element = new(span, Reference(span, source), Reference(span, index));
         _model.BindType(element, elementType);
@@ -270,7 +270,7 @@ public sealed class Lowering
 
         // The loop is marked as a walk, which is what lets the sequence refuse to be changed
         // while it runs. Nothing else in the lowered tree says a walk is happening: by this
-        // point a "for each" is an index loop like any other.
+        // point a "loop each" is an index loop like any other.
         WalkStmt walk = new(span, Reference(span, source), indexLoop);
 
         // The temporaries live in a block of their own, so none escapes the loop.

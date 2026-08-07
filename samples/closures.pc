@@ -4,9 +4,9 @@
     A function written inside another one may name what surrounds it, and what it names it
     keeps. The call that made it can finish; the function goes on answering.
 
-    The whole of it is one rule: what is kept is the variable, not a copy of what the variable
-    held. Everything below follows from that, including the two or three places where the
-    answer surprises people coming from elsewhere.
+    It is one rule: what is kept is the variable, not a copy of what the variable held.
+    Everything below follows from that, including the two or three places where the answer
+    surprises people coming from other languages.
 
     samples/lambdas.pc is about functions as values — their types, passing them, handing them
     back. This is about what happens to the names they mention.
@@ -31,8 +31,8 @@ shared model Program
         The variable is kept, not its value. So a change made after the function was written
         is seen by it, and a change the function makes is seen outside.
 
-        This is the part worth reading twice. Reading it as a copy explains the first line
-        and then gets the second one wrong.
+        Read this part carefully. Reading it as a copy explains the first line and then gets
+        the second one wrong.
     ##
     function TheVariableRatherThanItsValue()
         Console.WriteLine("== the variable, not its value ==");
@@ -110,8 +110,7 @@ shared model Program
         @summary: Makes a function that adds a fixed amount.
 
         @remarks: 'by' belongs to this call, and this call is over by the time the function
-        it made is used. What is handed back keeps it anyway, which is the whole reason any
-        of this machinery exists.
+        it made is used. What is handed back keeps it anyway, which is what closures are for.
 
         @by: what the function it makes will add.
         @yields: a function adding that amount.

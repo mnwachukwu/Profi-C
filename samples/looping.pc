@@ -161,8 +161,8 @@ shared model Program
         @summary: A loop that asks after the turn rather than before it.
 
         @remarks: A 'loop' with no word after it runs its body and then asks 'until'. So the
-        body always happens at least once, however the answer comes out — which is the whole
-        reason to reach for this one rather than 'loop while'.
+        body always happens at least once, however the answer comes out — which is the reason
+        to write this one rather than 'loop while'.
 
         The condition is written at the bottom because that is where it is tested. Written at
         the top it would look exactly like a 'loop while' and behave differently, and nothing
@@ -199,17 +199,17 @@ shared model Program
         @summary: A loop with no condition anywhere.
 
         @remarks: Written when the reason to stop is not a question that can be asked at the
-        top or the bottom — it is something that happens partway through. Saying so plainly
-        beats writing a condition that is always true and hoping the reader sees what it was
-        standing in for.
+        top or the bottom — it is something that happens partway through. Saying that plainly
+        is clearer than writing a condition that is always true, which tells the reader nothing
+        about what really ends the loop.
 
         Something in it still has to end it: a 'break', a 'yield', or a 'throw'. A loop with
         none of the three is PC0406, an opinion rather than an error, because a program that
         really means to run until it is stopped from outside is one somebody may write.
 
-        What it buys beyond reading well: a loop left only by 'yield' has no way of falling out
-        the bottom, so a function may end in one and still satisfy the rule that every path
-        yields a value.
+        There is a second gain: a loop left only by 'yield' has no way of falling out the
+        bottom, so a function may end in one and still satisfy the rule that every path yields
+        a value.
     ##
     function NotAskingAtAll()
         Console.WriteLine("== no condition at all ==");

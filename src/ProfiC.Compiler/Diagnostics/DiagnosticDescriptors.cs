@@ -1099,9 +1099,9 @@ public static class DiagnosticDescriptors
         + "further. Remove it.");
 
     /// <summary>
-    /// <para>Inserting into or removing from the very sequence a <c>for each</c> is walking.
+    /// <para>Inserting into or removing from the very sequence a <c>loop each</c> is walking.
     /// </para>
-    /// <para>A <c>for each</c> reads its sequence's length once, when the loop begins, so a
+    /// <para>A <c>loop each</c> reads its sequence's length once, when the loop begins, so a
     /// change made inside it does not lengthen the walk — and one that shortens the sequence
     /// leaves the loop reaching past the end. Neither is what the line looks like it does.</para>
     /// <para>Refused rather than given a rule, because there is no reading of it worth
@@ -1111,7 +1111,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor SequenceChangedWhileWalked = Error(
         "PC0243",
         "This changes the sequence being walked",
-        "'{0}' is the sequence this 'for each' is walking, and '{1}' changes it. Collect the "
+        "'{0}' is the sequence this 'loop each' is walking, and '{1}' changes it. Collect the "
         + "changes into another set, or count with a range loop.");
 
     // ---- Documentation, PC0244 to PC0247 --------------------------------------------------
@@ -1371,7 +1371,7 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor ForEachNeedsSequence = Error(
         "PC0316",
         "Cannot iterate this type",
-        "'for each' needs a set or a string, and this is {0}. Ask it for one, or count with "
+        "'loop each' needs a set or a string, and this is {0}. Ask it for one, or count with "
         + "'loop for'.");
 
     public static readonly DiagnosticDescriptor RangeLoopNeedsInteger = Error(
@@ -1565,6 +1565,25 @@ public static class DiagnosticDescriptors
         "A value has no identity to compare",
         "{0} is a value, so asking whether two of them are the same object has no answer. Use "
         + "'==' to compare what they hold.");
+
+    /// <summary>
+    /// <para>A member the language gives every value of a type, reached through the type's
+    /// name.</para>
+    /// <para><c>PC0331</c> says this about a member a program declared, and offers marking it
+    /// <c>shared</c> as the usual fix. That fix does not exist here: <c>ToString</c> and
+    /// <c>Equals</c> come from <c>Model</c>, and <c>Year</c> from <c>DateTime</c>, none of
+    /// which a program can mark anything.</para>
+    /// <para>The message names the position rather than the value, because a value is not
+    /// always there to be named. <c>Program</c> is a <c>shared model</c> and has no instances
+    /// at all, so "read it from a Program" would ask for something that cannot exist — while
+    /// "a value on the left of the dot" is true whether or not one can be had. A reader who
+    /// goes looking for one writes <c>new Program</c> and is answered there, which is where
+    /// that belongs.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor ProvidedMemberNeedsInstance = Error(
+        "PC0348",
+        "This member needs a value",
+        "'{0}' needs a value on the left of the dot, not the type name '{1}'.");
 
     /// <summary>
     /// <para>A function the language provides, named without being called.</para>

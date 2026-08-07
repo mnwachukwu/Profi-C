@@ -912,11 +912,14 @@ public sealed class AnswersTests
         Assert.Multiple(() =>
         {
             Assert.That(said, Does.StartWith("```profi-c"), "the shape, first");
-            Assert.That(said.TrimEnd(), Does.EndWith("Greeting"), "and where it came from, last");
+            Assert.That(
+                said.TrimEnd(),
+                Does.EndWith("`Greeting`"),
+                "and where it came from, last — as code, since it names a type");
             Assert.That(
                 said,
                 Does.Not.Contain("*Greeting*"),
-                "in plain text — a hover is markdown, and markdown has no smaller");
+                "not emphasized — a hover is markdown, and markdown has no smaller");
         });
     }
 

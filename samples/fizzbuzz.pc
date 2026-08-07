@@ -1,7 +1,7 @@
 ##
     FizzBuzz, the classic first exercise.
 
-    A fair look at the language's control flow: a range loop that reads as a
+    A first look at the language's control flow: a range loop that reads as a
     sentence, an if/else-if chain with no parentheses around the conditions, and a function
     that yields a string.
 ##

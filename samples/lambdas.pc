@@ -349,8 +349,8 @@ shared model Program
     ##
         @summary: Adds to the running total.
 
-        @remarks: Written where the field is declared, which is the shape a reader reaches for
-        first — the value and what makes it in one place.
+        @remarks: Written where the field is declared, so the value and what makes it are in
+        one place.
     ##
     delegate(integer) tally = function(by)
         Program.running = Program.running + by;

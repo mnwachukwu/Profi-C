@@ -144,8 +144,8 @@ shared model Program
         @summary: Floor, Ceiling and Round, the three ways from a real to an integer.
 
         @remarks: Each lands on a whole number, so each yields an integer and can be used as a
-        count or an index. Between them they are the three honest answers, which is why there
-        is no single conversion that would have to pick one without being asked.
+        count or an index. All three are correct answers to different questions, which is why
+        there is no single conversion that would have to pick one without being asked.
 
         A half goes away from zero, the rule taught in school.
     ##

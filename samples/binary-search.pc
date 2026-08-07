@@ -4,9 +4,9 @@
     In most languages this function returns -1 for a miss, and every caller is
     trusted to remember. Forgetting compiles fine and goes wrong later, somewhere else.
 
-    There is no null here and no sentinel to reach for. The function yields 'integer?', so a
-    caller cannot read the index until it has proved there is one. The check is not good
-    manners — it is the only way to get at the value.
+    There is no null here and no sentinel to use instead. The function yields 'integer?', so a
+    caller cannot read the index until it has proved there is one. The check is not a
+    convention — it is the only way to read the value.
 ##
 
 shared model Program

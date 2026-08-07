@@ -10,8 +10,8 @@
     forward slashes on every platform. It brings that file and whatever that file imports in
     turn — Tally.pc imports Text.pc, so Text arrives without this program mentioning it.
 
-    Reach for an import when you want one file. For a group of related types, reach for a
-    namespace; for a whole build across folders, reach for a project file.
+    Write an import when you want one file. For a group of related types, write a namespace;
+    for a whole build across folders, write a project file.
 ##
 
 import "shared/Tally.pc";

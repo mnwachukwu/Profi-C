@@ -100,6 +100,7 @@ public sealed partial class TypeChecker
     {
         if (BuiltInMembers.Find(type, member.MemberName) is { } builtIn)
         {
+            RequireSharedBuiltIn(member, type, builtIn);
             return ReadUncalled(member, builtIn);
         }
 
@@ -137,6 +138,35 @@ public sealed partial class TypeChecker
         {
             Report(DiagnosticDescriptors.MemberNeedsInstance, member, member.MemberName, type.Name);
         }
+    }
+
+    /// <summary>
+    /// <para>Rejects a member the language provides, reached through the name of its type.</para>
+    /// <para>The same question <see cref="RequireShared"/> asks of a member a program declared,
+    /// asked of the ones every type is given. A model with no instances — <c>Math</c>,
+    /// <c>Console</c>, <c>Integer</c> — has nothing but its name to reach a member through, so
+    /// every member of one belongs to the type. The rest have both kinds: <c>DateTime.Now</c>
+    /// is a moment the type can produce, while <c>Year</c> is a part of a moment somebody
+    /// already has.</para>
+    /// <para>Without this the member binds and answers about a value that was never made.
+    /// <c>Program.ToString()</c> read as an absent optional and printed <c>empty</c>;
+    /// <c>DateTime.Year</c> read a default moment and answered 1; and both reached a back end
+    /// with no value to load, which is an emitter that either stops or writes IL the runtime
+    /// refuses.</para>
+    /// </summary>
+    private void RequireSharedBuiltIn(
+        MemberExpr member, DeclaredTypeSymbol type, BuiltInMember found)
+    {
+        if (found.IsShared || BuiltIns.HasNoInstances(type.Name))
+        {
+            return;
+        }
+
+        Report(
+            DiagnosticDescriptors.ProvidedMemberNeedsInstance,
+            member,
+            member.MemberName,
+            type.Name);
     }
 
     /// <summary>
@@ -210,7 +240,7 @@ public sealed partial class TypeChecker
             return [];
         }
 
-        IReadOnlyList<BuiltInMember> found = BuiltInMembers.FindAll(receiver, name);
+        IReadOnlyList<BuiltInMember> found = BuiltInMembers.FindAllOnValues(receiver, name);
 
         if (found.Count > 0)
         {
@@ -220,7 +250,7 @@ public sealed partial class TypeChecker
         if (UnnarrowedTypeOf(receiverExpression) is { } declared
             && !ReferenceEquals(declared, receiver))
         {
-            return BuiltInMembers.FindAll(declared, name);
+            return BuiltInMembers.FindAllOnValues(declared, name);
         }
 
         return [];
@@ -411,8 +441,16 @@ public sealed partial class TypeChecker
             return ErrorType.Instance;
         }
 
-        IReadOnlyList<BuiltInMember> builtIns =
-            FindAllBuiltIn(member.Receiver, receiver, member.MemberName);
+        // A type name asks the catalog whole, so that a member belonging to each value is found
+        // and refused by name rather than reported as missing. A value asks for its own.
+        //
+        // A member the type declares still wins, exactly as it does on a value: a program may
+        // declare its own 'Math', and 'Math.Sqrt' then means the one it wrote.
+        IReadOnlyList<BuiltInMember> builtIns = named is not null
+            ? DeclaresMember(named, member.MemberName)
+                ? []
+                : BuiltInMembers.FindAll(named, member.MemberName)
+            : FindAllBuiltIn(member.Receiver, receiver, member.MemberName);
 
         if (builtIns.Count > 0)
         {
@@ -437,6 +475,11 @@ public sealed partial class TypeChecker
                 TypeSymbol valueType = TypeOfBuiltIn(chosenBuiltIn);
                 _model.BindType(member, valueType);
                 return valueType;
+            }
+
+            if (named is not null)
+            {
+                RequireSharedBuiltIn(member, named, chosenBuiltIn);
             }
 
             RecordBuiltIn(member, chosenBuiltIn);
