@@ -89,4 +89,60 @@ public sealed class SampleCheckTests : LexerTestBase
             Is.Empty,
             "conversions the language performs that no sample provokes");
     }
+
+    /// <summary>
+    /// <para>No sample counts to one less than a bound, because that is what <c>until</c> is.</para>
+    /// <para><c>loop for i = 0 to grid.Count - 1</c> and <c>loop for i = 0 until grid.Count</c>
+    /// walk the same elements, and only the second says so. The samples are where somebody
+    /// learns which word to reach for, and a dozen of them subtracting one taught the habit the
+    /// language added <c>until</c> to remove — while the specification, a page away, was calling
+    /// that subtraction the thing C# leaves you to remember.</para>
+    /// <para>Counting down is not in question. A loop written <c>stepby -1</c> ends where it
+    /// ends, and the <c>- 1</c> in <c>loop for i = values.Count - 1 to 0 stepby -1</c> is where
+    /// it starts rather than where it stops.</para>
+    /// <para>The negatives are left out: what they hold is mistakes, and one of them is this
+    /// exact off-by-one written the other way, walking one past the end on purpose.</para>
+    /// </summary>
+    [Test]
+    public void NoSampleCountsToOneLessThanABound()
+    {
+        List<string> subtracting = [];
+
+        foreach (string path in EverySampleFile)
+        {
+            string[] lines = File.ReadAllLines(path);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+
+                if (!line.Contains("loop for ", StringComparison.Ordinal)
+                    || line.Contains("stepby -", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // The bound is what follows " to ", and a step written after it ends the bound.
+                int to = line.IndexOf(" to ", StringComparison.Ordinal);
+                if (to < 0)
+                {
+                    continue;
+                }
+
+                string bound = line[(to + 4)..];
+                int step = bound.IndexOf(" stepby ", StringComparison.Ordinal);
+                bound = (step < 0 ? bound : bound[..step]).Trim();
+
+                if (bound.EndsWith("- 1", StringComparison.Ordinal))
+                {
+                    subtracting.Add($"{Path.GetFileName(path)} line {i + 1}: {line.Trim()}");
+                }
+            }
+        }
+
+        Assert.That(
+            subtracting,
+            Is.Empty,
+            "samples counting 'to' one less than a bound, where 'until' says it directly");
+    }
 }

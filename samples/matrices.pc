@@ -238,10 +238,10 @@ shared model Program
     integer[][] function Transpose(integer[][] grid)
         integer[][] turned = {};
 
-        loop for column = 0 to grid[0].Count - 1
+        loop for column = 0 until grid[0].Count
             integer[] built = {};
 
-            loop for row = 0 to grid.Count - 1
+            loop for row = 0 until grid.Count
                 built.Insert(grid[row][column]);
             end loop
 
@@ -265,13 +265,13 @@ shared model Program
     integer[][] function Multiply(integer[][] left, integer[][] right)
         integer[][] product = {};
 
-        loop for row = 0 to left.Count - 1
+        loop for row = 0 until left.Count
             integer[] built = {};
 
-            loop for column = 0 to right[0].Count - 1
+            loop for column = 0 until right[0].Count
                 integer total = 0;
 
-                loop for along = 0 to right.Count - 1
+                loop for along = 0 until right.Count
                     total = total + (left[row][along] * right[along][column]);
                 end loop
 
@@ -293,10 +293,10 @@ shared model Program
     integer[][] function Identity(integer size)
         integer[][] built = {};
 
-        loop for row = 0 to size - 1
+        loop for row = 0 until size
             integer[] line = {};
 
-            loop for column = 0 to size - 1
+            loop for column = 0 until size
                 line.Insert(if row == column then 1 else 0);
             end loop
 
@@ -320,10 +320,10 @@ shared model Program
     integer[] function Apply(integer[][] transform, integer[] point)
         integer[] moved = {};
 
-        loop for row = 0 to transform.Count - 1
+        loop for row = 0 until transform.Count
             integer total = 0;
 
-            loop for column = 0 to point.Count - 1
+            loop for column = 0 until point.Count
                 total = total + (transform[row][column] * point[column]);
             end loop
 
@@ -348,7 +348,7 @@ shared model Program
         loop each layer in cube
             integer[][] built = {};
 
-            loop for column = 0 to layer[0].Count - 1
+            loop for column = 0 until layer[0].Count
                 integer[] line = {};
 
                 loop for row = layer.Count - 1 until -1 stepby -1
@@ -389,7 +389,7 @@ shared model Program
     function WriteCube(string label, integer[][][] cube)
         Console.WriteLine(label + ":");
 
-        loop for layer = 0 to cube.Count - 1
+        loop for layer = 0 until cube.Count
             Console.WriteLine("    layer " + layer + ":");
 
             loop each row in cube[layer]

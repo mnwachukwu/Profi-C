@@ -526,24 +526,20 @@ CompilationUnit
           SetTypeSyntax
             NamedTypeSyntax 'integer'
         CollectionExpr
-      ForStmt 'column' to
+      ForStmt 'column' until
         LiteralExpr 0 [Integer]
-        BinaryExpr '-'
-          MemberExpr 'Count'
-            IndexExpr
-              IdentifierExpr 'grid'
-              LiteralExpr 0 [Integer]
-          LiteralExpr 1 [Integer]
+        MemberExpr 'Count'
+          IndexExpr
+            IdentifierExpr 'grid'
+            LiteralExpr 0 [Integer]
         VarDeclStmt 'built'
           SetTypeSyntax
             NamedTypeSyntax 'integer'
           CollectionExpr
-        ForStmt 'row' to
+        ForStmt 'row' until
           LiteralExpr 0 [Integer]
-          BinaryExpr '-'
-            MemberExpr 'Count'
-              IdentifierExpr 'grid'
-            LiteralExpr 1 [Integer]
+          MemberExpr 'Count'
+            IdentifierExpr 'grid'
           ExpressionStmt
             CallExpr
               MemberExpr 'Insert'
@@ -577,33 +573,27 @@ CompilationUnit
           SetTypeSyntax
             NamedTypeSyntax 'integer'
         CollectionExpr
-      ForStmt 'row' to
+      ForStmt 'row' until
         LiteralExpr 0 [Integer]
-        BinaryExpr '-'
-          MemberExpr 'Count'
-            IdentifierExpr 'left'
-          LiteralExpr 1 [Integer]
+        MemberExpr 'Count'
+          IdentifierExpr 'left'
         VarDeclStmt 'built'
           SetTypeSyntax
             NamedTypeSyntax 'integer'
           CollectionExpr
-        ForStmt 'column' to
+        ForStmt 'column' until
           LiteralExpr 0 [Integer]
-          BinaryExpr '-'
-            MemberExpr 'Count'
-              IndexExpr
-                IdentifierExpr 'right'
-                LiteralExpr 0 [Integer]
-            LiteralExpr 1 [Integer]
+          MemberExpr 'Count'
+            IndexExpr
+              IdentifierExpr 'right'
+              LiteralExpr 0 [Integer]
           VarDeclStmt 'total'
             NamedTypeSyntax 'integer'
             LiteralExpr 0 [Integer]
-          ForStmt 'along' to
+          ForStmt 'along' until
             LiteralExpr 0 [Integer]
-            BinaryExpr '-'
-              MemberExpr 'Count'
-                IdentifierExpr 'right'
-              LiteralExpr 1 [Integer]
+            MemberExpr 'Count'
+              IdentifierExpr 'right'
             AssignmentStmt
               IdentifierExpr 'total'
               BinaryExpr '+'
@@ -643,20 +633,16 @@ CompilationUnit
           SetTypeSyntax
             NamedTypeSyntax 'integer'
         CollectionExpr
-      ForStmt 'row' to
+      ForStmt 'row' until
         LiteralExpr 0 [Integer]
-        BinaryExpr '-'
-          IdentifierExpr 'size'
-          LiteralExpr 1 [Integer]
+        IdentifierExpr 'size'
         VarDeclStmt 'line'
           SetTypeSyntax
             NamedTypeSyntax 'integer'
           CollectionExpr
-        ForStmt 'column' to
+        ForStmt 'column' until
           LiteralExpr 0 [Integer]
-          BinaryExpr '-'
-            IdentifierExpr 'size'
-            LiteralExpr 1 [Integer]
+          IdentifierExpr 'size'
           ExpressionStmt
             CallExpr
               MemberExpr 'Insert'
@@ -688,21 +674,17 @@ CompilationUnit
         SetTypeSyntax
           NamedTypeSyntax 'integer'
         CollectionExpr
-      ForStmt 'row' to
+      ForStmt 'row' until
         LiteralExpr 0 [Integer]
-        BinaryExpr '-'
-          MemberExpr 'Count'
-            IdentifierExpr 'transform'
-          LiteralExpr 1 [Integer]
+        MemberExpr 'Count'
+          IdentifierExpr 'transform'
         VarDeclStmt 'total'
           NamedTypeSyntax 'integer'
           LiteralExpr 0 [Integer]
-        ForStmt 'column' to
+        ForStmt 'column' until
           LiteralExpr 0 [Integer]
-          BinaryExpr '-'
-            MemberExpr 'Count'
-              IdentifierExpr 'point'
-            LiteralExpr 1 [Integer]
+          MemberExpr 'Count'
+            IdentifierExpr 'point'
           AssignmentStmt
             IdentifierExpr 'total'
             BinaryExpr '+'
@@ -747,14 +729,12 @@ CompilationUnit
             SetTypeSyntax
               NamedTypeSyntax 'integer'
           CollectionExpr
-        ForStmt 'column' to
+        ForStmt 'column' until
           LiteralExpr 0 [Integer]
-          BinaryExpr '-'
-            MemberExpr 'Count'
-              IndexExpr
-                IdentifierExpr 'layer'
-                LiteralExpr 0 [Integer]
-            LiteralExpr 1 [Integer]
+          MemberExpr 'Count'
+            IndexExpr
+              IdentifierExpr 'layer'
+              LiteralExpr 0 [Integer]
           VarDeclStmt 'line'
             SetTypeSyntax
               NamedTypeSyntax 'integer'
@@ -838,12 +818,10 @@ CompilationUnit
           BinaryExpr '+'
             IdentifierExpr 'label'
             LiteralExpr ":" [String]
-      ForStmt 'layer' to
+      ForStmt 'layer' until
         LiteralExpr 0 [Integer]
-        BinaryExpr '-'
-          MemberExpr 'Count'
-            IdentifierExpr 'cube'
-          LiteralExpr 1 [Integer]
+        MemberExpr 'Count'
+          IdentifierExpr 'cube'
         ExpressionStmt
           CallExpr
             MemberExpr 'WriteLine'

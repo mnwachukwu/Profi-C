@@ -117,7 +117,7 @@ shared model Program
         integer working = 0;
         boolean started = false;
 
-        loop for i = 0 to digits.Count - 1
+        loop for i = 0 until digits.Count
             working = working * 10 + digits[i];
 
             integer figure = working / divisor;

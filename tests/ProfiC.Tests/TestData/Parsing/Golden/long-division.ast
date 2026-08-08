@@ -165,12 +165,10 @@ CompilationUnit
       VarDeclStmt 'started'
         NamedTypeSyntax 'boolean'
         LiteralExpr false [Boolean]
-      ForStmt 'i' to
+      ForStmt 'i' until
         LiteralExpr 0 [Integer]
-        BinaryExpr '-'
-          MemberExpr 'Count'
-            IdentifierExpr 'digits'
-          LiteralExpr 1 [Integer]
+        MemberExpr 'Count'
+          IdentifierExpr 'digits'
         AssignmentStmt
           IdentifierExpr 'working'
           BinaryExpr '+'
