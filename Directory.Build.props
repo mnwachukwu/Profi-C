@@ -28,7 +28,41 @@
     <Company>Profi-C</Company>
     <Copyright>Copyright (c) Matt Nwachukwu</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <VersionPrefix>0.1.0</VersionPrefix>
+  </PropertyGroup>
+
+  <!--
+    Versioning.
+
+    Three parts are written here. A release passes the fourth:
+
+        dotnet pack -p:BuildNumber=42
+
+    So a package is 1.0.0.42 and a build from a working copy is 1.0.0. The editor extension and
+    the site carry the same three parts and never a fourth, because npm and vsce both reject a
+    version that has one - four parts are a .NET shape and do not travel.
+
+    Three numbers come out of this, and they are deliberately not the same number.
+
+    AssemblyVersion is what one assembly records about another it was built against. A build
+    number in it would make every build binary-incompatible with the one before it, for nothing,
+    so it is pinned to the major and moves only when compatibility does. That is why it stays
+    1.0.0.0 across all of 1.x rather than following VersionPrefix.
+
+    FileVersion identifies the build rather than the contract, so it takes the build number. It
+    has to be set rather than left alone: it defaults to AssemblyVersion, so pinning that would
+    quietly pin this too and every release would claim to be the same build.
+
+    InformationalVersion is left to default, which makes it the full version. It is what the
+    command line reports when asked, and the only one of the three a reader ever sees.
+  -->
+  <PropertyGroup>
+    <VersionPrefix>1.0.0</VersionPrefix>
+
+    <Version Condition="'$(BuildNumber)' != ''">$(VersionPrefix).$(BuildNumber)</Version>
+
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion Condition="'$(BuildNumber)' != ''">$(VersionPrefix).$(BuildNumber)</FileVersion>
+    <FileVersion Condition="'$(BuildNumber)' == ''">$(VersionPrefix).0</FileVersion>
   </PropertyGroup>
 
 </Project>

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using System.Text.Json;
 using ProfiC.Compiler;
 using ProfiC.Compiler.Ast;
@@ -24,7 +25,19 @@ namespace ProfiC.Cli;
 /// </summary>
 public static class Program
 {
-    private const string Version = "0.1.0";
+    /// <summary>
+    /// <para>What this build calls itself, read from the assembly rather than restated here.</para>
+    /// <para>The number is set once in <c>Directory.Build.props</c>, and a release appends a
+    /// build to it. A constant here would agree with that until the first time it mattered, and
+    /// the version a tool reports is the one thing a reader has no way to check.</para>
+    /// <para>Cut at the <c>+</c>, which is where the commit a build came from is written. That
+    /// belongs in a build log rather than in the answer to <c>--version</c>.</para>
+    /// </summary>
+    private static string Version =>
+        (typeof(Program).Assembly
+                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                        ?.InformationalVersion ?? "0.0.0")
+        .Split('+')[0];
 
     /// <summary>
     /// <para>The name this was invoked as, so that messages name the command the reader

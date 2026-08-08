@@ -1,6 +1,6 @@
 # The Profi-C Language Specification
 
-**Version 0.1.0 (draft).**
+**Version 1.0.0 (draft).**
 
 Sections are written as each part of the language is implemented and covered by tests, so
 that the specification never describes more than the compiler does.
