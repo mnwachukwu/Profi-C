@@ -1,0 +1,154 @@
+# Cuts a release: builds the compiler for every platform it runs on, and publishes the archives
+# somebody installs from.
+#
+# **A tag is the whole act.** Pushing `v1.0.0` runs this; nothing else does. That keeps a release
+# something done on purpose rather than something a merge can cause, and it means the tag and the
+# release always name the same commit.
+#
+# **The names of the assets are a promise.** The install scripts and the site's install page both
+# reach for `releases/latest/download/<name>`, which GitHub keeps pointing at the newest release —
+# so a link written once goes on working, as long as every release names its files the same way.
+# Renaming one silently breaks every install instruction already published. A test in this
+# repository holds this file to the list for that reason.
+#
+# Built self-contained, so a reader needs nothing installed first. That is the whole reason this
+# is not a `dotnet tool`: for somebody whose first language this is, "install a runtime, then
+# install a tool" is two obstacles before the first program.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+  # So a release can be rehearsed against a branch without a tag existing. Nothing is uploaded
+  # on this path — see the `draft` step below.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # <b>Nothing is released that CI has not passed, on every system CI covers.</b> These are the
+  # same runs a push to main makes, called rather than repeated — so the bar for a release is
+  # exactly the bar for a merge, and it stays that way when the bar moves.
+  #
+  # Both operating systems, because the compiler is where they differ: paths, line endings, and
+  # the case-sensitivity of a file system are all things this has been wrong about before. A
+  # release built from a green Linux run alone would ship the Windows archive anyway.
+  verify-linux:
+    name: Linux
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ubuntu-latest
+
+  verify-windows:
+    name: Windows
+    uses: ./.github/workflows/build.yml
+    with:
+      os: windows-latest
+
+  release:
+    name: Build and publish
+    needs: [verify-linux, verify-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      # The version lives in Directory.Build.props and the tag has to agree with it. Checked
+      # rather than derived, because the two are written by hand at different moments: tagging
+      # v1.1.0 against a tree that still says 1.0.0 would publish archives whose `pc --version`
+      # contradicts the release they came from, and nothing else would notice.
+      - name: The tag and the version agree
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          declared=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+          tagged="${GITHUB_REF_NAME#v}"
+
+          if [ "$declared" != "$tagged" ]; then
+            echo "The tag says $tagged and Directory.Build.props says $declared."
+            echo "One of them is wrong, and a release cannot say both."
+            exit 1
+          fi
+
+          echo "Releasing $declared."
+
+      # Every platform .NET supports for this, from one runner. A self-contained publish needs no
+      # native toolchain — nothing here is compiled ahead of time — so a Linux runner produces the
+      # macOS and Windows builds exactly as a machine of that kind would.
+      #
+      # Each archive holds one folder rather than loose files: a self-contained build is a couple
+      # of hundred files beside the executable, and an install that emptied those into a folder on
+      # somebody's PATH would be an install nobody could undo.
+      - name: Publish every platform
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          publish() {
+            rid="$1"
+            name="$2"
+
+            echo "::group::$rid"
+            rm -rf staging
+            mkdir -p staging/profi-c
+
+            dotnet publish src/ProfiC.Cli.Alias \
+              --configuration Release \
+              --runtime "$rid" \
+              --self-contained true \
+              -p:BuildNumber=${{ github.run_number }} \
+              --output staging/profi-c
+
+            # Set rather than relied upon. A file extracted without it is a compiler that
+            # answers "permission denied", which reads as a broken download rather than as a
+            # missing mode — and the archive that carried it was built on a machine where
+            # nothing about the file looked wrong.
+            case "$name" in
+              *.zip)
+                (cd staging && zip -qr "../artifacts/$name" profi-c)
+                ;;
+              *.tar.gz)
+                chmod +x staging/profi-c/pc staging/profi-c/profi-c
+                tar -czf "artifacts/$name" -C staging profi-c
+                ;;
+            esac
+
+            echo "::endgroup::"
+          }
+
+          publish win-x64     profi-c-win-x64.zip
+          publish win-arm64   profi-c-win-arm64.zip
+          publish linux-x64   profi-c-linux-x64.tar.gz
+          publish linux-arm64 profi-c-linux-arm64.tar.gz
+          publish osx-x64     profi-c-osx-x64.tar.gz
+          publish osx-arm64   profi-c-osx-arm64.tar.gz
+
+          ls -lh artifacts
+
+      # What was built, whether or not it is being released. A dispatch run stops here, which is
+      # what makes it a rehearsal: everything that can fail has run, and nothing is public.
+      - name: Keep the archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: archives
+          path: artifacts/*
+
+      # Written from the tag rather than from a file, so the notes are whatever the tag says and
+      # the CHANGELOG stays the thing a reader browses rather than a thing a workflow parses.
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Install instructions are at https://profi-c.pluperfect.dev/install — see CHANGELOG.md for what changed." \
+            artifacts/*
