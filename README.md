@@ -311,9 +311,8 @@ and every file in [Samples](#samples) runs today.
 
 ## Writing and running a program
 
-You need the .NET 10 SDK and a clone of this repository. There is no installer yet — the compiler
-is not on NuGet, and putting it there before the emitter is finished would be shipping a tool
-that turns most programs away. Until then you build it from source, which takes one command.
+You need the .NET 10 SDK and a clone of this repository. There is no released build to download
+yet, so you build it from source, which takes one command.
 
 ### 1. Build the tool
 

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
 using System.Text.Json.Nodes;
@@ -359,10 +360,22 @@ public static partial class Playground
         return folded.ToJsonString();
     }
 
-    /// <summary>The compiler's version, so a page can say which one it is running.</summary>
+    /// <summary>
+    /// <para>The compiler's version, so a page can say which one it is running.</para>
+    /// <para>Read from the informational version, which is the one that follows the number set in
+    /// <c>Directory.Build.props</c>. <b>The assembly version does not.</b> It is pinned at
+    /// <c>1.0.0.0</c> for the whole of 1.x on purpose, so that a rebuild never changes what one
+    /// assembly records about another — which means asking it would have this page reporting
+    /// 1.0.0 at every release of 1.x, confidently and wrongly.</para>
+    /// <para>Cut at the <c>+</c>, where the commit a build came from is written, for the same
+    /// reason <c>pc --version</c> cuts it: that belongs in a build log.</para>
+    /// </summary>
     [JSExport]
     public static string Version() =>
-        typeof(Playground).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        (typeof(Playground).Assembly
+                           .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                           ?.InformationalVersion ?? "0.0.0")
+        .Split('+')[0];
 
     /// <summary>
     /// Takes a program through the whole front end. One file — a page holds one editor, and
