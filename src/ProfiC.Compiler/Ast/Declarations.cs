@@ -14,7 +14,8 @@ public sealed class CompilationUnit(
     IReadOnlyList<ImportDirective> imports,
     IReadOnlyList<Declaration> declarations,
     SourceText source,
-    IReadOnlyList<DocComment>? documentation = null) : SyntaxNode(span)
+    IReadOnlyList<DocComment>? documentation = null,
+    IReadOnlyList<SourceSpan>? comments = null) : SyntaxNode(span)
 {
     public IReadOnlyList<UsingDirective> Usings { get; } = usings;
 
@@ -36,6 +37,14 @@ public sealed class CompilationUnit(
     /// those to declarations is a pass of its own.</para>
     /// </summary>
     public IReadOnlyList<DocComment> Documentation { get; } = documentation ?? [];
+
+    /// <summary>
+    /// <para>Where every comment sits, in the order written.</para>
+    /// <para>Beside the tree for the same reason documentation is: a comment is not syntax, and
+    /// no node holds one. Carried because folding a comment away needs to know which lines it
+    /// covers, and that is the one question the tree cannot answer.</para>
+    /// </summary>
+    public IReadOnlyList<SourceSpan> Comments { get; } = comments ?? [];
 
     public override IEnumerable<SyntaxNode> Children =>
         Usings.Concat<SyntaxNode>(Imports).Concat(Declarations);

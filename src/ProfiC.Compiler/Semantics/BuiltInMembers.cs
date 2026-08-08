@@ -182,6 +182,25 @@ public static class BuiltInMembers
     }
 
     /// <summary>The single version of a member, where a caller needs only its type.</summary>
+    /// <summary>
+    /// <para>Whether a type puts its own values in order, which is what lets <c>&lt;</c>,
+    /// <c>&gt;</c>, <c>&lt;=</c> and <c>&gt;=</c> be written on it.</para>
+    /// <para>Read out of the catalog rather than listed here. A type is ordered when it answers
+    /// <c>CompareTo</c> against its own type, and that is the very member a comparison is
+    /// lowered into — so the question the checker asks and the member the program ends up
+    /// calling cannot come apart. Naming the types that qualify would let a later one arrive
+    /// with a <c>CompareTo</c> and no operators, or the reverse.</para>
+    /// <para>Ordering belongs to these rather than to every model. Two models in general have
+    /// no order to be in, and deriving one from their fields would make <c>&lt;</c> mean
+    /// whatever they happened to be declared in.</para>
+    /// </summary>
+    public static bool IsOrdered(TypeSymbol type) =>
+        type is ModelSymbol
+        && FindAll(type, "CompareTo").Any(
+            member => ReferenceEquals(member.ReturnType, PrimitiveType.Integer)
+                      && member.ParameterTypes is [{ } only]
+                      && Conversions.SameType(only, type));
+
     public static BuiltInMember? Find(TypeSymbol receiver, string name) =>
         FindAll(receiver, name).FirstOrDefault();
 

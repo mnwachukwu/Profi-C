@@ -47,21 +47,37 @@ public static class ConstantFolder
                 return FoldBinary(binary, model, depth);
 
             case IdentifierExpr identifier:
-                // A constant may be built from other constants, so a name that refers to one
-                // folds to its value.
-                return model.GetSymbol(identifier) switch
-                {
-                    EnumMemberSymbol member => member.Value,
-                    _ => null,
-                };
+                return FoldName(model.GetSymbol(identifier), model, depth);
 
-            case MemberExpr member when model.GetSymbol(member) is EnumMemberSymbol enumMember:
-                return enumMember.Value;
+            case MemberExpr member:
+                return FoldName(model.GetSymbol(member), model, depth);
 
             default:
                 return null;
         }
     }
+
+    /// <summary>
+    /// <para>What a name stands for, where it stands for something known while compiling.</para>
+    /// <para>An enumeration member carries its value. A <c>constant</c> does not: it carries the
+    /// expression it was written with, and that expression is folded here — which is what lets one
+    /// constant be written in terms of another, and what <see cref="Fold"/>'s depth limit is
+    /// guarding when it is.</para>
+    /// <para>Anything else folds to nothing. A plain local holds whatever it last held, and no
+    /// amount of reading the declaration says what that is.</para>
+    /// </summary>
+    private static object? FoldName(Symbol? symbol, SemanticModel model, int depth) => symbol switch
+    {
+        EnumMemberSymbol member => member.Value,
+
+        FieldSymbol { IsConstant: true, Declaration: FieldDecl { Initializer: { } written } } =>
+            Fold(written, model, depth + 1),
+
+        LocalSymbol { IsConstant: true, Declaration: VarDeclStmt { Initializer: { } written } } =>
+            Fold(written, model, depth + 1),
+
+        _ => null,
+    };
 
     private static object? FoldUnary(UnaryExpr unary, SemanticModel model, int depth)
     {

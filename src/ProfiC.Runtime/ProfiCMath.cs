@@ -46,11 +46,42 @@ public static class ProfiCMath
 
     public static Fraction Abs(Fraction value) => Fraction.Abs(value);
 
+    /// <summary>
+    /// <para>Refuses a float that names no number, before it is rounded to one.</para>
+    /// <para>Only a float reaches here. A decimal and a fraction have no infinity and no
+    /// not-a-number between them, so the whole question belongs to the one type that does.</para>
+    /// <para><b>The conversion would otherwise succeed and be wrong.</b> Narrowing a floating
+    /// point value to a whole one saturates rather than failing, so an infinity arrives as the
+    /// largest integer and a not-a-number as zero — answers indistinguishable from a real count
+    /// that happens to be large, and reached without anything being reported. Crossing the same
+    /// gap by another route already stops: <c>ToReal</c> and <c>ToFraction</c> both refuse an
+    /// infinity, on the grounds that the type being asked for has nothing to hold it. An integer
+    /// has no more to hold it with, so rounding refuses it too.</para>
+    /// </summary>
+    private static double Roundable(double value, string what)
+    {
+        if (double.IsNaN(value))
+        {
+            throw new ArgumentException(
+                $"A value that is not a number has no whole number to be {what} to. Only a "
+                + "float has one at all, so there is nothing here to round.");
+        }
+
+        if (double.IsInfinity(value))
+        {
+            throw new ArgumentException(
+                $"An infinity has no whole number to be {what} to. A float carries on past "
+                + "every integer, so there is no whole number here for one to hold.");
+        }
+
+        return value;
+    }
+
     /// <summary>The whole number at or below this one.</summary>
     public static long Floor(decimal value) => (long)Math.Floor(value);
 
     /// <inheritdoc cref="Floor(decimal)"/>
-    public static long Floor(double value) => (long)Math.Floor(value);
+    public static long Floor(double value) => (long)Math.Floor(Roundable(value, "rounded down"));
 
     /// <inheritdoc cref="Floor(decimal)"/>
     public static long Floor(Fraction value) => Fraction.Floor(value);
@@ -59,7 +90,7 @@ public static class ProfiCMath
     public static long Ceiling(decimal value) => (long)Math.Ceiling(value);
 
     /// <inheritdoc cref="Ceiling(decimal)"/>
-    public static long Ceiling(double value) => (long)Math.Ceiling(value);
+    public static long Ceiling(double value) => (long)Math.Ceiling(Roundable(value, "rounded up"));
 
     /// <inheritdoc cref="Ceiling(decimal)"/>
     public static long Ceiling(Fraction value) => Fraction.Ceiling(value);
@@ -70,7 +101,8 @@ public static class ProfiCMath
     public static long Round(decimal value) => (long)Math.Round(value, MidpointRounding.AwayFromZero);
 
     /// <inheritdoc cref="Round(decimal)"/>
-    public static long Round(double value) => (long)Math.Round(value, MidpointRounding.AwayFromZero);
+    public static long Round(double value) =>
+        (long)Math.Round(Roundable(value, "rounded"), MidpointRounding.AwayFromZero);
 
     /// <inheritdoc cref="Round(decimal)"/>
     public static long Round(Fraction value) => Fraction.Round(value);

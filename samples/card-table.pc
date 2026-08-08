@@ -167,6 +167,21 @@ shared model Program
             default:
                 Console.WriteLine("not passing");
         end switch
+
+        ##
+            A label may name a constant rather than write the value out. What a label needs is
+            a value known while compiling, and that is exactly what a constant is — so the two
+            spellings mean the same thing and the named one says why the number is that number.
+        ##
+        constant integer full = 52;
+        integer dealt = 52;
+
+        switch dealt
+            case full:
+                Console.WriteLine("the whole deck was dealt");
+            default:
+                Console.WriteLine("some cards are left");
+        end switch
     end function
 
 end model

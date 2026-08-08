@@ -14,9 +14,12 @@ Reached through the name; there is no such thing as *a* `Math`.
 | [Rounding](#rounding) | `Floor` `Ceiling` `Round` |
 | [How far an answer can be trusted](#how-far-an-answer-can-be-trusted) | — |
 
-**Every member below exists in two forms**, one taking a `real` and one taking a `float`, and the
-argument settles which runs. Neither type can answer for the other — a real has no infinity and a
-float has no twenty-eight digits — so a single version would force a conversion at every call.
+**Every member that takes a number takes a `real` or a `float`**, in two forms the argument
+chooses between. Neither type can answer for the other — a real has no infinity and a float has no
+twenty-eight digits — so a single version would force a conversion at every call. Three sections
+go further and each says so: `Abs`, `Min` and `Max` take all four number types, the rounding
+members take the three that have a fractional part, and `Factorial` counts arrangements and so
+takes a whole number only.
 
 The `real` forms compute in binary and convert back, which rounds to fifteen significant digits:
 fewer than a float shows, and every one of them true.

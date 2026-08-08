@@ -1,0 +1,93 @@
+##
+    Asking a question of something that is not an answer.
+
+    This program does not compile. Six places take a condition, and every one of them wants a
+    boolean — not a number that happens to be non-zero, and not an optional that may hold one.
+
+    They are gathered here because they are one rule written six ways. A language that checked
+    the 'if' and let the 'while' through would be a language where the same mistake is caught
+    or not depending on which line it landed on.
+##
+
+shared model Program
+
+    function Main()
+        Program.AnIf();
+        Program.AWhile();
+        Program.AnUntil();
+        Program.AnIfExpression();
+        Program.AnOperand();
+        Program.ANegation();
+        Program.AnOptionalHoldingOne();
+    end function
+
+    # A statement's condition, which is the one most people meet first.
+    function AnIf()
+        integer count = 3;
+
+        if count
+            Console.WriteLine("counted");
+        end if
+    end function
+
+    # The same question, asked by a loop that tests before each turn.
+    function AWhile()
+        integer count = 3;
+
+        loop while count
+            Console.WriteLine("counting");
+        end loop
+    end function
+
+    # And by the loop that tests after one, which is closed by the condition rather than by 'end'.
+    function AnUntil()
+        integer count = 3;
+
+        loop
+            Console.WriteLine("counting");
+        until count
+    end function
+
+    ##
+        The expression form. It reads differently from the statement and is checked the same,
+        which is the point of writing it down beside the others.
+    ##
+    function AnIfExpression()
+        integer count = 3;
+        string said = if count then "some" else "none";
+
+        Console.WriteLine(said);
+    end function
+
+    # An operand of 'and' or 'or', where the condition is not the whole expression.
+    function AnOperand()
+        integer count = 3;
+
+        Console.WriteLine(count and true);
+    end function
+
+    ##
+        'not' answers differently (PC0304), because the question is not "is this a condition"
+        but "is this operator defined for this". The mistake is the same one and the reader is
+        told the same thing about it.
+    ##
+    function ANegation()
+        integer count = 3;
+
+        Console.WriteLine(not count);
+    end function
+
+    ##
+        An optional is refused for a reason of its own: it may hold the answer rather than be
+        one. 'Or' says what to use when it holds nothing, and a check proves it holds something
+        — either reaches a boolean the condition can take.
+    ##
+    function AnOptionalHoldingOne()
+        boolean? ready;
+
+        if ready
+            Console.WriteLine("ready");
+        end if
+    end function
+
+end model

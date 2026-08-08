@@ -16,3 +16,17 @@
   before: 7
   after:  0
   the copy is empty too, and reads as a plain value inside a check
+== writing one out ==
+  a fallback, printed:   0
+  a fallback, joined:    0
+  a fallback, in a hole: 0
+  proven, printed:       41
+  proven, joined:        41
+  proven, in a hole:     41
+== comparing them ==
+  41 and 41:            true
+  41 and nothing:       false
+  nothing and nothing:  true
+  41 and 7:             false
+  41 and plain 41:      true
+  nothing and plain 41: false

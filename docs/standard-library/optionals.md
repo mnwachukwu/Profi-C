@@ -99,8 +99,30 @@ races rather than the careful one.
 `T?[]` holds values that may each be absent, and has [four members of its own](sets.md#dropping-the-empties)
 for getting rid of them — `TrimAll` being the one that gives back a `T[]` so the unwrapping stops.
 
+## Comparing them
+
+`==` and `!=` work on an optional without any proof being needed, and they are the only things
+that do. Two optionals are equal when both hold nothing, or when both hold values that are equal;
+an optional compared against a plain value is equal when it holds one equal to it, so an absence
+equals no value at all.
+
+```
+integer? held = 41;
+integer? same = 41;
+integer? gone;
+
+Console.WriteLine(held == same);      # true
+Console.WriteLine(held == 41);        # true — the value widens to an optional
+Console.WriteLine(gone == 41);        # false
+Console.WriteLine(gone == held);      # false
+```
+
+Comparing does not read what is held, which is why it needs no check first. Everything that does
+read it — printing it, joining it to a string, reaching a member of it — still does.
+
 ## Also on every optional
 
-Nothing else. An optional does **not** answer [`ToString()` or `Equals()`](every-value.md): asking
-what an absence prints as, or whether two absences are equal, are questions with no answer worth
-guessing. Reach the value first.
+Nothing else. An optional does **not** answer [`ToString()` or `Equals()`](every-value.md).
+Both of those are members, and reaching a member of an optional means reaching through to what it
+holds, which is the one thing an optional will not do without proof. `==` is an operator rather
+than a member, which is why it answers where `Equals()` refuses.

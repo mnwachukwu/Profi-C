@@ -275,7 +275,59 @@ public sealed partial class TypeChecker
             RequireInteger(CheckExpression(loop.Step), loop.Step);
         }
 
+        CheckStepReachesTheBound(loop);
         CheckRepeatedly(loop.Body, NothingProven);
+    }
+
+    /// <summary>
+    /// <para>Whether a range loop's counter can arrive anywhere, where every part of it is known
+    /// while compiling.</para>
+    /// <para>Only where all three fold. A step worked out while the program runs may be anything,
+    /// and a loop written to run a number of times somebody supplies is an ordinary thing to
+    /// write — so nothing is said about one.</para>
+    /// <para>Neither of these stops a build. A step of zero runs forever, and a step pointing the
+    /// wrong way runs not at all; both are exact, predictable behavior rather than the absence of
+    /// any, which is what separates them from dividing by zero.</para>
+    /// </summary>
+    private void CheckStepReachesTheBound(ForStmt loop)
+    {
+        // No step written is a step of one. Read that way rather than skipped, since a loop
+        // counting the ordinary way to a bound behind it is the plainest form of this mistake
+        // and the one most likely to be written.
+        long step = 1;
+
+        if (loop.Step is not null)
+        {
+            if (ConstantFolder.TryFold(loop.Step, _model) is not long written)
+            {
+                return;
+            }
+
+            step = written;
+        }
+
+        if (step == 0)
+        {
+            Report(DiagnosticDescriptors.StepGoesNowhere, loop.Step!);
+            return;
+        }
+
+        if (ConstantFolder.TryFold(loop.Start, _model) is not long start
+            || ConstantFolder.TryFold(loop.Bound, _model) is not long bound)
+        {
+            return;
+        }
+
+        // Where the bound is one to stop before rather than one to reach, starting on it is
+        // already past it. Reaching it is what 'to' asks and what 'until' refuses.
+        bool arrives = start == bound
+            ? loop.IsInclusive
+            : (bound > start && step > 0) || (bound < start && step < 0);
+
+        if (!arrives)
+        {
+            Report(DiagnosticDescriptors.LoopRunsNoTimes, loop, start, step, bound);
+        }
     }
 
     private void RequireInteger(TypeSymbol type, SyntaxNode node)

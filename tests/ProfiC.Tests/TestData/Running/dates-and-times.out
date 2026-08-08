@@ -24,9 +24,13 @@
 == which came first ==
   august before december true
   december before august false
+  august is not after it true
   a day equals itself    true
+  CompareTo agrees       true
   nine before nine pm    true
   a minute is shorter    true
+  an hour is not shorter true
+  the day is still open  true
 == writing one down ==
   plain          2026-08-15 14:30:00
   just the date  2026-08-15

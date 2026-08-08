@@ -14,9 +14,10 @@ gives you something back rather than doing something.
 | [Trimming](#trimming) | `Trim` `TrimStart` `TrimEnd` |
 | [Case](#case) | `ToUpper` `ToLower` `Capitalize` |
 | [Splitting and joining](#splitting-and-joining) | `Split` `ToCharacters` |
-| [Reading a value back out](#reading-a-value-back-out) | `ToInteger` `ToReal` `ToBoolean` `ToFraction` |
+| [Reading a value back out](#reading-a-value-back-out) | `ToInteger` `ToReal` `ToFloat` `ToBoolean` `ToCharacter` `ToFraction` |
 | [Writing a number into text](#writing-a-number-into-text) | `Format` |
 | [String](#string) | `String.Empty` |
+| [Boolean and Character](#boolean-and-character) | `Boolean.Parse` `Character.Parse` |
 
 A string's members deliberately mirror [a set's](sets.md), so that the two read alike: a string is
 a run of characters, and asking how long it is, whether it contains something, or for a piece of
@@ -88,7 +89,7 @@ Console.WriteLine(word.Subset(3));         # puter
 |---|---|---|
 | `Insert(string what)` | `string` | `what` added to the end |
 | `InsertAt(integer where, string what)` | `string` | `what` put in at `where` |
-| `Remove(string what)` | `string` | The first `what` taken out |
+| `Remove(string what)` | `string` | Every `what` taken out |
 | `RemoveAt(integer where)` | `string` | The character at `where` taken out |
 | `Replace(string what, string with)` | `string` | Every `what` swapped for `with` |
 
@@ -98,8 +99,14 @@ string name = "Ada";
 Console.WriteLine(name.Insert(" Lovelace"));       # Ada Lovelace
 Console.WriteLine(name.InsertAt(1, "----"));       # A----da
 Console.WriteLine("banana".Replace("a", "o"));     # bonono
-Console.WriteLine("banana".Remove("na"));          # bana — the first one only
+Console.WriteLine("banana".Remove("na"));          # ba — both of them
 ```
+
+**`Remove` takes out every appearance, where [a set's `Remove`](sets.md#changing-it) takes out
+the first.** The two are not the same question: a set answers whether there was one to remove and
+alters the set it was called on, while a string cannot be altered at all, so removing from one
+builds a new string and there is nothing to report back. Taking the first only would need a
+position to say which, and that is what `RemoveAt` is for.
 
 ## Trimming
 

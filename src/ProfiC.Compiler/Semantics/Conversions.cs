@@ -242,8 +242,12 @@ public static class Conversions
         type is SetType set && ReferenceEquals(set.ElementType, PrimitiveType.Character);
 
     /// <summary>
-    /// The types a <c>switch</c> may examine. Reals and fractions are absent because
-    /// equality on them is a trap, which is exactly what a case label tests.
+    /// <para>The types a <c>switch</c> may examine.</para>
+    /// <para>What settles the list is that a case label is a constant, written out and compared
+    /// as it stands. A real is absent because equality on one is a trap, which is exactly what a
+    /// label tests. Everything else is absent because there is no way to write one as a label:
+    /// a model, a set and an optional have no constant form, and an optional has a state — the
+    /// absence — that no label could name even if it did.</para>
     /// </summary>
     public static bool IsSwitchable(TypeSymbol type) =>
         type.IsError

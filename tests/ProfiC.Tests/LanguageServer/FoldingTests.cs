@@ -69,18 +69,85 @@ public sealed class FoldingTests : LexerTestBase
     }
 
     [Test]
-    public void ADocumentedBlockHoldsWhatItsSummarySays()
+    public void ADocumentationCommentHoldsWhatItsSummarySays()
     {
-        Assert.That(At(Fold(Counting), 7).Held, Is.EqualTo("Counts up to a limit, and says so."));
+        Assert.That(At(Fold(Counting), 3).Held, Is.EqualTo("Counts up to a limit, and says so."));
     }
 
+    /// <summary>
+    /// A folded block leaves the line that opens it on screen, and that line names what went
+    /// away. Writing a second label beside it says nothing a reader cannot already read.
+    /// </summary>
     [Test]
-    public void AnythingElseHoldsHowMuchThereIs()
+    public void ABlockHoldsNothing()
     {
         Assert.Multiple(() =>
         {
-            Assert.That(At(Fold(Counting), 13).Held, Is.EqualTo("2 lines"));
-            Assert.That(At(Fold(Counting), 8).Held, Is.EqualTo("2 lines"));
+            Assert.That(At(Fold(Counting), 7).Held, Is.Empty, "the documented function");
+            Assert.That(At(Fold(Counting), 8).Held, Is.Empty, "the loop inside it");
+            Assert.That(At(Fold(Counting), 13).Held, Is.Empty, "the undocumented function");
+        });
+    }
+
+    /// <summary>
+    /// A comment is a comment whether or not it documents something, and the longest one in the
+    /// corpus is the heading over a file, which documents nothing at all.
+    /// </summary>
+    [Test]
+    public void ACommentThatDocumentsNothingFoldsAndHoldsItsOpeningProse()
+    {
+        const string Heading = """
+            ##
+                What this file is for, said in a sentence.
+
+                And at greater length below it, which is the part a fold hides.
+            ##
+
+            shared model Program
+
+                function Main()
+                    Console.WriteLine("hi");
+                end function
+
+            end model
+            """;
+
+        Folding.Range heading = At(Fold(Heading), 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(heading.Kind, Is.EqualTo(Folding.Comment));
+            Assert.That(heading.EndLine, Is.EqualTo(5));
+            Assert.That(heading.Held, Is.EqualTo("What this file is for, said in a sentence."));
+        });
+    }
+
+    /// <summary>
+    /// A run of line comments folds onto its own first sentence, which stays on screen. Repeating
+    /// it beside itself says nothing, so nothing is what it holds.
+    /// </summary>
+    [Test]
+    public void ARunOfLineCommentsFoldsAndHoldsNothing()
+    {
+        const string Aside = """
+            shared model Program
+
+                function Main()
+                    # What the line below does, said at a length that runs to a second line
+                    # and finishes there.
+                    Console.WriteLine("hi");
+                end function
+
+            end model
+            """;
+
+        Folding.Range aside = At(Fold(Aside), 4);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(aside.Kind, Is.EqualTo(Folding.Comment));
+            Assert.That(aside.EndLine, Is.EqualTo(5));
+            Assert.That(aside.Held, Is.Empty);
         });
     }
 
@@ -100,7 +167,7 @@ public sealed class FoldingTests : LexerTestBase
             end model
             """;
 
-        Assert.That(At(Fold(ThreeSentences), 6).Held, Is.EqualTo("Says hello."));
+        Assert.That(At(Fold(ThreeSentences), 3).Held, Is.EqualTo("Says hello."));
     }
 
     [Test]
@@ -270,7 +337,15 @@ public sealed class FoldingTests : LexerTestBase
                 Assert.That(range.Line, Is.GreaterThanOrEqualTo(1));
                 Assert.That(range.EndLine, Is.GreaterThan(range.Line));
                 Assert.That(range.EndLine, Is.LessThanOrEqualTo(source.LineCount));
-                Assert.That(range.Held, Is.Not.Empty);
+
+                // Only a comment says what it holds, and only where its opening line is bare.
+                if (range.Held.Length > 0)
+                {
+                    Assert.That(range.Kind, Is.EqualTo(Folding.Comment),
+                                $"{name}: the block at {range.Line} labels itself twice");
+                    Assert.That(source.GetLine(range.Line).Trim().ToString(), Is.EqualTo("##"),
+                                $"{name}: the comment at {range.Line} repeats its own first line");
+                }
             }
 
             // Every pair is one inside the other or clear of it. An editor cannot draw a control

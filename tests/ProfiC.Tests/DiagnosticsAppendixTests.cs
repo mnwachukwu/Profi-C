@@ -149,6 +149,63 @@ public sealed class DiagnosticsAppendixTests : LexerTestBase
     }
 
     /// <summary>
+    /// <para>Every row states the diagnostic's title and its message, and both are quoted from the
+    /// compiler rather than described.</para>
+    /// <para><b>This is the column that rotted.</b> The id, the severity and the counts were each
+    /// held to the compiler and each did their job; the message was printed and checked by nothing,
+    /// so changing one in <c>DiagnosticDescriptors</c> left the appendix saying the old thing and
+    /// the whole suite green. It is also the longest prose in the specification, and the part a
+    /// reader arrives at having already seen the real message in their terminal — so a difference
+    /// between the two reads as the document describing a different compiler.</para>
+    /// <para>Compared as written, placeholders and all. A row is a quotation, not a paraphrase.
+    /// </para>
+    /// </summary>
+    [Test]
+    public void TheAppendixQuotesEveryDiagnosticAsTheCompilerWordsIt()
+    {
+        string specification = File.ReadAllText(SpecificationPath);
+        List<string> wrong = [];
+
+        foreach (DiagnosticDescriptor descriptor in Descriptors())
+        {
+            // A cell may hold a bar, written '\|' so the table does not read it as a divider —
+            // which PC0333's '(1|2)' needs. So a cell runs to the first bar that is not escaped,
+            // and what it holds is unescaped before it is compared.
+            const string Cell = @"(?:\\.|[^|\\])*";
+
+            Match row = Regex.Match(
+                specification,
+                $@"^\| `{descriptor.Id}` \| \w+ \| (?<title>{Cell}) \| (?<message>{Cell}) \|$",
+                RegexOptions.Multiline);
+
+            if (!row.Success)
+            {
+                wrong.Add($"{descriptor.Id} has no appendix row of the expected four columns");
+                continue;
+            }
+
+            static string Written(Group cell) =>
+                cell.Value.Trim().Replace(@"\|", "|", StringComparison.Ordinal);
+
+            foreach ((string what, string documented, string actual) in new[]
+            {
+                ("title", Written(row.Groups["title"]), descriptor.Title),
+                ("message", Written(row.Groups["message"]), descriptor.MessageFormat),
+            })
+            {
+                if (!string.Equals(documented, actual, StringComparison.Ordinal))
+                {
+                    wrong.Add($"{descriptor.Id} {what}:{Environment.NewLine}"
+                              + $"      appendix: {documented}{Environment.NewLine}"
+                              + $"      compiler: {actual}");
+                }
+            }
+        }
+
+        Assert.That(wrong.Order(StringComparer.Ordinal), Is.Empty);
+    }
+
+    /// <summary>
     /// <para>The appendix counts the warnings and the opinions in two sentences, each saying its
     /// number in words.</para>
     /// <para>It is a second hand-written list of the same thing, and a count is the claim a

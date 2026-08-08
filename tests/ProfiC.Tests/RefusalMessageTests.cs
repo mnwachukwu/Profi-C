@@ -181,6 +181,17 @@ public sealed class RefusalMessageTests : LexerTestBase
          "An infinity has no real to become. A float carries on past its bounds and a real stops "
          + "at them, so there is no number here for it to hold."),
 
+        // Rounding is the third way out of a float, and refuses the same two values for the same
+        // reason: narrowing to a whole number saturates rather than failing, so an infinity would
+        // arrive as the largest integer and be indistinguishable from a count.
+        ("Console.WriteLine(Math.Round(Float.Infinity));", typeof(ArgumentException),
+         "An infinity has no whole number to be rounded to. A float carries on past every "
+         + "integer, so there is no whole number here for one to hold."),
+
+        ("Console.WriteLine(Math.Ceiling(Float.NotANumber));", typeof(ArgumentException),
+         "A value that is not a number has no whole number to be rounded up to. Only a float has "
+         + "one at all, so there is nothing here to round."),
+
         // And the third: a float larger than a real can carry.
         ("Console.WriteLine(Float.MaxValue.ToReal());", typeof(OverflowException),
          "This result is too large to hold. A real counts in tens up to about 79 followed by 27 "

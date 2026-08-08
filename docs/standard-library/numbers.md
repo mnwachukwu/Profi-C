@@ -16,7 +16,7 @@
 | [Members on a number](#members-on-a-number) | `Format` `ToFloat` `ToReal` `ToFraction` `Reciprocal` `Numerator` `Denominator` |
 | [Writing a number out](#writing-a-number-out) | `Format` |
 | [Fraction](#fraction) | `Fraction.Create` |
-| [What each type knows about itself](#what-each-type-knows-about-itself) | `Integer.MaxValue` `Integer.MinValue` `Real.MaxValue` `Real.MinValue` `Float.MaxValue` `Float.MinValue` |
+| [What each type knows about itself](#what-each-type-knows-about-itself) | `Integer.MaxValue` `Integer.MinValue` `Real.MaxValue` `Real.MinValue` `Float.MaxValue` `Float.MinValue` `Integer.Parse` `Real.Parse` `Float.Parse` `Fraction.Parse` |
 | [What only a float has](#what-only-a-float-has) | `Float.Infinity` `Float.NegativeInfinity` `Float.NotANumber` |
 | [Writing one too large](#writing-one-too-large) | — |
 | [The whole conversion chart](#the-whole-conversion-chart) | — |
@@ -253,13 +253,26 @@ happens, and a float is asked for by name.
 
 | Conversion | Can it fail? | What is lost |
 |---|---|---|
-| to `real`, to `fraction`, from `integer` | no | nothing |
-| `real → fraction` | **yes** — `PC0346` when written down, otherwise at run time | nothing; the parts can outgrow a whole number |
-| `real → float` | no | digits past the sixteenth |
-| `integer → float` | no | digits past the sixteenth, for very large numbers |
+| `integer → real`, `integer → fraction` | no | nothing |
+| `real → fraction` | **yes** — `PC0346` where the compiler can see the value, otherwise at run time | nothing; the parts can outgrow a whole number |
+| `real → float`, `integer → float` | no | digits past the sixteenth |
 | `fraction → real`, `fraction → float` | no | thirds and the like stop being exact |
 | `float → real` | **yes**, three ways | see below |
-| any `→ integer` | no | everything after the point, which is what you asked for |
+| `float → fraction` | **yes**, on an infinity or a value that is not a number | nothing otherwise — the ratio is exact |
+| `float → integer` | **yes**, on an infinity or a value that is not a number | everything after the point, which is what you asked for |
+| `real → integer`, `fraction → integer` | no | everything after the point, which is what you asked for |
+
+**Failing is not the same as being written out.** `real → fraction` is the one conversion that
+happens on its own and can still stop: it loses nothing, which is why it needs no asking, but a
+real carrying more places than a fraction's two whole numbers can hold has no fraction to become.
+Where the value is on the page the compiler says so; where it is not, the program stops on the
+line that converts.
+
+**A float is the only type any of this applies to.** A real and a fraction have no infinity and no
+not-a-number between them, so every value of either is a number and every conversion out of one
+either loses digits or loses nothing. A float has three values that name no number at all, and
+each of the three stops whichever way it is asked to leave: `ToReal`, `ToFraction`, and rounding
+to an `integer` all refuse them rather than inventing a number to stand in.
 
 ## Crossing between a `real` and a `float`
 
@@ -270,7 +283,7 @@ value in a way the table below states.
 |---|---|---|
 | `real.ToFloat()` | `float` | The same number in binary. **Always answers**: every real fits well inside a float's range. What is lost is digits — a real holds about twenty-eight and a float sixteen |
 | `float.ToReal()` | `real` | The same number in tens. **Can fail three ways**, and silently changes what it does convert |
-| `float.ToFraction()` | `fraction` | The ratio the float is really holding, which is the clearest look at what binary floating point does |
+| `float.ToFraction()` | `fraction` | The ratio the float is really holding, which is the clearest look at what binary floating point does. **Stops on an infinity or a value that is not a number**, neither of which is a ratio |
 
 A `real` needs no `ToFraction()`: it counts in tens, so it already is a fraction over a power of
 ten and widens on its own.

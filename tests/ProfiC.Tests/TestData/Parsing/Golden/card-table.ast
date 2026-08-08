@@ -237,3 +237,23 @@ CompilationUnit
             MemberExpr 'WriteLine'
               IdentifierExpr 'Console'
             LiteralExpr "not passing" [String]
+      VarDeclStmt 'full' [constant]
+        NamedTypeSyntax 'integer'
+        LiteralExpr 52 [Integer]
+      VarDeclStmt 'dealt'
+        NamedTypeSyntax 'integer'
+        LiteralExpr 52 [Integer]
+      SwitchStmt
+        IdentifierExpr 'dealt'
+        CaseGroup
+          IdentifierExpr 'full'
+          ExpressionStmt
+            CallExpr
+              MemberExpr 'WriteLine'
+                IdentifierExpr 'Console'
+              LiteralExpr "the whole deck was dealt" [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            LiteralExpr "some cards are left" [String]

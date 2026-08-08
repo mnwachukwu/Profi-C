@@ -845,7 +845,8 @@ Programs the compiler rejects:
 | [visibility.pc](samples/negatives/compile/visibility.pc) | Reaching a private and a protected member from outside, two visibilities on one declaration, and `protected` on a type |
 | [overriding.pc](samples/negatives/compile/overriding.pc) | `override` matching nothing, overriding a function that is not `virtual`, yielding something else, and hiding one without saying so |
 | [bits.pc](samples/negatives/compile/bits.pc) | `xor` on two booleans, bit operations on a real and a fraction, a shift past the width of an integer, and a word after `bitwise` that is neither `and` nor `or` |
-| [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `loop each` is walking |
+| [looping.pc](samples/negatives/compile/looping.pc) | Inserting into, removing from, and clearing the very sequence a `loop each` is walking, walking a number and an optional set, and four range loops that cannot work: a step of zero, a step pointing away, a bound already behind, and an exclusive bound already reached |
+| [conditions.pc](samples/negatives/compile/conditions.pc) | A number and an optional asked to be a condition, in all six places one is taken: `if`, `loop while`, `loop … until`, the `if` expression, an operand of `and`, and `not` |
 | [closures.pc](samples/negatives/compile/closures.pc) | Misreadings of what a kept function names — assigning to a loop counter, hiding a name it kept, and reaching for an instance a shared member does not have |
 | [ignoring.pc](samples/negatives/compile/ignoring.pc) | An `ignore` naming no diagnostic, one naming a diagnostic nothing here reports, and one trying to silence an error — which fires anyway |
 | [documenting.pc](samples/negatives/compile/documenting.pc) | A documented parameter the function does not take, `@yields:` on a function that yields nothing, a label written twice, and a doc above a statement |

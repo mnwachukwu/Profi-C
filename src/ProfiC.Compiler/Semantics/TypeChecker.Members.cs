@@ -494,6 +494,17 @@ public sealed partial class TypeChecker
                 Report(DiagnosticDescriptors.EmptyLineNeedsNoArgument, call.Arguments[0]);
             }
 
+            // Writing out something that has no text to write. Checked here for the same reason
+            // as the two below: these take a value written as accepting anything, which is right
+            // — anything with a rendering may be printed — and leaves the one type without one
+            // to be caught by name.
+            if (chosenBuiltIn.Id is BuiltInId.ConsoleWrite or BuiltInId.ConsoleWriteLine
+                && call.Arguments.Count == 1)
+            {
+                RequireSomethingToWrite(
+                    _model.GetType(call.Arguments[0]) ?? ErrorType.Instance, call.Arguments[0]);
+            }
+
             // Asking whether two values are the same object, which is a question a value has no
             // answer to. Checked here rather than by the parameter types because the two this
             // takes are written as accepting anything — which is right for everything else that

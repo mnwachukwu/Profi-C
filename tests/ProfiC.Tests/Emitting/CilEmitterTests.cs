@@ -932,10 +932,36 @@ public sealed class CilEmitterTests
 
                     Console.WriteLine(here.HasValue());
                     Console.WriteLine(gone.HasValue());
-                    Console.WriteLine(here);
-                    Console.WriteLine(gone);
                     Console.WriteLine(here.Or(-1));
                     Console.WriteLine(gone.Or("a fallback"));
+            """);
+
+    /// <summary>
+    /// <para>Comparing optionals, which is the one thing that reads one without narrowing it.</para>
+    /// <para><b>Every pair here answered differently in the two engines.</b> An optional is a value
+    /// holding a value, and the emitter compared the holders: two absences were the same object and
+    /// equal, two equal numbers were not the same object and were not. So a compiled program
+    /// answered that 5 does not equal 5, from a build that reported nothing.</para>
+    /// <para>Both spellings, because they take different routes. Against another optional both
+    /// sides are already the same shape; against a plain value the checker has to write the
+    /// widening down, and it is the writing down that was missing.</para>
+    /// </summary>
+    [Test]
+    public void OptionalsCompareByWhatTheyHold() =>
+        Agrees("""
+                    integer? held = 41;
+                    integer? same = 41;
+                    integer? other = 7;
+                    string? gone = Console.Read();
+                    string? alsoGone = Console.Read();
+
+                    Console.WriteLine(held == same);
+                    Console.WriteLine(held == other);
+                    Console.WriteLine(gone == alsoGone);
+                    Console.WriteLine(held == 41);
+                    Console.WriteLine(held == 7);
+                    Console.WriteLine(gone == "a value");
+                    Console.WriteLine(held != other);
             """);
 
     /// <summary>
@@ -1021,7 +1047,7 @@ public sealed class CilEmitterTests
 
                     Console.WriteLine(held.Count);
                     Console.WriteLine(held);
-                    Console.WriteLine(held[1]);
+                    Console.WriteLine(held[1].Or(-1));
             """);
 
     // ---- Sets -------------------------------------------------------------------------------

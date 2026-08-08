@@ -2,4 +2,7 @@ optionals.pc(27,25): error PC0329: This is an integer?, which may be empty. Use 
 optionals.pc(30,27): error PC0306: An Account? has no member named 'Describe'.
 optionals.pc(33,27): error PC0303: '+' is not defined for an integer? and an integer. Convert one side, or use a member.
 optionals.pc(37,31): error PC0306: An Account? has no member named 'balance'.
-optionals.pc(43,9): error PC0252: This is already optional, so the second '?' says nothing new. Write one '?'.
+optionals.pc(43,27): error PC0349: An integer? may hold nothing, so there is nothing to write for it. Say what to write instead with 'Or', or prove it holds a value and write that.
+optionals.pc(44,39): error PC0349: An integer? may hold nothing, so there is nothing to write for it. Say what to write instead with 'Or', or prove it holds a value and write that.
+optionals.pc(45,35): error PC0349: An integer? may hold nothing, so there is nothing to write for it. Say what to write instead with 'Or', or prove it holds a value and write that.
+optionals.pc(50,9): error PC0252: This is already optional, so the second '?' says nothing new. Write one '?'.

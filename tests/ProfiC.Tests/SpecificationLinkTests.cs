@@ -92,6 +92,48 @@ public sealed class SpecificationLinkTests : LexerTestBase
     }
 
     /// <summary>
+    /// <para>Every section reference points at the section its label names.</para>
+    /// <para>The two halves of `[§11.4](#114-reaching-other-code)` are written by hand and drift
+    /// apart on their own: renumbering a section updates the anchors, because a wrong one does not
+    /// land anywhere and the test above catches it, while the labels keep saying the old number and
+    /// nothing notices. A reader following one is then told to look at §10.4 and taken to §11.4 —
+    /// and the one who scrolls instead of clicking arrives at a section about something else.</para>
+    /// <para>Read across the documents rather than the specification alone: all five that had come
+    /// apart were in `side-by-side.md`, which the tests above never open.</para>
+    /// </summary>
+    [Test]
+    public void EverySectionReferencePointsWhereItsLabelSays()
+    {
+        List<string> wrong = [];
+
+        foreach (string document in new[]
+                 { "language-spec.md", "side-by-side.md", "language-summary.md" })
+        {
+            string path = System.IO.Path.Combine(RepositoryRoot, "docs", document);
+            string text = File.ReadAllText(path);
+
+            foreach (Match link in Regex.Matches(text, @"\[§(\d+(?:\.\d+)*[a-z]?)\]\(#([^)]+)\)"))
+            {
+                string label = link.Groups[1].Value;
+                string anchor = link.Groups[2].Value;
+
+                // The anchor for "### 11.4 Reaching other code" is "114-reaching-other-code", so
+                // the label's digits without their dots are what it has to open with.
+                string digits = label.Replace(".", string.Empty, StringComparison.Ordinal);
+
+                if (!anchor.StartsWith($"{digits}-", StringComparison.Ordinal)
+                    && !string.Equals(anchor, digits, StringComparison.Ordinal))
+                {
+                    wrong.Add($"{document}: '{link.Value}' is labelled §{label} and goes to "
+                              + $"'{anchor}'");
+                }
+            }
+        }
+
+        Assert.That(wrong.Order(StringComparer.Ordinal), Is.Empty);
+    }
+
+    /// <summary>
     /// <para>No section reference is left as bare text.</para>
     /// <para>A reader following one by scrolling is doing by hand what a link does, so a bare
     /// one is a link somebody forgot rather than a style.</para>

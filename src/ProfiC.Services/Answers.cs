@@ -38,8 +38,11 @@ public static class Answers
     /// <para>Answered so that an editor folds the language's blocks rather than guessing from
     /// indentation, which is what it does for a language nothing told it about — and which gets a
     /// block wrong wherever a line is wrapped or a continuation is indented.</para>
-    /// <para>The protocol carries no room for what a folded block holds, so what arrives here is
-    /// the range and its kind. Saying what was hidden is the editor's to draw.</para>
+    /// <para>A comment carries what it says as <c>collapsedText</c>, which is the protocol's own
+    /// word for what to show in place of what was hidden. No editor draws it yet — a client
+    /// announces whether it can, and the ones there are announce that they cannot — so an editor
+    /// that wants it asks for these ranges itself and draws its own. The field is what it is
+    /// named in the protocol either way, so the day one does honor it, it is already there.</para>
     /// </summary>
     public static JsonArray Folds(CompilationUnit unit, SourceText source)
     {
@@ -47,11 +50,21 @@ public static class Answers
 
         return
         [
-            .. Folding.Of(unit, source).Select(range => (JsonNode)new JsonObject
+            .. Folding.Of(unit, source).Select(range =>
             {
-                ["startLine"] = Math.Max(0, range.Line - 1),
-                ["endLine"] = Math.Max(0, range.EndLine - 1),
-                ["kind"] = range.Kind,
+                JsonObject one = new()
+                {
+                    ["startLine"] = Math.Max(0, range.Line - 1),
+                    ["endLine"] = Math.Max(0, range.EndLine - 1),
+                    ["kind"] = range.Kind,
+                };
+
+                if (range.Held.Length > 0)
+                {
+                    one["collapsedText"] = range.Held;
+                }
+
+                return (JsonNode)one;
             }),
         ];
     }

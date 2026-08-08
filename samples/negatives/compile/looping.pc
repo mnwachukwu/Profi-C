@@ -20,6 +20,12 @@ shared model Program
         Program.Growing();
         Program.Shrinking();
         Program.EmptyingIt();
+        Program.WalkingWhatIsNotASequence();
+        Program.WalkingOneThatMayNotBeThere();
+        Program.AStepThatStaysPut();
+        Program.AStepPointingAway();
+        Program.ABoundAlreadyBehind();
+        Program.AnExclusiveBoundAlreadyReached();
         Console.WriteLine(Program.NothingEndsIt());
     end function
 
@@ -75,6 +81,78 @@ shared model Program
         end loop
 
         Console.WriteLine(amounts.Count);
+    end function
+
+    ##
+        A 'loop each' walks a set or a string, and nothing else. A number is the one people
+        reach for, meaning "this many times" — which is what the range loop below the refusal
+        is for, and what the message names.
+    ##
+    function WalkingWhatIsNotASequence()
+        loop each turn in 3
+            Console.WriteLine(turn);
+        end loop
+    end function
+
+    ##
+        A step of zero never moves the counter, so the loop runs forever. PC0413 is an opinion
+        for the same reason PC0406 above it is: running forever is a shape a program may mean,
+        and this one is exact about what it does rather than unpredictable. What it is not is
+        anything somebody wrote on purpose with a bound in front of it.
+    ##
+    function AStepThatStaysPut()
+        loop for at = 1 to 10 stepby 0
+            Console.WriteLine(at);
+        end loop
+    end function
+
+    ##
+        A step pointing away from the bound, so the body never runs at all. That is a warning
+        rather than an opinion: the lines inside were written to be run, and nothing about the
+        loop's shape is a matter of taste. An editor dims it, which is what it does with
+        everything nothing reaches.
+
+        Counting down is not in question — 'loop for at = 10 to 1 stepby -1' is the ordinary
+        way to write it, and it is the step and the bound disagreeing that is reported.
+    ##
+    function AStepPointingAway()
+        loop for at = 1 to 10 stepby -1
+            Console.WriteLine(at);
+        end loop
+    end function
+
+    ##
+        The same thing with no step written, which is a step of one. This is the plainest form
+        of it and the likeliest to be typed: a bound behind where the counting starts.
+    ##
+    function ABoundAlreadyBehind()
+        loop for at = 5 to 3
+            Console.WriteLine(at);
+        end loop
+    end function
+
+    ##
+        And with 'until', where the bound is one to stop before rather than one to reach.
+        Starting on it is already past it, so the body never runs — where the same two numbers
+        written with 'to' would run once.
+    ##
+    function AnExclusiveBoundAlreadyReached()
+        loop for at = 5 until 5
+            Console.WriteLine(at);
+        end loop
+    end function
+
+    ##
+        An optional holding a set is not a set, for the same reason it is not anything it
+        holds. The walk would have to decide what to do about the absence, and the two answers
+        — walk nothing, or stop — are different enough that the program has to say which.
+    ##
+    function WalkingOneThatMayNotBeThere()
+        integer[]? amounts;
+
+        loop each amount in amounts
+            Console.WriteLine(amount);
+        end loop
     end function
 
 end model

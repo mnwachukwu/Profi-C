@@ -1,4 +1,4 @@
-switching.pc(21,16): error PC0315: A switch cannot examine a real. Equality on it is unreliable, so a case label could never be trusted to match.
+switching.pc(21,16): error PC0315: A switch cannot examine a real. A case label compares an integer, a character, a string, a boolean or an enumeration member, and nothing else.
 switching.pc(28,18): error PC0325: A case label must be known while compiling.
 switching.pc(36,18): error PC0326: The value 1 is already handled by another case.
 switching.pc(42,18): error PC0300: Cannot use a string where a Suit is expected. Nothing converts one to the other.

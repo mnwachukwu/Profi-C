@@ -9,10 +9,14 @@ that the specification never describes more than the compiler does.
 
 Everything described here is implemented and runs.
 
-Profi-C currently runs on a tree-walking interpreter (`pc run`). A CIL back end is planned
-and does not exist; nothing in this document depends on which of the two executes a program,
-and where a rule is enforced — while checking or while running — is stated wherever it
-matters.
+Profi-C has two back ends. A tree-walking interpreter runs a program where it stands (`pc run`),
+and a CIL emitter writes an assembly the .NET runtime executes (`pc build`). Nothing in this
+document depends on which of the two runs a program, and where a rule is enforced — while
+checking or while running — is stated wherever it matters.
+
+The interpreter is the definition. Where the two disagree the emitter has the fault, and the
+whole sample corpus is run through both and compared on every build so that a disagreement is
+found rather than reported.
 
 Three files sit beside this one and answer different questions. [grammar.ebnf](grammar.ebnf)
 gives the surface syntax as a set of productions; it is written for people and is not read by
@@ -189,8 +193,8 @@ The differences that matter most to a C# reader:
   reference-typed return maps to `T?` unless it is documented as never absent, so what a Profi-C
   program sees is an empty optional. The curated wrappers therefore already do what an automatic
   binder would do, and no signature changes when one arrives.
-- **`==` is deep by default** on models and sets, comparing structurally with cycle-safe
-  bisimulation. `Reference.Equals(a, b)` spells out C#'s default behavior.
+- **`==` is deep by default** on models, sets, and optionals, comparing structurally with
+  cycle-safe bisimulation. `Reference.Equals(a, b)` spells out C#'s default behavior.
 - **`this.` is mandatory**, not conventional.
 - **Assignment is a statement**, so `if x = 5` is a syntax error rather than a warning.
 
@@ -380,8 +384,7 @@ line with it**:
 ```
 
 The body is indented under the marks by convention rather than by rule — the compiler reads a
-block the same either way. Indenting it lets an editor fold the comment, since editors fold by
-indentation without being configured.
+block the same either way, and an editor the compiler answers folds it either way.
 
 That closing rule settles two things at once.
 
@@ -557,6 +560,11 @@ through `Format` itself.
 **An interpolated string is a `string`**, whatever it holds, and means exactly the
 concatenation it looks like: each hole becomes `ToString()`, or `Format(pattern)` where one was
 named, and the pieces are joined with `+`.
+
+**So a hole must hold something with text**, which is the same requirement the join it becomes
+already has. An optional answers no `ToString()`, so an optional in a hole is `PC0349` — as it
+is joined to a string, or written out with `Console.Write`. Say what to write with `Or`, or
+prove presence and write the value.
 
 A block string does **not** interpolate, per [§1.5](#15-literals).
 
@@ -1533,6 +1541,10 @@ end switch
 A label must be a constant (`PC0325`) and no two may be the same (`PC0326`). The value being
 switched on must be one a case can name (`PC0315`).
 
+A label may be written out or may name a `constant`, since a `constant` is a value known while
+compiling and that is what a label requires. Naming one puts the reason for the number beside
+the number.
+
 **A `switch` over an enumeration that leaves members out and writes no `default` is a
 warning** (`PC0337`), naming the ones with no case. This is what makes adding a member to an
 enumeration safe: every switch that has to change says so, at the place it has to change,
@@ -1573,6 +1585,14 @@ is an error; a `loop each` takes its element's type from the sequence. Both are 
 construct rather than inferred from a value, which is why neither needs `let`. A range loop's
 bounds and step must themselves be integers (`PC0317`), and its counter cannot be assigned to
 inside the loop (`PC0206`).
+
+**A range loop that cannot work is reported where every part of it is known while compiling.** A
+step of zero never advances, so the loop runs forever (`PC0413`); a step carrying the counter away
+from its bound means the body never runs at all (`PC0414`), as does a bound already reached where
+`until` says to stop before it. Neither stops a build: each names exact behavior rather than the
+absence of any, which is what separates them from dividing by zero. Where any of the three is
+worked out while the program runs, nothing is said — a loop counting a number of times somebody
+supplies is ordinary.
 
 **`loop ... until` tests after the body, so the body always runs at least once.** That is the
 whole reason it exists, and it has a consequence the others do not share: whatever the body
@@ -1979,6 +1999,12 @@ Reading a `T?` where a `T` is wanted is rejected by `PC0329`, whose message name
 ways out rather than only reporting the mismatch.
 
 `Or` is the usual choice. `Value` is for where absence is impossible and the program says so.
+
+**Writing one out is a reading too**, and is rejected the same way (`PC0349`). Printing an
+optional, joining it to a string, and putting it in a hole all ask it for its text, and an
+optional has none — what an absence prints as is a question with no answer worth guessing. A
+set of optionals is not itself one, so printing that is fine, and each element that holds
+nothing shows as `empty`.
 
 ### 8.2 Narrowing
 
@@ -2428,6 +2454,13 @@ values all the same, since every model converts to one and every function to the
 Every other name here is reached through the name itself; writing `new Math()` is reported
 (`PC0328`).
 
+**`DateTime`, `Date`, `Time` and `TimeSpan` order their own values**, so `<`, `>`, `<=` and
+`>=` may be written on two of the same type. Each is its `CompareTo` against zero, so the
+operator and the member cannot give different answers. No other model is ordered: two values of
+a declared type have no order to be in, and one taken from the fields would mean whatever order
+they happened to be declared in, so `PC0303` refuses it. Ordering and equality are separate
+questions — `==` works on every model ([§7.4](#74-equality)) and orders nothing.
+
 ### 11.1 The reference
 
 **The members themselves are in [docs/standard-library/](standard-library/README.md)**, whose
@@ -2835,9 +2868,10 @@ the program means.
 Nothing is wrong with a program that has an opinion against it, and reading them in order is a
 reasonable way to learn what the language expects of a reader.
 
-**Warnings are few, and each one names its fix.** Eighteen exist: more quotes in a row than close
+**Warnings are few, and each one names its fix.** Nineteen exist: more quotes in a row than close
 a block string, a type shadowing one the language provides, a test that is always true, a test
-that is always false, a `switch` leaving enumeration members unhandled, unreachable code, a local
+that is always false, a `switch` leaving enumeration members unhandled, unreachable code, a range
+loop whose step points away from its bound so the body never runs, a local
 nothing ever reads, a private member nothing reaches, a statement that works a value out and drops
 it, a `catch` naming the one exception nothing catches, an import naming an absolute path, imports
 that form a circle, three about an `ignore` that cannot work — one naming no diagnostic, one
@@ -2847,7 +2881,7 @@ above nothing that can carry it, one naming a parameter that is not there, and o
 value never given back.
 
 **Opinions are the language having taste, and nearly every one says a written token has no
-effect.** Fourteen exist: an unnecessary `@` on a name, a `shared` on a member of a shared model
+effect.** Fifteen exist: an unnecessary `@` on a name, a `shared` on a member of a shared model
 that is shared already, a type on a range loop's counter, a lambda parameter type the surrounding
 code already gave, `using Standard;` where Standard is already in scope, a namespace repeating a
 name it sits inside, an `entry` where only one program exists to choose, `virtual` beside
@@ -2855,10 +2889,11 @@ name it sits inside, an `entry` where only one program exists to choose, `virtua
 nothing, a `base()` reaching the parent a constructor reaches anyway, a doc that says the same
 thing twice, and a call whose result nothing keeps.
 
-The fourteenth is the exception to that shape: a `loop` with no condition that nothing inside can
-break, yield, or throw out of. Nothing written there is redundant — something is missing — and the
-language says so as an opinion because a program meaning to run until it is stopped from outside
-is one somebody may write.
+The last two are the exception to that shape, and they are the same exception twice: a `loop` with
+no condition that nothing inside can break, yield, or throw out of, and a range loop with a step of
+zero, which never reaches its bound. Nothing written in either is redundant — something is missing
+or wrong — and the language says so as an opinion because a program meaning to run until it is
+stopped from outside is one somebody may write.
 
 ### PC0000 to PC0099
 
@@ -2882,8 +2917,8 @@ is one somebody may write.
 | `PC0016` | error | Block string delimiters differ in length | {0} quotes do not close a block string opened with {1}, so this is text and the block runs on. Open it with '{2}', or close it with '{3}'. |
 | `PC0017` | error | This base has no digits | '{0}' says the number that follows is {1}, and none follows. |
 | `PC0018` | error | This digit is not in the base | '{0}' is not a {1} digit, which is {2}. |
-| `PC0019` | error | This exponent has no digits | An 'e' says how many places to move the point, so it needs digits after it â€” '1e3' is 1000.0. |
-| `PC0020` | error | This separator has no digits after it | An '_' in a number separates digits, so more have to follow it â€” '1_000' is a thousand. |
+| `PC0019` | error | This exponent has no digits | An 'e' says how many places to move the point, so it needs digits after it — '1e3' is 1000.0. |
+| `PC0020` | error | This separator has no digits after it | An '_' in a number separates digits, so more have to follow it — '1_000' is a thousand. |
 | `PC0021` | error | A name cannot begin with a digit | '{0}' is written against the number before it. A name begins with a letter or an underscore, and nothing in the language puts two values side by side. |
 | `PC0022` | warning | This 'ignore' names no diagnostic | '{0}' is not something this compiler reports, so this line silences nothing. Check the identifier against the one in the message. |
 | `PC0023` | warning | That diagnostic cannot be ignored | '{0}' stops compilation, and only a warning or an opinion can be ignored. This line cannot do anything; what it names has to be fixed. |
@@ -2913,8 +2948,8 @@ is one somebody may write.
 | `PC0114` | error | This word is reserved | '{0}' is a reserved word, so it cannot be a name on its own. Write '@{0}' to use it as one. |
 | `PC0115` | opinion | This parameter's type is already known | The surrounding code already says what '{0}' holds, so writing its type says it twice. Leave the type out. |
 | `PC0116` | error | A function's type is written with 'delegate' | 'Function' takes no parentheses. For a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'. |
-| `PC0117` | error | A function's type is written with 'delegate' | 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' â€” 'integer delegate(string)' takes a string and yields an integer. |
-| `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' | 'bitwise' says which of two operations follows, and {0} is neither. Write 'bitwise and' or 'bitwise or' â€” 'xor', 'shiftleft' and 'shiftright' need no word before them. |
+| `PC0117` | error | A function's type is written with 'delegate' | 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer. |
+| `PC0118` | error | Only 'and' or 'or' may follow 'bitwise' | 'bitwise' says which of two operations follows, and {0} is neither. Write 'bitwise and' or 'bitwise or' — 'xor', 'shiftleft' and 'shiftright' need no word before them. |
 | `PC0119` | error | 'let' declares a local, not a field | 'let' works inside a function, where the value it holds is written beside it. A field is read far from here, so it says its type: '{0} {1} = ...'. |
 | `PC0120` | error | A loop begins with 'loop' | Every loop opens with 'loop', so this is written 'loop {0}'. The word after 'loop' says which kind: 'for', 'each', 'while', or nothing at all. |
 
@@ -2953,7 +2988,7 @@ is one somebody may write.
 | `PC0229` | error | Standard belongs to the language | 'Standard' is the namespace the language's own types live in, and a program may not add to it. Name this namespace something else. |
 | `PC0230` | opinion | Standard is already in scope | Every file reaches Standard without saying so, so this line brings nothing. |
 | `PC0231` | error | This belongs above any namespace | '{0}' is a statement about the whole file, so it goes above every namespace in it. Move it to the top. |
-| `PC0232` | opinion | This namespace repeats one around it | '{0}' already sits inside a namespace of that name, so its types are reached as '{0}.{0}.â€¦'. Rename this one if that was not meant. |
+| `PC0232` | opinion | This namespace repeats one around it | '{0}' already sits inside a namespace of that name, so its types are reached as '{0}.{0}.…'. Rename this one if that was not meant. |
 | `PC0233` | error | Nothing can be of this type | '{0}' has no instances, so nothing can ever be held here. {1} |
 | `PC0234` | error | Which program starts? | These sources declare more than one Program: {0}. Write 'entry {1}' in the project file to say which one begins. |
 | `PC0235` | error | No such program | '{0}' is not a Program among these sources. {1} |
@@ -2961,7 +2996,7 @@ is one somebody may write.
 | `PC0237` | error | This name is already in use here | '{0}' is already the name of something in an enclosing scope, so this one would hide it. Give it a name of its own. |
 | `PC0238` | error | This function needs a body | '{0}' ends at the semicolon, so nothing says what it does. Give it a body, or mark it 'abstract' to leave it to whatever extends this model. |
 | `PC0239` | error | An abstract function has no body | '{0}' is abstract, so every model extending this one writes what it does and this body would never run. End the declaration at ';', or drop the 'abstract'. |
-| `PC0240` | error | Only an abstract model may leave a function open | '{0}' is abstract, but '{1}' can be constructed â€” so an instance of it would reach a function nothing ever wrote. Mark '{1}' abstract too. |
+| `PC0240` | error | Only an abstract model may leave a function open | '{0}' is abstract, but '{1}' can be constructed — so an instance of it would reach a function nothing ever wrote. Mark '{1}' abstract too. |
 | `PC0241` | error | An inherited function is still open | '{0}' can be constructed, so it must write every function left open above it. Still open: {1}. Override each, or mark '{0}' abstract. |
 | `PC0242` | opinion | An abstract function is already virtual | '{0}' is abstract, which is what offers it for overriding, so 'virtual' says nothing further. Remove it. |
 | `PC0243` | error | This changes the sequence being walked | '{0}' is the sequence this 'loop each' is walking, and '{1}' changes it. Collect the changes into another set, or count with a range loop. |
@@ -2970,7 +3005,7 @@ is one somebody may write.
 | `PC0246` | warning | This describes a value that is never given back | '{0}' yields nothing, so there is no value for '@yields:' to describe. |
 | `PC0247` | opinion | This is documented twice | '{0}' already has a line above this one, and the first is the one that shows. For a second paragraph, leave a blank line and keep writing. |
 | `PC0248` | error | 'base' has to come first | 'base(...)' must be the first statement in a constructor, so that '{0}' is fully built before anything here runs. |
-| `PC0249` | error | 'this' is not available yet | '{1}' is still being built here, so '{0}' cannot be reached from a field's starting value. Give '{2}' its value in a constructor instead. |
+| `PC0249` | error | '{0}' is not available yet | '{1}' is still being built here, so '{0}' cannot be reached from a field's starting value. Give '{2}' its value in a constructor instead. |
 | `PC0250` | error | Nothing here builds the parent | '{0}' extends '{1}', which cannot be built without being given something. Begin this constructor with 'base(...)': '{1}' takes {2}. |
 | `PC0251` | opinion | This 'base()' changes nothing | '{0}' is built before this constructor's body whether or not 'base()' is written, so this line does what would happen without it. Keep it if saying so helps. |
 | `PC0252` | error | An optional of an optional | This is already optional, so the second '?' says nothing new. Write one '?'. |
@@ -3000,7 +3035,7 @@ is one somebody may write.
 | `PC0312` | error | Index must be an integer | An index must be an integer, and this is {0}. Write a whole number. |
 | `PC0313` | error | Cannot infer the type of an empty set | The type of an empty set cannot be worked out from the set alone. Write the type, as in 'integer[] values = {};'. |
 | `PC0314` | error | Set elements have different types | The elements of a set must have one type, and these are {0} and {1}. Write the set's type, as in 'Shape[] values = {{...}};'. |
-| `PC0315` | error | Cannot switch on this type | A switch cannot examine {0}. Equality on it is unreliable, so a case label could never be trusted to match. |
+| `PC0315` | error | Cannot switch on this type | A switch cannot examine {0}. A case label compares an integer, a character, a string, a boolean or an enumeration member, and nothing else. |
 | `PC0316` | error | Cannot iterate this type | 'loop each' needs a set or a string, and this is {0}. Ask it for one, or count with 'loop for'. |
 | `PC0317` | error | Range loop needs integers | A range loop counts with integers, and this is {0}. Count with whole numbers, or walk it with 'loop each'. |
 | `PC0318` | error | This function yields nothing | '{0}' declares no result, so 'yield' cannot carry a value. Declare a result, or write 'yield;'. |
@@ -3034,6 +3069,7 @@ is one somebody may write.
 | `PC0346` | error | This real has no fraction to become | {0} needs a numerator or denominator larger than an integer holds. Up to eighteen places after the point will convert. |
 | `PC0347` | error | A value has no identity to compare | {0} is a value, so asking whether two of them are the same object has no answer. Use '==' to compare what they hold. |
 | `PC0348` | error | This member needs a value | '{0}' needs a value on the left of the dot, not the type name '{1}'. |
+| `PC0349` | error | An optional has no text to write | {0} may hold nothing, so there is nothing to write for it. Say what to write instead with 'Or', or prove it holds a value and write that. |
 
 ### PC0400 to PC0499
 
@@ -3052,6 +3088,8 @@ is one somebody may write.
 | `PC0410` | warning | Nothing uses this | Nothing uses '{0}'. Remove it, or widen it past 'private'. |
 | `PC0411` | warning | Nothing happens here | This works a value out and drops it, and nothing else happens. Remove the line. |
 | `PC0412` | opinion | This call's result is dropped | Nothing keeps what this yields. Keep it, or give the function a version that yields nothing. |
+| `PC0413` | opinion | This step never advances | A step of zero leaves the counter where it started, so this loop runs forever. Give it a step that moves, or write 'loop' where running forever is meant. |
+| `PC0414` | warning | This loop cannot run | Counting from {0} by {1} never reaches {2}, so nothing inside this loop runs. Check which way the step points. |
 
 ### PC0500 to PC0599
 

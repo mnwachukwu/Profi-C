@@ -4,21 +4,29 @@
    WHAT THIS FILE IS. A description of the language's surface syntax, written
    for people and kept in step with the parser by hand.
 
-   WHAT IT IS NOT. It is not read by anything. No part of the compiler, the
-   build, or the test suite opens this file, and no parser is generated from
-   it. Profi-C is parsed by hand-written recursive descent -- one method per
-   production, in src/ProfiC.Compiler/Parsing -- with expressions handled by
-   precedence climbing against the table in src/ProfiC.Compiler/Ast/
-   Operators.cs. That table, not the one printed below, is what the compiler
-   consults; the one below restates it for a reader.
+   WHAT IT IS NOT. No parser is generated from it. Profi-C is parsed by
+   hand-written recursive descent -- one method per production, in
+   src/ProfiC.Compiler/Parsing -- with expressions handled by precedence
+   climbing against the table in src/ProfiC.Compiler/Ast/Operators.cs. That
+   table, not the one printed below, is what the compiler consults; the one
+   below restates it for a reader.
 
-   So this file can drift from the compiler without anything failing. What
-   actually pins the syntax is the sample corpus, and above all
+   So the productions here can drift from the compiler without anything
+   failing. What actually pins the syntax is the sample corpus, and above all
    samples/reference/tour.pc, which holds nearly every construct here exactly
    once. Every sample is checked against a recorded token stream and a
    recorded tree on every build, and the tests assert that between them the
    samples reach every node the parser can build. Change a production here
    and nothing breaks; change one there and the goldens do.
+
+   The precedence table is the exception, and the tests do read it. It
+   restates a table in code rather than describing the syntax, so it can be
+   flatly wrong rather than merely out of date, and it is checked against
+   Operators.cs on every build: the order of the levels, which operators share
+   one, which way each groups, and that no operator is missing from it. A
+   level number is written there and nowhere else -- the prose names operators
+   instead, so that renumbering cannot strand a number somewhere down the
+   page.
 
    "Nearly", because the tour opens with block namespaces and so holds no
    file-scoped one. samples/namespaces.pc writes that form, with blocks
@@ -130,9 +138,10 @@ Statement      = Block | IfStmt | LoopStmt
 IfStmt         = "if" Expr Body { "else" "if" Expr Body } [ "else" Body ]
                  "end" "if" ;
 
-(* Every loop opens with "loop", and the word after it says which kind. Three close
-   with "end" "loop"; the fourth is closed by "until", which carries the condition
-   and so is doing the closing itself. *)
+(* Every loop opens with "loop". A word after it says which of the first three it is;
+   nothing after it leaves two, told apart by what closes them. Four close with "end"
+   "loop"; the fifth is closed by "until", which carries the condition and so is doing
+   the closing itself. *)
 LoopStmt       = WhileStmt | ForStmt | ForEachStmt | UntilStmt | ForeverStmt ;
 
 WhileStmt      = "loop" "while" Expr Body "end" "loop" ;
@@ -320,8 +329,8 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
 
    "^" raises to a power. It is the only right-associative infix operator, so
    "2 ^ 3 ^ 2" is 2 ^ (3 ^ 2) rather than (2 ^ 3) ^ 2, matching how the
-   notation is read on paper. It also binds tighter than the leading minus at
-   level 8, so "-2 ^ 2" is -(2 ^ 2) and not (-2) ^ 2 -- again as written by
+   notation is read on paper. It also binds tighter than the leading minus,
+   so "-2 ^ 2" is -(2 ^ 2) and not (-2) ^ 2 -- again as written by
    hand. Its two sides are not the same kind of thing: the exponent counts
    multiplications rather than being a second value of the base's type, which
    is what allows a fraction base to stay exact. See the language
@@ -339,11 +348,16 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    Type suffixes nest and read left to right. "Node?[]" is a set of
    optionals; "Node[]?" is an optional set. Both are legal and they differ.
 
-   Every loop opens with "loop", and the word after it chooses among the four:
-   "for" counts, "each" walks, "while" tests at the top, and nothing at all
-   tests at the bottom. The first three close with "end" "loop"; UntilStmt is
-   the only construct in the language not closed by "end", because the word
-   carrying its condition is what closes it.
+   Every loop opens with "loop", and the word after it chooses among five:
+   "for" counts, "each" walks, and "while" tests at the top. Nothing at all
+   leaves the remaining two, which no word tells apart -- an "until" after the
+   body tests at the bottom, and an "end" "loop" in its place tests nowhere.
+   So the parser reads the body before it knows which of the two it has, which
+   costs nothing: they share a body and differ only in what follows it.
+
+   Four close with "end" "loop"; UntilStmt is the only construct in the
+   language not closed by "end", because the word carrying its condition is
+   what closes it.
 
    A qualified "end" is verified. The parser records which construct opened
    and rejects a mismatched closer with a diagnostic naming both.
@@ -395,11 +409,13 @@ NewExpr        = "new" Identifier "(" [ ArgList ] ")" ;
    or a ";" already separates the two, so no ambiguity can arise. At those
    four sites, almost every token that can begin a statement terminates the
    preceding expression correctly on its own, because identifiers, "this",
-   "base", every literal, "{", "new", "not", and every keyword
-   have no infix binding power.
+   "base", every literal, "{", "new", "not", and every keyword that opens a
+   statement have no infix binding power. The keywords that do have one --
+   "and", "or", "xor", "is", "as", "bitwise", "shiftleft", "shiftright" --
+   open no statement, so none of them ever stands at this boundary.
 
-   Two tokens do not. "(" is the call operator at level 10 and "-" is infix
-   at level 6, so both continue an expression rather than starting a new
+   Two tokens do not. "(" is the call operator and "-" is infix as well as
+   prefix, so both continue an expression rather than starting a new
    statement. Without a rule, this
 
        if c

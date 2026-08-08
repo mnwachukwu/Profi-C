@@ -468,16 +468,12 @@ public sealed partial class CilEmitter
     }
 
     /// <summary>
-    /// <para>Equality, which in this language compares what a value holds rather than where it
-    /// lives.</para>
-    /// <para>Three sequences, because the answer is the same and the way to it is not. A number
-    /// or a boolean is one instruction. A string is a call, since two equal strings are rarely
-    /// the same object. Anything else — a model, a set — is the runtime's deep walk, and
-    /// <c>ceq</c> there would compare references and find two equal values different.</para>
-    /// </summary>
-    /// <summary>
     /// <para><c>==</c> and <c>/=</c>: the two operands, then whichever comparison their types
     /// call for.</para>
+    /// <para>Equality in this language compares what a value holds rather than where it lives.
+    /// A number or a boolean is one instruction; a string is a call, since two equal strings are
+    /// rarely the same object; and anything the runtime walks is the runtime's own comparison,
+    /// where <c>ceq</c> would compare references and find two equal values different.</para>
     /// <para><b>A deep comparison is a call taking two objects</b>, so a value type going into
     /// one is boxed on the way — a moment, a day, a length of time. Pushed unboxed the assembly
     /// does not verify at all, which is a loud failure and the good case; what makes this worth
@@ -709,8 +705,14 @@ public sealed partial class CilEmitter
     /// the mistake easy — <c>ceq</c> would compile, run, and answer false for two points at the
     /// same place.</para>
     /// </summary>
+    /// <summary>
+    /// <para>Whether a value is one the runtime compares rather than the processor.</para>
+    /// <para>An optional is here because it is a value holding a value: two of them are equal
+    /// when what they hold is, and <c>ceq</c> would ask instead whether they are the same object
+    /// — which two absences are and two equal numbers are not.</para>
+    /// </summary>
     private bool IsComparedDeeply(Expression expression) =>
-        _model.GetType(expression) is ModelSymbol or StructureSymbol or SetType;
+        _model.GetType(expression) is ModelSymbol or StructureSymbol or SetType or OptionalType;
 
     private void EmitConversion(ConversionExpr conversion)
     {

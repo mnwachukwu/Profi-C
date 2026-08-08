@@ -37,6 +37,10 @@ shared model Program
         # An operator has to be defined for both sides.
         let bad = true * 2;
 
+        # Ordering belongs to the types that order themselves. Two shapes have no order,
+        # and taking one from the fields would mean whatever order they were declared in.
+        let sooner = new Circle() < new Circle();
+
         # A parent does not convert to a child.
         Circle c = new Shape();
 
@@ -48,6 +52,11 @@ shared model Program
 
         # Division by a literal zero is refused before the program runs.
         Console.WriteLine(1 / 0);
+
+        # And by a zero that was given a name. A constant is a value known while compiling,
+        # which is the whole of what it means, so naming one hides nothing from this check.
+        constant integer none = 0;
+        Console.WriteLine(1 / none);
 
         # 'function' declares one or makes one on the spot; 'delegate' writes the type of one.
         # Reaching for the declaring word here is the most natural mistake in the language,

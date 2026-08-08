@@ -162,10 +162,12 @@ public sealed class DocComment
     }
 
     /// <summary>
-    /// A line with its comment marks and indentation taken off. The marks are stripped rather
-    /// than required, so the block and line forms read the same way.
+    /// What one line of a comment says, with its marks and indentation taken off. The marks are
+    /// stripped rather than required, so the block and line forms read the same way. A line
+    /// carrying nothing but marks comes back empty.
     /// </summary>
-    private static string Bare(string line) => line.Trim().TrimStart('#').Trim();
+    public static string Bare(string line) =>
+        line is null ? string.Empty : line.Trim().TrimStart('#').Trim();
 
     /// <summary>
     /// <para>Splits a label from its text, or answers that the line carries none.</para>

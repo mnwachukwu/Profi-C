@@ -14,16 +14,20 @@ namespace ProfiC.Services;
 /// makes and for the same reason. Folding is wanted most in a long file being worked on, which is
 /// exactly when the file does not compile. The parser recovers, so the blocks around a mistake
 /// still fold.</para>
+/// <para>Comments come from the scanner rather than the tree, since none of them is syntax and no
+/// node holds one.</para>
 /// </summary>
 public static class Folding
 {
     /// <summary>
     /// <para>One foldable stretch, with the line it opens on and the line it closes on.</para>
     /// <para>Lines are one-based, as everything a reader sees in Profi-C is.</para>
-    /// <para><see cref="Held"/> is what an editor can show in place of what it hid. A block whose
-    /// declaration is documented says what its documentation says; anything else says how much
-    /// there is. Both beat the bare mark an editor draws on its own, which says only that
-    /// something is there.</para>
+    /// <para><see cref="Held"/> is what an editor can show in place of what it hid, and is empty
+    /// where there is nothing worth saying. <b>Only a comment carries one.</b> A folded block
+    /// leaves the line that opens it on screen, and that line names what went away — a second
+    /// label beside <c>function TwiceTheFirstEven(integer[] values)</c> tells a reader nothing
+    /// they cannot already see. A folded comment leaves the mark that opens it and nothing
+    /// else.</para>
     /// </summary>
     public sealed record Range(int Line, int EndLine, string Kind, string Held);
 
@@ -39,33 +43,20 @@ public static class Folding
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(source);
 
-        // What each documented line says about itself, so that a block can be labeled with its
-        // author's own words rather than with a count of what is inside it.
-        Dictionary<int, string> summaries = [];
-
-        foreach (DocComment comment in unit.Documentation)
-        {
-            if (comment.Summary.Length > 0)
-            {
-                summaries[comment.Documents] = Shortened(comment.Summary);
-            }
-        }
-
         List<Range> found = [];
 
-        foreach (DocComment comment in unit.Documentation)
+        // Every comment, not only the ones that document something. What a comment says decides
+        // what a reader is shown in place of it; it does not decide whether it folds.
+        foreach (SourceSpan comment in unit.Comments)
         {
-            Add(found, comment.Span, source, Comment, comment.Summary.Length > 0
-                ? Shortened(comment.Summary)
-                : string.Empty);
+            Add(found, comment, source, Comment, Says(source, comment));
         }
 
         foreach (SyntaxNode node in Everything(unit))
         {
             if (Folds(node))
             {
-                Add(found, node.Span, source, Block,
-                    summaries.GetValueOrDefault(node.Span.Start.Line, string.Empty));
+                Add(found, node.Span, source, Block, string.Empty);
             }
         }
 
@@ -108,7 +99,7 @@ public static class Folding
     /// draws a control that does nothing.
     /// </summary>
     private static void Add(
-        List<Range> found, SourceSpan span, SourceText source, string kind, string summary)
+        List<Range> found, SourceSpan span, SourceText source, string kind, string held)
     {
         int line = span.Start.Line;
         int end = source
@@ -120,15 +111,57 @@ public static class Folding
             return;
         }
 
-        found.Add(new Range(
-            line,
-            end,
-            kind,
-            summary.Length > 0 ? summary : Counted(end - line)));
+        found.Add(new Range(line, end, kind, held));
     }
 
-    /// <summary>How much a fold hides, for a block whose declaration says nothing about itself.</summary>
-    private static string Counted(int lines) => lines == 1 ? "1 line" : $"{lines} lines";
+    /// <summary>
+    /// <para>What a comment says, in one line, or nothing where a reader can already read it.</para>
+    /// <para><b>Only a comment that opens on a bare line has anything to say here.</b> Folding
+    /// leaves the opening line on screen, and a run of line comments folds onto its own first
+    /// sentence — repeating it beside itself says nothing. A block comment opens with its marks
+    /// and closes with them, so folding one hides every word in it.</para>
+    /// <para>What it says is its <c>@summary:</c> where it documents something, and its opening
+    /// prose otherwise. That prose is joined to the first blank line before it is shortened, so a
+    /// sentence that wrapped is cut where it ends rather than where it happened to break.</para>
+    /// </summary>
+    private static string Says(SourceText source, SourceSpan span)
+    {
+        int start = span.Start.Offset;
+        int end = Math.Min(start + span.Length, source.Text.Length);
+
+        string[] lines = source.Text[start..end].Split('\n');
+
+        if (DocComment.Bare(lines[0]).Length > 0)
+        {
+            return string.Empty;
+        }
+
+        if (DocComment.TryRead(source, start, end, out DocComment? documented))
+        {
+            return Shortened(documented.Summary);
+        }
+
+        List<string> opening = [];
+
+        foreach (string line in lines)
+        {
+            string bare = DocComment.Bare(line);
+
+            if (bare.Length == 0)
+            {
+                if (opening.Count > 0)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            opening.Add(bare);
+        }
+
+        return Shortened(string.Join(' ', opening));
+    }
 
     /// <summary>
     /// <para>A summary as one line, short enough to sit at the end of the line it labels.</para>

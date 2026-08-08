@@ -87,7 +87,7 @@ class Circle : Shape
 ```
 
 `extends` rather than `:`, and there is no interface list after it — see
-[§10.1](#111-shape-and-abstraction). A type with no visibility word is `internal`, exactly as in
+[§11.1](#111-shape-and-abstraction). A type with no visibility word is `internal`, exactly as in
 C#.
 
 ### A shared model, which is where a program starts
@@ -220,7 +220,7 @@ touching object state says so. There is no `private` keyword: a member with no v
 private.
 
 The `+=` on the C# side is not stylistic: Profi-C has no compound assignment, so accumulation is
-always written out. See [§9](#10-where-c-does-it-better).
+always written out. See [§10](#10-where-c-does-it-better).
 
 ### Abstract, virtual, override
 
@@ -236,6 +236,8 @@ abstract model Shape
 end model
 
 model Square extends Shape
+    public real side;
+
     public override real function Area()
         yield this.side * this.side;
     end function
@@ -254,6 +256,8 @@ abstract class Shape
 
 class Square : Shape
 {
+    public double side;
+
     public override double Area() => this.side * this.side;
 }
 ```
@@ -451,9 +455,11 @@ foreach (int grade in grades)
 }
 ```
 
-A `loop each` reads its sequence's length once, when the loop begins, so changing that sequence
-inside its own loop is refused (`PC0243`) rather than left to mean something subtle. C# permits
-the same code and throws partway through instead.
+A `loop each` reads its sequence's length once, when the loop begins, so a change made during one
+cannot move with it. Where the compiler can see the change it refuses the program (`PC0243`);
+where it cannot — a set reached through a parameter, say — the change raises
+`SequenceChangedException` as C# does. The difference is that the cases worth catching are caught
+before the program runs, rather than every one of them being left to run time.
 
 C#'s walks anything implementing `IEnumerable`, including things computed lazily as they are
 read. Profi-C's walks a set.
@@ -597,7 +603,7 @@ fallthrough was used for. A `switch` over an enumeration that omits a member is 
 
 C# switches on far more: type patterns, property patterns, ranges, `when` guards, and a switch
 *expression* yielding a value. Profi-C switches on a constant. See
-[§9](#10-where-c-does-it-better).
+[§10](#10-where-c-does-it-better).
 
 ---
 
@@ -664,7 +670,7 @@ One collection type, ordered and growable, with no array/list distinction to lea
 The cost is the rest of C#'s collections: arrays, `List<T>`, `Dictionary<K,V>`, `HashSet<T>`,
 `Queue<T>`, `Stack<T>` and the interfaces behind them. A program wanting a key-to-value lookup has
 one in C#; Profi-C has a set and no way to write another. See
-[§10.2](#112-data).
+[§11.2](#112-data).
 
 ### A set of sets
 
@@ -774,7 +780,11 @@ model InsufficientFunds extends Exception
     end function
 end model
 
-throw new InsufficientFunds("short by 150");
+shared model Program
+    function Main()
+        throw new InsufficientFunds("short by 150");
+    end function
+end model
 ```
 
 **C#**
@@ -785,7 +795,10 @@ class InsufficientFunds : Exception
     public InsufficientFunds(string message) : base(message) { }
 }
 
-throw new InsufficientFunds("short by 150");
+class Program
+{
+    static void Main() => throw new InsufficientFunds("short by 150");
+}
 ```
 
 There is no bare `throw` to re-raise: the caught exception is a value with a name, so it is thrown
@@ -802,11 +815,11 @@ nothing else, so there is no stack trace for a program to read, keep or lose.
 **Profi-C**
 
 ```
-namespace Store.Pricing;
-
 import "models/Product.pc";
 
 using Store.Models;
+
+namespace Store.Pricing;
 ```
 
 **C#**
@@ -818,6 +831,10 @@ namespace Store.Pricing;
 
 using Store.Models;
 ```
+
+**The order is the other way round from C#.** Both are statements about the whole file, so both
+go above the `namespace` rather than inside it (`PC0231`) — where C# puts its `using` directives
+under a file-scoped namespace and scopes them to it.
 
 `namespace` also takes a block form. `import` is the piece C# has no counterpart to: it names a
 file to compile alongside this one, where C# leaves that to the project. `using Standard;` is an
@@ -852,8 +869,10 @@ Double braces rather than single, because a single brace is common in text and d
 rarer than escaping it. A run of three or more quotation marks holds text exactly as written, and
 the closing run's indentation comes off every line.
 
-C#'s interpolation carries alignment and format specifiers inline — `{total,10:C2}` right-aligns
-a currency in ten columns. Profi-C writes that as a `Format` call.
+A format specifier is written inline in both, after a colon: C#'s `{total:C2}` is
+`{{total:C2}}`, and the patterns are .NET's in both places. What C# has and Profi-C does not is
+the alignment before it — `{total,10:C2}` right-aligns a currency in ten columns, which here is a
+call to [`Format`](standard-library/numbers.md#writing-a-number-out) and then padding the result.
 
 ### Comments and documentation
 
@@ -1018,7 +1037,7 @@ needs a different approach.
 Three of the absences above are **deferred rather than rejected**: generics, interfaces, and
 properties, together with a key-to-value type and rectangular sets. They are the prerequisites
 for binding directly to .NET, which is what would turn the last row of
-[§10.4](#114-reaching-other-code) from "nothing" into "everything".
+[§11.4](#114-reaching-other-code) from "nothing" into "everything".
 
 Direct binding arrives over several versions. Each stage stands on its own as a language feature
 rather than being justified only by the binder:

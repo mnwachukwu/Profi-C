@@ -21,6 +21,14 @@ CompilationUnit
         CallExpr
           MemberExpr 'WhatAClosureTakesAway'
             IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WritingOneOut'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'ComparingThem'
+            IdentifierExpr 'Program'
     FunctionDecl 'Describe'
       ParameterDecl 'value'
         OptionalTypeSyntax
@@ -326,6 +334,173 @@ CompilationUnit
             MemberExpr 'WriteLine'
               IdentifierExpr 'Console'
             LiteralExpr "  the copy is empty too, and reads as a plain value inside a check" [String]
+    FunctionDecl 'WritingOneOut'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== writing one out ==" [String]
+      VarDeclStmt 'held'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        LiteralExpr 41 [Integer]
+      VarDeclStmt 'gone'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Nothing'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'Write'
+            IdentifierExpr 'Console'
+          LiteralExpr "  a fallback, printed:   " [String]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          CallExpr
+            MemberExpr 'Or'
+              IdentifierExpr 'gone'
+            LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  a fallback, joined:    " [String]
+            CallExpr
+              MemberExpr 'Or'
+                IdentifierExpr 'gone'
+              LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          InterpolatedStringExpr '  a fallback, in a hole: ' ''
+            InterpolationPart
+              CallExpr
+                MemberExpr 'Or'
+                  IdentifierExpr 'gone'
+                LiteralExpr 0 [Integer]
+      IfStmt
+        CallExpr
+          MemberExpr 'HasValue'
+            IdentifierExpr 'held'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'Write'
+              IdentifierExpr 'Console'
+            LiteralExpr "  proven, printed:       " [String]
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            IdentifierExpr 'held'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            BinaryExpr '+'
+              LiteralExpr "  proven, joined:        " [String]
+              IdentifierExpr 'held'
+        ExpressionStmt
+          CallExpr
+            MemberExpr 'WriteLine'
+              IdentifierExpr 'Console'
+            InterpolatedStringExpr '  proven, in a hole:     ' ''
+              InterpolationPart
+                IdentifierExpr 'held'
+    FunctionDecl 'ComparingThem'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          LiteralExpr "== comparing them ==" [String]
+      VarDeclStmt 'held'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        LiteralExpr 41 [Integer]
+      VarDeclStmt 'same'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        LiteralExpr 41 [Integer]
+      VarDeclStmt 'other'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        LiteralExpr 7 [Integer]
+      VarDeclStmt 'gone'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Nothing'
+            IdentifierExpr 'Program'
+      VarDeclStmt 'alsoGone'
+        OptionalTypeSyntax
+          NamedTypeSyntax 'integer'
+        CallExpr
+          MemberExpr 'Nothing'
+            IdentifierExpr 'Program'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  41 and 41:            " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'held'
+                IdentifierExpr 'same'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  41 and nothing:       " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'held'
+                IdentifierExpr 'gone'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  nothing and nothing:  " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'gone'
+                IdentifierExpr 'alsoGone'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  41 and 7:             " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'held'
+                IdentifierExpr 'other'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  41 and plain 41:      " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'held'
+                LiteralExpr 41 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  nothing and plain 41: " [String]
+            ParenthesizedExpr
+              BinaryExpr '=='
+                IdentifierExpr 'gone'
+                LiteralExpr 41 [Integer]
     FunctionDecl 'Nothing'
       OptionalTypeSyntax
         NamedTypeSyntax 'integer'

@@ -20,18 +20,21 @@ public sealed partial class Parser
     private readonly SourceText _source;
     private readonly DiagnosticBag _diagnostics;
     private readonly IReadOnlyList<DocComment> _documentation;
+    private readonly IReadOnlyList<SourceSpan> _comments;
     private int _position;
 
     private Parser(
         SourceText source,
         IReadOnlyList<Token> tokens,
         DiagnosticBag diagnostics,
-        IReadOnlyList<DocComment> documentation)
+        IReadOnlyList<DocComment> documentation,
+        IReadOnlyList<SourceSpan> comments)
     {
         _source = source;
         _tokens = tokens;
         _diagnostics = diagnostics;
         _documentation = documentation;
+        _comments = comments;
     }
 
     /// <summary>Scans and parses a source file.</summary>
@@ -43,25 +46,26 @@ public sealed partial class Parser
         Lexer lexer = new(source, diagnostics);
         List<Token> tokens = lexer.Scan();
 
-        return new Parser(source, tokens, diagnostics, lexer.Documentation)
+        return new Parser(source, tokens, diagnostics, lexer.Documentation, lexer.Comments)
             .ParseCompilationUnit();
     }
 
     /// <summary>
-    /// Parses an already-scanned token stream. Documentation comes from the scanner, so one
-    /// scanned elsewhere passes what it found or the file documents nothing.
+    /// Parses an already-scanned token stream. Comments and what they document come from the
+    /// scanner, so one scanned elsewhere passes what it found or the file has neither.
     /// </summary>
     public static CompilationUnit Parse(
         SourceText source,
         IReadOnlyList<Token> tokens,
         DiagnosticBag diagnostics,
-        IReadOnlyList<DocComment>? documentation = null)
+        IReadOnlyList<DocComment>? documentation = null,
+        IReadOnlyList<SourceSpan>? comments = null)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(tokens);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        return new Parser(source, tokens, diagnostics, documentation ?? [])
+        return new Parser(source, tokens, diagnostics, documentation ?? [], comments ?? [])
             .ParseCompilationUnit();
     }
 

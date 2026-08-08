@@ -49,7 +49,7 @@ public sealed partial class Parser
         }
 
         return new CompilationUnit(
-            SpanFrom(start), usings, imports, declarations, _source, _documentation);
+            SpanFrom(start), usings, imports, declarations, _source, _documentation, _comments);
     }
 
     /// <summary>

@@ -818,10 +818,18 @@ public sealed class InterpreterTests
         """),
         Is.EqualTo("11 12 21 22 \n"));
 
+    /// <summary>
+    /// <para>The bound is held in a local rather than written out, and that is deliberate: the
+    /// rule under test is what the loop does, which holds however the bound arrives, and a bound
+    /// the compiler can fold is one it reports (<c>PC0414</c>) before this ever runs. Written as
+    /// a literal, this would be a test of a program the language warns about.</para>
+    /// </summary>
     [Test]
     public void ALoopWhoseBoundIsAlreadyPassedNeverRuns() => Assert.That(
         RunBody("""
-                loop for i = 5 to 1
+                integer last = 1;
+
+                loop for i = 5 to last
                     Console.WriteLine("unreachable");
                 end loop
                 Console.WriteLine("done");
@@ -2131,4 +2139,50 @@ public sealed class InterpreterTests
             end model
             """)),
         Is.EqualTo(new[] { "Plain" }));
+
+    // ---- Ordering the types that order themselves -------------------------------------------
+
+    /// <summary>
+    /// <para>A relational operator on a moment answers what its <c>CompareTo</c> answers.</para>
+    /// <para>Asserted against <c>CompareTo</c> rather than against <c>true</c> and <c>false</c>,
+    /// because the two must give one answer and that is the whole claim: the operator is lowered
+    /// into the member, so what is being checked is that the lowering kept the sense of it. The
+    /// bounds either side of equal are where a mistake would hide — <c>&lt;=</c> written as
+    /// <c>&lt;</c> is right everywhere except on two values that match.</para>
+    /// </summary>
+    [TestCase("new Date(2026, 1, 1)", "new Date(2026, 2, 1)")]
+    [TestCase("new Date(2026, 2, 1)", "new Date(2026, 1, 1)")]
+    [TestCase("new Date(2026, 1, 1)", "new Date(2026, 1, 1)")]
+    [TestCase("new Time(9, 0)", "new Time(21, 0)")]
+    [TestCase("new Time(9, 0)", "new Time(9, 0)")]
+    [TestCase("TimeSpan.FromMinutes(1.0)", "TimeSpan.FromHours(1.0)")]
+    [TestCase("TimeSpan.FromHours(1.0)", "TimeSpan.FromHours(1.0)")]
+    [TestCase("new DateTime(2026, 1, 1, 9, 0, 0)", "new DateTime(2026, 1, 1, 17, 0, 0)")]
+    [TestCase("new DateTime(2026, 1, 1, 9, 0, 0)", "new DateTime(2026, 1, 1, 9, 0, 0)")]
+    public void AMomentComparesTheWayItsCompareToDoes(string first, string second) => Assert.That(
+        Lines(RunBody($$"""
+                let a = {{first}};
+                let b = {{second}};
+
+                Console.WriteLine((a < b) == (a.CompareTo(b) < 0));
+                Console.WriteLine((a > b) == (a.CompareTo(b) > 0));
+                Console.WriteLine((a <= b) == (a.CompareTo(b) <= 0));
+                Console.WriteLine((a >= b) == (a.CompareTo(b) >= 0));
+                Console.WriteLine((a == b) == (a.CompareTo(b) == 0));
+            """)),
+        Is.EqualTo(new[] { "true", "true", "true", "true", "true" }));
+
+    /// <summary>
+    /// <para>Exactly the four moment types order themselves.</para>
+    /// <para>The checker reads this out of the catalog rather than from a list, so the set can
+    /// change without anybody meaning it to: giving some other built-in a <c>CompareTo</c> would
+    /// hand it four operators at the same time. Written out here so that would be a decision
+    /// rather than a side effect.</para>
+    /// </summary>
+    [Test]
+    public void OnlyTheMomentsOrderThemselves() => Assert.That(
+        BuiltIns.AllTypeNames
+                .Where(name => BuiltInMembers.IsOrdered(BuiltInTypes.Of(name)))
+                .Order(StringComparer.Ordinal),
+        Is.EqualTo(new[] { "Date", "DateTime", "Time", "TimeSpan" }));
 }

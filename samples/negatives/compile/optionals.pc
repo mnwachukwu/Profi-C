@@ -37,6 +37,13 @@ shared model Program
             Console.WriteLine(found.balance);
         end if
 
+        # Writing one out, in all three ways there are to ask a value for its text. An absence
+        # has no text, so none of them has an answer — and each is refused where it is written
+        # rather than at the call the last of them becomes while the program is being lowered.
+        Console.WriteLine(maybe);
+        Console.WriteLine("total: " + maybe);
+        Console.WriteLine("total: {{maybe}}");
+
         # One '?' and no more. A second says nothing new, and the two ways of being empty it
         # would make cannot be told apart: nothing an optional offers sees past the first
         # level, so "absent" and "present, holding an absence" answer alike to every question.

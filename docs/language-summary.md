@@ -77,6 +77,7 @@ Four differences to know before anything else, stated in
 - **`yield` means return.** C# uses the word for iterators; Profi-C's has nothing to do with them.
 - **There is no `null`.** Optionals replace it, and reading one the compiler cannot prove present
   does not compile.
-- **`==` is deep by default** on models and sets, comparing structurally rather than by identity.
+- **`==` is deep by default** on models, sets, and optionals, comparing structurally rather than
+  by identity.
 - **`this.` is mandatory**, and so is `ModelName.` for a shared member. A bare name reaches only
   locals and parameters.

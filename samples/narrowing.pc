@@ -21,6 +21,8 @@ shared model Program
         Program.EveryWayThrough();
         Program.WhereItStops();
         Program.WhatAClosureTakesAway();
+        Program.WritingOneOut();
+        Program.ComparingThem();
     end function
 
     # ---- Checking it -------------------------------------------------------------------
@@ -209,6 +211,78 @@ shared model Program
         else
             Console.WriteLine("  the copy is empty too, and reads as a plain value inside a check");
         end if
+    end function
+
+    # ---- Writing one out ---------------------------------------------------------------
+
+    ##
+        @summary: The three ways of asking for text, on a value that may not be there.
+
+        @remarks: Printing a value, joining it to a string, and putting it in a hole are one
+        act asked three ways, and all three ask for the same thing: text. An optional has
+        none, so all three are refused (PC0349) — see
+        samples/negatives/compile/optionals.pc.
+
+        There are two ways to have text anyway, and both appear here. 'Or' says what to write
+        when there is nothing, which needs no proof and is the shorter of the two. A check
+        proves presence, and inside it the name is a plain value that writes itself out like
+        any other.
+    ##
+    function WritingOneOut()
+        Console.WriteLine("== writing one out ==");
+
+        integer? held = 41;
+        integer? gone = Program.Nothing();
+
+        # Saying what to write instead. No proof is needed, so this reads the same whether or
+        # not there is anything there. The label is written first and separately, so what
+        # follows it is a value printed on its own.
+        Console.Write("  a fallback, printed:   ");
+        Console.WriteLine(gone.Or(0));
+        Console.WriteLine("  a fallback, joined:    " + gone.Or(0));
+        Console.WriteLine("  a fallback, in a hole: {{gone.Or(0)}}");
+
+        # Proving it instead. Inside the check the name is an integer, so all three are
+        # written the way they would be for any number.
+        if held.HasValue()
+            Console.Write("  proven, printed:       ");
+            Console.WriteLine(held);
+            Console.WriteLine("  proven, joined:        " + held);
+            Console.WriteLine("  proven, in a hole:     {{held}}");
+        end if
+    end function
+
+    # ---- Comparing them ----------------------------------------------------------------
+
+    ##
+        @summary: What '==' answers about an optional, which needs no proof at all.
+
+        @remarks: Comparing is the one thing that reads an optional without narrowing it first.
+        Two of them are equal when both hold nothing, or when both hold equal values; and one
+        compared against a plain value is equal when it holds a value equal to it. An absence
+        equals no value, which is what makes the second line below false rather than an error.
+
+        This is why 'HasValue' is not the only way to ask about an absence. It is the way to
+        prove one so the value can be read, and comparing does not read the value.
+    ##
+    function ComparingThem()
+        Console.WriteLine("== comparing them ==");
+
+        integer? held = 41;
+        integer? same = 41;
+        integer? other = 7;
+        integer? gone = Program.Nothing();
+        integer? alsoGone = Program.Nothing();
+
+        Console.WriteLine("  41 and 41:            " + (held == same));
+        Console.WriteLine("  41 and nothing:       " + (held == gone));
+        Console.WriteLine("  nothing and nothing:  " + (gone == alsoGone));
+        Console.WriteLine("  41 and 7:             " + (held == other));
+
+        # Against a plain value, which reads the same way. The value widens to an optional and
+        # the comparison is the one above, so nothing here needs unwrapping either.
+        Console.WriteLine("  41 and plain 41:      " + (held == 41));
+        Console.WriteLine("  nothing and plain 41: " + (gone == 41));
     end function
 
     # @summary: An optional holding nothing, for the examples above.

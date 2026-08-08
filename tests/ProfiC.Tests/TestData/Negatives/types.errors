@@ -2,11 +2,13 @@ types.pc(21,5): error PC0119: 'let' works inside a function, where the value it 
 types.pc(31,25): error PC0300: Cannot use a string where an integer is expected. Write 'ToInteger()', or 'Integer.Parse(...)'.
 types.pc(34,18): error PC0301: A fraction does not become a real on its own, because the result would surprise you. Write 'ToReal()' to ask for it.
 types.pc(38,19): error PC0303: '*' is not defined for a boolean and an integer. Convert one side, or use a member.
-types.pc(41,20): error PC0300: Cannot use a Shape where a Circle is expected. Nothing converts one to the other.
-types.pc(44,19): error PC0300: Cannot use an integer where a Model is expected. A value is not a Model; there is no boxing here.
-types.pc(47,24): error PC0305: The branches of an if expression must have the same type, and these are an integer and a string. Make them agree, or write an 'if' statement.
-types.pc(50,31): error PC0324: This divides by zero.
-types.pc(55,17): error PC0117: 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.
-types.pc(59,9): error PC0116: 'Function' takes no parentheses. For a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'.
-types.pc(59,36): error PC0300: Cannot use an integer delegate(integer) where a delegate(integer) is expected. Nothing converts one to the other.
-types.pc(66,44): error PC0347: An integer is a value, so asking whether two of them are the same object has no answer. Use '==' to compare what they hold.
+types.pc(42,22): error PC0303: '<' is not defined for a Circle and a Circle. Convert one side, or use a member.
+types.pc(45,20): error PC0300: Cannot use a Shape where a Circle is expected. Nothing converts one to the other.
+types.pc(48,19): error PC0300: Cannot use an integer where a Model is expected. A value is not a Model; there is no boxing here.
+types.pc(51,24): error PC0305: The branches of an if expression must have the same type, and these are an integer and a string. Make them agree, or write an 'if' statement.
+types.pc(54,31): error PC0324: This divides by zero.
+types.pc(59,31): error PC0324: This divides by zero.
+types.pc(64,17): error PC0117: 'function' declares a function or makes one on the spot. To write the type of one, use 'delegate' — 'integer delegate(string)' takes a string and yields an integer.
+types.pc(68,9): error PC0116: 'Function' takes no parentheses. For a particular shape write 'delegate(...)', with a result before it if it has one, as in 'integer delegate(string)'.
+types.pc(68,36): error PC0300: Cannot use an integer delegate(integer) where a delegate(integer) is expected. Nothing converts one to the other.
+types.pc(75,44): error PC0347: An integer is a value, so asking whether two of them are the same object has no answer. Use '==' to compare what they hold.

@@ -2,9 +2,14 @@
 
 [← Back to the index](README.md)
 
-Two members exist on every type in the language: a primitive, a set, an optional, an enumeration
-member, a structure, a model a program declared, and a model the language provides. They come
-from `Model`, which every type descends from.
+Two members exist on every type in the language: a primitive, a set, an enumeration member, a
+structure, a model a program declared, and a model the language provides. They come from `Model`,
+which every type descends from.
+
+**An optional is the exception, and answers neither.** Reaching a member of one means reaching
+through to what it holds, which it will not do without proof — so `ToString()` and `Equals()` are
+refused on an optional as any other member would be. Comparing two of them with `==` is the one
+thing that needs no proof; [optionals.md](optionals.md#comparing-them) gives the rules.
 
 | Section | Members |
 |---|---|

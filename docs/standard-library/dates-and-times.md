@@ -153,8 +153,27 @@ Console.WriteLine(moment.Day);                   # 2 — a moment does not
 |---|---|---|
 | `CompareTo(same type)` | `integer` | Negative if earlier, zero if equal, positive if later |
 
-Every one of the four answers it against its own type. Ordinary `<` and `>` work too; `CompareTo`
-is there for when you want the three-way answer in one go, as when sorting.
+Every one of the four answers it against its own type. **`<`, `>`, `<=` and `>=` work too**, and
+are what to write when the question is which came first — each is `CompareTo` against zero, so
+the two can never disagree. `CompareTo` itself is for when the three-way answer is wanted in one
+go, as when sorting.
+
+`==` and `!=` compare what the value holds, as they do for [any other
+value](every-value.md#what-equals-compares).
+
+```
+Date opened = new Date(2026, 1, 5);
+Date closed = new Date(2026, 3, 1);
+
+Console.WriteLine(opened < closed);                # true
+Console.WriteLine(opened >= closed);               # false
+Console.WriteLine(opened.CompareTo(closed));       # -1 — the earlier one
+Console.WriteLine(opened == new Date(2026, 1, 5)); # true
+```
+
+**Only these four types order themselves.** A model a program declares has no order to be in, so
+`<` on two of them is refused (`PC0303`) — deriving one from their fields would make it mean
+whatever order the fields happened to be declared in.
 
 ## Writing one out, and reading one back
 

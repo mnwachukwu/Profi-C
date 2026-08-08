@@ -320,11 +320,12 @@ public sealed class Lowering
                     unary.Span, unary.Operator, LowerExpression(unary.Operand)));
 
             case BinaryExpr binary:
-                return Carry(binary, new BinaryExpr(
-                    binary.Span,
-                    LowerExpression(binary.Left),
-                    binary.Operator,
-                    LowerExpression(binary.Right)));
+                return LowerOrderedComparison(binary)
+                       ?? Carry(binary, new BinaryExpr(
+                           binary.Span,
+                           LowerExpression(binary.Left),
+                           binary.Operator,
+                           LowerExpression(binary.Right)));
 
             case TypeTestExpr test:
                 return Carry(test, new TypeTestExpr(
@@ -464,6 +465,50 @@ public sealed class Lowering
             _model.BindType(literal, PrimitiveType.String);
             return literal;
         }
+    }
+
+    /// <summary>
+    /// <para>Comparing two values of a type that orders itself, as the <c>CompareTo</c> it
+    /// stands for: <c>a &lt; b</c> becomes <c>a.CompareTo(b) &lt; 0</c>.</para>
+    /// <para>Done here rather than in either back end, because the operator is a spelling
+    /// rather than an operation. There is no instruction that compares two moments, and both
+    /// engines already know how to call <c>CompareTo</c> — so lowering leaves nothing for
+    /// either of them to learn, and no way for them to learn it differently.</para>
+    /// <para>The operator is kept and its right side becomes a zero, so the four
+    /// relations need no cases of their own: what <c>&lt;=</c> means against zero is what it
+    /// meant against the other value.</para>
+    /// </summary>
+    private Expression? LowerOrderedComparison(BinaryExpr binary)
+    {
+        if (binary.Operator is not (BinaryOperator.LessThan or BinaryOperator.GreaterThan
+                or BinaryOperator.LessThanOrEqual or BinaryOperator.GreaterThanOrEqual))
+        {
+            return null;
+        }
+
+        if (_model.GetType(binary.Left) is not { } held || !BuiltInMembers.IsOrdered(held))
+        {
+            return null;
+        }
+
+        MemberExpr member = new(binary.Span, LowerExpression(binary.Left), "CompareTo");
+        CallExpr call = new(binary.Span, member, [LowerExpression(binary.Right)]);
+
+        _model.BindType(member, PrimitiveType.Integer);
+        _model.BindType(call, PrimitiveType.Integer);
+
+        if (BuiltInMembers.FindAll(held, "CompareTo") is [{ Id: { } id }, ..])
+        {
+            _model.BindBuiltIn(member, id);
+        }
+
+        LiteralExpr zero = new(binary.Span, LiteralKind.Integer, "0");
+        _model.BindType(zero, PrimitiveType.Integer);
+
+        BinaryExpr against = new(binary.Span, call, binary.Operator, zero);
+        _model.BindType(against, PrimitiveType.Boolean);
+
+        return against;
     }
 
     /// <summary>

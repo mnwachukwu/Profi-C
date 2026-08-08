@@ -1365,8 +1365,8 @@ public static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor NotSwitchable = Error(
         "PC0315",
         "Cannot switch on this type",
-        "A switch cannot examine {0}. Equality on it is unreliable, so a case label could "
-        + "never be trusted to match.");
+        "A switch cannot examine {0}. A case label compares an integer, a character, a string, "
+        + "a boolean or an enumeration member, and nothing else.");
 
     public static readonly DiagnosticDescriptor ForEachNeedsSequence = Error(
         "PC0316",
@@ -1584,6 +1584,28 @@ public static class DiagnosticDescriptors
         "PC0348",
         "This member needs a value",
         "'{0}' needs a value on the left of the dot, not the type name '{1}'.");
+
+    /// <summary>
+    /// <para>An optional written where its text was wanted: printed, joined to a string, or put
+    /// in a hole.</para>
+    /// <para>All three ask a value for <c>ToString</c>, and an optional answers none — which is
+    /// the rule the standard library states outright, since what an absence prints as is a
+    /// question with no answer worth guessing. The value inside has text; the optional around it
+    /// does not.</para>
+    /// <para>Checked here rather than left to the member lookup, which already refuses
+    /// <c>x.ToString()</c> written out. Two of the three never write that call down, and the
+    /// third writes it while lowering, after checking is over — which is why a hole reached the
+    /// interpreter and failed there.</para>
+    /// <para>The two ways out are the two ways out of any optional. <c>Or</c> says what to write
+    /// when there is nothing, and is what most callers here want. Proving presence and writing
+    /// the value is the other, and is what a caller who must do something else about an absence
+    /// writes.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor NothingToWrite = Error(
+        "PC0349",
+        "An optional has no text to write",
+        "{0} may hold nothing, so there is nothing to write for it. Say what to write instead "
+        + "with 'Or', or prove it holds a value and write that.");
 
     /// <summary>
     /// <para>A function the language provides, named without being called.</para>
@@ -1811,6 +1833,32 @@ public static class DiagnosticDescriptors
         "Nothing here can end this loop",
         "Nothing here breaks, yields, or throws, so nothing will stop this loop. Add a 'break', "
         + "or give it a condition with 'loop while' or 'until'.");
+
+    /// <summary>
+    /// <para>A range loop whose step is zero, which never reaches its bound.</para>
+    /// <para>An opinion rather than an error, and for the same reason as <c>PC0406</c> beside
+    /// it: a loop that runs forever is a shape a program may mean, and this one says so
+    /// precisely rather than being unpredictable. Not faded either, and for that reason — the
+    /// step is the word that is wrong, and nothing written here is spare.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor StepGoesNowhere = Opinion(
+        "PC0413",
+        "This step never advances",
+        "A step of zero leaves the counter where it started, so this loop runs forever. Give it "
+        + "a step that moves, or write 'loop' where running forever is meant.");
+
+    /// <summary>
+    /// <para>A range loop whose step carries the counter away from its bound, so the body never
+    /// runs at all.</para>
+    /// <para>A warning rather than an opinion, because nothing here is a matter of taste: the
+    /// lines inside were written to be run and never will be. Faded with it, since that is what
+    /// the fading says — nothing reaches this.</para>
+    /// </summary>
+    public static readonly DiagnosticDescriptor LoopRunsNoTimes = UnusedWarning(
+        "PC0414",
+        "This loop cannot run",
+        "Counting from {0} by {1} never reaches {2}, so nothing inside this loop runs. Check "
+        + "which way the step points.");
 
     /// <summary>
     /// <para>A <c>break</c> or a <c>continue</c> with no loop around it to act on.</para>

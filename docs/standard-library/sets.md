@@ -40,7 +40,7 @@ Console.WriteLine(scores.IndexOf(85));    # 1 — the first one
 
 ## Changing it
 
-These four change the set in place and are the only members that do.
+These five change the set in place and are the only members that do.
 
 | Member | Yields | What it does |
 |---|---|---|
@@ -102,8 +102,10 @@ having straight. Because a Profi-C set keeps order and allows a value twice, `Un
 rather than merging — what was in both ends up in the answer twice. `Distinct` is what turns a
 row of things into a mathematical set, and it is only ever done when asked.
 
-`Intersect` and `Except` are each other's counterpart: between them they divide this set in two,
-so putting them back together gives the original.
+`Intersect` and `Except` are each other's counterpart: every element of this set goes to exactly
+one of the two, repeats included, so between them they account for all of it. Appending one to
+the other does not rebuild it, though — each gathers its own in this set's order and the two runs
+then sit end to end, so `{1, 2, 3}` against `{3, 4}` comes back as `3,1,2`.
 
 <a id="distinct"></a>
 

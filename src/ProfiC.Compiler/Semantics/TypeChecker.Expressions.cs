@@ -160,10 +160,26 @@ public sealed partial class TypeChecker
     };
 
     /// <summary>
+    /// <para>Refuses an optional where its text was wanted.</para>
+    /// <para>Three places ask a value to write itself out — a hole, a join to a string, and
+    /// <c>Console.Write</c> — and an optional answers none of them, having no <c>ToString</c>
+    /// for any of the three to reach. Asked here rather than left to the member lookup that
+    /// already refuses <c>x.ToString()</c>: two of the three never write that call down, and
+    /// the third writes it while lowering, once checking is over.</para>
+    /// </summary>
+    private void RequireSomethingToWrite(TypeSymbol held, SyntaxNode at)
+    {
+        if (held is OptionalType)
+        {
+            Report(DiagnosticDescriptors.NothingToWrite, at, held.WithArticleCapitalized());
+        }
+    }
+
+    /// <summary>
     /// <para>An interpolated string is a string, whatever it holds.</para>
-    /// <para>Every hole is checked, and nothing is asked of what it yields: joining a value to
-    /// a string already accepts any type, and a hole is that same join written a shorter way.
-    /// A hole that says how to format itself is the exception, since only a value that answers
+    /// <para>Every hole is checked, and what it yields has to have text to contribute: a hole is
+    /// a join to a string written a shorter way, and both ask the same of what they are given.
+    /// A hole that says how to format itself asks for more, since only a value that answers
     /// <c>Format</c> can be asked to.</para>
     /// </summary>
     private TypeSymbol TypeOfInterpolatedString(InterpolatedStringExpr interpolated)
@@ -171,6 +187,8 @@ public sealed partial class TypeChecker
         foreach (InterpolationPart hole in interpolated.Holes)
         {
             TypeSymbol held = CheckExpression(hole.Value);
+
+            RequireSomethingToWrite(held, hole);
 
             if (hole.Format is null || held is ErrorType)
             {
@@ -285,6 +303,11 @@ public sealed partial class TypeChecker
             && (ReferenceEquals(left, PrimitiveType.String)
                 || ReferenceEquals(right, PrimitiveType.String)))
         {
+            // The other side renders itself, so it has to have a rendering. Reported against
+            // the side that has none rather than against the join, since that is the one to fix.
+            RequireSomethingToWrite(left, binary.Left);
+            RequireSomethingToWrite(right, binary.Right);
+
             return PrimitiveType.String;
         }
 
@@ -476,6 +499,14 @@ public sealed partial class TypeChecker
             return PrimitiveType.Boolean;
         }
 
+        // A type that orders its own values answers these the way a number does. Which day
+        // comes first is a question with one answer, so making it look like arithmetic is what
+        // a reader expects — and lowering turns it back into the CompareTo it stands for.
+        if (BuiltInMembers.IsOrdered(left) && Conversions.SameType(left, right))
+        {
+            return PrimitiveType.Boolean;
+        }
+
         Report(
             DiagnosticDescriptors.OperatorNotDefined,
             binary,
@@ -513,9 +544,33 @@ public sealed partial class TypeChecker
         {
             WidenOperands(binary, left, right, unified);
         }
+        else if (ComparedAsOptional(left, right) is { } wrapped)
+        {
+            // An optional against what it could hold. Written down as a comparison of two
+            // optionals, so that both sides are the same shape by the time either engine runs
+            // them — what a value compares to an absence as is then answered once, here, rather
+            // than separately and differently by each.
+            WidenOperands(binary, left, right, wrapped);
+        }
 
         return PrimitiveType.Boolean;
     }
+
+    /// <summary>
+    /// <para>The optional both sides of a comparison read as, where one of them is an optional and
+    /// the other is what it holds. Nothing where both are optionals already, or neither is.</para>
+    /// </summary>
+    private static OptionalType? ComparedAsOptional(TypeSymbol left, TypeSymbol right) =>
+        (left, right) switch
+        {
+            (OptionalType optional, not OptionalType)
+                when Conversions.SameType(optional.UnderlyingType, right) => optional,
+
+            (not OptionalType, OptionalType optional)
+                when Conversions.SameType(optional.UnderlyingType, left) => optional,
+
+            _ => null,
+        };
 
     private TypeSymbol CheckTypeTest(TypeTestExpr test)
     {

@@ -64,7 +64,8 @@ end model
 ## What the language raises
 
 Eleven names. Each is the same name at run time as the one a program writes, so what the language
-raises is what a program names — and all but the last are ones a `catch` can take.
+raises is what a program names — and every one but `RecursionTooDeepException` is one a `catch`
+can take.
 
 | Exception | Raised when |
 |---|---|

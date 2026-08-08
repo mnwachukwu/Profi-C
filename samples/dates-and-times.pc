@@ -195,16 +195,21 @@ shared model Program
                             + lateMoment.Add(TimeSpan.FromMinutes(45.0)));
     end function
 
-    # ---- Ordering, which is spelled with a word rather than an operator ------------------
+    # ---- Ordering ------------------------------------------------------------------------
 
     ##
         @summary: Putting moments in order.
 
-        @remarks: CompareTo yields a negative number when this one comes first, zero when they are the
-        same, and a positive number when it comes after. Written as a word because that is
-        what .NET does, and because '<' on two dates reads as though it were arithmetic.
+        @remarks: These four order their own values, so '<', '>', '<=' and '>=' work on two of the
+        same type. Each is CompareTo against zero, so the operator and the member answer the
+        same question and cannot disagree.
 
-        Equality is the exception: '==' works on all four, as it does on everything.
+        CompareTo is the one to reach for when all three answers are wanted at once, as when
+        sorting: it yields a negative number when this one comes first, zero when they are the
+        same, and a positive number when it comes after.
+
+        Equality is a different question and needs no order, so '==' works on every model
+        rather than only on these.
     ##
     function PuttingThemInOrder()
         Console.WriteLine("== which came first ==");
@@ -212,19 +217,27 @@ shared model Program
         Date earlier = new Date(2026, 8, 15);
         Date later = new Date(2026, 12, 25);
 
-        Console.WriteLine("  august before december " + (earlier.CompareTo(later) < 0));
-        Console.WriteLine("  december before august " + (later.CompareTo(earlier) < 0));
+        Console.WriteLine("  august before december " + (earlier < later));
+        Console.WriteLine("  december before august " + (later < earlier));
+        Console.WriteLine("  august is not after it " + (earlier <= earlier));
         Console.WriteLine("  a day equals itself    " + (earlier == new Date(2026, 8, 15)));
+        Console.WriteLine("  CompareTo agrees       " + (earlier.CompareTo(later) < 0));
 
         Time morning = new Time(9, 0);
         Time evening = new Time(21, 0);
 
-        Console.WriteLine("  nine before nine pm    " + (morning.CompareTo(evening) < 0));
+        Console.WriteLine("  nine before nine pm    " + (morning < evening));
 
         TimeSpan hour = TimeSpan.FromHours(1.0);
         TimeSpan minute = TimeSpan.FromMinutes(1.0);
 
-        Console.WriteLine("  a minute is shorter    " + (minute.CompareTo(hour) < 0));
+        Console.WriteLine("  a minute is shorter    " + (minute < hour));
+        Console.WriteLine("  an hour is not shorter " + (hour >= minute));
+
+        DateTime opened = new DateTime(2026, 8, 15, 9, 0, 0);
+        DateTime closed = new DateTime(2026, 8, 15, 17, 0, 0);
+
+        Console.WriteLine("  the day is still open  " + (opened < closed));
     end function
 
     # ---- Asking what time it is ---------------------------------------------------------

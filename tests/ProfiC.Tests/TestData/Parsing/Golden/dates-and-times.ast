@@ -507,11 +507,8 @@ CompilationUnit
             LiteralExpr "  august before december " [String]
             ParenthesizedExpr
               BinaryExpr '<'
-                CallExpr
-                  MemberExpr 'CompareTo'
-                    IdentifierExpr 'earlier'
-                  IdentifierExpr 'later'
-                LiteralExpr 0 [Integer]
+                IdentifierExpr 'earlier'
+                IdentifierExpr 'later'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -520,11 +517,18 @@ CompilationUnit
             LiteralExpr "  december before august " [String]
             ParenthesizedExpr
               BinaryExpr '<'
-                CallExpr
-                  MemberExpr 'CompareTo'
-                    IdentifierExpr 'later'
-                  IdentifierExpr 'earlier'
-                LiteralExpr 0 [Integer]
+                IdentifierExpr 'later'
+                IdentifierExpr 'earlier'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  august is not after it " [String]
+            ParenthesizedExpr
+              BinaryExpr '<='
+                IdentifierExpr 'earlier'
+                IdentifierExpr 'earlier'
       ExpressionStmt
         CallExpr
           MemberExpr 'WriteLine'
@@ -538,6 +542,19 @@ CompilationUnit
                   LiteralExpr 2026 [Integer]
                   LiteralExpr 8 [Integer]
                   LiteralExpr 15 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  CompareTo agrees       " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                CallExpr
+                  MemberExpr 'CompareTo'
+                    IdentifierExpr 'earlier'
+                  IdentifierExpr 'later'
+                LiteralExpr 0 [Integer]
       VarDeclStmt 'morning'
         NamedTypeSyntax 'Time'
         NewExpr 'Time'
@@ -556,11 +573,8 @@ CompilationUnit
             LiteralExpr "  nine before nine pm    " [String]
             ParenthesizedExpr
               BinaryExpr '<'
-                CallExpr
-                  MemberExpr 'CompareTo'
-                    IdentifierExpr 'morning'
-                  IdentifierExpr 'evening'
-                LiteralExpr 0 [Integer]
+                IdentifierExpr 'morning'
+                IdentifierExpr 'evening'
       VarDeclStmt 'hour'
         NamedTypeSyntax 'TimeSpan'
         CallExpr
@@ -581,11 +595,46 @@ CompilationUnit
             LiteralExpr "  a minute is shorter    " [String]
             ParenthesizedExpr
               BinaryExpr '<'
-                CallExpr
-                  MemberExpr 'CompareTo'
-                    IdentifierExpr 'minute'
-                  IdentifierExpr 'hour'
-                LiteralExpr 0 [Integer]
+                IdentifierExpr 'minute'
+                IdentifierExpr 'hour'
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  an hour is not shorter " [String]
+            ParenthesizedExpr
+              BinaryExpr '>='
+                IdentifierExpr 'hour'
+                IdentifierExpr 'minute'
+      VarDeclStmt 'opened'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+          LiteralExpr 9 [Integer]
+          LiteralExpr 0 [Integer]
+          LiteralExpr 0 [Integer]
+      VarDeclStmt 'closed'
+        NamedTypeSyntax 'DateTime'
+        NewExpr 'DateTime'
+          LiteralExpr 2026 [Integer]
+          LiteralExpr 8 [Integer]
+          LiteralExpr 15 [Integer]
+          LiteralExpr 17 [Integer]
+          LiteralExpr 0 [Integer]
+          LiteralExpr 0 [Integer]
+      ExpressionStmt
+        CallExpr
+          MemberExpr 'WriteLine'
+            IdentifierExpr 'Console'
+          BinaryExpr '+'
+            LiteralExpr "  the day is still open  " [String]
+            ParenthesizedExpr
+              BinaryExpr '<'
+                IdentifierExpr 'opened'
+                IdentifierExpr 'closed'
     FunctionDecl 'WhatTimeIsItNow'
       ExpressionStmt
         CallExpr
