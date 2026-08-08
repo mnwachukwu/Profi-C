@@ -744,7 +744,7 @@ Every one of these runs. Each is a complete program, and each is there to show o
 | [fractions.pc](samples/fractions.pc) | **Exact rationals.** `1\|3 + 1\|3 + 1\|3` is exactly 1; the same sum in `real` is not |
 | [runtime-fractions.pc](samples/runtime-fractions.pc) | Building fractions from values with `Fraction.Create`, when literals will not do |
 | [standard-library.pc](samples/standard-library.pc) | Everything the language provides without declaring anything |
-| [bits.pc](samples/bits.pc) | **Working on the bits of a whole number.** Flags combined and asked about, `bitwise and`/`or`/`xor`, and the two shifts — the one part of the language aimed past a first program |
+| [bits.pc](samples/bits.pc) | **Working on the bits of a whole number.** Flags combined and asked about, `bitwise and`/`or`/`xor`, and the two shifts |
 | [ignoring.pc](samples/ignoring.pc) | **Telling the compiler to stop saying something.** The three severities, the three forms of `# ignore`, how far each reaches, and why a comment beginning with the word stays a comment |
 | [documenting.pc](samples/documenting.pc) | **Writing down what a thing is.** `@summary:` and the labels beside it, how a summary runs to several paragraphs, and why a remark above a declaration stays a remark |
 | [visibility.pc](samples/visibility.pc) | **`shared` and `public` answer different questions.** One asks how many there are, the other who can reach it — a shared model's members are private until they say otherwise |

@@ -1,10 +1,6 @@
 ##
     Working on the bits of a whole number.
 
-    This is the one part of the language aimed past a first program. Nothing else
-    needs it, and a reader who never uses it loses nothing — but a whole number is a row of
-    bits underneath, and some jobs are clearest when written that way.
-
     Everything here is spelled as a word. '&' and '|' would have been new punctuation, and '|'
     was not available in any case: it already writes a fraction. So 'bitwise' qualifies the
     'and' and 'or' that already mean something, and the rest stand alone.
